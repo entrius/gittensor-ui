@@ -10,20 +10,21 @@ import {
   Typography,
   alpha,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import { IssueBounty } from '../../api/models/Issues';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import { WatchlistButton } from '../common';
 import BountyProgress from './BountyProgress';
-import { getIssueStatusMeta } from '../../utils/issueStatus';
+import { getIssueStatusMetaForTheme } from '../../utils/issueStatus';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import {
   formatTokenAmount,
   formatDate,
   formatAlphaToUsd,
 } from '../../utils/format';
-import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { TEXT_OPACITY } from '../../theme';
 
 interface BountyCardProps {
   issue: IssueBounty;
@@ -47,8 +48,9 @@ export const BountyCard: React.FC<BountyCardProps> = ({
   alphaPrice,
   compact = false,
 }) => {
+  const theme = useTheme();
   const owner = issue.repositoryFullName.split('/')[0] || '';
-  const statusMeta = getIssueStatusMeta(issue.status);
+  const statusMeta = getIssueStatusMetaForTheme(issue.status, theme);
   const usdDisplay = formatAlphaToUsd(
     issue.targetBounty,
     taoPrice ?? 0,
@@ -64,10 +66,10 @@ export const BountyCard: React.FC<BountyCardProps> = ({
       ? 'Payout'
       : 'Bounty';
   const bountyColor = isPending
-    ? STATUS_COLORS.award
+    ? theme.palette.status.award
     : isCancelled
       ? 'text.tertiary'
-      : STATUS_COLORS.merged;
+      : theme.palette.status.merged;
 
   const linkProps = useLinkBehavior<HTMLAnchorElement>(href ?? '', {
     state: linkState,
@@ -85,7 +87,7 @@ export const BountyCard: React.FC<BountyCardProps> = ({
         borderRadius: 2,
         border: '1px solid',
         borderColor: theme.palette.border.light,
-        backgroundColor: theme.palette.surface.transparent,
+        backgroundColor: theme.palette.background.paper,
         display: 'flex',
         flexDirection: 'column',
         gap: 1.5,
@@ -120,16 +122,16 @@ export const BountyCard: React.FC<BountyCardProps> = ({
         />
         <Tooltip title={issue.repositoryFullName} placement="top" arrow>
           <Typography
-            sx={{
+            sx={(t) => ({
               fontSize: '0.88rem',
               fontWeight: 500,
-              color: STATUS_COLORS.info,
+              color: t.palette.status.info,
               flex: 1,
               minWidth: 0,
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
-            }}
+            })}
           >
             {issue.repositoryFullName}
           </Typography>
@@ -153,9 +155,9 @@ export const BountyCard: React.FC<BountyCardProps> = ({
           itemKey={String(issue.id)}
           size="small"
           sx={{
-            backgroundColor: 'rgba(255,255,255,0.08)',
+            backgroundColor: 'border.subtle',
             borderRadius: '50%',
-            '&:hover': { backgroundColor: 'rgba(255,255,255,0.15)' },
+            '&:hover': { backgroundColor: 'border.medium' },
           }}
         />
       </Box>
@@ -193,18 +195,18 @@ export const BountyCard: React.FC<BountyCardProps> = ({
               width: 'fit-content',
               fontSize: '0.78rem',
               fontWeight: 500,
-              color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
+              color: alpha(theme.palette.text.primary, TEXT_OPACITY.secondary),
               textDecoration: 'none',
               px: 1,
               py: 0.5,
               borderRadius: 1.5,
-              border: `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
-              backgroundColor: alpha(theme.palette.common.white, 0.05),
+              border: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
+              backgroundColor: alpha(theme.palette.text.primary, 0.05),
               transition: 'all 0.15s',
               '&:hover': {
-                color: theme.palette.common.white,
-                borderColor: alpha(theme.palette.common.white, 0.28),
-                backgroundColor: alpha(theme.palette.common.white, 0.1),
+                color: theme.palette.text.primary,
+                borderColor: alpha(theme.palette.text.primary, 0.28),
+                backgroundColor: alpha(theme.palette.text.primary, 0.1),
                 textDecoration: 'none',
               },
             })}
@@ -251,7 +253,7 @@ export const BountyCard: React.FC<BountyCardProps> = ({
             <Typography
               sx={(theme) => ({
                 fontSize: '0.7rem',
-                color: alpha(theme.palette.common.white, 0.35),
+                color: alpha(theme.palette.text.primary, 0.35),
               })}
             >
               {usdDisplay}
@@ -281,11 +283,11 @@ export const BountyCard: React.FC<BountyCardProps> = ({
           {issue.solverHotkey ? (
             <Tooltip title={issue.solverHotkey} arrow>
               <Typography
-                sx={{
+                sx={(t) => ({
                   fontSize: '0.75rem',
-                  color: STATUS_COLORS.info,
+                  color: t.palette.status.info,
                   cursor: 'default',
-                }}
+                })}
               >
                 {`${issue.solverHotkey.slice(0, 6)}…${issue.solverHotkey.slice(-4)}`}
               </Typography>
@@ -294,7 +296,7 @@ export const BountyCard: React.FC<BountyCardProps> = ({
             <Typography
               sx={(theme) => ({
                 fontSize: '0.75rem',
-                color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
+                color: alpha(theme.palette.text.primary, TEXT_OPACITY.faint),
               })}
             >
               -
@@ -303,7 +305,7 @@ export const BountyCard: React.FC<BountyCardProps> = ({
           <Typography
             sx={(theme) => ({
               fontSize: '0.72rem',
-              color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+              color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
               whiteSpace: 'nowrap',
             })}
           >

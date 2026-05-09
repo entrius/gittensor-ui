@@ -3144,28 +3144,34 @@ const PRCard: React.FC<{
   return (
     <Card
       elevation={0}
-      sx={(t) => ({
-        p: 1,
-        backgroundColor: t.palette.background.default,
-        backdropFilter: 'blur(12px)',
-        border: '1px solid',
-        borderColor: alpha(color, 0.3),
-        ...(isStale && { opacity: 0.4, filter: 'grayscale(0.5)' }),
-        borderRadius: 2,
-        cursor: 'pointer',
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        boxShadow: `0 2px 8px ${alpha(t.palette.background.default, 0.1)}`,
-        '&:hover': {
-          backgroundColor: t.palette.surface.elevated,
-          borderColor: alpha(color, 0.5),
-          transform: 'translateY(-2px)',
-          boxShadow: `0 8px 24px -6px ${alpha(t.palette.background.default, 0.6)}`,
-        },
-      })}
+      sx={(t) => {
+        const isDark = t.palette.mode === 'dark';
+        const shadowBase = isDark
+          ? t.palette.background.default
+          : t.palette.common.black;
+        return {
+          p: 1,
+          backgroundColor: t.palette.background.paper,
+          backdropFilter: 'blur(12px)',
+          border: '1px solid',
+          borderColor: alpha(color, isDark ? 0.3 : 0.5),
+          ...(isStale && { opacity: 0.4, filter: 'grayscale(0.5)' }),
+          borderRadius: 2,
+          cursor: 'pointer',
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+          boxShadow: `0 2px 8px ${alpha(shadowBase, isDark ? 0.1 : 0.06)}`,
+          '&:hover': {
+            backgroundColor: t.palette.surface.elevated,
+            borderColor: alpha(color, isDark ? 0.5 : 0.7),
+            transform: 'translateY(-2px)',
+            boxShadow: `0 8px 24px -6px ${alpha(shadowBase, isDark ? 0.6 : 0.15)}`,
+          },
+        };
+      }}
     >
       {/* Row 1: repo + status + star */}
       <Box
@@ -3250,7 +3256,10 @@ const PRCard: React.FC<{
         <Box
           sx={(t) => ({
             mt: 'auto',
-            backgroundColor: alpha(t.palette.background.default, 0.2),
+            backgroundColor:
+              t.palette.mode === 'dark'
+                ? alpha(t.palette.background.default, 0.2)
+                : t.palette.surface.subtle,
             borderRadius: 1.5,
             p: 1,
             display: 'flex',
@@ -3979,28 +3988,34 @@ const IssueCard: React.FC<{
   return (
     <Card
       elevation={0}
-      sx={(t) => ({
-        p: 1,
-        backgroundColor: t.palette.background.default,
-        backdropFilter: 'blur(12px)',
-        border: '1px solid',
-        borderColor: alpha(color, 0.3),
-        ...(isStale && { opacity: 0.4, filter: 'grayscale(0.5)' }),
-        borderRadius: 2,
-        cursor: 'pointer',
-        transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1,
-        boxShadow: `0 2px 8px ${alpha(t.palette.background.default, 0.1)}`,
-        '&:hover': {
-          backgroundColor: t.palette.surface.elevated,
-          borderColor: alpha(color, 0.5),
-          transform: 'translateY(-2px)',
-          boxShadow: `0 8px 24px -6px ${alpha(t.palette.background.default, 0.6)}`,
-        },
-      })}
+      sx={(t) => {
+        const isDark = t.palette.mode === 'dark';
+        const shadowBase = isDark
+          ? t.palette.background.default
+          : t.palette.common.black;
+        return {
+          p: 1,
+          backgroundColor: t.palette.background.paper,
+          backdropFilter: 'blur(12px)',
+          border: '1px solid',
+          borderColor: alpha(color, isDark ? 0.3 : 0.5),
+          ...(isStale && { opacity: 0.4, filter: 'grayscale(0.5)' }),
+          borderRadius: 2,
+          cursor: 'pointer',
+          transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
+          height: '100%',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 1,
+          boxShadow: `0 2px 8px ${alpha(shadowBase, isDark ? 0.1 : 0.06)}`,
+          '&:hover': {
+            backgroundColor: t.palette.surface.elevated,
+            borderColor: alpha(color, isDark ? 0.5 : 0.7),
+            transform: 'translateY(-2px)',
+            boxShadow: `0 8px 24px -6px ${alpha(shadowBase, isDark ? 0.6 : 0.15)}`,
+          },
+        };
+      }}
     >
       <Box
         sx={{
@@ -4087,7 +4102,10 @@ const IssueCard: React.FC<{
         <Box
           sx={(t) => ({
             mt: 'auto',
-            backgroundColor: alpha(t.palette.background.default, 0.2),
+            backgroundColor:
+              t.palette.mode === 'dark'
+                ? alpha(t.palette.background.default, 0.2)
+                : t.palette.surface.subtle,
             borderRadius: 1.5,
             p: 1,
             display: 'flex',

@@ -324,7 +324,7 @@ const LanguageWeightsTable: React.FC = () => {
               sx={{
                 color: showChart
                   ? theme.palette.text.primary
-                  : alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                  : alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
                 border: `1px solid ${theme.palette.border.light}`,
                 borderRadius: 2,
                 padding: '6px',
@@ -347,7 +347,7 @@ const LanguageWeightsTable: React.FC = () => {
                 variant="body2"
                 sx={{
                   color: alpha(
-                    theme.palette.common.white,
+                    theme.palette.text.primary,
                     TEXT_OPACITY.secondary,
                   ),
                   fontSize: '0.8rem',
@@ -364,7 +364,7 @@ const LanguageWeightsTable: React.FC = () => {
                 }}
                 sx={{
                   color: theme.palette.text.primary,
-                  backgroundColor: alpha(theme.palette.common.black, 0.4),
+                  backgroundColor: theme.palette.surface.subtle,
                   fontSize: '0.8rem',
                   height: '36px',
                   borderRadius: 2,
@@ -401,7 +401,7 @@ const LanguageWeightsTable: React.FC = () => {
                       <Search
                         sx={{
                           color: alpha(
-                            theme.palette.common.white,
+                            theme.palette.text.primary,
                             TEXT_OPACITY.muted,
                           ),
                           fontSize: '1rem',
@@ -415,7 +415,7 @@ const LanguageWeightsTable: React.FC = () => {
                       onClear={() => setDraftValue('')}
                       sx={{
                         color: alpha(
-                          theme.palette.common.white,
+                          theme.palette.text.primary,
                           TEXT_OPACITY.muted,
                         ),
                       }}
@@ -426,7 +426,7 @@ const LanguageWeightsTable: React.FC = () => {
                   width: { xs: '100%', sm: '200px' },
                   '& .MuiOutlinedInput-root': {
                     color: theme.palette.text.primary,
-                    backgroundColor: alpha(theme.palette.common.black, 0.4),
+                    backgroundColor: theme.palette.surface.subtle,
                     fontSize: '0.8rem',
                     height: '36px',
                     borderRadius: 2,
@@ -449,7 +449,7 @@ const LanguageWeightsTable: React.FC = () => {
             p: 2,
             borderBottom: `1px solid ${theme.palette.border.light}`,
             height: '500px',
-            backgroundColor: alpha(theme.palette.common.black, 0.2),
+            backgroundColor: theme.palette.surface.subtle,
           }}
         >
           {showChart && paginatedLanguages.length > 0 && (

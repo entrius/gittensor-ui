@@ -14,7 +14,6 @@ import {
   Avatar,
   useTheme,
 } from '@mui/material';
-import { STATUS_COLORS } from '../../theme';
 import { formatDistanceToNow } from 'date-fns';
 import FolderIcon from '@mui/icons-material/Folder';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
@@ -296,7 +295,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
         <Breadcrumbs
           aria-label="breadcrumb"
           sx={{
-            '& .MuiBreadcrumbs-separator': { color: STATUS_COLORS.open },
+            '& .MuiBreadcrumbs-separator': { color: 'status.open' },
           }}
         >
           <Link
@@ -308,7 +307,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
               fontWeight: !currentPath ? 600 : 400,
               color: !currentPath
                 ? theme.palette.text.tertiary
-                : STATUS_COLORS.info,
+                : theme.palette.status.info,
               cursor: !currentPath ? 'default' : 'pointer',
               fontSize: '14px',
             }}
@@ -329,7 +328,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   fontWeight: isLast ? 600 : 400,
                   color: isLast
                     ? theme.palette.text.tertiary
-                    : STATUS_COLORS.info,
+                    : theme.palette.status.info,
                   cursor: isLast ? 'default' : 'pointer',
                   fontSize: '14px',
                 }}
@@ -360,7 +359,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
           {commitQuery.isLoading ? (
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
               <CircularProgress size={16} />
-              <Typography sx={{ fontSize: '13px', color: STATUS_COLORS.open }}>
+              <Typography sx={{ fontSize: '13px', color: 'status.open' }}>
                 Loading commit info...
               </Typography>
             </Box>
@@ -392,7 +391,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                 <Typography
                   sx={{
                     fontSize: '13px',
-                    color: STATUS_COLORS.open,
+                    color: 'status.open',
                     whiteSpace: 'nowrap',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -413,14 +412,12 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                 <Typography
                   sx={{
                     fontSize: '13px',
-                    color: STATUS_COLORS.open,
+                    color: 'status.open',
                   }}
                 >
                   {currentCommit.sha}
                 </Typography>
-                <Typography
-                  sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
-                >
+                <Typography sx={{ fontSize: '13px', color: 'status.open' }}>
                   {formatDistanceToNow(new Date(currentCommit.date), {
                     addSuffix: true,
                   })}
@@ -428,7 +425,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
               </Box>
             </>
           ) : (
-            <Typography sx={{ fontSize: '13px', color: STATUS_COLORS.open }}>
+            <Typography sx={{ fontSize: '13px', color: 'status.open' }}>
               {commitQuery.error instanceof RateLimitError
                 ? commitQuery.error.message
                 : 'Latest commit info unavailable'}
@@ -475,7 +472,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                       handleNavigate(parent || null);
                     }}
                     sx={{
-                      color: STATUS_COLORS.info,
+                      color: theme.palette.status.info,
                       borderBottom: `1px solid ${theme.palette.border.subtle}`,
                       py: 1,
                       fontSize: '13px',
@@ -513,7 +510,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                       />
                     ) : (
                       <InsertDriveFileIcon
-                        sx={{ color: STATUS_COLORS.open, fontSize: 16 }}
+                        sx={{ color: 'status.open', fontSize: 16 }}
                       />
                     )}
                   </TableCell>
@@ -532,7 +529,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                     sx={{
                       borderBottom: `1px solid ${theme.palette.border.subtle}`,
                       py: 1,
-                      color: STATUS_COLORS.open,
+                      color: 'status.open',
                       fontSize: '13px',
                       textAlign: 'right',
                     }}

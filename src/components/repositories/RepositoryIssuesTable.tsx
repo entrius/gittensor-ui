@@ -26,10 +26,10 @@ import {
 import { formatTokenAmount, getLowerText, type SortOrder } from '../../utils';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import {
-  getIssueStatusMeta,
+  getIssueStatusMetaForTheme,
   getBountyAmountColor,
 } from '../../utils/issueStatus';
-import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
+import { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
 
 interface RepositoryIssuesTableProps {
@@ -224,8 +224,8 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             icon={isOpen ? <RadioButtonUncheckedIcon /> : <CheckCircleIcon />}
             label={isOpen ? 'OPEN' : 'CLOSED'}
             sx={{
-              color: isOpen ? STATUS_COLORS.open : STATUS_COLORS.merged,
-              borderColor: isOpen ? STATUS_COLORS.open : STATUS_COLORS.merged,
+              color: isOpen ? 'status.open' : theme.palette.status.merged,
+              borderColor: isOpen ? 'status.open' : theme.palette.status.merged,
               '& .MuiChip-icon': { color: 'inherit' },
             }}
           />
@@ -243,7 +243,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             target="_blank"
             rel="noopener noreferrer"
             style={{
-              color: STATUS_COLORS.info,
+              color: theme.palette.status.info,
               textDecoration: 'none',
               fontWeight: 500,
             }}
@@ -254,7 +254,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         ) : (
           <span
             style={{
-              color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
+              color: alpha(theme.palette.text.primary, TEXT_OPACITY.faint),
             }}
           >
             -
@@ -303,7 +303,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           isActive={filter === 'all'}
           onClick={() => setFilter('all')}
           count={counts.total}
-          color={STATUS_COLORS.open}
+          color={'status.open'}
           activeTextColor="text.primary"
         />
         <FilterButton
@@ -311,7 +311,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           isActive={filter === 'open'}
           onClick={() => setFilter('open')}
           count={counts.open}
-          color={STATUS_COLORS.open}
+          color={'status.open'}
           activeTextColor="text.primary"
         />
         <FilterButton
@@ -319,7 +319,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           isActive={filter === 'closed'}
           onClick={() => setFilter('closed')}
           count={counts.closed}
-          color={STATUS_COLORS.merged}
+          color={theme.palette.status.merged}
           activeTextColor="text.primary"
         />
       </Stack>
@@ -362,7 +362,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           </Box>
           <Box sx={{ p: 2, display: 'flex', flexDirection: 'column', gap: 1 }}>
             {bounties.map((bounty) => {
-              const meta = getIssueStatusMeta(bounty.status);
+              const meta = getIssueStatusMetaForTheme(bounty.status, theme);
               return (
                 <LinkBox
                   key={bounty.id}
@@ -374,13 +374,13 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                     justifyContent: 'space-between',
                     p: 2,
                     borderRadius: 2,
-                    border: `1px solid ${alpha(theme.palette.common.white, 0.06)}`,
+                    border: `1px solid ${alpha(theme.palette.text.primary, 0.06)}`,
                     backgroundColor: 'surface.subtle',
                     cursor: 'pointer',
                     transition: 'all 0.2s ease',
                     '&:hover': {
                       backgroundColor: 'surface.light',
-                      borderColor: alpha(theme.palette.common.white, 0.15),
+                      borderColor: alpha(theme.palette.text.primary, 0.15),
                       transform: 'translateX(2px)',
                     },
                   }}
@@ -408,7 +408,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                     />
                     <Typography
                       sx={{
-                        color: STATUS_COLORS.open,
+                        color: 'status.open',
                         fontSize: '0.8rem',
                         whiteSpace: 'nowrap',
                       }}
@@ -443,7 +443,8 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                       sx={{
                         color: getBountyAmountColor(
                           bounty.status,
-                          alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                          alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
+                          theme.palette.status,
                         ),
                         fontSize: '0.85rem',
                         fontWeight: 600,
@@ -454,7 +455,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                     <ArrowForwardIcon
                       sx={{
                         color: alpha(
-                          theme.palette.common.white,
+                          theme.palette.text.primary,
                           TEXT_OPACITY.ghost,
                         ),
                         fontSize: 16,
@@ -526,7 +527,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
               <Typography
                 sx={{
                   color: alpha(
-                    theme.palette.common.white,
+                    theme.palette.text.primary,
                     TEXT_OPACITY.tertiary,
                   ),
                   fontSize: '0.9rem',

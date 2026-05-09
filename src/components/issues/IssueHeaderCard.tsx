@@ -20,8 +20,8 @@ import {
 } from '../../utils/format';
 import { getGithubAvatarSrc } from '../../utils';
 import { usePrices } from '../../hooks/usePrices';
-import { getIssueStatusMeta } from '../../utils/issueStatus';
-import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { getIssueStatusMetaForTheme } from '../../utils/issueStatus';
+import { TEXT_OPACITY } from '../../theme';
 
 interface IssueHeaderCardProps {
   issue: IssueDetails;
@@ -29,7 +29,7 @@ interface IssueHeaderCardProps {
 
 const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
   const theme = useTheme();
-  const statusBadge = getIssueStatusMeta(issue.status);
+  const statusBadge = getIssueStatusMetaForTheme(issue.status, theme);
   const { taoPrice, alphaPrice, hasPrices } = usePrices();
   const usdEstimate = hasPrices
     ? formatAlphaToUsd(issue.targetBounty, taoPrice, alphaPrice)
@@ -65,7 +65,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               flexWrap: 'wrap',
               gap: 0.5,
               fontSize: { xs: '0.95rem', sm: '1rem' },
-              color: STATUS_COLORS.info,
+              color: theme.palette.status.info,
               textDecoration: 'none',
               '&:hover': {
                 textDecoration: 'underline',
@@ -120,7 +120,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             <Typography
               sx={{
                 fontSize: '0.7rem',
-                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+                color: alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary),
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 mb: 0.5,
@@ -140,7 +140,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                   sx={{
                     fontSize: '1.25rem',
                     fontWeight: 600,
-                    color: STATUS_COLORS.warning,
+                    color: theme.palette.status.warning,
                   }}
                 >
                   {formatTokenAmount(issue.bountyAmount)}
@@ -149,7 +149,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                   sx={{
                     fontSize: '0.9rem',
                     color: alpha(
-                      theme.palette.common.white,
+                      theme.palette.text.primary,
                       TEXT_OPACITY.tertiary,
                     ),
                   }}
@@ -162,7 +162,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 sx={{
                   fontSize: '1.25rem',
                   fontWeight: 600,
-                  color: STATUS_COLORS.merged,
+                  color: theme.palette.status.merged,
                 }}
               >
                 {formatTokenAmount(issue.targetBounty)} ل
@@ -174,8 +174,8 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                   fontWeight: 600,
                   color:
                     issue.status === 'active'
-                      ? STATUS_COLORS.merged
-                      : alpha(theme.palette.common.white, 0.6),
+                      ? theme.palette.status.merged
+                      : alpha(theme.palette.text.primary, 0.6),
                 }}
               >
                 {formatTokenAmount(issue.targetBounty)} ل
@@ -185,7 +185,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               <Typography
                 sx={{
                   fontSize: '0.8rem',
-                  color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                  color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
                   mt: 0.25,
                 }}
               >
@@ -202,7 +202,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 sx={{
                   fontSize: '0.7rem',
                   color: alpha(
-                    theme.palette.common.white,
+                    theme.palette.text.primary,
                     TEXT_OPACITY.tertiary,
                   ),
                   textTransform: 'uppercase',
@@ -241,7 +241,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             <Typography
               sx={{
                 fontSize: '0.7rem',
-                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+                color: alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary),
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
                 mb: 0.9,
@@ -279,7 +279,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 size="small"
                 sx={{
                   fontSize: '0.7rem',
-                  backgroundColor: alpha(theme.palette.common.white, 0.1),
+                  backgroundColor: alpha(theme.palette.text.primary, 0.1),
                   color: 'text.primary',
                 }}
               />

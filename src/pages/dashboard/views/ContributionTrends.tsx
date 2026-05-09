@@ -86,7 +86,7 @@ const CHART_MODE_TOGGLE_BACKGROUND_OPACITY = 0.035;
 const CHART_MODE_TOGGLE_SLIDER_INSET = 3;
 const CHART_MODE_TOGGLE_SLIDER_WIDTH = `calc(50% - ${CHART_MODE_TOGGLE_SLIDER_INSET}px)`;
 const CHART_MODE_TOGGLE_SLIDER_OPACITY = 0.95;
-const CHART_MODE_TOGGLE_SLIDER_SHADOW_OPACITY = 0.16;
+
 const CHART_MODE_TOGGLE_TRANSITION =
   'transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease';
 const CHART_MODE_TOGGLE_BUTTON_SIZE = {
@@ -224,7 +224,7 @@ const getChartModeToggleSx = (theme: Theme, chartMode: TrendChartMode) => ({
   position: 'relative',
   gap: 0,
   p: CHART_MODE_TOGGLE_PADDING,
-  borderRadius: 999,
+  borderRadius: '50px',
   border: `1px solid ${alpha(
     theme.palette.text.primary,
     CHART_MODE_TOGGLE_BORDER_OPACITY,
@@ -241,14 +241,16 @@ const getChartModeToggleSx = (theme: Theme, chartMode: TrendChartMode) => ({
     bottom: CHART_MODE_TOGGLE_SLIDER_INSET,
     left: CHART_MODE_TOGGLE_SLIDER_INSET,
     width: CHART_MODE_TOGGLE_SLIDER_WIDTH,
-    borderRadius: 999,
-    backgroundColor: alpha(
-      theme.palette.diff.additions,
-      CHART_MODE_TOGGLE_SLIDER_OPACITY,
-    ),
-    boxShadow: `0 8px 18px ${alpha(
-      theme.palette.diff.additions,
-      CHART_MODE_TOGGLE_SLIDER_SHADOW_OPACITY,
+    borderRadius: '50px',
+    backgroundColor:
+      theme.palette.mode === 'dark'
+        ? alpha(theme.palette.diff.additions, CHART_MODE_TOGGLE_SLIDER_OPACITY)
+        : theme.palette.status.success,
+    boxShadow: `0 4px 12px ${alpha(
+      theme.palette.mode === 'dark'
+        ? theme.palette.diff.additions
+        : theme.palette.status.success,
+      0.3,
     )}`,
     transform: getChartModeSliderOffset(chartMode),
     transition: CHART_MODE_TOGGLE_TRANSITION,
@@ -720,11 +722,20 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
                 letterSpacing: '0.05em',
                 textTransform: 'uppercase',
                 '&.Mui-selected': {
-                  color: theme.palette.background.paper,
-                  backgroundColor: alpha(theme.palette.diff.additions, 0.95),
+                  color:
+                    theme.palette.mode === 'dark'
+                      ? theme.palette.background.paper
+                      : theme.palette.common.white,
+                  backgroundColor:
+                    theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.diff.additions, 0.95)
+                      : theme.palette.status.success,
                 },
                 '&.Mui-selected:hover': {
-                  backgroundColor: alpha(theme.palette.diff.additions, 0.95),
+                  backgroundColor:
+                    theme.palette.mode === 'dark'
+                      ? alpha(theme.palette.diff.additions, 0.95)
+                      : theme.palette.status.success,
                 },
                 '&:hover': {
                   backgroundColor: alpha(theme.palette.text.primary, 0.06),

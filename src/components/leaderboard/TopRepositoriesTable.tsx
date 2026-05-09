@@ -64,13 +64,7 @@ import {
 import { useWatchlist } from '../../hooks/useWatchlist';
 import { RankIcon } from './RankIcon';
 import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
-import {
-  CHART_COLORS,
-  STATUS_COLORS,
-  TEXT_OPACITY,
-  UI_COLORS,
-  scrollbarSx,
-} from '../../theme';
+import { CHART_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import {
   echartsAxisTooltipChrome,
   echartsBarChartTitle,
@@ -413,13 +407,13 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
   const getChartOption = () => {
     const chartData = chartTopRepositories;
-    const white = UI_COLORS.white;
-    const borderSubtle = alpha(white, 0.08);
-    const surfaceSubtle = alpha(white, 0.02);
+    const fg = theme.palette.text.primary;
+    const borderSubtle = alpha(fg, 0.08);
+    const surfaceSubtle = alpha(fg, 0.02);
     const textColor = echartsStrongAxisLabelColor(theme);
     const gridColor = theme.palette.border.subtle;
-    const tooltipBorderColor = alpha(theme.palette.text.primary, 0.14);
-    const tooltipLabelColor = alpha(white, TEXT_OPACITY.secondary);
+    const tooltipBorderColor = alpha(fg, 0.14);
+    const tooltipLabelColor = alpha(fg, TEXT_OPACITY.secondary);
     const primaryColor = theme.palette.text.primary;
     const chartFont = echartsFontFamily(theme);
 
@@ -689,7 +683,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             focus: 'series',
             itemStyle: {
               shadowBlur: 20,
-              shadowColor: alpha(STATUS_COLORS.info, 0.5),
+              shadowColor: alpha(theme.palette.status.info, 0.5),
             },
           },
           animationDuration: 1000,

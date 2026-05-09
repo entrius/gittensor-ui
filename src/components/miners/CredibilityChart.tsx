@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
 import ReactECharts from 'echarts-for-react';
-import { CHART_COLORS, TEXT_OPACITY } from '../../theme';
+import { TEXT_OPACITY, CHART_COLORS } from '../../theme';
 import {
   echartsItemTooltipChrome,
   echartsTransparentBackground,
@@ -21,6 +21,14 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
   credibility,
 }) => {
   const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
+  const chartMerged = isDark
+    ? CHART_COLORS.merged
+    : theme.palette.status.success;
+  const chartOpen = isDark ? CHART_COLORS.open : theme.palette.border.light;
+  const chartClosed = isDark
+    ? CHART_COLORS.closed
+    : theme.palette.status.closed;
 
   const chartOption = useMemo(
     () => ({
@@ -36,7 +44,7 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
           fontWeight: 'bold',
         },
         subtextStyle: {
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+          color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
           fontSize: 11,
           fontWeight: 500,
         },
@@ -64,23 +72,28 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
             {
               value: merged,
               name: 'Merged',
-              itemStyle: { color: CHART_COLORS.merged },
+              itemStyle: { color: chartMerged },
             },
-            {
-              value: open,
-              name: 'Open',
-              itemStyle: { color: CHART_COLORS.open },
-            },
+            { value: open, name: 'Open', itemStyle: { color: chartOpen } },
             {
               value: closed,
               name: 'Closed',
-              itemStyle: { color: CHART_COLORS.closed },
+              itemStyle: { color: chartClosed },
             },
           ],
         },
       ],
     }),
-    [merged, open, closed, credibility, theme],
+    [
+      merged,
+      open,
+      closed,
+      credibility,
+      theme,
+      chartMerged,
+      chartOpen,
+      chartClosed,
+    ],
   );
 
   return (
@@ -94,7 +107,7 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
       <Typography
         variant="monoSmall"
         sx={{
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+          color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
           mb: 0.75,
           textAlign: 'center',
         }}
@@ -119,9 +132,9 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
           flexWrap: 'wrap',
         }}
       >
-        <LegendItem label="Merged" value={merged} color={CHART_COLORS.merged} />
-        <LegendItem label="Open" value={open} color={CHART_COLORS.open} />
-        <LegendItem label="Closed" value={closed} color={CHART_COLORS.closed} />
+        <LegendItem label="Merged" value={merged} color={chartMerged} />
+        <LegendItem label="Open" value={open} color={chartOpen} />
+        <LegendItem label="Closed" value={closed} color={chartClosed} />
       </Box>
     </Box>
   );
@@ -146,7 +159,7 @@ const LegendItem: React.FC<{ label: string; value: number; color: string }> = ({
       />
       <Typography
         sx={{
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
+          color: alpha(theme.palette.text.primary, TEXT_OPACITY.secondary),
           fontSize: '0.65rem',
         }}
       >

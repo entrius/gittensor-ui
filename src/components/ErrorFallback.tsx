@@ -1,9 +1,9 @@
 import React from 'react';
-import { Box, Button, Stack, Typography } from '@mui/material';
+import { Box, Button, Stack, Typography, useTheme } from '@mui/material';
 import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
 import HomeIcon from '@mui/icons-material/Home';
 import RefreshIcon from '@mui/icons-material/Refresh';
-import { STATUS_COLORS, scrollbarSx } from '../theme';
+import { scrollbarSx } from '../theme';
 
 interface ErrorFallbackProps {
   variant: 'fullPage' | 'inline';
@@ -16,6 +16,7 @@ const ErrorFallback: React.FC<ErrorFallbackProps> = ({
   error,
   onReset,
 }) => {
+  const theme = useTheme();
   const goHome = () => {
     window.location.assign('/dashboard');
   };
@@ -50,7 +51,9 @@ const ErrorFallback: React.FC<ErrorFallbackProps> = ({
         alignItems="flex-start"
         sx={{ maxWidth: 560, width: '100%' }}
       >
-        <ErrorOutlineIcon sx={{ fontSize: 42, color: STATUS_COLORS.closed }} />
+        <ErrorOutlineIcon
+          sx={{ fontSize: 42, color: theme.palette.status.closed }}
+        />
         <Typography
           sx={{
             fontSize: { xs: '1.25rem', md: '1.5rem' },

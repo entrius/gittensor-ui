@@ -1,6 +1,7 @@
 import React, { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { formatDate } from '../../utils/format';
+import { STATUS_COLORS } from '../../theme';
 import {
   Box,
   Grid,
@@ -19,7 +20,6 @@ import SpeedIcon from '@mui/icons-material/Speed';
 import LaunchIcon from '@mui/icons-material/Launch';
 import PeopleIcon from '@mui/icons-material/People';
 import BugReportIcon from '@mui/icons-material/BugReport';
-import { STATUS_COLORS } from '../../theme';
 import { RateLimitError, githubFetch } from '../../api';
 
 interface RepositoryCheckTabProps {
@@ -362,7 +362,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
         >
           Repository Health Check & Feasibility
         </Typography>
-        <Typography variant="body2" sx={{ color: STATUS_COLORS.open }}>
+        <Typography variant="body2" sx={{ color: 'status.open' }}>
           An in-depth analysis of the repository's openness to contributions,
           code health, and community standards.
         </Typography>
@@ -411,10 +411,10 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                   sx={{
                     color:
                       score > 80
-                        ? STATUS_COLORS.success
+                        ? theme.palette.status.success
                         : score > 50
-                          ? STATUS_COLORS.warning
-                          : STATUS_COLORS.error,
+                          ? theme.palette.status.warning
+                          : theme.palette.status.error,
                   }}
                 />
                 <Box
@@ -450,7 +450,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               <Typography
                 variant="body2"
                 sx={{
-                  color: STATUS_COLORS.open,
+                  color: 'status.open',
                   textAlign: 'center',
                   fontSize: '12px',
                 }}
@@ -498,7 +498,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                   <Typography
                     variant="body2"
                     sx={{
-                      color: STATUS_COLORS.open,
+                      color: 'status.open',
                       fontSize: '13px',
                       flexShrink: 0,
                     }}
@@ -528,7 +528,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                   <Typography
                     variant="body2"
                     sx={{
-                      color: STATUS_COLORS.open,
+                      color: 'status.open',
                       fontSize: '13px',
                       flexShrink: 0,
                     }}
@@ -558,7 +558,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                   <Typography
                     variant="body2"
                     sx={{
-                      color: STATUS_COLORS.open,
+                      color: 'status.open',
                       fontSize: '13px',
                       flexShrink: 0,
                     }}
@@ -584,7 +584,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
               <Typography
                 variant="body2"
                 sx={{
-                  color: STATUS_COLORS.open,
+                  color: 'status.open',
                   fontSize: '13px',
                   lineHeight: 1.6,
                 }}
@@ -692,7 +692,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 sx={{
                   p: 2,
                   borderBottom: `1px solid ${theme.palette.border.light}`,
-                  backgroundColor: alpha(theme.palette.common.white, 0.03),
+                  backgroundColor: alpha(theme.palette.text.primary, 0.03),
                 }}
               >
                 <Typography
@@ -725,7 +725,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                           p: { xs: 1.5, md: 2 },
                           borderRadius: 1,
                           bgcolor: 'surface.subtle',
-                          border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
+                          border: `1px solid ${alpha(theme.palette.text.primary, 0.05)}`,
                           display: 'flex',
                           alignItems: 'flex-start',
                           gap: { xs: 1.5, md: 2 },
@@ -733,7 +733,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                           minWidth: 0,
                           transition: 'background-color 0.2s',
                           '&:hover': {
-                            bgcolor: alpha(theme.palette.common.white, 0.04),
+                            bgcolor: alpha(theme.palette.text.primary, 0.04),
                           },
                         }}
                       >
@@ -741,13 +741,16 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                           {check.passed ? (
                             <CheckCircleIcon
                               sx={{
-                                color: STATUS_COLORS.success,
+                                color: theme.palette.status.success,
                                 fontSize: 22,
                               }}
                             />
                           ) : (
                             <CancelIcon
-                              sx={{ color: STATUS_COLORS.error, fontSize: 22 }}
+                              sx={{
+                                color: theme.palette.status.error,
+                                fontSize: 22,
+                              }}
                             />
                           )}
                         </Box>
@@ -764,7 +767,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                           </Typography>
                           <Typography
                             sx={{
-                              color: STATUS_COLORS.open,
+                              color: 'status.open',
                               fontSize: '12px',
                               lineHeight: 1.5,
                             }}

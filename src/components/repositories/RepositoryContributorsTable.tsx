@@ -13,7 +13,6 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import KeyboardArrowUpIcon from '@mui/icons-material/KeyboardArrowUp';
 import { useAllPrs, useAllMiners } from '../../api';
 import { LinkBox } from '../common/linkBehavior';
-import { STATUS_COLORS } from '../../theme';
 import { isMergedPr } from '../../utils/prStatus';
 import { parseNumber } from '../../utils/ExplorerUtils';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
@@ -218,7 +217,7 @@ const RepositoryContributorsTable: React.FC<
       headerSx: compactCellSx,
       cellSx: (c) => ({
         ...compactCellSx,
-        color: c.rank <= 3 ? 'text.primary' : STATUS_COLORS.open,
+        color: c.rank <= 3 ? 'text.primary' : 'status.open',
         fontWeight: c.rank <= 3 ? 600 : 400,
       }),
       renderCell: (c) => c.rank,
@@ -256,7 +255,7 @@ const RepositoryContributorsTable: React.FC<
                 overflow: 'hidden',
                 cursor: 'pointer',
                 '&:hover .contributor-name': {
-                  color: STATUS_COLORS.info,
+                  color: theme.palette.status.info,
                   textDecoration: 'underline',
                 },
               }}
@@ -297,7 +296,7 @@ const RepositoryContributorsTable: React.FC<
                   <Typography
                     sx={{
                       fontSize: '10px',
-                      color: STATUS_COLORS.open,
+                      color: 'status.open',
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
@@ -313,7 +312,12 @@ const RepositoryContributorsTable: React.FC<
         );
       },
     }),
-    [programTab, repositoryFullName, theme.palette.border.light],
+    [
+      programTab,
+      repositoryFullName,
+      theme.palette.border.light,
+      theme.palette.status.info,
+    ],
   );
 
   const columns = useMemo<DataTableColumn<ContributorRow>[]>(() => {
@@ -394,7 +398,7 @@ const RepositoryContributorsTable: React.FC<
         Top Miner Contributors{' '}
         <Typography
           component="span"
-          sx={{ color: STATUS_COLORS.open, fontSize: '0.8em' }}
+          sx={{ color: 'status.open', fontSize: '0.8em' }}
         >
           ({totalContributors})
         </Typography>
@@ -475,7 +479,7 @@ const RepositoryContributorsTable: React.FC<
         px: 1.5,
         py: 1.5,
         cursor: 'pointer',
-        color: STATUS_COLORS.open,
+        color: 'status.open',
         fontSize: '12px',
         '&:hover': {
           color: 'text.primary',
@@ -512,7 +516,7 @@ const RepositoryContributorsTable: React.FC<
           return {
             opacity: eligible ? 1 : 0.5,
             '&:hover': {
-              backgroundColor: alpha(theme.palette.common.white, 0.04),
+              backgroundColor: alpha(theme.palette.text.primary, 0.04),
               opacity: 1,
             },
             transition: 'all 0.1s',

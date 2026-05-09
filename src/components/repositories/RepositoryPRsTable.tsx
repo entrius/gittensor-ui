@@ -10,6 +10,7 @@ import {
   Typography,
   alpha,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAllPrs, type CommitLog } from '../../api';
 import {
@@ -23,7 +24,7 @@ import {
   serializePRKey,
   useWatchlist,
 } from '../../hooks/useWatchlist';
-import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
+import { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import FilterButton from '../FilterButton';
@@ -54,6 +55,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   state = 'all',
 }) => {
   const navigate = useNavigate();
+  const theme = useTheme();
   const [searchParams, setSearchParams] = useSearchParams();
   const { isWatched } = useWatchlist('prs');
   const [filter, setFilter] = useSessionStoredState<PrStatusFilter>(
@@ -456,7 +458,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           <Box sx={{ p: 4, textAlign: 'center' }}>
             <Typography
               sx={{
-                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+                color: alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary),
                 fontSize: '0.9rem',
               }}
             >

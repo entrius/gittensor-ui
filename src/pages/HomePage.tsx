@@ -12,6 +12,7 @@ import useCountUp from '../hooks/useCountUp';
 import { SEO } from '../components';
 import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
 import { type CommitLog, type MinerEvaluation, useStats } from '../api';
+import { STATUS_COLORS } from '../theme';
 import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
 import {
   getGithubAvatarSrc,
@@ -536,7 +537,7 @@ const HomePage: React.FC = () => {
                   borderRadius: 2,
                   backgroundColor:
                     activePanel === 'feed'
-                      ? theme.palette.status.merged
+                      ? STATUS_COLORS.merged
                       : alpha(theme.palette.text.primary, 0.1),
                   cursor: 'pointer',
                   transition: 'background-color 0.3s ease',
@@ -550,7 +551,7 @@ const HomePage: React.FC = () => {
                   borderRadius: 2,
                   backgroundColor:
                     activePanel === 'miners'
-                      ? theme.palette.status.merged
+                      ? STATUS_COLORS.merged
                       : alpha(theme.palette.text.primary, 0.1),
                   cursor: 'pointer',
                   transition: 'background-color 0.3s ease',
@@ -669,11 +670,11 @@ const HomePage: React.FC = () => {
                     transition: 'all 0.25s ease',
                     backgroundColor:
                       activeBottomCard === tab
-                        ? alpha(theme.palette.status.merged, 0.15)
+                        ? alpha(STATUS_COLORS.merged, 0.15)
                         : 'transparent',
                     color:
                       activeBottomCard === tab
-                        ? theme.palette.status.merged
+                        ? STATUS_COLORS.merged
                         : alpha(theme.palette.text.primary, 0.35),
                     '&:hover': {
                       backgroundColor: alpha(theme.palette.text.primary, 0.06),
@@ -746,14 +747,14 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
           sx={fadeUp(60)}
         >
           <Box
-            sx={(theme) => ({
+            sx={{
               width: 6,
               height: 6,
               borderRadius: '50%',
-              backgroundColor: theme.palette.status.merged,
+              backgroundColor: STATUS_COLORS.merged,
               animation: 'landingPulse 2.2s ease-in-out infinite',
               flexShrink: 0,
-            })}
+            }}
           />
           <Typography
             sx={(theme) => ({
@@ -799,8 +800,8 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
             Autonomous software{' '}
             <Box
               component="span"
-              sx={(theme) => ({
-                color: theme.palette.status.merged,
+              sx={{
+                color: STATUS_COLORS.merged,
                 fontStyle: 'italic',
                 display: 'inline-block',
                 position: 'relative',
@@ -811,12 +812,12 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
                   right: '0.05em',
                   bottom: '0.03em',
                   height: '0.05em',
-                  backgroundColor: alpha(theme.palette.status.merged, 0.48),
+                  backgroundColor: alpha(STATUS_COLORS.merged, 0.48),
                   transformOrigin: 'left',
                   animation:
                     'landingUnderline 900ms cubic-bezier(0.16, 1, 0.3, 1) 620ms both',
                 },
-              })}
+              }}
             >
               development.
             </Box>
@@ -853,17 +854,17 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
               minHeight: 48,
               px: 3.5,
               borderRadius: 1.75,
-              backgroundColor: theme.palette.status.merged,
+              backgroundColor: STATUS_COLORS.merged,
               color: theme.palette.common.black,
               textTransform: 'none',
               fontWeight: 900,
               fontSize: '0.92rem',
-              boxShadow: `0 0 24px ${alpha(theme.palette.status.merged, 0.25)}, 0 4px 12px ${alpha(theme.palette.common.black, 0.4)}`,
+              boxShadow: `0 0 24px ${alpha(STATUS_COLORS.merged, 0.25)}, 0 4px 12px ${alpha(theme.palette.common.black, 0.4)}`,
               transition: 'all 0.22s ease',
               '&:hover': {
-                backgroundColor: alpha(theme.palette.status.merged, 0.88),
+                backgroundColor: alpha(STATUS_COLORS.merged, 0.88),
                 transform: 'translateY(-2px)',
-                boxShadow: `0 0 36px ${alpha(theme.palette.status.merged, 0.35)}, 0 8px 24px ${alpha(theme.palette.common.black, 0.5)}`,
+                boxShadow: `0 0 36px ${alpha(STATUS_COLORS.merged, 0.35)}, 0 8px 24px ${alpha(theme.palette.common.black, 0.5)}`,
               },
             })}
           >
@@ -887,9 +888,9 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
               backgroundColor: alpha(theme.palette.text.primary, 0.03),
               transition: 'all 0.22s ease',
               '&:hover': {
-                borderColor: theme.palette.status.merged,
-                backgroundColor: alpha(theme.palette.status.merged, 0.06),
-                color: theme.palette.status.merged,
+                borderColor: STATUS_COLORS.merged,
+                backgroundColor: alpha(STATUS_COLORS.merged, 0.06),
+                color: STATUS_COLORS.merged,
                 transform: 'translateY(-2px)',
               },
             })}

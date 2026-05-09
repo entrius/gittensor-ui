@@ -323,9 +323,9 @@ const RepositoryDetailsPage: React.FC = () => {
             severity="warning"
             sx={(theme) => ({
               mt: 2,
-              backgroundColor: alpha(STATUS_COLORS.warningOrange, 0.08),
+              backgroundColor: theme.palette.highlight.warning,
               border: '1px solid',
-              borderColor: alpha(STATUS_COLORS.warningOrange, 0.3),
+              borderColor: alpha(theme.palette.status.warningOrange, 0.3),
               color: alpha(theme.palette.text.primary, 0.8),
               '& .MuiAlert-icon': { color: theme.palette.status.warningOrange },
             })}

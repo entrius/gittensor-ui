@@ -154,7 +154,7 @@ const CodeViewer: React.FC<CodeViewerProps> = ({
           },
           '& code': {
             fontFamily: 'monospace',
-            backgroundColor: alpha(theme.palette.common.white, 0.1),
+            backgroundColor: alpha(theme.palette.text.primary, 0.1),
             px: 0.5,
             borderRadius: 0.5,
           },

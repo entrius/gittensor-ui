@@ -150,7 +150,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         borderRadius: 2,
         border: '1px solid',
         borderColor: theme.palette.border.light,
-        backgroundColor: theme.palette.surface.transparent,
+        backgroundColor: theme.palette.background.paper,
         display: 'flex',
         flexDirection: 'column',
         gap: { xs: 1.25, sm: 1.5 },

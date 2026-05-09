@@ -92,7 +92,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
             sx={{
               fontSize: '0.85rem',
-              color: STATUS_COLORS.info,
+              color: theme.palette.status.info,
               cursor: 'pointer',
               '&:hover': { textDecoration: 'underline' },
             }}
@@ -100,7 +100,9 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
             {submission.authorLogin}
           </LinkBox>
         ) : (
-          <Typography sx={{ fontSize: '0.85rem', color: STATUS_COLORS.info }}>
+          <Typography
+            sx={{ fontSize: '0.85rem', color: theme.palette.status.info }}
+          >
             {submission.authorLogin}
           </Typography>
         ),
@@ -271,7 +273,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   width: 56,
                   height: 56,
                   borderRadius: 1.5,
-                  backgroundColor: alpha(theme.palette.common.white, 0.04),
+                  backgroundColor: alpha(theme.palette.text.primary, 0.04),
                   border: `1px solid ${theme.palette.border.light}`,
                   display: 'flex',
                   alignItems: 'center',

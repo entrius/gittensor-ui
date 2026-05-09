@@ -6,10 +6,15 @@ import {
   IconButton,
   AppBar,
   Toolbar,
+  Tooltip,
   alpha,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles';
 import { Outlet, useLocation } from 'react-router-dom';
 import MenuIcon from '@mui/icons-material/Menu';
+import LightModeIcon from '@mui/icons-material/LightMode';
+import DarkModeIcon from '@mui/icons-material/DarkMode';
+import { useThemeMode } from '../../hooks/useThemeMode';
 import { LoadingPage } from '../../pages';
 import useOnNavigate from '../../hooks/useOnNavigate';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
@@ -17,7 +22,7 @@ import { Sidebar } from '..';
 import ErrorBoundary from '../ErrorBoundary';
 import GlobalSearchBar from './GlobalSearchBar';
 import ShortcutsHelpDialog from './ShortcutsHelpDialog';
-import theme, { scrollbarSx } from '../../theme';
+import { scrollbarSx } from '../../theme';
 import { getRouteForPathname } from '../../routes';
 
 const SIDEBAR_WIDTH = 240;
@@ -27,9 +32,21 @@ const SIDEBAR_COLLAPSED_WIDTH = 72;
 const AppLayout: React.FC = () => {
   const mainRef = useRef<HTMLElement>(null);
   const location = useLocation();
+  const theme = useTheme();
   useOnNavigate(() => mainRef.current?.scrollTo(0, 0));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isCompactDesktop = useMediaQuery(theme.breakpoints.down('lg'));
+  const isDark = theme.palette.mode === 'dark';
+  const { toggleMode } = useThemeMode();
+  const themeToggleLabel = isDark
+    ? 'Switch to light mode'
+    : 'Switch to dark mode';
+  const drawerTintColor = isDark
+    ? theme.palette.common.white
+    : theme.palette.common.black;
+  const mobileLogoFilter = isDark
+    ? `brightness(0) invert(1) drop-shadow(0 0 6px ${alpha(theme.palette.common.white, 0.8)})`
+    : 'brightness(0)';
   const isDesktopSidebarCollapsed = !isMobile && isCompactDesktop;
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isHelpOpen, closeHelp, shortcuts } = useKeyboardShortcuts();
@@ -57,7 +74,9 @@ const AppLayout: React.FC = () => {
         <AppBar
           position="fixed"
           sx={{
-            backgroundColor: 'background.default',
+            // Use paper (white in light mode) so the header looks like a
+            // distinct panel separate from the grey canvas below it.
+            backgroundColor: 'background.paper',
             borderBottom: '1px solid',
             borderColor: 'divider',
           }}
@@ -79,9 +98,24 @@ const AppLayout: React.FC = () => {
               style={{
                 height: '32px',
                 width: 'auto',
-                filter: `brightness(0) invert(1) drop-shadow(0 0 6px ${alpha(theme.palette.common.white, 0.8)})`,
+                filter: mobileLogoFilter,
               }}
             />
+            <Box sx={{ flexGrow: 1 }} />
+            <Tooltip title={themeToggleLabel} arrow>
+              <IconButton
+                size="small"
+                onClick={toggleMode}
+                aria-label={themeToggleLabel}
+                sx={{ color: 'text.primary' }}
+              >
+                {isDark ? (
+                  <LightModeIcon fontSize="small" />
+                ) : (
+                  <DarkModeIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
           </Toolbar>
         </AppBar>
       )}
@@ -100,8 +134,9 @@ const AppLayout: React.FC = () => {
             '& .MuiDrawer-paper': {
               boxSizing: 'border-box',
               width: { xs: '100%', sm: 320 },
-              backgroundColor: 'background.default',
-              backgroundImage: `linear-gradient(${alpha(theme.palette.common.white, 0.05)}, ${alpha(theme.palette.common.white, 0.05)})`,
+              // Sidebar uses canvas.subtle (#f6f8fa) — matches GitHub's left nav style.
+              backgroundColor: theme.palette.surface.subtle,
+              backgroundImage: `linear-gradient(${alpha(drawerTintColor, 0.04)}, ${alpha(drawerTintColor, 0.04)})`,
               borderRight: `1px solid ${theme.palette.border.light}`,
             },
             '& .MuiBackdrop-root': {
@@ -127,6 +162,8 @@ const AppLayout: React.FC = () => {
             borderRight: `1px solid ${theme.palette.border.light}`,
             overflow: 'hidden',
             transition: 'width 0.2s ease, min-width 0.2s ease',
+            // Sidebar uses canvas.subtle (#f6f8fa) — matches GitHub's left nav style.
+            backgroundColor: theme.palette.surface.subtle,
           }}
         >
           <Sidebar collapsed={isDesktopSidebarCollapsed} />
@@ -171,10 +208,13 @@ const AppLayout: React.FC = () => {
                 backgroundColor: 'background.default',
                 borderBottom: `1px solid ${theme.palette.border.light}`,
                 display: 'flex',
-                justifyContent: 'center',
+                alignItems: 'center',
+                gap: 1,
               }}
             >
-              <GlobalSearchBar />
+              <Box sx={{ flex: 1 }}>
+                <GlobalSearchBar />
+              </Box>
             </Box>
           )}
           <ErrorBoundary variant="inline" resetKey={location.pathname}>

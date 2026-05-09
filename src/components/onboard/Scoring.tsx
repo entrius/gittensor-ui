@@ -104,11 +104,11 @@ export const Scoring: React.FC = () => {
               flex: { xs: 1, sm: 'initial' },
               px: { xs: 1, sm: 2 },
               fontSize: { xs: '0.82rem', sm: '0.9rem' },
-              color: alpha(theme.palette.common.white, 0.55),
+              color: alpha(theme.palette.text.primary, 0.55),
               '&.Mui-selected': { color: 'text.primary' },
             },
             '& .MuiTabs-indicator': {
-              backgroundColor: theme.palette.common.white,
+              backgroundColor: theme.palette.text.primary,
             },
           }}
         >
@@ -127,7 +127,7 @@ export const Scoring: React.FC = () => {
                 p: 3,
                 borderRadius: 4,
                 cursor: 'default',
-                background: alpha(theme.palette.common.white, 0.02),
+                background: alpha(theme.palette.text.primary, 0.02),
                 border: '1px solid',
                 borderColor: 'border.subtle',
               }}
@@ -162,7 +162,7 @@ export const Scoring: React.FC = () => {
           textAlign: 'center',
           p: 6,
           borderRadius: 4,
-          background: `linear-gradient(180deg, transparent 0%, ${alpha(theme.palette.common.white, 0.02)} 100%)`,
+          background: `linear-gradient(180deg, transparent 0%, ${alpha(theme.palette.text.primary, 0.02)} 100%)`,
           border: '1px solid',
           borderColor: 'border.subtle',
         }}

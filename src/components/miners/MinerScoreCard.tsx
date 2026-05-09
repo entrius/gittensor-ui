@@ -30,12 +30,8 @@ import {
   type MinerEvaluation,
 } from '../../api';
 import { useClipboardCopy } from '../../hooks/useClipboardCopy';
-import {
-  RANK_COLORS,
-  STATUS_COLORS,
-  RISK_COLORS,
-  tooltipSlotProps,
-} from '../../theme';
+import { RANK_COLORS, RISK_COLORS, tooltipSlotProps } from '../../theme';
+import { useTheme } from '@mui/material/styles';
 import {
   calculateDynamicOpenPrThreshold,
   calculateOpenIssueThreshold,
@@ -292,6 +288,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
   githubId,
   viewMode = 'prs',
 }) => {
+  const muiTheme = useTheme();
   const { data: minerStats, isLoading, error } = useMinerStats(githubId);
   const { data: prs } = useMinerPRs(githubId);
   const { data: githubData } = useMinerGithubData(githubId);
@@ -346,7 +343,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
       <Card sx={{ p: 4 }}>
         <Typography
           sx={{
-            color: alpha(STATUS_COLORS.error, 0.9),
+            color: alpha(muiTheme.palette.status.error, 0.9),
             fontSize: '0.9rem',
           }}
         >
@@ -362,11 +359,11 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
   const isEligible = minerStats.isEligible ?? false;
   const isIssueEligible = minerStats.isIssueEligible ?? false;
   const eligibilityColor = isEligible
-    ? STATUS_COLORS.success
-    : STATUS_COLORS.neutral;
+    ? muiTheme.palette.status.success
+    : muiTheme.palette.status.neutral;
   const issueEligibilityColor = isIssueEligible
-    ? STATUS_COLORS.success
-    : STATUS_COLORS.neutral;
+    ? muiTheme.palette.status.success
+    : muiTheme.palette.status.neutral;
   const eligibilityChipSx = (color: string) => ({
     color,
     borderColor: alpha(color, 0.35),
@@ -682,7 +679,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               sub={`~$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · ~$${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
               color={
                 (minerStats.usdPerDay ?? 0) > 0
-                  ? STATUS_COLORS.success
+                  ? muiTheme.palette.status.success
                   : undefined
               }
               rank={rankings?.earnings}
@@ -747,7 +744,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               sub={`~$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · ~$${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
               color={
                 (minerStats.usdPerDay ?? 0) > 0
-                  ? STATUS_COLORS.success
+                  ? muiTheme.palette.status.success
                   : undefined
               }
               rank={rankings?.earnings}
