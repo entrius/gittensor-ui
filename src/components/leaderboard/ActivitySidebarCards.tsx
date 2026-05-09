@@ -274,7 +274,11 @@ interface StatRowProps {
   valueColor?: string;
 }
 
-const StatRow: React.FC<StatRowProps> = ({ label, value, valueColor }) => (
+export const StatRow: React.FC<StatRowProps> = ({
+  label,
+  value,
+  valueColor,
+}) => (
   <Box
     sx={{
       display: 'flex',
