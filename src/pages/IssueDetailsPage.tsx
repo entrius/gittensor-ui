@@ -89,7 +89,23 @@ const IssueDetailsPage: React.FC = () => {
           }}
         >
           <Stack spacing={{ xs: 2, md: 3 }}>
-            <BackButton to="/bounties" label="Back to Bounties" mb={0} />
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1,
+              }}
+            >
+              <BackButton to="/bounties" label="Back to Bounties" mb={0} />
+              <Box sx={{ display: { xs: 'inline-flex', sm: 'none' } }}>
+                <WatchlistButton
+                  category="bounties"
+                  itemKey={String(issue.id)}
+                  size="medium"
+                />
+              </Box>
+            </Box>
             <Box
               sx={{
                 display: 'flex',
@@ -100,11 +116,13 @@ const IssueDetailsPage: React.FC = () => {
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <IssueHeaderCard issue={issue} />
               </Box>
-              <WatchlistButton
-                category="bounties"
-                itemKey={String(issue.id)}
-                size="medium"
-              />
+              <Box sx={{ display: { xs: 'none', sm: 'inline-flex' } }}>
+                <WatchlistButton
+                  category="bounties"
+                  itemKey={String(issue.id)}
+                  size="medium"
+                />
+              </Box>
             </Box>
 
             {/* Tabs */}

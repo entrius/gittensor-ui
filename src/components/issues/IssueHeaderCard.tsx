@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Avatar,
   Box,
   Card,
   Typography,
@@ -10,12 +11,14 @@ import {
   useTheme,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
 import { IssueDetails } from '../../api/models/Issues';
 import {
   formatTokenAmount,
   formatDate,
   formatAlphaToUsd,
 } from '../../utils/format';
+import { getGithubAvatarSrc } from '../../utils';
 import { usePrices } from '../../hooks/usePrices';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
@@ -59,6 +62,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             sx={{
               display: 'flex',
               alignItems: 'center',
+              flexWrap: 'wrap',
               gap: 0.5,
               fontSize: { xs: '0.85rem', sm: '1rem' },
               color: STATUS_COLORS.info,
@@ -220,22 +224,42 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                   ),
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
-                  mb: 0.5,
+                  mb: 0.9,
                 }}
               >
                 Author
               </Typography>
-              <Typography
+              <Box
                 sx={{
-                  fontSize: '0.9rem',
-                  color: 'text.primary',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  minWidth: 0,
                 }}
               >
-                {issue.authorLogin}
-              </Typography>
+                <Avatar
+                  src={getGithubAvatarSrc(issue.authorLogin)}
+                  alt={issue.authorLogin}
+                  sx={{
+                    width: { xs: 18, sm: 20 },
+                    height: { xs: 18, sm: 20 },
+                    fontSize: '0.72rem',
+                    flexShrink: 0,
+                  }}
+                />
+                <Typography
+                  sx={{
+                    fontSize: '0.9rem',
+                    color: 'text.primary',
+                    lineHeight: 1.2,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                  }}
+                >
+                  {issue.authorLogin}
+                </Typography>
+              </Box>
             </Box>
           )}
 
@@ -254,20 +278,29 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                 color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
-                mb: 0.5,
+                mb: 0.9,
               }}
             >
               Created
             </Typography>
-            <Typography
-              sx={{
-                fontSize: { xs: '0.85rem', sm: '0.9rem' },
-                color: 'text.primary',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {formatDate(issue.createdAt)}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <CalendarTodayOutlinedIcon
+                sx={{
+                  fontSize: { xs: 12, sm: 13 },
+                  color: 'text.secondary',
+                }}
+              />
+              <Typography
+                sx={{
+                  fontSize: { xs: '0.85rem', sm: '0.9rem' },
+                  color: 'text.primary',
+                  lineHeight: 1.2,
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {formatDate(issue.createdAt)}
+              </Typography>
+            </Box>
           </Box>
         </Box>
 
