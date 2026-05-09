@@ -15,3 +15,30 @@ export const getGithubUserAvatarSrcById = (
     normalizedId,
   )}`;
 };
+
+/**
+ * Robust avatar source resolver.
+ * Handles both usernames (github.com/user.png) and numeric IDs (avatars.githubusercontent.com/u/ID).
+ * If both are provided, it prefers username unless it looks like a numeric ID.
+ */
+export const getGithubAvatarSrc = (
+  username?: string | null,
+  id?: string | number | null,
+): string => {
+  const trimmedUsername = username?.trim();
+  const isNumeric = (val?: string | null) => !!val && /^\d+$/.test(val);
+
+  if (trimmedUsername && !isNumeric(trimmedUsername)) {
+    return getRepositoryOwnerAvatarSrc(trimmedUsername);
+  }
+
+  if (id) {
+    return getGithubUserAvatarSrcById(id);
+  }
+
+  if (isNumeric(trimmedUsername)) {
+    return getGithubUserAvatarSrcById(trimmedUsername);
+  }
+
+  return '';
+};
