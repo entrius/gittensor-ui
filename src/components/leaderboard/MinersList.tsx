@@ -234,6 +234,7 @@ const MinerIdentityCell: React.FC<MinerIdentityCellProps> = ({ miner }) => {
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
       <Avatar
         src={avatarSrc}
+        alt={username}
         sx={{
           width: 24,
           height: 24,

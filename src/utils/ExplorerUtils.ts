@@ -5,15 +5,11 @@ import {
   type RepositoryPrScoring,
 } from '../api';
 import { type IssueBounty } from '../api/models/Issues';
+import { getRepositoryOwnerAvatarSrc } from './avatar';
 import { isMergedPr } from './prStatus';
 
-export const getGithubAvatarSrc = (username?: string | null) => {
-  if (username) {
-    return `https://avatars.githubusercontent.com/${username}`;
-  }
-
-  return '';
-};
+export const getGithubAvatarSrc = (username?: string | null) =>
+  getRepositoryOwnerAvatarSrc(username);
 
 // Parses numeric-like values and falls back when the value is missing or invalid.
 export const parseNumber = (value: unknown, fallback = 0): number => {
@@ -263,7 +259,10 @@ export const buildRepoWeightsMap = (
   if (!Array.isArray(repos)) return map;
   for (const repo of repos) {
     if (repo && repo.fullName) {
-      map.set(repo.fullName.toLowerCase(), parseFloat(repo.weight || '0'));
+      map.set(
+        repo.fullName.toLowerCase(),
+        parseFloat(String(repo.config?.weight ?? 0)),
+      );
     }
   }
   return map;

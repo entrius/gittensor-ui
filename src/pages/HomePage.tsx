@@ -8,15 +8,31 @@ import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
 import {
   type CommitLog,
   type MinerEvaluation,
+  type Repository,
   useAllMiners,
   useAllPrs,
+  useReposAndWeights,
   useStats,
 } from '../api';
 import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
-import { getGithubAvatarSrc, getPrStatusLabel, parseNumber } from '../utils';
+import {
+  getGithubAvatarSrc,
+  getGithubUserAvatarSrcById,
+  getPrStatusLabel,
+  parseNumber,
+} from '../utils';
+import { buildFeaturedWork } from './dashboard/dashboardData';
 
 const EMPTY_PRS: CommitLog[] = [];
 const EMPTY_MINERS: MinerEvaluation[] = [];
+const EMPTY_REPOS: Repository[] = [];
+
+const combineQueryState = (
+  ...queries: { isLoading: boolean; isError: boolean }[]
+) => ({
+  isLoading: queries.some((q) => q.isLoading),
+  isError: queries.some((q) => q.isError),
+});
 
 const fadeUp = (delayMs = 0) => ({
   opacity: 0,
@@ -169,41 +185,72 @@ const buildTopMinerRows = (miners: MinerEvaluation[]): LandingMinerRow[] => {
 const getActivityRowId = (pr: CommitLog) =>
   `${pr.repository}-${pr.pullRequestNumber}`;
 
-const pickLandingActivityPrs = (prs: CommitLog[]) => {
+const pickLandingActivityPrs = (prs: CommitLog[], repos: Repository[]) => {
   const validPrs = prs.filter((pr) => pr.repository && pr.pullRequestNumber);
-  const byActivityTime = (a: CommitLog, b: CommitLog) =>
-    timestampValue(getActivityTimestamp(b)) -
-    timestampValue(getActivityTimestamp(a));
+  const featuredRepos = buildFeaturedWork(validPrs, repos);
+
+  const selected: CommitLog[] = [];
+  const selectedIds = new Set<string>();
+  const featuredOrgs = new Set<string>();
+
+  for (const repo of featuredRepos) {
+    if (repo.prs.length > 0) {
+      const topPr = validPrs.find(
+        (p) =>
+          p.repository === repo.repository &&
+          p.pullRequestNumber === repo.prs[0].prNumber,
+      );
+      if (topPr) {
+        selected.push(topPr);
+        selectedIds.add(getActivityRowId(topPr));
+        featuredOrgs.add(repo.repository.split('/')[0]);
+      }
+    }
+  }
+
   const byCreatedTime = (a: CommitLog, b: CommitLog) =>
     timestampValue(b.prCreatedAt) - timestampValue(a.prCreatedAt);
-  const byMergedTime = (a: CommitLog, b: CommitLog) =>
-    timestampValue(b.mergedAt) - timestampValue(a.mergedAt);
 
   const openPrs = validPrs
     .filter((pr) => getPrStatusLabel(pr) === 'Open')
     .sort(byCreatedTime);
-  const mergedPrs = validPrs
-    .filter((pr) => getPrStatusLabel(pr) === 'Merged')
-    .sort(byMergedTime);
-  const selected = [openPrs[0], openPrs[1], mergedPrs[0], openPrs[2]].filter(
-    Boolean,
-  ) as CommitLog[];
-  const selectedIds = new Set(selected.map(getActivityRowId));
 
-  for (const pr of [...validPrs].sort(byActivityTime)) {
+  // Pick an open PR from a different organization
+  for (const pr of openPrs) {
     if (selected.length >= 4) break;
     const id = getActivityRowId(pr);
-    if (!selectedIds.has(id)) {
+    const org = pr.repository.split('/')[0];
+    if (!selectedIds.has(id) && !featuredOrgs.has(org)) {
       selected.push(pr);
       selectedIds.add(id);
+      featuredOrgs.add(org);
+    }
+  }
+
+  // Fallback if we still don't have 4
+  if (selected.length < 4) {
+    const byActivityTime = (a: CommitLog, b: CommitLog) =>
+      timestampValue(getActivityTimestamp(b)) -
+      timestampValue(getActivityTimestamp(a));
+
+    for (const pr of [...validPrs].sort(byActivityTime)) {
+      if (selected.length >= 4) break;
+      const id = getActivityRowId(pr);
+      if (!selectedIds.has(id)) {
+        selected.push(pr);
+        selectedIds.add(id);
+      }
     }
   }
 
   return selected.slice(0, 4);
 };
 
-const buildActivityRows = (prs: CommitLog[]): LandingActivityRow[] =>
-  pickLandingActivityPrs(prs).map((pr) => {
+const buildActivityRows = (
+  prs: CommitLog[],
+  repos: Repository[],
+): LandingActivityRow[] =>
+  pickLandingActivityPrs(prs, repos).map((pr) => {
     const status = getPrStatusLabel(pr);
     const statusLabel =
       status === 'Merged'
@@ -236,7 +283,7 @@ const buildActivityRows = (prs: CommitLog[]): LandingActivityRow[] =>
 const getAvatarSrc = (miner: LandingMinerRow) => {
   if (miner.username) return getGithubAvatarSrc(miner.username);
   return /^\d+$/.test(miner.githubId)
-    ? `https://avatars.githubusercontent.com/u/${miner.githubId}`
+    ? getGithubUserAvatarSrcById(miner.githubId)
     : '';
 };
 
@@ -244,27 +291,48 @@ const HomePage: React.FC = () => {
   const theme = useTheme();
   const monthlyRewards = useMonthlyRewards();
   const [activePanel, setActivePanel] = useState<'feed' | 'miners'>('feed');
+  const [activeBottomCard, setActiveBottomCard] = useState<
+    'maintainer' | 'miner'
+  >('maintainer');
 
   useEffect(() => {
     const interval = setInterval(() => {
       setActivePanel((current) => (current === 'feed' ? 'miners' : 'feed'));
-    }, 8000); // Rotate every 8 seconds
+    }, 5000);
+    return () => clearInterval(interval);
+  }, []);
+
+  useEffect(() => {
+    // Coprime cadence vs the top panel (5s) so flips rarely line up.
+    const interval = setInterval(() => {
+      setActiveBottomCard((current) =>
+        current === 'maintainer' ? 'miner' : 'maintainer',
+      );
+    }, 7000);
     return () => clearInterval(interval);
   }, []);
   const prsQuery = useAllPrs();
   const minersQuery = useAllMiners();
+  const reposQuery = useReposAndWeights();
   const stats = useStats();
   const onboardLink = useLinkBehavior<HTMLAnchorElement>('/onboard');
   const docsLink = useLinkBehavior<HTMLAnchorElement>(
     'https://docs.gittensor.io',
   );
+  const registerRepoLink = useLinkBehavior<HTMLAnchorElement>(
+    '/repository-registration',
+  );
 
   const prs = prsQuery.data ?? EMPTY_PRS;
   const miners = minersQuery.data ?? EMPTY_MINERS;
+  const repos = reposQuery.data ?? EMPTY_REPOS;
   const isLoading = prsQuery.isLoading || minersQuery.isLoading;
 
   const minerRows = useMemo(() => buildTopMinerRows(miners), [miners]);
-  const activityRows = useMemo(() => buildActivityRows(prs), [prs]);
+  const activityRows = useMemo(
+    () => buildActivityRows(prs, repos),
+    [prs, repos],
+  );
 
   const mergedPrs35d = useMemo(() => countMergedPrsInWindow(prs, 35), [prs]);
   const totalReposEver = parseNumber(stats.data?.uniqueRepositories ?? 0);
@@ -402,8 +470,7 @@ const HomePage: React.FC = () => {
               <LiveProofPanel
                 rows={activityRows}
                 hasLiveData={activityRows.length > 0}
-                isLoading={prsQuery.isLoading}
-                isError={prsQuery.isError}
+                {...combineQueryState(prsQuery, reposQuery)}
               />
             </Box>
             <Box
@@ -423,8 +490,7 @@ const HomePage: React.FC = () => {
               <TopMinersPanel
                 rows={minerRows}
                 hasLiveData={minerRows.length > 0}
-                isLoading={minersQuery.isLoading}
-                isError={minersQuery.isError}
+                {...combineQueryState(minersQuery)}
               />
             </Box>
             <Stack
@@ -487,7 +553,102 @@ const HomePage: React.FC = () => {
             totalIssuesSolved={totalIssuesSolvedEver}
             medianMergeRate={medianMergeRate}
           />
-          <OnboardingCard onboardLink={onboardLink} docsLink={docsLink} />
+          <Box
+            sx={{
+              minWidth: 0,
+              alignSelf: 'stretch',
+              display: 'grid',
+              gridTemplateColumns: '1fr',
+              gridTemplateRows: '1fr',
+              position: 'relative',
+            }}
+          >
+            <Box
+              sx={{
+                gridArea: '1 / 1',
+                display: 'flex',
+                opacity: activeBottomCard === 'maintainer' ? 1 : 0,
+                pointerEvents:
+                  activeBottomCard === 'maintainer' ? 'auto' : 'none',
+                transition: 'opacity 0.6s ease',
+                zIndex: activeBottomCard === 'maintainer' ? 1 : 0,
+              }}
+            >
+              <OnboardingCard
+                content={{
+                  kicker: 'Maintain a repo?',
+                  headline: 'Open issues, get PRs.',
+                  body: 'Install the GitHub App and submit a quick form. The team reviews each repo before listing.',
+                  primaryLabel: 'Register a repo',
+                  primaryLink: registerRepoLink,
+                  secondaryLabel: 'Read docs',
+                  secondaryLink: docsLink,
+                }}
+              />
+            </Box>
+            <Box
+              sx={{
+                gridArea: '1 / 1',
+                display: 'flex',
+                opacity: activeBottomCard === 'miner' ? 1 : 0,
+                pointerEvents: activeBottomCard === 'miner' ? 'auto' : 'none',
+                transition: 'opacity 0.6s ease',
+                zIndex: activeBottomCard === 'miner' ? 1 : 0,
+              }}
+            >
+              <OnboardingCard
+                content={{
+                  kicker: 'Ready to contribute?',
+                  headline: 'Register once, then submit PRs.',
+                  body: 'Read the quickstart guide to get set up. No complex infrastructure or always-on servers required.',
+                  primaryLabel: 'Miner guide',
+                  primaryLink: onboardLink,
+                  secondaryLabel: 'Read docs',
+                  secondaryLink: docsLink,
+                }}
+              />
+            </Box>
+            <Stack
+              direction="row"
+              spacing={1}
+              sx={{
+                position: 'absolute',
+                bottom: -24,
+                left: '50%',
+                transform: 'translateX(-50%)',
+                zIndex: 2,
+              }}
+            >
+              <Box
+                onClick={() => setActiveBottomCard('maintainer')}
+                sx={(theme) => ({
+                  width: 32,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor:
+                    activeBottomCard === 'maintainer'
+                      ? theme.palette.status.merged
+                      : alpha(theme.palette.text.primary, 0.1),
+                  cursor: 'pointer',
+                  transition: 'background-color 0.3s ease',
+                })}
+              />
+              <Box
+                onClick={() => setActiveBottomCard('miner')}
+                sx={(theme) => ({
+                  width: 32,
+                  height: 4,
+                  borderRadius: 2,
+                  backgroundColor:
+                    activeBottomCard === 'miner'
+                      ? theme.palette.status.merged
+                      : alpha(theme.palette.text.primary, 0.1),
+                  cursor: 'pointer',
+                  transition: 'background-color 0.3s ease',
+                })}
+              />
+            </Stack>
+          </Box>
         </Box>
       </Box>
     </Page>
@@ -1376,13 +1537,22 @@ const HowItWorksSection: React.FC<{
   </Box>
 );
 
-const OnboardingCard: React.FC<{
-  onboardLink: ReturnType<typeof useLinkBehavior<HTMLAnchorElement>>;
-  docsLink: ReturnType<typeof useLinkBehavior<HTMLAnchorElement>>;
-}> = ({ onboardLink, docsLink }) => (
+type OnboardingCardContent = {
+  kicker: string;
+  headline: React.ReactNode;
+  body: React.ReactNode;
+  primaryLabel: string;
+  primaryLink: ReturnType<typeof useLinkBehavior<HTMLAnchorElement>>;
+  secondaryLabel: string;
+  secondaryLink: ReturnType<typeof useLinkBehavior<HTMLAnchorElement>>;
+};
+
+const OnboardingCard: React.FC<{ content: OnboardingCardContent }> = ({
+  content,
+}) => (
   <Box
     sx={(theme) => ({
-      alignSelf: 'stretch',
+      width: '100%',
       display: 'flex',
       flexDirection: 'column',
       justifyContent: 'space-between',
@@ -1419,7 +1589,7 @@ const OnboardingCard: React.FC<{
           textTransform: 'uppercase',
         })}
       >
-        Ready to contribute?
+        {content.kicker}
       </Typography>
       <Typography
         sx={{
@@ -1429,7 +1599,7 @@ const OnboardingCard: React.FC<{
           lineHeight: 1,
         }}
       >
-        Register once, then submit PRs.
+        {content.headline}
       </Typography>
       <Typography
         sx={(theme) => ({
@@ -1438,8 +1608,7 @@ const OnboardingCard: React.FC<{
           lineHeight: 1.6,
         })}
       >
-        Read the quickstart guide to get set up. No complex infrastructure or
-        always-on servers required.
+        {content.body}
       </Typography>
     </Stack>
     <Stack
@@ -1449,7 +1618,7 @@ const OnboardingCard: React.FC<{
     >
       <Button
         component="a"
-        {...onboardLink}
+        {...content.primaryLink}
         variant="contained"
         endIcon={<ArrowForwardIcon />}
         sx={(theme) => ({
@@ -1467,11 +1636,11 @@ const OnboardingCard: React.FC<{
           transition: 'all 0.2s ease',
         })}
       >
-        Miner guide
+        {content.primaryLabel}
       </Button>
       <Button
         component="a"
-        {...docsLink}
+        {...content.secondaryLink}
         variant="outlined"
         sx={(theme) => ({
           minHeight: 44,
@@ -1486,7 +1655,7 @@ const OnboardingCard: React.FC<{
           },
         })}
       >
-        Read docs
+        {content.secondaryLabel}
       </Button>
     </Stack>
   </Box>
