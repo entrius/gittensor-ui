@@ -12,13 +12,8 @@ import {
 
 /**
  * Fetch all issues with optional status and repository filter.
- * @param enabled When false, the query does not run (defaults to true).
  */
-export const useIssues = (
-  status?: string,
-  repository?: string,
-  enabled: boolean = true,
-) => {
+export const useIssues = (status?: string, repository?: string) => {
   const params: Record<string, string> = {};
   if (status) params.status = status;
   if (repository) params.repository = repository;
@@ -27,7 +22,6 @@ export const useIssues = (
     '/issues',
     undefined,
     Object.keys(params).length > 0 ? params : undefined,
-    enabled,
   );
 };
 
