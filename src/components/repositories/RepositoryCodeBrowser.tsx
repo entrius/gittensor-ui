@@ -357,6 +357,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
               >
                 <Avatar
                   src={currentCommit.avatarUrl}
+                  alt={currentCommit.committerLogin}
                   sx={{ width: 20, height: 20 }}
                 />
                 <Typography
