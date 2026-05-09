@@ -1,5 +1,6 @@
 import React from 'react';
 import {
+  Avatar,
   Box,
   Card,
   Typography,
@@ -10,12 +11,14 @@ import {
   useTheme,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
 import { IssueDetails } from '../../api/models/Issues';
 import {
   formatTokenAmount,
   formatDate,
   formatAlphaToUsd,
 } from '../../utils/format';
+import { getGithubAvatarSrc } from '../../utils';
 import { usePrices } from '../../hooks/usePrices';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
@@ -38,7 +41,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
         backgroundColor: 'background.default',
         border: `1px solid ${theme.palette.border.light}`,
         borderRadius: 3,
-        p: 3,
+        p: { xs: 2, sm: 3 },
       }}
       elevation={0}
     >
@@ -59,8 +62,9 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             sx={{
               display: 'flex',
               alignItems: 'center',
+              flexWrap: 'wrap',
               gap: 0.5,
-              fontSize: '1rem',
+              fontSize: { xs: '0.95rem', sm: '1rem' },
               color: STATUS_COLORS.info,
               textDecoration: 'none',
               '&:hover': {
@@ -103,12 +107,16 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
         <Box
           sx={{
             display: 'flex',
-            alignItems: 'center',
-            gap: 3,
-            flexWrap: 'wrap',
+            alignItems: 'flex-start',
+            flexDirection: { xs: 'column', sm: 'row' },
+            columnGap: { sm: 4 },
+            rowGap: { xs: 1.75, sm: 2 },
+            flexWrap: { xs: 'nowrap', sm: 'wrap' },
           }}
         >
-          <Box>
+          <Box
+            sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { sm: 170 } }}
+          >
             <Typography
               sx={{
                 fontSize: '0.7rem',
@@ -187,7 +195,9 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
           </Box>
 
           {issue.authorLogin && (
-            <Box>
+            <Box
+              sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { sm: 140 } }}
+            >
               <Typography
                 sx={{
                   fontSize: '0.7rem',
@@ -197,42 +207,65 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                   ),
                   textTransform: 'uppercase',
                   letterSpacing: '0.5px',
-                  mb: 0.5,
+                  mb: 0.9,
                 }}
               >
                 Author
               </Typography>
-              <Typography
-                sx={{
-                  fontSize: '0.9rem',
-                  color: 'text.primary',
-                }}
-              >
-                {issue.authorLogin}
-              </Typography>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Avatar
+                  src={getGithubAvatarSrc(issue.authorLogin)}
+                  alt={issue.authorLogin}
+                  sx={{
+                    width: { xs: 18, sm: 20 },
+                    height: { xs: 18, sm: 20 },
+                    fontSize: '0.72rem',
+                  }}
+                />
+                <Typography
+                  sx={{
+                    fontSize: '0.9rem',
+                    color: 'text.primary',
+                    lineHeight: 1.2,
+                  }}
+                >
+                  {issue.authorLogin}
+                </Typography>
+              </Box>
             </Box>
           )}
 
-          <Box>
+          <Box
+            sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { sm: 160 } }}
+          >
             <Typography
               sx={{
                 fontSize: '0.7rem',
                 color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
                 textTransform: 'uppercase',
                 letterSpacing: '0.5px',
-                mb: 0.5,
+                mb: 0.9,
               }}
             >
               Created
             </Typography>
-            <Typography
-              sx={{
-                fontSize: '0.9rem',
-                color: 'text.primary',
-              }}
-            >
-              {formatDate(issue.createdAt)}
-            </Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+              <CalendarTodayOutlinedIcon
+                sx={{
+                  fontSize: { xs: 12, sm: 13 },
+                  color: 'text.secondary',
+                }}
+              />
+              <Typography
+                sx={{
+                  fontSize: '0.9rem',
+                  color: 'text.primary',
+                  lineHeight: 1.2,
+                }}
+              >
+                {formatDate(issue.createdAt)}
+              </Typography>
+            </Box>
           </Box>
         </Box>
 

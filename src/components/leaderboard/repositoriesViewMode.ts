@@ -5,12 +5,11 @@ export const REPOSITORIES_VIEW_STORAGE_KEY = 'repositories:viewMode';
 
 export const readStoredRepositoriesViewMode = (): RepositoriesViewMode => {
   try {
-    return window.localStorage.getItem(REPOSITORIES_VIEW_STORAGE_KEY) ===
-      'cards'
-      ? 'cards'
-      : 'list';
+    return window.localStorage.getItem(REPOSITORIES_VIEW_STORAGE_KEY) === 'list'
+      ? 'list'
+      : 'cards';
   } catch {
-    return 'list';
+    return 'cards';
   }
 };
 

@@ -10,6 +10,7 @@ import {
   CircularProgress,
   alpha,
   useTheme,
+  type Theme,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
@@ -30,6 +31,120 @@ interface HealthCheck {
   passed: boolean;
   description: string;
 }
+
+interface StatCardProps {
+  value: number | string;
+  label: string;
+  hint: string;
+  href?: string;
+  theme: Theme;
+}
+
+const StatCard: React.FC<StatCardProps> = ({
+  value,
+  label,
+  hint,
+  href,
+  theme,
+}) => {
+  const isLink = Boolean(href);
+  const linkProps = isLink
+    ? {
+        component: 'a' as const,
+        href,
+        target: '_blank',
+        rel: 'noopener noreferrer',
+      }
+    : {};
+  return (
+    <Box
+      {...linkProps}
+      sx={{
+        p: { xs: 1.5, md: 2 },
+        borderRadius: 1,
+        bgcolor: alpha(theme.palette.common.white, 0.03),
+        border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
+        height: '100%',
+        minWidth: 0,
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'space-between',
+        gap: 1,
+        textDecoration: 'none',
+        cursor: isLink ? 'pointer' : 'default',
+        overflow: 'hidden',
+        boxSizing: 'border-box',
+        transition: isLink ? 'all 0.2s' : 'none',
+        ...(isLink && {
+          '&:hover': {
+            bgcolor: alpha(theme.palette.common.white, 0.08),
+            border: `1px solid ${theme.palette.border.light}`,
+            transform: 'translateY(-2px)',
+          },
+        }),
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: 1,
+          minWidth: 0,
+        }}
+      >
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography
+            sx={{
+              color: 'text.primary',
+              fontSize: { xs: '20px', md: '24px' },
+              fontWeight: 600,
+              lineHeight: 1.2,
+              mb: 0.5,
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+            }}
+          >
+            {value}
+          </Typography>
+          <Typography
+            sx={{
+              color: STATUS_COLORS.open,
+              fontSize: '12px',
+              fontWeight: 600,
+              lineHeight: 1.25,
+              overflowWrap: 'break-word',
+              hyphens: 'auto',
+            }}
+          >
+            {label}
+          </Typography>
+        </Box>
+        {isLink && (
+          <LaunchIcon
+            sx={{
+              fontSize: 16,
+              color: STATUS_COLORS.open,
+              mt: 0.25,
+              flexShrink: 0,
+            }}
+          />
+        )}
+      </Box>
+      <Typography
+        variant="caption"
+        sx={{
+          color: 'text.secondary',
+          fontSize: '11px',
+          lineHeight: 1.3,
+        }}
+      >
+        {hint}
+      </Typography>
+    </Box>
+  );
+};
 
 const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
   repositoryFullName,
@@ -204,19 +319,20 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
 
       <Grid container spacing={2}>
         {/* Left Column: Health Score & Activity */}
-        <Grid item xs={12} md={4}>
+        <Grid item xs={12} md={4} sx={{ minWidth: 0 }}>
           <Box
             sx={{
               display: 'flex',
-              flexDirection: 'column',
+              flexDirection: { xs: 'column', sm: 'row', md: 'column' },
               gap: 2,
               height: '100%',
+              alignItems: 'stretch',
             }}
           >
             {/* Health Score Card */}
             <Card
               sx={{
-                p: 3,
+                p: { xs: 2, md: 3 },
                 backgroundColor: 'background.default',
                 border: `1px solid ${theme.palette.border.light}`,
                 borderRadius: 2,
@@ -224,7 +340,9 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
-                minHeight: '280px', // Fixed height for consistency
+                flex: { sm: 1, md: 'unset' },
+                minWidth: 0,
+                minHeight: { xs: 220, sm: 240, md: 280 },
               }}
             >
               <Box
@@ -293,11 +411,14 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
             {/* Activity & Feasibility Card */}
             <Card
               sx={{
-                p: 3,
+                p: { xs: 2, md: 3 },
                 backgroundColor: 'background.default',
                 border: `1px solid ${theme.palette.border.light}`,
                 borderRadius: 2,
-                flex: 1, // Fill remaining space
+                flex: 1,
+                minWidth: 0,
+                display: 'flex',
+                flexDirection: 'column',
               }}
             >
               <Typography
@@ -315,10 +436,21 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 <SpeedIcon sx={{ fontSize: 18 }} /> Activity & Feasibility
               </Typography>
               <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 1,
+                  }}
+                >
                   <Typography
                     variant="body2"
-                    sx={{ color: STATUS_COLORS.open, fontSize: '13px' }}
+                    sx={{
+                      color: STATUS_COLORS.open,
+                      fontSize: '13px',
+                      flexShrink: 0,
+                    }}
                   >
                     Last Push
                   </Typography>
@@ -327,15 +459,28 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       color: 'text.primary',
                       fontSize: '13px',
+                      textAlign: 'right',
+                      minWidth: 0,
                     }}
                   >
                     {formatDate(repoData.pushed_at)}
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 1,
+                  }}
+                >
                   <Typography
                     variant="body2"
-                    sx={{ color: STATUS_COLORS.open, fontSize: '13px' }}
+                    sx={{
+                      color: STATUS_COLORS.open,
+                      fontSize: '13px',
+                      flexShrink: 0,
+                    }}
                   >
                     Created
                   </Typography>
@@ -344,15 +489,28 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                     sx={{
                       color: 'text.primary',
                       fontSize: '13px',
+                      textAlign: 'right',
+                      minWidth: 0,
                     }}
                   >
                     {formatDate(repoData.created_at)}
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    gap: 1,
+                  }}
+                >
                   <Typography
                     variant="body2"
-                    sx={{ color: STATUS_COLORS.open, fontSize: '13px' }}
+                    sx={{
+                      color: STATUS_COLORS.open,
+                      fontSize: '13px',
+                      flexShrink: 0,
+                    }}
                   >
                     Status
                   </Typography>
@@ -366,6 +524,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                         ? 'error.dark'
                         : 'success.dark',
                       color: 'text.primary',
+                      flexShrink: 0,
                     }}
                   />
                 </Box>
@@ -388,7 +547,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
         </Grid>
 
         {/* Right Column: Issue Analysis & Standards */}
-        <Grid item xs={12} md={8}>
+        <Grid item xs={12} md={8} sx={{ minWidth: 0 }}>
           <Box
             sx={{
               display: 'flex',
@@ -400,13 +559,13 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
             {/* Issue Analysis Card */}
             <Card
               sx={{
-                p: 3,
+                p: { xs: 2, md: 3 },
                 backgroundColor: 'background.default',
                 border: `1px solid ${theme.palette.border.light}`,
                 borderRadius: 2,
               }}
             >
-              <Box sx={{ mb: 3 }}>
+              <Box sx={{ mb: { xs: 2, md: 3 } }}>
                 <Typography
                   variant="h6"
                   sx={{
@@ -422,235 +581,53 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 </Typography>
               </Box>
 
-              <Grid container spacing={2}>
-                {/* Stat: Open Issues — 2×2 from md until lg so link cards have room; 4 across on lg+ */}
-                <Grid item xs={6} md={6} lg={3}>
-                  <Box
-                    sx={{
-                      p: 2,
-                      borderRadius: 1,
-                      bgcolor: alpha(theme.palette.common.white, 0.03),
-                      border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Typography
-                      variant="h4"
-                      sx={{
-                        color: 'text.primary',
-                        fontSize: '24px',
-                        mb: 0.5,
-                      }}
-                    >
-                      {openIssuesCount !== null
+              <Grid container spacing={{ xs: 1.5, md: 2 }}>
+                {/* Stat: Open Issues */}
+                <Grid item xs={6} md={6} xl={3} sx={{ minWidth: 0 }}>
+                  <StatCard
+                    value={
+                      openIssuesCount !== null
                         ? openIssuesCount
-                        : repoData.open_issues_count || '-'}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: STATUS_COLORS.open, fontSize: '12px' }}
-                    >
-                      Open Issues
-                    </Typography>
-                  </Box>
+                        : (repoData.open_issues_count ?? '-')
+                    }
+                    label="Open Issues"
+                    hint="Currently open"
+                    theme={theme}
+                  />
                 </Grid>
 
                 {/* Stat: Forks */}
-                <Grid item xs={6} md={6} lg={3}>
-                  <Box
-                    sx={{
-                      p: 2,
-                      borderRadius: 1,
-                      bgcolor: alpha(theme.palette.common.white, 0.03),
-                      border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'center',
-                    }}
-                  >
-                    <Typography
-                      variant="h4"
-                      sx={{
-                        color: 'text.primary',
-                        fontSize: '24px',
-                        mb: 0.5,
-                      }}
-                    >
-                      {repoData.forks_count}
-                    </Typography>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: STATUS_COLORS.open, fontSize: '12px' }}
-                    >
-                      Forks
-                    </Typography>
-                  </Box>
+                <Grid item xs={6} md={6} xl={3} sx={{ minWidth: 0 }}>
+                  <StatCard
+                    value={repoData.forks_count}
+                    label="Forks"
+                    hint="Total forks"
+                    theme={theme}
+                  />
                 </Grid>
 
                 {/* Action: Good First Issues */}
-                <Grid item xs={6} md={6} lg={3}>
-                  <Box
-                    component="a"
+                <Grid item xs={6} md={6} xl={3} sx={{ minWidth: 0 }}>
+                  <StatCard
+                    value={
+                      goodFirstIssueCount !== null ? goodFirstIssueCount : '-'
+                    }
+                    label="Good First Issues"
+                    hint="Perfect for beginners"
                     href={`https://github.com/${repositoryFullName}/issues?q=is%3Aissue+is%3Aopen+label%3A"good+first+issue"`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      p: 2,
-                      borderRadius: 1,
-                      bgcolor: alpha(theme.palette.common.white, 0.03),
-                      border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
-                      height: '100%',
-                      minWidth: 0,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      textDecoration: 'none',
-                      cursor: 'pointer',
-                      overflow: 'hidden',
-                      boxSizing: 'border-box',
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        bgcolor: alpha(theme.palette.common.white, 0.08),
-                        border: `1px solid ${theme.palette.border.light}`,
-                        transform: 'translateY(-2px)',
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        gap: 1,
-                        mb: 1,
-                        minWidth: 0,
-                      }}
-                    >
-                      <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography
-                          variant="h4"
-                          sx={{
-                            color: 'text.primary',
-                            fontSize: '24px',
-                            mb: 0.5,
-                          }}
-                        >
-                          {goodFirstIssueCount !== null
-                            ? goodFirstIssueCount
-                            : '-'}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            color: STATUS_COLORS.open,
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            lineHeight: 1.25,
-                            wordBreak: 'break-word',
-                          }}
-                        >
-                          Good First Issues
-                        </Typography>
-                      </Box>
-                      <LaunchIcon
-                        sx={{
-                          fontSize: 16,
-                          color: STATUS_COLORS.open,
-                          mt: 0.25,
-                          flexShrink: 0,
-                        }}
-                      />
-                    </Box>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: 'text.secondary', fontSize: '11px' }}
-                    >
-                      Perfect for beginners
-                    </Typography>
-                  </Box>
+                    theme={theme}
+                  />
                 </Grid>
 
                 {/* Action: Help Wanted */}
-                <Grid item xs={6} md={6} lg={3}>
-                  <Box
-                    component="a"
+                <Grid item xs={6} md={6} xl={3} sx={{ minWidth: 0 }}>
+                  <StatCard
+                    value={helpWantedCount !== null ? helpWantedCount : '-'}
+                    label="Help Wanted"
+                    hint="General contributions"
                     href={`https://github.com/${repositoryFullName}/issues?q=is%3Aissue+is%3Aopen+label%3A"help+wanted"`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    sx={{
-                      p: 2,
-                      borderRadius: 1,
-                      bgcolor: alpha(theme.palette.common.white, 0.03),
-                      border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
-                      height: '100%',
-                      minWidth: 0,
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      textDecoration: 'none',
-                      cursor: 'pointer',
-                      overflow: 'hidden',
-                      boxSizing: 'border-box',
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        bgcolor: alpha(theme.palette.common.white, 0.08),
-                        border: `1px solid ${theme.palette.border.light}`,
-                        transform: 'translateY(-2px)',
-                      },
-                    }}
-                  >
-                    <Box
-                      sx={{
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'flex-start',
-                        gap: 1,
-                        mb: 1,
-                        minWidth: 0,
-                      }}
-                    >
-                      <Box sx={{ minWidth: 0, flex: 1 }}>
-                        <Typography
-                          variant="h4"
-                          sx={{
-                            color: 'text.primary',
-                            fontSize: '24px',
-                            mb: 0.5,
-                          }}
-                        >
-                          {helpWantedCount !== null ? helpWantedCount : '-'}
-                        </Typography>
-                        <Typography
-                          sx={{
-                            color: STATUS_COLORS.open,
-                            fontSize: '12px',
-                            fontWeight: 600,
-                            lineHeight: 1.25,
-                            wordBreak: 'break-word',
-                          }}
-                        >
-                          Help Wanted
-                        </Typography>
-                      </Box>
-                      <LaunchIcon
-                        sx={{
-                          fontSize: 16,
-                          color: STATUS_COLORS.open,
-                          mt: 0.25,
-                          flexShrink: 0,
-                        }}
-                      />
-                    </Box>
-                    <Typography
-                      variant="caption"
-                      sx={{ color: 'text.secondary', fontSize: '11px' }}
-                    >
-                      General contributions
-                    </Typography>
-                  </Box>
+                    theme={theme}
+                  />
                 </Grid>
               </Grid>
             </Card>
@@ -688,27 +665,34 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                 </Typography>
               </Box>
 
-              <Box sx={{ p: 2 }}>
-                <Grid container spacing={2}>
+              <Box sx={{ p: { xs: 1.5, md: 2 } }}>
+                <Grid container spacing={{ xs: 1.5, md: 2 }}>
                   {checks.map((check) => (
-                    <Grid item xs={12} sm={6} key={check.name}>
+                    <Grid
+                      item
+                      xs={12}
+                      sm={6}
+                      key={check.name}
+                      sx={{ minWidth: 0 }}
+                    >
                       <Box
                         sx={{
-                          p: 2,
+                          p: { xs: 1.5, md: 2 },
                           borderRadius: 1,
                           bgcolor: 'surface.subtle',
                           border: `1px solid ${alpha(theme.palette.common.white, 0.05)}`,
                           display: 'flex',
                           alignItems: 'flex-start',
-                          gap: 2,
+                          gap: { xs: 1.5, md: 2 },
                           height: '100%',
+                          minWidth: 0,
                           transition: 'background-color 0.2s',
                           '&:hover': {
                             bgcolor: alpha(theme.palette.common.white, 0.04),
                           },
                         }}
                       >
-                        <Box sx={{ mt: 0.5 }}>
+                        <Box sx={{ mt: 0.5, flexShrink: 0 }}>
                           {check.passed ? (
                             <CheckCircleIcon
                               sx={{
@@ -722,7 +706,7 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                             />
                           )}
                         </Box>
-                        <Box>
+                        <Box sx={{ minWidth: 0 }}>
                           <Typography
                             sx={{
                               color: 'text.primary',
