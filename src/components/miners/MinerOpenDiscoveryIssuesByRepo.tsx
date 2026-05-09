@@ -799,7 +799,6 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
             sx={{
               color: 'text.primary',
               fontSize: { xs: '0.95rem', sm: '1.1rem' },
-              fontWeight: 500,
             }}
           >
             {title}
@@ -859,7 +858,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           sx={{
             width: { xs: '100%', sm: 'auto' },
             maxWidth: { xs: '100%', sm: 400 },
-            minWidth: { xs: 0, sm: 260 },
+            minWidth: { xs: 0, sm: 350 },
             '& .MuiOutlinedInput-root': {
               fontSize: '0.8rem',
               color: 'text.primary',
@@ -1172,7 +1171,6 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
               sx={{
                 color: 'text.primary',
                 fontSize: { xs: '0.95rem', sm: '1.1rem' },
-                fontWeight: 500,
               }}
             >
               Other open discovery issues

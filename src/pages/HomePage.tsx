@@ -5,10 +5,21 @@ import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
-import { type CommitLog, type MinerEvaluation, useStats } from '../api';
+import {
+  type CommitLog,
+  type MinerEvaluation,
+  type Repository,
+  useStats,
+} from '../api';
 import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
-import { getGithubAvatarSrc, getPrStatusLabel, parseNumber } from '../utils';
+import {
+  getGithubAvatarSrc,
+  getGithubUserAvatarSrcById,
+  getPrStatusLabel,
+  parseNumber,
+} from '../utils';
 import useDashboardData from './dashboard/useDashboardData';
+import { buildFeaturedWork } from './dashboard/dashboardData';
 
 const fadeUp = (delayMs = 0) => ({
   opacity: 0,
@@ -161,41 +172,72 @@ const buildTopMinerRows = (miners: MinerEvaluation[]): LandingMinerRow[] => {
 const getActivityRowId = (pr: CommitLog) =>
   `${pr.repository}-${pr.pullRequestNumber}`;
 
-const pickLandingActivityPrs = (prs: CommitLog[]) => {
+const pickLandingActivityPrs = (prs: CommitLog[], repos: Repository[]) => {
   const validPrs = prs.filter((pr) => pr.repository && pr.pullRequestNumber);
-  const byActivityTime = (a: CommitLog, b: CommitLog) =>
-    timestampValue(getActivityTimestamp(b)) -
-    timestampValue(getActivityTimestamp(a));
+  const featuredRepos = buildFeaturedWork(validPrs, repos);
+
+  const selected: CommitLog[] = [];
+  const selectedIds = new Set<string>();
+  const featuredOrgs = new Set<string>();
+
+  for (const repo of featuredRepos) {
+    if (repo.prs.length > 0) {
+      const topPr = validPrs.find(
+        (p) =>
+          p.repository === repo.repository &&
+          p.pullRequestNumber === repo.prs[0].prNumber,
+      );
+      if (topPr) {
+        selected.push(topPr);
+        selectedIds.add(getActivityRowId(topPr));
+        featuredOrgs.add(repo.repository.split('/')[0]);
+      }
+    }
+  }
+
   const byCreatedTime = (a: CommitLog, b: CommitLog) =>
     timestampValue(b.prCreatedAt) - timestampValue(a.prCreatedAt);
-  const byMergedTime = (a: CommitLog, b: CommitLog) =>
-    timestampValue(b.mergedAt) - timestampValue(a.mergedAt);
 
   const openPrs = validPrs
     .filter((pr) => getPrStatusLabel(pr) === 'Open')
     .sort(byCreatedTime);
-  const mergedPrs = validPrs
-    .filter((pr) => getPrStatusLabel(pr) === 'Merged')
-    .sort(byMergedTime);
-  const selected = [openPrs[0], openPrs[1], mergedPrs[0], openPrs[2]].filter(
-    Boolean,
-  ) as CommitLog[];
-  const selectedIds = new Set(selected.map(getActivityRowId));
 
-  for (const pr of [...validPrs].sort(byActivityTime)) {
+  // Pick an open PR from a different organization
+  for (const pr of openPrs) {
     if (selected.length >= 4) break;
     const id = getActivityRowId(pr);
-    if (!selectedIds.has(id)) {
+    const org = pr.repository.split('/')[0];
+    if (!selectedIds.has(id) && !featuredOrgs.has(org)) {
       selected.push(pr);
       selectedIds.add(id);
+      featuredOrgs.add(org);
+    }
+  }
+
+  // Fallback if we still don't have 4
+  if (selected.length < 4) {
+    const byActivityTime = (a: CommitLog, b: CommitLog) =>
+      timestampValue(getActivityTimestamp(b)) -
+      timestampValue(getActivityTimestamp(a));
+
+    for (const pr of [...validPrs].sort(byActivityTime)) {
+      if (selected.length >= 4) break;
+      const id = getActivityRowId(pr);
+      if (!selectedIds.has(id)) {
+        selected.push(pr);
+        selectedIds.add(id);
+      }
     }
   }
 
   return selected.slice(0, 4);
 };
 
-const buildActivityRows = (prs: CommitLog[]): LandingActivityRow[] =>
-  pickLandingActivityPrs(prs).map((pr) => {
+const buildActivityRows = (
+  prs: CommitLog[],
+  repos: Repository[],
+): LandingActivityRow[] =>
+  pickLandingActivityPrs(prs, repos).map((pr) => {
     const status = getPrStatusLabel(pr);
     const statusLabel =
       status === 'Merged'
@@ -228,7 +270,7 @@ const buildActivityRows = (prs: CommitLog[]): LandingActivityRow[] =>
 const getAvatarSrc = (miner: LandingMinerRow) => {
   if (miner.username) return getGithubAvatarSrc(miner.username);
   return /^\d+$/.test(miner.githubId)
-    ? `https://avatars.githubusercontent.com/u/${miner.githubId}`
+    ? getGithubUserAvatarSrcById(miner.githubId)
     : '';
 };
 
@@ -271,8 +313,8 @@ const HomePage: React.FC = () => {
     [datasets.miners.data],
   );
   const activityRows = useMemo(
-    () => buildActivityRows(datasets.prs.data),
-    [datasets.prs.data],
+    () => buildActivityRows(datasets.prs.data, datasets.repos.data),
+    [datasets.prs.data, datasets.repos.data],
   );
 
   const mergedPrs35d = useMemo(

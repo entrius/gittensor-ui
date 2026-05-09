@@ -199,6 +199,7 @@ const CommitLogItem: React.FC<{
           <Stack direction="row" alignItems="center" spacing={1}>
             <Avatar
               src={getRepositoryOwnerAvatarSrc(entry.repository.split('/')[0])}
+              alt={entry.repository}
               sx={{
                 width: 16,
                 height: 16,

@@ -42,6 +42,7 @@ import {
 } from '../../utils/format';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
+import { isOutsideScoringWindow } from '../../utils/ExplorerUtils';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
@@ -425,7 +426,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       },
       yAxis: {
         type: 'value',
-        name: 'Bounty (α)',
+        name: 'Bounty (ل)',
         nameTextStyle: { color: textColor, fontFamily: 'JetBrains Mono' },
         axisLabel: { color: textColor, fontFamily: 'JetBrains Mono' },
         splitLine: { lineStyle: { color: gridColor, type: 'dashed' } },
@@ -569,6 +570,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
               src={getRepositoryOwnerAvatarSrc(
                 issue.repositoryFullName.split('/')[0],
               )}
+              alt={issue.repositoryFullName}
               sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
             />
             <Typography
@@ -1192,6 +1194,11 @@ const IssuesList: React.FC<IssuesListProps> = ({
                 : '750px'
           }
           emptyState={emptyState}
+          getRowSx={(issue) =>
+            issue.completedAt && isOutsideScoringWindow(issue.completedAt)
+              ? { opacity: 0.4, filter: 'grayscale(0.5)' }
+              : {}
+          }
           sort={{
             field: sortKey,
             order: sortDirection,
