@@ -93,7 +93,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     const m = new Map<string, string | null>();
     for (const r of repos || []) {
       if (r?.fullName) {
-        m.set(r.fullName.toLowerCase(), r.inactiveAt ?? null);
+        m.set(r.fullName.toLowerCase(), r.config?.inactiveAt ?? null);
       }
     }
     return m;

@@ -41,6 +41,7 @@ import {
   calculateOpenIssueThreshold,
   parseNumber,
 } from '../../utils/ExplorerUtils';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { credibilityColor } from '../../utils/format';
 
 const formatTimeAgo = (date: Date): string => {
@@ -430,18 +431,6 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
     { xs: 'flex', sm: 'none' },
     1,
   );
-  const renderEarningsTile = (tooltip: string) => (
-    <StatTile
-      label="Earnings"
-      value={`$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
-      sub={`$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · $${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
-      color={
-        (minerStats.usdPerDay ?? 0) > 0 ? STATUS_COLORS.success : undefined
-      }
-      tooltip={tooltip}
-    />
-  );
-
   return (
     <Card sx={{ p: 3, position: 'relative' }} elevation={0}>
       {/* Updated chip — desktop */}
@@ -479,7 +468,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
         }}
       >
         <Avatar
-          src={`https://avatars.githubusercontent.com/${username}`}
+          src={getRepositoryOwnerAvatarSrc(username)}
           alt={username}
           sx={{
             width: { xs: 72, sm: 64 },
@@ -497,6 +486,10 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               gap: 1.5,
               flexWrap: 'wrap',
               mb: 0.5,
+              pr: {
+                xs: 0,
+                sm: minerStats.updatedAt ? '160px' : 0,
+              },
             }}
           >
             <Typography
@@ -672,9 +665,17 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
-            {renderEarningsTile(
-              'Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus.',
-            )}
+            <StatTile
+              label="Earnings"
+              value={`~$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
+              sub={`~$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · ~$${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
+              color={
+                (minerStats.usdPerDay ?? 0) > 0
+                  ? STATUS_COLORS.success
+                  : undefined
+              }
+              tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
+            />
           </Grid>
         </Grid>
       ) : (
@@ -728,9 +729,17 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
             />
           </Grid>
           <Grid item xs={6} sm={4} md={2}>
-            {renderEarningsTile(
-              'Estimated earnings from issue discovery based on current network incentive distribution.',
-            )}
+            <StatTile
+              label="Earnings"
+              value={`~$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
+              sub={`~$${Math.round((minerStats.usdPerDay ?? 0) * 30).toLocaleString()}/mo · ~$${Math.round(minerStats.lifetimeUsd ?? 0).toLocaleString()} total`}
+              color={
+                (minerStats.usdPerDay ?? 0) > 0
+                  ? STATUS_COLORS.success
+                  : undefined
+              }
+              tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
+            />
           </Grid>
         </Grid>
       )}

@@ -15,6 +15,7 @@ import { LinkBox } from '../common/linkBehavior';
 import { STATUS_COLORS } from '../../theme';
 import { isMergedPr } from '../../utils/prStatus';
 import { parseNumber } from '../../utils/ExplorerUtils';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 
 interface RepositoryContributorsTableProps {
@@ -252,7 +253,8 @@ const RepositoryContributorsTable: React.FC<
               }}
             >
               <Avatar
-                src={`https://avatars.githubusercontent.com/${c.author}`}
+                src={getRepositoryOwnerAvatarSrc(c.author)}
+                alt={c.author}
                 sx={{
                   width: 18,
                   height: 18,
