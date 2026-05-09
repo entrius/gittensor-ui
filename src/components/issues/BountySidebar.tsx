@@ -16,6 +16,7 @@ import { useQueries } from '@tanstack/react-query';
 import axios from 'axios';
 
 import {
+  getIssueSubmissionsQueryKey,
   type IssueBounty,
   type IssuesStats,
   type IssueSubmission,
@@ -52,15 +53,20 @@ interface HunterRow {
   totalAlpha: number;
 }
 
-const TOP_HUNTERS_FETCH_LIMIT = 50;
+// Sample size for the leaderboard aggregation. Display is capped at `topN`
+// (5) further down, so this only needs to be wide enough for a representative
+// ranking — not the full bounty history. Kept small to avoid fanning out a
+// browser's full per-origin connection budget on first paint.
+const TOP_HUNTERS_FETCH_LIMIT = 15;
 
 const fetchIssueSubmissions = async (
   id: number,
+  signal?: AbortSignal,
 ): Promise<IssueSubmission[]> => {
   const baseUrl = import.meta.env.VITE_REACT_APP_BASE_URL;
   const path = `/issues/${id}/submissions`;
   const url = baseUrl ? `${baseUrl}${path}` : path;
-  const { data } = await axios.get<IssueSubmission[]>(url);
+  const { data } = await axios.get<IssueSubmission[]>(url, { signal });
   return data;
 };
 
@@ -69,8 +75,9 @@ const fetchIssueSubmissions = async (
  *
  * For each completed bounty we fetch its `/issues/{id}/submissions`, find the
  * row with `isWinner: true`, and tally its `authorLogin` plus the bounty's
- * paid `bountyAmount`. Cache key matches `useIssueSubmissions` so the bounty
- * details page re-uses these fetches.
+ * paid `bountyAmount`. Reuses the `useIssueSubmissions` cache key via
+ * `getIssueSubmissionsQueryKey` so the bounty-details page shares these
+ * fetches.
  */
 const useTopBountyHunters = (
   issues: IssueBounty[],
@@ -89,12 +96,8 @@ const useTopBountyHunters = (
 
   const queries = useQueries({
     queries: completedBounties.map((b) => ({
-      queryKey: [
-        'useIssueSubmissions',
-        `/issues/${b.id}/submissions`,
-        undefined,
-      ] as const,
-      queryFn: () => fetchIssueSubmissions(b.id),
+      queryKey: getIssueSubmissionsQueryKey(b.id),
+      queryFn: ({ signal }) => fetchIssueSubmissions(b.id, signal),
       staleTime: 60_000,
       retry: false,
     })),
