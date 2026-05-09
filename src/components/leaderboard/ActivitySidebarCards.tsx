@@ -268,13 +268,13 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
 
 // ── Shared sub-components ────────────────────────────────────────
 
-interface StatRowProps {
+export interface StatRowProps {
   label: string;
   value: number | string;
   valueColor?: string;
 }
 
-const StatRow: React.FC<StatRowProps> = ({ label, value, valueColor }) => (
+export const StatRow: React.FC<StatRowProps> = ({ label, value, valueColor }) => (
   <Box
     sx={{
       display: 'flex',
