@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Box, Card, CardContent, Grid, Stack, Typography } from '@mui/material';
 import { alpha, type Theme, useTheme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
@@ -48,6 +48,7 @@ const buildStatusChartOption = (
   theme: Theme,
   centerLabel: string,
   segments: DashboardOverviewPool['chartSegments'],
+  chartContainerRef: React.RefObject<HTMLDivElement>,
 ): Record<string, unknown> => {
   const totalValue = segments.reduce((sum, segment) => sum + segment.value, 0);
   const chartFont = echartsFontFamily(theme);
@@ -98,6 +99,58 @@ const buildStatusChartOption = (
         </div>
       `,
       ...echartsItemTooltipChrome(theme),
+      confine: false,
+      appendTo: undefined,
+      position: (
+        point: [number, number],
+        _params: unknown,
+        _dom: HTMLElement,
+        _rect: unknown,
+        size: { contentSize: [number, number] },
+      ) => {
+        const [cursorX, cursorY] = point;
+        const [tooltipWidth, tooltipHeight] = size.contentSize;
+        const chartEl = chartContainerRef.current;
+        if (!chartEl) {
+          return [cursorX, cursorY - tooltipHeight];
+        }
+
+        const rect = chartEl.getBoundingClientRect();
+        const cursorViewportX = rect.left + cursorX;
+        const cursorViewportY = rect.top + cursorY;
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+        const margin = 8;
+        const cursorIsInRightHalf = cursorViewportX > viewportWidth / 2;
+
+        let viewportLeft = cursorIsInRightHalf
+          ? cursorViewportX - tooltipWidth
+          : cursorViewportX;
+        if (
+          !cursorIsInRightHalf &&
+          viewportLeft + tooltipWidth + margin > viewportWidth
+        ) {
+          viewportLeft = cursorViewportX - tooltipWidth;
+        }
+        if (cursorIsInRightHalf && viewportLeft < margin) {
+          viewportLeft = cursorViewportX;
+        }
+        viewportLeft = Math.max(
+          margin,
+          Math.min(viewportLeft, viewportWidth - tooltipWidth - margin),
+        );
+
+        let viewportTop = cursorViewportY - tooltipHeight;
+        if (viewportTop < margin) {
+          viewportTop = cursorViewportY;
+        }
+        viewportTop = Math.max(
+          margin,
+          Math.min(viewportTop, viewportHeight - tooltipHeight - margin),
+        );
+
+        return [viewportLeft - rect.left, viewportTop - rect.top];
+      },
     },
     series: [
       {
@@ -158,6 +211,7 @@ const PoolColumn: React.FC<PoolColumnProps> = ({
 }) => {
   const theme = useTheme();
   const monoFontFamily = theme.typography.fontFamily;
+  const chartContainerRef = useRef<HTMLDivElement>(null);
 
   return (
     <Box
@@ -195,6 +249,7 @@ const PoolColumn: React.FC<PoolColumnProps> = ({
 
       {/* Donut chart */}
       <Box
+        ref={chartContainerRef}
         sx={{
           width: '100%',
           aspectRatio: '1',
@@ -208,6 +263,7 @@ const PoolColumn: React.FC<PoolColumnProps> = ({
             theme,
             pool.chartCenterLabel,
             pool.chartSegments,
+            chartContainerRef,
           )}
           style={{ width: '100%', height: '100%' }}
           opts={{ renderer: 'svg' }}
@@ -339,6 +395,7 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
                   borderRadius: 3,
                   border: `1px solid ${theme.palette.border.light}`,
                   backgroundColor: 'transparent',
+                  overflow: 'visible',
                 }}
                 elevation={0}
               >
