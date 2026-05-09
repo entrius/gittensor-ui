@@ -60,9 +60,9 @@ export const LeaderboardSidebar: React.FC<LeaderboardSidebarProps> = ({
       spacing={2}
       sx={{ height: '100%', overflow: 'auto', pr: 1, ...scrollbarSx }}
     >
-      {/* Activity Cards: PR Activity, Issue Activity, Code Impact */}
       <ActivitySidebarCards
         miners={miners}
+        variant={variant}
         insertAfterFirstCard={insertAfterFirstCard}
       />
 
@@ -275,6 +275,7 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
       >
         <Avatar
           src={getGithubAvatarSrc(miner.author || miner.githubId)}
+          alt={miner.author || miner.githubId}
           sx={{ width: 20, height: 20 }}
         />
         <Typography

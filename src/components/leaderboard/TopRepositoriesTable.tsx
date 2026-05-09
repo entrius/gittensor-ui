@@ -94,13 +94,62 @@ type SortColumn =
 type SortDirection = 'asc' | 'desc';
 type ViewMode = RepositoriesViewMode;
 
+/** Chart-friendly metrics (excludes purely-display columns like rank/watch). */
+type ChartMetricKey =
+  | 'weight'
+  | 'totalScore'
+  | 'totalPRs'
+  | 'contributors'
+  | 'discoveryScore'
+  | 'discoveryIssues'
+  | 'discoveryContributors';
+
+const CHART_METRIC_OPTIONS: Array<{ value: ChartMetricKey; label: string }> = [
+  { value: 'totalScore', label: 'OSS Score' },
+  { value: 'totalPRs', label: 'PRs' },
+  { value: 'contributors', label: 'OSS Contributors' },
+  { value: 'discoveryIssues', label: 'Issues' },
+  { value: 'discoveryScore', label: 'Issue Score' },
+  { value: 'discoveryContributors', label: 'Issue Contributors' },
+  { value: 'weight', label: 'Weight' },
+];
+
+const VALID_CHART_METRIC_KEYS = new Set<ChartMetricKey>(
+  CHART_METRIC_OPTIONS.map((o) => o.value),
+);
+
+interface ChartCandidate {
+  weight?: number;
+  totalScore?: number;
+  totalPRs?: number;
+  uniqueMiners?: Set<string>;
+  discoveryScore?: number;
+  discoveryIssues?: number;
+  discoveryContributors?: Set<string>;
+}
+
+const CHART_METRIC_VALUE: Record<
+  ChartMetricKey,
+  (r: ChartCandidate) => number
+> = {
+  weight: (r) => r.weight || 0,
+  totalScore: (r) => r.totalScore || 0,
+  totalPRs: (r) => r.totalPRs || 0,
+  contributors: (r) => r.uniqueMiners?.size || 0,
+  discoveryScore: (r) => r.discoveryScore || 0,
+  discoveryIssues: (r) => r.discoveryIssues || 0,
+  discoveryContributors: (r) => r.discoveryContributors?.size || 0,
+};
+
 /** Card sort: classic metrics + Issues; issue score/contrib. sort via list headers / URL. */
 const CARD_SORT_OPTIONS: Array<{ value: SortColumn; label: string }> = [
   { value: 'weight', label: 'Weight' },
   { value: 'totalScore', label: 'OSS score' },
   { value: 'totalPRs', label: 'PRs' },
   { value: 'contributors', label: 'Contributors' },
+  { value: 'discoveryScore', label: 'Issue Score' },
   { value: 'discoveryIssues', label: 'Issues' },
+  { value: 'discoveryContributors', label: 'Issue Contributors' },
   { value: 'repository', label: 'Repository' },
 ];
 
@@ -110,6 +159,12 @@ interface TopRepositoriesTableProps {
   getRepositoryHref: (repositoryFullName: string) => string;
   linkState?: Record<string, unknown>;
 }
+
+const ISSUE_METRIC_KEYS = new Set<ChartMetricKey>([
+  'discoveryIssues',
+  'discoveryScore',
+  'discoveryContributors',
+]);
 
 const VALID_SORT_COLUMNS: SortColumn[] = [
   'rank',
@@ -183,6 +238,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     urlDir === 'asc' || urlDir === 'desc' ? urlDir : 'desc',
   );
   const [useLogScale, setUseLogScale] = useState(true);
+  const chartMetricKey: ChartMetricKey = VALID_CHART_METRIC_KEYS.has(
+    sortColumn as ChartMetricKey,
+  )
+    ? (sortColumn as ChartMetricKey)
+    : 'totalScore';
   const [storedViewMode, setStoredViewMode] = useState<ViewMode>(
     readStoredRepositoriesViewMode,
   );
@@ -355,8 +415,22 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     [filteredRepositories, page, rowsPerPage],
   );
 
+  /* Chart shows the top N repos for the chosen metric (independent of the
+     table's sort/pagination), but still respects status + search filters. */
+  const chartTopRepositories = useMemo(() => {
+    const valueOf = CHART_METRIC_VALUE[chartMetricKey];
+    const base = ISSUE_METRIC_KEYS.has(chartMetricKey)
+      ? filteredRepositories.filter((r) => r.mirrorEnabled)
+      : filteredRepositories;
+    return [...base]
+      .filter((r) => valueOf(r) > 0)
+      .sort((a, b) => valueOf(b) - valueOf(a))
+      .slice(0, rowsPerPage)
+      .map((r, i) => ({ ...r, rank: i + 1 }));
+  }, [filteredRepositories, chartMetricKey, rowsPerPage]);
+
   const getChartOption = () => {
-    const chartData = pagedRepositories;
+    const chartData = chartTopRepositories;
     const white = UI_COLORS.white;
     const borderSubtle = alpha(white, 0.08);
     const surfaceSubtle = alpha(white, 0.02);
@@ -376,37 +450,37 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       }
     > = {
       weight: {
-        title: 'Repository Weights',
+        title: `Top ${rowsPerPage} Repositories by Weight`,
         yAxis: 'Weight',
         value: (r) => r.weight || 0,
       },
       totalScore: {
-        title: 'OSS score by repository',
+        title: `Top ${rowsPerPage} Repositories by OSS Score`,
         yAxis: 'OSS score',
         value: (r) => r.totalScore || 0,
       },
       totalPRs: {
-        title: 'Pull Requests by Repository',
+        title: `Top ${rowsPerPage} Repositories by PR Count`,
         yAxis: 'PRs',
         value: (r) => r.totalPRs || 0,
       },
       contributors: {
-        title: 'OSS contributors by repository',
+        title: `Top ${rowsPerPage} Repositories by OSS Contributors`,
         yAxis: 'Contributors',
         value: (r) => r.uniqueMiners?.size || 0,
       },
       discoveryScore: {
-        title: 'Issue score by repository',
+        title: `Top ${rowsPerPage} Repositories by Issue Score`,
         yAxis: 'Issue score',
         value: (r) => r.discoveryScore || 0,
       },
       discoveryIssues: {
-        title: 'Issues by repository',
+        title: `Top ${rowsPerPage} Repositories by Issue Count`,
         yAxis: 'Issues',
         value: (r) => r.discoveryIssues || 0,
       },
       discoveryContributors: {
-        title: 'Issue contributors by repository',
+        title: `Top ${rowsPerPage} Repositories by Issue Contributors`,
         yAxis: 'Contributors',
         value: (r) => r.discoveryContributors?.size || 0,
       },
@@ -426,14 +500,14 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         value: (r) => r.totalScore || 0,
       },
     };
-    const metric = chartMetric[sortColumn] ?? chartMetric.totalScore;
+    const metric = chartMetric[chartMetricKey] ?? chartMetric.totalScore;
     const effectiveLogScale =
       useLogScale &&
-      sortColumn !== 'weight' &&
-      sortColumn !== 'totalPRs' &&
-      sortColumn !== 'contributors' &&
-      sortColumn !== 'discoveryIssues' &&
-      sortColumn !== 'discoveryContributors';
+      chartMetricKey !== 'weight' &&
+      chartMetricKey !== 'totalPRs' &&
+      chartMetricKey !== 'contributors' &&
+      chartMetricKey !== 'discoveryIssues' &&
+      chartMetricKey !== 'discoveryContributors';
 
     const barGradient = {
       type: 'linear',
@@ -475,7 +549,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     const baseTitle = echartsBarChartTitle(
       theme,
       metric.title,
-      'Values match the current table sort and page',
+      'Top repositories ranked by the selected metric',
     );
 
     return {
@@ -788,51 +862,16 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     </>
   );
 
-  // Custom sort header to preserve the original unicode arrow look and
-  // cell-wide click + hover (MUI's TableSortLabel differs visually). The
-  // Box takes on the cell's padding so clicks anywhere inside the cell hit.
-  const renderSortHeader = (
-    column: SortColumn,
-    label: string,
-    align: 'left' | 'right' | 'center' = 'left',
-  ) => (
-    <Box
-      onClick={() => handleSort(column)}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 0.5,
-        cursor: 'pointer',
-        userSelect: 'none',
-        width: '100%',
-        height: '100%',
-        px: align === 'center' ? 0.5 : 2,
-        py: 1,
-        justifyContent:
-          align === 'right'
-            ? 'flex-end'
-            : align === 'center'
-              ? 'center'
-              : 'flex-start',
-      }}
-    >
-      {label}
-      {sortColumn === column && (
-        <Typography component="span" sx={{ fontSize: '0.7rem', opacity: 0.7 }}>
-          {sortDirection === 'asc' ? '▲' : '▼'}
-        </Typography>
-      )}
-    </Box>
-  );
-
-  const sortableHeaderSx = {
-    padding: 0,
-    cursor: 'pointer',
-    userSelect: 'none' as const,
-    '&:hover': {
-      backgroundColor: 'surface.light',
+  const compactSortableHeaderSx = {
+    whiteSpace: 'nowrap',
+    '& .MuiTableSortLabel-root': {
+      whiteSpace: 'nowrap',
+      maxWidth: '100%',
     },
-  };
+    '& .MuiTableSortLabel-icon': {
+      ml: 0.25,
+    },
+  } as const;
 
   const listColumns: DataTableColumn<RepoStats, SortColumn>[] = [
     {
@@ -844,9 +883,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'repository',
-      header: renderSortHeader('repository', 'Repository'),
+      header: 'Repository',
       width: '30%',
-      headerSx: sortableHeaderSx,
+      sortKey: 'repository',
+      headerSx: compactSortableHeaderSx,
       cellSx: { pl: 1.5 },
       renderCell: (repo) => {
         const owner = (repo.repository || '').split('/')[0] || '';
@@ -901,10 +941,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'weight',
-      header: renderSortHeader('weight', 'Weight', 'right'),
+      header: 'Weight',
       width: '10%',
       align: 'right',
-      headerSx: sortableHeaderSx,
+      sortKey: 'weight',
+      headerSx: compactSortableHeaderSx,
       renderCell: (repo) => (
         <Typography
           sx={{
@@ -919,10 +960,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'totalScore',
-      header: renderSortHeader('totalScore', 'OSS score', 'right'),
+      header: 'OSS score',
       width: '11%',
       align: 'right',
-      headerSx: sortableHeaderSx,
+      sortKey: 'totalScore',
+      headerSx: compactSortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasOssActivity(repo);
         const v = repo.totalScore ?? 0;
@@ -941,10 +983,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'totalPRs',
-      header: renderSortHeader('totalPRs', 'PRs', 'right'),
+      header: 'PRs',
       width: '7%',
       align: 'right',
-      headerSx: sortableHeaderSx,
+      sortKey: 'totalPRs',
+      headerSx: compactSortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasOssActivity(repo);
         const n = repo.totalPRs ?? 0;
@@ -962,10 +1005,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'discoveryScore',
-      header: renderSortHeader('discoveryScore', 'Issue score', 'right'),
+      header: 'Issue score',
       width: '10%',
       align: 'right',
-      headerSx: sortableHeaderSx,
+      sortKey: 'discoveryScore',
+      headerSx: compactSortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasDiscoveryActivity(repo);
         const v = repo.discoveryScore ?? 0;
@@ -984,10 +1028,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'discoveryIssues',
-      header: renderSortHeader('discoveryIssues', 'Issues', 'right'),
+      header: 'Issues',
       width: '7%',
       align: 'right',
-      headerSx: sortableHeaderSx,
+      sortKey: 'discoveryIssues',
+      headerSx: compactSortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasDiscoveryActivity(repo);
         const n = repo.discoveryIssues ?? 0;
@@ -1005,10 +1050,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'contributors',
-      header: renderSortHeader('contributors', 'Contributors', 'right'),
+      header: 'Contributors',
       width: '9%',
       align: 'right',
-      headerSx: sortableHeaderSx,
+      sortKey: 'contributors',
+      headerSx: compactSortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasOssActivity(repo);
         const n = repo.uniqueMiners?.size ?? 0;
@@ -1026,14 +1072,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'discoveryContributors',
-      header: renderSortHeader(
-        'discoveryContributors',
-        'Issue contrib.',
-        'right',
-      ),
-      width: '9%',
+      header: 'Issue contrib',
+      width: '10%',
       align: 'right',
-      headerSx: sortableHeaderSx,
+      sortKey: 'discoveryContributors',
+      headerSx: compactSortableHeaderSx,
       renderCell: (repo) => {
         const active = repoHasDiscoveryActivity(repo);
         const n = repo.discoveryContributors?.size ?? 0;
@@ -1051,10 +1094,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
     {
       key: 'watch',
-      header: renderSortHeader('watch', '★', 'center'),
+      header: '★',
       width: '52px',
       align: 'center',
-      headerSx: sortableHeaderSx,
       cellSx: { p: 0 },
       renderCell: (repo) =>
         repo.repository ? (
@@ -1247,7 +1289,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           </Box>
         </Box>
 
-        {/* Row 2: Sort controls (card view only) */}
         {viewMode === 'cards' && (
           <Box
             sx={{
@@ -1325,7 +1366,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           </Box>
         )}
 
-        {/* Mobile-only chart controls row (below sort row) */}
         <Box
           sx={{
             display: { xs: 'flex', md: 'none' },
@@ -1349,7 +1389,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             backgroundColor: 'surface.subtle',
           }}
         >
-          {showChart && filteredRepositories.length > 0 && (
+          {showChart && chartTopRepositories.length > 0 && (
             <ReactECharts
               option={getChartOption()}
               style={{ height: '100%', width: '100%' }}
@@ -1458,6 +1498,11 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             })}
             minWidth="1280px"
             stickyHeader
+            sort={{
+              field: sortColumn,
+              order: sortDirection,
+              onChange: handleSort,
+            }}
             emptyState={
               !filteredRepositories.length &&
               trimmedSearch &&

@@ -7,6 +7,7 @@ import {
   Stack,
   alpha,
   useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CodeIcon from '@mui/icons-material/Code';
@@ -16,6 +17,7 @@ import { useMonthlyRewards } from '../../hooks/useMonthlyRewards';
 
 export const AboutContent: React.FC = () => {
   const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const monthlyRewards = useMonthlyRewards();
 
   return (
@@ -249,16 +251,19 @@ export const AboutContent: React.FC = () => {
             rel="noopener noreferrer"
             endIcon={<OpenInNewIcon />}
             sx={{
-              px: 5,
-              py: 2,
-              fontSize: '1.1rem',
+              px: { xs: 3.5, sm: 5 },
+              py: { xs: 1, sm: 2 },
+              fontSize: { xs: '0.95rem', sm: '1.1rem' },
+              lineHeight: 1.35,
               fontWeight: 'bold',
               borderRadius: '50px',
               boxShadow: `0 0 20px ${alpha(theme.palette.common.black, 0.3)}`,
               textTransform: 'none',
             }}
           >
-            View Documentation & Setup Guide
+            {isMobile
+              ? 'View Docs & Setup Guide'
+              : 'View Documentation & Setup Guide'}
           </Button>
         </Box>
 
