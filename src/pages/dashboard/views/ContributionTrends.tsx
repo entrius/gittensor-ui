@@ -29,6 +29,7 @@ import {
   echartsTransparentBackground,
 } from '../../../utils/echarts/gittensorChartTheme';
 import { CHART_COLORS } from '../../../theme';
+import { mode } from '../../../utils/themeUtils';
 
 interface ContributionTrendsProps {
   range: TrendTimeRange;
@@ -242,14 +243,18 @@ const getChartModeToggleSx = (theme: Theme, chartMode: TrendChartMode) => ({
     left: CHART_MODE_TOGGLE_SLIDER_INSET,
     width: CHART_MODE_TOGGLE_SLIDER_WIDTH,
     borderRadius: '50px',
-    backgroundColor:
-      theme.palette.mode === 'dark'
-        ? alpha(theme.palette.diff.additions, CHART_MODE_TOGGLE_SLIDER_OPACITY)
-        : theme.palette.status.success,
+    backgroundColor: mode(theme, {
+      dark: alpha(
+        theme.palette.diff.additions,
+        CHART_MODE_TOGGLE_SLIDER_OPACITY,
+      ),
+      light: theme.palette.status.success,
+    }),
     boxShadow: `0 4px 12px ${alpha(
-      theme.palette.mode === 'dark'
-        ? theme.palette.diff.additions
-        : theme.palette.status.success,
+      mode(theme, {
+        dark: theme.palette.diff.additions,
+        light: theme.palette.status.success,
+      }),
       0.3,
     )}`,
     transform: getChartModeSliderOffset(chartMode),
@@ -722,20 +727,20 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
                 letterSpacing: '0.05em',
                 textTransform: 'uppercase',
                 '&.Mui-selected': {
-                  color:
-                    theme.palette.mode === 'dark'
-                      ? theme.palette.background.paper
-                      : theme.palette.common.white,
-                  backgroundColor:
-                    theme.palette.mode === 'dark'
-                      ? alpha(theme.palette.diff.additions, 0.95)
-                      : theme.palette.status.success,
+                  color: mode(theme, {
+                    dark: theme.palette.background.paper,
+                    light: theme.palette.common.white,
+                  }),
+                  backgroundColor: mode(theme, {
+                    dark: alpha(theme.palette.diff.additions, 0.95),
+                    light: theme.palette.status.success,
+                  }),
                 },
                 '&.Mui-selected:hover': {
-                  backgroundColor:
-                    theme.palette.mode === 'dark'
-                      ? alpha(theme.palette.diff.additions, 0.95)
-                      : theme.palette.status.success,
+                  backgroundColor: mode(theme, {
+                    dark: alpha(theme.palette.diff.additions, 0.95),
+                    light: theme.palette.status.success,
+                  }),
                 },
                 '&:hover': {
                   backgroundColor: alpha(theme.palette.text.primary, 0.06),

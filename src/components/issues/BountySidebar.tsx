@@ -8,7 +8,7 @@ import {
   Stack,
   Typography,
 } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
@@ -280,14 +280,14 @@ const ActivityLegendRow: React.FC<{ segment: DonutSegment }> = ({
         }}
       />
       <Typography
-        sx={{
+        sx={(theme) => ({
           fontFamily: FONTS.mono,
           fontSize: '0.78rem',
-          color: STATUS_COLORS.open,
+          color: theme.palette.status.open,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-        }}
+        })}
       >
         {segment.label}
       </Typography>
@@ -343,16 +343,16 @@ const PoolPayoutsCard: React.FC<{ stats?: IssuesStats }> = ({ stats }) => {
                 })}
               >
                 <Typography
-                  sx={{
+                  sx={(theme) => ({
                     fontFamily: FONTS.mono,
                     fontSize: '0.68rem',
-                    color: STATUS_COLORS.open,
+                    color: theme.palette.status.open,
                     textTransform: 'uppercase',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                     mb: 0.75,
-                  }}
+                  })}
                 >
                   {t.label}
                 </Typography>
@@ -390,6 +390,7 @@ const CompletionDonut: React.FC<{
   issues: IssueBounty[];
   isLoading: boolean;
 }> = ({ issues, isLoading }) => {
+  const theme = useTheme();
   const breakdown = useMemo(() => {
     let registered = 0;
     let active = 0;
@@ -479,7 +480,7 @@ const CompletionDonut: React.FC<{
                               {
                                 value: 1,
                                 itemStyle: {
-                                  color: 'rgba(255,255,255,0.08)',
+                                  color: alpha(theme.palette.text.primary, 0.1),
                                 },
                               },
                             ],
@@ -519,7 +520,7 @@ const CompletionDonut: React.FC<{
                   sx={{
                     fontFamily: FONTS.mono,
                     fontSize: '0.56rem',
-                    color: STATUS_COLORS.open,
+                    color: theme.palette.status.open,
                     mt: 0.5,
                     textTransform: 'uppercase',
                   }}
@@ -557,34 +558,34 @@ const HuntersHeader: React.FC = () => (
     })}
   >
     <Typography
-      sx={{
+      sx={(theme) => ({
         fontFamily: FONTS.mono,
         fontSize: '0.7rem',
-        color: STATUS_COLORS.open,
+        color: theme.palette.status.open,
         width: 24,
         textTransform: 'uppercase',
-      }}
+      })}
     >
       #
     </Typography>
     <Typography
-      sx={{
+      sx={(theme) => ({
         fontFamily: FONTS.mono,
         fontSize: '0.7rem',
-        color: STATUS_COLORS.open,
+        color: theme.palette.status.open,
         flex: 1,
         textTransform: 'uppercase',
-      }}
+      })}
     >
       Miner
     </Typography>
     <Typography
-      sx={{
+      sx={(theme) => ({
         fontFamily: FONTS.mono,
         fontSize: '0.7rem',
-        color: STATUS_COLORS.open,
+        color: theme.palette.status.open,
         textTransform: 'uppercase',
-      }}
+      })}
     >
       Earned
     </Typography>
@@ -631,12 +632,12 @@ const HunterRowItem: React.FC<{
       })}
     >
       <Typography
-        sx={{
+        sx={(theme) => ({
           fontFamily: FONTS.mono,
           fontSize: '0.85rem',
-          color: STATUS_COLORS.open,
+          color: theme.palette.status.open,
           width: 24,
-        }}
+        })}
       >
         {hunter.rank}
       </Typography>
@@ -664,11 +665,11 @@ const HunterRowItem: React.FC<{
             {displayName}
           </Typography>
           <Typography
-            sx={{
+            sx={(theme) => ({
               fontFamily: FONTS.mono,
               fontSize: '0.65rem',
-              color: STATUS_COLORS.open,
-            }}
+              color: theme.palette.status.open,
+            })}
           >
             {hunter.count} solved
           </Typography>
@@ -689,12 +690,12 @@ const HunterRowItem: React.FC<{
         </Typography>
         {usdLabel && (
           <Typography
-            sx={{
+            sx={(theme) => ({
               fontFamily: FONTS.mono,
               fontSize: '0.65rem',
-              color: STATUS_COLORS.open,
+              color: theme.palette.status.open,
               whiteSpace: 'nowrap',
-            }}
+            })}
           >
             {usdLabel}
           </Typography>

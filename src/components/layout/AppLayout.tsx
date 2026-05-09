@@ -23,6 +23,7 @@ import ErrorBoundary from '../ErrorBoundary';
 import GlobalSearchBar from './GlobalSearchBar';
 import ShortcutsHelpDialog from './ShortcutsHelpDialog';
 import { scrollbarSx } from '../../theme';
+import { isDarkMode, mode } from '../../utils/themeUtils';
 import { getRouteForPathname } from '../../routes';
 
 const SIDEBAR_WIDTH = 240;
@@ -36,17 +37,19 @@ const AppLayout: React.FC = () => {
   useOnNavigate(() => mainRef.current?.scrollTo(0, 0));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isCompactDesktop = useMediaQuery(theme.breakpoints.down('lg'));
-  const isDark = theme.palette.mode === 'dark';
+  const isDark = isDarkMode(theme);
   const { toggleMode } = useThemeMode();
   const themeToggleLabel = isDark
     ? 'Switch to light mode'
     : 'Switch to dark mode';
-  const drawerTintColor = isDark
-    ? theme.palette.common.white
-    : theme.palette.common.black;
-  const mobileLogoFilter = isDark
-    ? `brightness(0) invert(1) drop-shadow(0 0 6px ${alpha(theme.palette.common.white, 0.8)})`
-    : 'brightness(0)';
+  const drawerTintColor = mode(theme, {
+    dark: theme.palette.common.white,
+    light: theme.palette.common.black,
+  });
+  const mobileLogoFilter = mode(theme, {
+    dark: `brightness(0) invert(1) drop-shadow(0 0 6px ${alpha(theme.palette.common.white, 0.8)})`,
+    light: 'brightness(0)',
+  });
   const isDesktopSidebarCollapsed = !isMobile && isCompactDesktop;
   const [mobileOpen, setMobileOpen] = useState(false);
   const { isHelpOpen, closeHelp, shortcuts } = useKeyboardShortcuts();

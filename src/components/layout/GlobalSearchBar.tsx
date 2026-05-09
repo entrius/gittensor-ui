@@ -6,6 +6,7 @@ import React, {
   useState,
 } from 'react';
 import { scrollbarSx } from '../../theme';
+import { darkOnly } from '../../utils/themeUtils';
 import {
   Box,
   ButtonBase,
@@ -597,10 +598,7 @@ const GlobalSearchBar: React.FC = () => {
             backgroundColor: theme.palette.surface.subtle,
             fontSize: '0.85rem',
             borderRadius: 2,
-            boxShadow:
-              theme.palette.mode === 'dark'
-                ? 'none'
-                : '0 1px 3px rgba(0,0,0,0.05)',
+            boxShadow: darkOnly(theme, 'none', '0 1px 3px rgba(0,0,0,0.05)'),
             '& fieldset': { borderColor: theme.palette.border.light },
             '&:hover fieldset': { borderColor: theme.palette.border.medium },
             '&.Mui-focused fieldset': {

@@ -23,6 +23,7 @@ import SchoolIcon from '@mui/icons-material/School';
 import { useLinkBehavior } from '../common/linkBehavior';
 import { useWatchlistTotalCount } from '../../hooks/useWatchlist';
 import { useThemeMode } from '../../hooks/useThemeMode';
+import { mode, isDarkMode } from '../../utils/themeUtils';
 
 // In dark mode the SVG logo is inverted to white with a glow; in light mode
 // the original dark artwork is preferred for contrast against a white surface.
@@ -313,10 +314,10 @@ const SidebarNavLink: React.FC<{
     onClick: () => onNavigate?.(),
   });
   const theme = useTheme();
-  const baseColor =
-    theme.palette.mode === 'dark'
-      ? theme.palette.common.white
-      : theme.palette.common.black;
+  const baseColor = mode(theme, {
+    dark: theme.palette.common.white,
+    light: theme.palette.common.black,
+  });
 
   const iconNode =
     collapsed && badge ? (
@@ -407,24 +408,24 @@ const SidebarNavLink: React.FC<{
         minWidth: 0,
         py: collapsed ? 1.25 : 1.5,
         px: collapsed ? 1 : 2,
-        color:
-          theme.palette.mode === 'dark'
-            ? 'text.primary'
-            : isActive
-              ? theme.palette.text.primary
-              : theme.palette.text.secondary,
+        color: isDarkMode(theme)
+          ? 'text.primary'
+          : isActive
+            ? theme.palette.text.primary
+            : theme.palette.text.secondary,
         textDecoration: 'none',
         fontSize: NAV_LABEL_FONT,
         textTransform: 'none',
         backgroundColor: isActive
-          ? theme.palette.mode === 'dark'
-            ? alpha(baseColor, 0.1)
-            : theme.palette.surface.accent
+          ? mode(theme, {
+              dark: alpha(baseColor, 0.1),
+              light: theme.palette.surface.accent,
+            })
           : 'transparent',
         borderLeft: collapsed
           ? 'none'
           : isActive
-            ? `2px solid ${theme.palette.mode === 'dark' ? baseColor : theme.palette.text.primary}`
+            ? `2px solid ${mode(theme, { dark: baseColor, light: theme.palette.text.primary })}`
             : '2px solid transparent',
         borderRadius: collapsed ? 1.5 : 0,
         textAlign: collapsed ? 'center' : 'left',
@@ -435,14 +436,14 @@ const SidebarNavLink: React.FC<{
           flexShrink: 0,
         },
         '&:hover, &:focus-visible': {
-          backgroundColor:
-            theme.palette.mode === 'dark'
-              ? alpha(baseColor, 0.05)
-              : theme.palette.surface.light,
-          color:
-            theme.palette.mode === 'dark'
-              ? 'primary.main'
-              : theme.palette.text.primary,
+          backgroundColor: mode(theme, {
+            dark: alpha(baseColor, 0.05),
+            light: theme.palette.surface.light,
+          }),
+          color: mode(theme, {
+            dark: 'primary.main' as const,
+            light: theme.palette.text.primary,
+          }),
         },
         '&:focus-visible': {
           outline: 'none',

@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { Box, Typography } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
 import { SectionCard } from './SectionCard';
 import {
@@ -287,11 +287,11 @@ export const StatRow: React.FC<StatRowProps> = ({
     }}
   >
     <Typography
-      sx={{
+      sx={(theme) => ({
         fontFamily: FONTS.mono,
         fontSize: '0.85rem',
-        color: STATUS_COLORS.open,
-      }}
+        color: theme.palette.status.open,
+      })}
     >
       {label}
     </Typography>
@@ -373,16 +373,16 @@ const MinerStatusTile: React.FC<MinerStatusTileProps> = ({
     })}
   >
     <Typography
-      sx={{
+      sx={(theme) => ({
         fontFamily: FONTS.mono,
         fontSize: '0.68rem',
-        color: STATUS_COLORS.open,
+        color: theme.palette.status.open,
         textTransform: 'uppercase',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
         whiteSpace: 'nowrap',
         mb: 0.75,
-      }}
+      })}
     >
       {label}
     </Typography>
@@ -399,11 +399,11 @@ const MinerStatusTile: React.FC<MinerStatusTileProps> = ({
         {value.toLocaleString()}
       </Typography>
       <Typography
-        sx={{
+        sx={(theme) => ({
           fontFamily: FONTS.mono,
           fontSize: '0.72rem',
-          color: STATUS_COLORS.open,
-        }}
+          color: theme.palette.status.open,
+        })}
       >
         {percent}%
       </Typography>
@@ -419,6 +419,7 @@ const ActivityDonutCard: React.FC<ActivityDonutCardProps> = ({
   totalUsdPerDay,
   segments,
 }) => {
+  const theme = useTheme();
   const total = segments.reduce((acc, segment) => acc + segment.value, 0);
 
   return (
@@ -459,7 +460,9 @@ const ActivityDonutCard: React.FC<ActivityDonutCardProps> = ({
                         : [
                             {
                               value: 1,
-                              itemStyle: { color: 'rgba(255,255,255,0.08)' },
+                              itemStyle: {
+                                color: alpha(theme.palette.text.primary, 0.1),
+                              },
                             },
                           ],
                   },
@@ -495,7 +498,7 @@ const ActivityDonutCard: React.FC<ActivityDonutCardProps> = ({
                 sx={{
                   fontFamily: FONTS.mono,
                   fontSize: '0.56rem',
-                  color: STATUS_COLORS.open,
+                  color: theme.palette.status.open,
                   mt: 0.5,
                   textTransform: 'uppercase',
                 }}
@@ -622,11 +625,11 @@ const ImpactBar: React.FC<ImpactBarProps> = ({
       }}
     >
       <Typography
-        sx={{
+        sx={(theme) => ({
           fontFamily: FONTS.mono,
           fontSize: '0.78rem',
-          color: STATUS_COLORS.open,
-        }}
+          color: theme.palette.status.open,
+        })}
       >
         {label}
       </Typography>
@@ -687,14 +690,14 @@ const ActivityLegendRow: React.FC<{ segment: ActivitySegment }> = ({
         }}
       />
       <Typography
-        sx={{
+        sx={(theme) => ({
           fontFamily: FONTS.mono,
           fontSize: '0.78rem',
-          color: STATUS_COLORS.open,
+          color: theme.palette.status.open,
           overflow: 'hidden',
           textOverflow: 'ellipsis',
           whiteSpace: 'nowrap',
-        }}
+        })}
       >
         {segment.label}
       </Typography>

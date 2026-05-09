@@ -3,6 +3,7 @@ import { Box, Stack, Typography, Avatar } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { SectionCard } from './SectionCard';
 import { scrollbarSx } from '../../theme';
+import { mode, darkOnly } from '../../utils/themeUtils';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { LinkBox } from '../common/linkBehavior';
 import { type MinerStats, FONTS } from './types';
@@ -115,7 +116,7 @@ const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
       display: 'flex',
       gap: 0.5,
       backgroundColor: theme.palette.surface.control,
-      border: `1px solid ${theme.palette.mode === 'dark' ? 'transparent' : theme.palette.border.light}`,
+      border: `1px solid ${darkOnly(theme, 'transparent', theme.palette.border.light)}`,
       p: 0.5,
       borderRadius: 2,
     })}
@@ -139,15 +140,17 @@ const LeaderboardTabs: React.FC<LeaderboardTabsProps> = ({
           cursor: 'pointer',
           backgroundColor:
             activeTab === option.value
-              ? theme.palette.mode === 'dark'
-                ? alpha(theme.palette.text.primary, 0.15)
-                : theme.palette.status.success
+              ? mode(theme, {
+                  dark: alpha(theme.palette.text.primary, 0.15),
+                  light: theme.palette.status.success,
+                })
               : 'transparent',
           color:
             activeTab === option.value
-              ? theme.palette.mode === 'dark'
-                ? theme.palette.text.primary
-                : theme.palette.common.white
+              ? mode(theme, {
+                  dark: theme.palette.text.primary,
+                  light: theme.palette.common.white,
+                })
               : theme.palette.status.open,
           transition: 'all 0.2s',
           '&:hover': {
