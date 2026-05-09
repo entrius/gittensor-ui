@@ -30,7 +30,9 @@ jobs:
           fi
 
       - name: Create .env file
-        run: echo "VITE_REACT_APP_BASE_URL=${{ vars.VITE_REACT_APP_BASE_URL }}" > .env
+        run: |
+          echo "VITE_REACT_APP_BASE_URL=${{ vars.VITE_REACT_APP_BASE_URL }}" > .env
+          echo "VITE_REACT_APP_MIRROR_BASE_URL=${{ vars.VITE_REACT_APP_MIRROR_BASE_URL }}" >> .env
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5

@@ -67,7 +67,9 @@ export type SortOption =
   | 'usdPerDay'
   | 'totalPRs'
   | 'totalIssues'
-  | 'credibility';
+  | 'issueDiscoveryScore'
+  | 'credibility'
+  | 'watch';
 
 export const FONTS = {
   mono: '"JetBrains Mono", monospace',

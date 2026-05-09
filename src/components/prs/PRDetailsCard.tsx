@@ -18,8 +18,9 @@ import theme, {
   TEXT_OPACITY,
   tooltipSlotProps,
 } from '../../theme';
-import { parseNumber } from '../../utils';
+import { getRepositoryOwnerAvatarSrc, parseNumber } from '../../utils';
 import { buildMultiplierGrid } from '../../utils/multiplierDefs';
+import PRTimeDecayChart from './PRTimeDecayChart';
 
 interface PRDetailsCardProps {
   repository: string;
@@ -152,11 +153,14 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         },
         tooltip: {
           trigger: 'item',
+          confine: true,
           formatter: '{b}: {c} ({d}%)',
           backgroundColor: alpha(theme.palette.common.black, 0.9),
           borderColor: alpha(theme.palette.common.white, 0.15),
           borderWidth: 1,
           textStyle: { color: theme.palette.text.primary },
+          extraCssText:
+            'max-width: 90vw; white-space: normal; word-break: break-word;',
         },
         series: [
           {
@@ -195,7 +199,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         borderRadius: 3,
         border: `1px solid ${theme.palette.border.light}`,
         backgroundColor: 'transparent',
-        p: 3,
+        p: { xs: 2, sm: 3 },
       }}
       elevation={0}
     >
@@ -215,7 +219,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
             }}
           >
             <Avatar
-              src={`https://avatars.githubusercontent.com/${owner}`}
+              src={getRepositoryOwnerAvatarSrc(owner)}
               alt={owner}
               sx={{
                 width: 64,
@@ -428,6 +432,13 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
           })}
         </Box>
       </Box>
+
+      <PRTimeDecayChart
+        mergedAt={prDetails.mergedAt}
+        prState={prDetails.prState}
+        timeDecayMultiplier={prDetails.timeDecayMultiplier}
+        earnedScore={prDetails.earnedScore}
+      />
 
       <Box
         sx={{

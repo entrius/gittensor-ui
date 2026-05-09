@@ -54,11 +54,29 @@ export const DIFF_COLORS = {
   deletions: '#ef4444', // Red - line deletions (same as closed/error)
 } as const;
 
+// GitHub-style colors for issue/PR labels. Theme-only so chips don't hardcode
+// hex values at call sites.
+export const LABEL_COLORS = {
+  bug: '#ff7b72', // Red - matches STATUS_COLORS.closed
+  enhancement: 'rgb(163, 238, 239)', // Light cyan - GitHub default
+  feature: '#3fb950', // Green - matches STATUS_COLORS.merged
+  documentation: '#58a6ff', // Blue - matches STATUS_COLORS.info
+  question: '#f59e0b', // Amber - matches STATUS_COLORS.warning
+} as const;
+
 // Chart colors - different from status colors for better visual distinction in pie/donut charts
 export const CHART_COLORS = {
   merged: '#3fb950', // Green - successful merges
   open: '#8b949e', // Grey - pending/open
   closed: '#ef4444', // Red - closed without merge
+  // Distinct per-series palette for overlaid/multi-series charts
+  // (e.g. watchlist comparison radar). Indices map to series order.
+  series: [
+    STATUS_COLORS.merged, // Green
+    STATUS_COLORS.info, // Blue
+    STATUS_COLORS.warning, // Amber
+    '#a78bfa', // Purple
+  ],
 } as const;
 
 export const scrollbarSx = {

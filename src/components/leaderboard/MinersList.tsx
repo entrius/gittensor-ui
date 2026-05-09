@@ -1,7 +1,7 @@
 import React from 'react';
 import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
 import { useMinerGithubData, useMinerPRs } from '../../api';
-import { CHART_COLORS, scrollbarSx } from '../../theme';
+import { CHART_COLORS } from '../../theme';
 import { getGithubAvatarSrc, type SortOrder } from '../../utils/ExplorerUtils';
 import { DataTable, type DataTableColumn, WatchlistButton } from '../common';
 import { RankIcon } from './RankIcon';
@@ -56,7 +56,7 @@ export const MinersList: React.FC<MinersListProps> = ({
         {
           key: 'prs',
           header: 'PRs',
-          width: '13%',
+          width: '11%',
           align: 'right',
           sortKey: 'totalPRs',
           renderCell: (miner) => (
@@ -66,7 +66,7 @@ export const MinersList: React.FC<MinersListProps> = ({
         {
           key: 'issues',
           header: 'Issues',
-          width: '13%',
+          width: '11%',
           align: 'right',
           sortKey: 'totalIssues',
           renderCell: (miner) => (
@@ -134,7 +134,7 @@ export const MinersList: React.FC<MinersListProps> = ({
     },
     {
       key: 'totalScore',
-      header: 'Score',
+      header: isWatchlist ? 'OSS' : 'Score',
       width: '11%',
       align: 'right',
       sortKey: 'totalScore',
@@ -144,11 +144,28 @@ export const MinersList: React.FC<MinersListProps> = ({
         </Typography>
       ),
     },
+    ...(isWatchlist
+      ? ([
+          {
+            key: 'discovery',
+            header: 'Discovery',
+            width: '11%',
+            align: 'right' as const,
+            sortKey: 'issueDiscoveryScore',
+            renderCell: (miner: MinerStats) => (
+              <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
+                {Number(miner.issueDiscoveryScore ?? 0).toFixed(2)}
+              </Typography>
+            ),
+          },
+        ] satisfies DataTableColumn<MinerStats, SortOption>[])
+      : []),
     {
       key: 'watch',
       header: '\u2605',
       width: '52px',
       align: 'center',
+      sortKey: 'watch',
       cellSx: { p: 0 },
       renderCell: (miner) =>
         miner.githubId ? (
@@ -169,15 +186,8 @@ export const MinersList: React.FC<MinersListProps> = ({
         border: '1px solid',
         borderColor: 'border.light',
         backgroundColor: 'transparent',
-        overflow: 'hidden',
-        maxHeight: '75vh',
         display: 'flex',
         flexDirection: 'column',
-        '& .MuiTableContainer-root': {
-          flex: 1,
-          overflowY: 'auto',
-          ...scrollbarSx,
-        },
       }}
     >
       <DataTable<MinerStats, SortOption>
@@ -190,7 +200,7 @@ export const MinersList: React.FC<MinersListProps> = ({
           opacity: (miner.isEligible ?? false) ? 1 : 0.5,
           transition: 'opacity 0.2s, background-color 0.2s',
         })}
-        minWidth="900px"
+        minWidth="1020px"
         stickyHeader
         sort={{
           field: sortOption,

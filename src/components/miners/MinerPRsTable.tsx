@@ -17,6 +17,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMinerPRs, type CommitLog } from '../../api';
 import {
   filterPrs,
+  getRepositoryOwnerAvatarSrc,
   getPrStatusCounts,
   paginateItems,
   type PrStatusFilter,
@@ -245,15 +246,22 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       width: '25%',
       cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
       renderCell: (pr) => (
-        <Box
-          sx={{
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+        <Tooltip
+          title={pr.pullRequestTitle}
+          arrow
+          placement="top"
+          slotProps={tooltipSlotProps}
         >
-          {pr.pullRequestTitle}
-        </Box>
+          <Box
+            sx={{
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {pr.pullRequestTitle}
+          </Box>
+        </Tooltip>
       ),
     },
     {
@@ -273,7 +281,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             }}
           >
             <Avatar
-              src={`https://avatars.githubusercontent.com/${owner}`}
+              src={getRepositoryOwnerAvatarSrc(owner)}
               alt={owner}
               sx={{
                 width: 20,
@@ -353,7 +361,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               <Tooltip
                 title={scoreTooltip}
                 arrow
-                placement="left"
+                placement="top"
+                followCursor
                 slotProps={tooltipSlotProps}
               >
                 <Typography
