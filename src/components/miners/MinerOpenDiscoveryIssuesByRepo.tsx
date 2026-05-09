@@ -24,7 +24,7 @@ import {
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 import { useMinerGithubData, useMinerPRs } from '../../api';
-import { paginateItems } from '../../utils';
+import { getRepositoryOwnerAvatarSrc, paginateItems } from '../../utils';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
@@ -412,10 +412,20 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
       () => [
         {
           key: 'number',
-          header: 'Issue #',
+          header: (
+            <>
+              <Box
+                component="span"
+                sx={{ display: { xs: 'none', sm: 'inline' } }}
+              >
+                Issue{' '}
+              </Box>
+              #
+            </>
+          ),
           width: '9%',
           sortKey: 'number',
-          headerSx: { verticalAlign: 'middle' },
+          headerSx: { verticalAlign: 'middle', whiteSpace: 'nowrap' },
           cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
           renderCell: (issue) => (
             // stopPropagation keeps the row's onRowClick from also firing
@@ -472,7 +482,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                 }}
               >
                 <Avatar
-                  src={`https://avatars.githubusercontent.com/${owner}`}
+                  src={getRepositoryOwnerAvatarSrc(owner)}
                   alt={owner}
                   sx={{
                     width: 20,
@@ -581,10 +591,20 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
       () => [
         {
           key: 'number',
-          header: 'Issue #',
+          header: (
+            <>
+              <Box
+                component="span"
+                sx={{ display: { xs: 'none', sm: 'inline' } }}
+              >
+                Issue{' '}
+              </Box>
+              #
+            </>
+          ),
           width: '9%',
           sortKey: 'number' as IssueSortField,
-          headerSx: { verticalAlign: 'middle' },
+          headerSx: { verticalAlign: 'middle', whiteSpace: 'nowrap' },
           cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
           renderCell: (issue) => (
             <a
@@ -640,7 +660,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                 }}
               >
                 <Avatar
-                  src={`https://avatars.githubusercontent.com/${owner}`}
+                  src={getRepositoryOwnerAvatarSrc(owner)}
                   alt={owner}
                   sx={{
                     width: 20,
@@ -806,8 +826,9 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
       <Box
         sx={{
           display: 'flex',
-          alignItems: 'center',
-          gap: 1,
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
+          gap: { xs: 1.25, sm: 1 },
           flexWrap: 'wrap',
         }}
       >
@@ -829,8 +850,9 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
             ),
           }}
           sx={{
-            maxWidth: 400,
-            minWidth: 260,
+            width: { xs: '100%', sm: 'auto' },
+            maxWidth: { xs: '100%', sm: 400 },
+            minWidth: { xs: 0, sm: 260 },
             '& .MuiOutlinedInput-root': {
               fontSize: '0.8rem',
               color: 'text.primary',
@@ -843,7 +865,19 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           }}
         />
 
-        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap', ml: 'auto' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: { xs: 0.75, sm: 0.5 },
+            flexWrap: 'wrap',
+            ml: { xs: 0, sm: 'auto' },
+            width: { xs: '100%', sm: 'auto' },
+            '& > .MuiButton-root': {
+              flex: { xs: 1, sm: 'none' },
+              minWidth: 0,
+            },
+          }}
+        >
           <ExplorerFilterButton
             label="All"
             count={counts.all}

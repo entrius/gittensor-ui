@@ -3,6 +3,7 @@ import { Avatar, Box, Card, Divider, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import { WatchlistButton } from '../common';
+import { getRepositoryOwnerAvatarSrc } from '../../utils';
 import { RankIcon } from './RankIcon';
 import {
   FONTS,
@@ -112,7 +113,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
         <RankIcon rank={repo.rank || 0} />
         <Avatar
-          src={`https://avatars.githubusercontent.com/${owner}`}
+          src={getRepositoryOwnerAvatarSrc(owner) || undefined}
           alt={owner}
           sx={(theme) => ({
             width: 28,
@@ -122,7 +123,9 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
             borderColor: theme.palette.border.medium,
             backgroundColor: getRepositoryOwnerAvatarBackground(owner),
           })}
-        />
+        >
+          {(owner[0] || '?').toUpperCase()}
+        </Avatar>
         <Tooltip title={repo.repository || ''} placement="top" arrow>
           <Typography
             sx={{

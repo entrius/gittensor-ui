@@ -16,7 +16,11 @@ import { Search as SearchIcon } from '@mui/icons-material';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { useMinerIssues } from '../../api';
 import { type MinerIssue } from '../../api/models/Dashboard';
-import { paginateItems } from '../../utils';
+import {
+  getRepositoryOwnerAvatarSrc,
+  isOutsideScoringWindow,
+  paginateItems,
+} from '../../utils';
 import { LABEL_COLORS } from '../../theme';
 import {
   DataTable,
@@ -260,7 +264,7 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
             }}
           >
             <Avatar
-              src={`https://avatars.githubusercontent.com/${owner}`}
+              src={getRepositoryOwnerAvatarSrc(owner)}
               alt={owner}
               sx={{
                 width: 20,
@@ -435,7 +439,18 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
             {hasFilters ? ` of ${issues.length}` : ''})
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+        <Box
+          sx={{
+            display: 'flex',
+            gap: { xs: 0.75, sm: 0.5 },
+            flexWrap: 'wrap',
+            width: { xs: '100%', sm: 'auto' },
+            '& > .MuiButton-root': {
+              flex: { xs: 1, sm: 'none' },
+              minWidth: 0,
+            },
+          }}
+        >
           {STATUS_FILTERS.map((s) => (
             <ExplorerFilterButton
               key={s}
@@ -471,8 +486,9 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
         }}
         sx={{
           mt: 2,
-          maxWidth: 400,
-          minWidth: 350,
+          width: { xs: '100%', sm: 'auto' },
+          maxWidth: { xs: '100%', sm: 400 },
+          minWidth: { xs: 0, sm: 350 },
           '& .MuiOutlinedInput-root': {
             fontSize: '0.8rem',
             color: 'text.primary',
@@ -521,6 +537,11 @@ const MinerIssuesTable: React.FC<MinerIssuesTableProps> = ({ githubId }) => {
               {emptyMessage}
             </Typography>
           </Box>
+        }
+        getRowSx={(issue) =>
+          issue.closed_at && isOutsideScoringWindow(issue.closed_at)
+            ? { opacity: 0.4, filter: 'grayscale(0.5)' }
+            : {}
         }
         sort={{
           field: sortField,
