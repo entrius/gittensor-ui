@@ -68,7 +68,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
     (!isNumericId(miner.author) ? miner.author : miner.githubId) ||
     miner.githubId ||
     '';
-  const avatarSrc = githubData?.avatarUrl || getGithubAvatarSrc(username);
+  const avatarSrc = githubData?.avatarUrl || getGithubAvatarSrc(miner.author, miner.githubId);
 
   const credibilityPercent = (miner.credibility ?? 0) * 100;
   const issueCredPercent = (miner.issueCredibility ?? 0) * 100;
