@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { matchesWatchedSet } from '../hooks/useWatchedPRs';
+import {
+  getWatchedSources,
+  matchesWatchedSet,
+  type WatchedPRSource,
+} from '../hooks/useWatchedPRs';
 import type { CommitLog } from '../api';
 
 const pr = (overrides: Partial<CommitLog> = {}): CommitLog =>
@@ -199,5 +203,94 @@ describe('matchesWatchedSet', () => {
         miners,
       ),
     ).toBe(false);
+  });
+});
+
+describe('getWatchedSources', () => {
+  const empty = {
+    starred: new Set<string>(),
+    repos: new Set<string>(),
+    miners: new Set<string>(),
+  };
+
+  it('returns an empty array when no source matches', () => {
+    expect(
+      getWatchedSources(
+        pr({ repository: 'owner/repo', pullRequestNumber: 5 }),
+        empty.starred,
+        empty.repos,
+        empty.miners,
+      ),
+    ).toEqual([]);
+  });
+
+  it('returns ["starred"] when only the starred set matches', () => {
+    expect(
+      getWatchedSources(
+        pr({ repository: 'owner/repo', pullRequestNumber: 5 }),
+        new Set(['owner/repo#5']),
+        empty.repos,
+        empty.miners,
+      ),
+    ).toEqual<WatchedPRSource[]>(['starred']);
+  });
+
+  it('returns ["miner"] when only the miner set matches', () => {
+    expect(
+      getWatchedSources(
+        pr({ githubId: 'gh-alice' }),
+        empty.starred,
+        empty.repos,
+        new Set(['gh-alice']),
+      ),
+    ).toEqual<WatchedPRSource[]>(['miner']);
+  });
+
+  it('returns ["repo"] when only the repo set matches (case-insensitive)', () => {
+    expect(
+      getWatchedSources(
+        pr({ repository: 'Owner/Repo' }),
+        empty.starred,
+        new Set(['owner/repo']),
+        empty.miners,
+      ),
+    ).toEqual<WatchedPRSource[]>(['repo']);
+  });
+
+  it('returns sources in stable order [starred, miner, repo] when multiple match', () => {
+    expect(
+      getWatchedSources(
+        pr({
+          repository: 'owner/repo',
+          pullRequestNumber: 5,
+          githubId: 'gh-alice',
+        }),
+        new Set(['owner/repo#5']),
+        new Set(['owner/repo']),
+        new Set(['gh-alice']),
+      ),
+    ).toEqual<WatchedPRSource[]>(['starred', 'miner', 'repo']);
+  });
+
+  it('returns ["miner", "repo"] when starred is absent but miner and repo match', () => {
+    expect(
+      getWatchedSources(
+        pr({ repository: 'owner/repo', githubId: 'gh-alice' }),
+        empty.starred,
+        new Set(['owner/repo']),
+        new Set(['gh-alice']),
+      ),
+    ).toEqual<WatchedPRSource[]>(['miner', 'repo']);
+  });
+
+  it('returns no "miner" entry when pr.githubId is undefined even if the miner set is populated', () => {
+    expect(
+      getWatchedSources(
+        pr({ githubId: undefined }),
+        empty.starred,
+        empty.repos,
+        new Set(['gh-alice']),
+      ),
+    ).toEqual<WatchedPRSource[]>([]);
   });
 });

@@ -34,8 +34,10 @@ import ViewColumnIcon from '@mui/icons-material/ViewColumn'; // Split
 import axios from 'axios';
 
 import parseDiff, {
+  type AddChange,
   type Change,
   type Chunk,
+  type DeleteChange,
   type File as DiffFile,
 } from 'parse-diff';
 import ContentCopyIcon from '@mui/icons-material/ContentCopy';
@@ -84,15 +86,211 @@ interface TreeNode {
   changeCount?: number; // Number of changed files inside
 }
 
-type SplitDiffRow =
-  | { type: 'chunk-header'; left: null; right: null; headerContent: string }
-  | { type: 'normal'; left: Change; right: Change }
-  | { type: 'modify'; left: Change | null; right: Change | null };
-
 const selectedFileBackground = alpha(STATUS_COLORS.info, 0.15);
 const addedLineBackground = alpha(DIFF_COLORS.additions, 0.15);
 const deletedLineBackground = alpha(DIFF_COLORS.deletions, 0.15);
+const addedTokenBackground = alpha(DIFF_COLORS.additions, 0.4);
+const deletedTokenBackground = alpha(DIFF_COLORS.deletions, 0.4);
 const unchangedFileColor = alpha(STATUS_COLORS.open, 0.5);
+
+const stripDiffMarker = (s: string): string =>
+  s.startsWith('+') || s.startsWith('-') ? s.slice(1) : s;
+
+type LineKind = 'normal' | 'add' | 'del';
+type WordDiffSeg = { text: string; changed: boolean };
+type LineSide = { kind: LineKind; ln: number; segs: WordDiffSeg[] };
+type DiffRow =
+  | { type: 'chunk-header'; content: string }
+  | { type: 'line'; left: LineSide | null; right: LineSide | null };
+
+const LINE_BG: Record<LineKind, string> = {
+  normal: 'transparent',
+  add: addedLineBackground,
+  del: deletedLineBackground,
+};
+const TOKEN_BG: Record<LineKind, string> = {
+  normal: 'transparent',
+  add: addedTokenBackground,
+  del: deletedTokenBackground,
+};
+
+const TOKEN_RE = /\w+|\s+|[^\w\s]/g;
+// LCS is O(n*m); skip token-level diff on pathologically long lines and
+// fall back to a whole-line highlight.
+const MAX_WORD_DIFF_TOKENS = 200;
+
+const tokenize = (s: string): string[] => s.match(TOKEN_RE) ?? [];
+
+const mergeSegs = (segs: WordDiffSeg[]): WordDiffSeg[] => {
+  const out: WordDiffSeg[] = [];
+  for (const s of segs) {
+    const last = out[out.length - 1];
+    if (last && last.changed === s.changed) last.text += s.text;
+    else out.push({ ...s });
+  }
+  return out;
+};
+
+const wordDiff = (
+  left: string,
+  right: string,
+): { left: WordDiffSeg[]; right: WordDiffSeg[] } => {
+  const a = tokenize(left);
+  const b = tokenize(right);
+  const m = a.length;
+  const n = b.length;
+
+  if (Math.max(m, n) > MAX_WORD_DIFF_TOKENS) {
+    return {
+      left: [{ text: left, changed: true }],
+      right: [{ text: right, changed: true }],
+    };
+  }
+
+  const dp: number[][] = Array.from({ length: m + 1 }, () =>
+    new Array<number>(n + 1).fill(0),
+  );
+  for (let i = m - 1; i >= 0; i--) {
+    for (let j = n - 1; j >= 0; j--) {
+      dp[i][j] =
+        a[i] === b[j]
+          ? dp[i + 1][j + 1] + 1
+          : Math.max(dp[i + 1][j], dp[i][j + 1]);
+    }
+  }
+
+  const ls: WordDiffSeg[] = [];
+  const rs: WordDiffSeg[] = [];
+  let i = 0;
+  let j = 0;
+  while (i < m && j < n) {
+    if (a[i] === b[j]) {
+      ls.push({ text: a[i], changed: false });
+      rs.push({ text: b[j], changed: false });
+      i++;
+      j++;
+    } else if (dp[i + 1][j] >= dp[i][j + 1]) {
+      ls.push({ text: a[i++], changed: true });
+    } else {
+      rs.push({ text: b[j++], changed: true });
+    }
+  }
+  while (i < m) ls.push({ text: a[i++], changed: true });
+  while (j < n) rs.push({ text: b[j++], changed: true });
+
+  return { left: mergeSegs(ls), right: mergeSegs(rs) };
+};
+
+const plainSegs = (content: string): WordDiffSeg[] => [
+  { text: stripDiffMarker(content), changed: false },
+];
+
+// Operates on already-parsed files so PRFileDiffViewer can parse once and
+// share the result with the minimap. Caller must ensure `files` has at least
+// one entry — the no-patch case is short-circuited at the parent.
+const buildDiffRows = (files: DiffFile[]): DiffRow[] => {
+  const rows: DiffRow[] = [];
+
+  files[0].chunks.forEach((chunk) => {
+    rows.push({ type: 'chunk-header', content: chunk.content });
+    let dels: DeleteChange[] = [];
+    let adds: AddChange[] = [];
+
+    const flush = () => {
+      for (let i = 0; i < Math.max(dels.length, adds.length); i++) {
+        const del = dels[i];
+        const add = adds[i];
+        const paired =
+          del && add
+            ? wordDiff(
+                stripDiffMarker(del.content),
+                stripDiffMarker(add.content),
+              )
+            : null;
+        rows.push({
+          type: 'line',
+          left: del
+            ? {
+                kind: 'del',
+                ln: del.ln,
+                segs: paired?.left ?? plainSegs(del.content),
+              }
+            : null,
+          right: add
+            ? {
+                kind: 'add',
+                ln: add.ln,
+                segs: paired?.right ?? plainSegs(add.content),
+              }
+            : null,
+        });
+      }
+      dels = [];
+      adds = [];
+    };
+
+    chunk.changes.forEach((change) => {
+      if (change.type === 'del') dels.push(change);
+      else if (change.type === 'add') adds.push(change);
+      else {
+        flush();
+        const segs = plainSegs(change.content);
+        rows.push({
+          type: 'line',
+          left: { kind: 'normal', ln: change.ln1, segs },
+          right: { kind: 'normal', ln: change.ln2, segs },
+        });
+      }
+    });
+    flush();
+  });
+
+  return rows;
+};
+
+const DiffSegs: React.FC<{ segs: WordDiffSeg[]; highlightBg: string }> = ({
+  segs,
+  highlightBg,
+}) => (
+  <>
+    {segs.map((seg, i) =>
+      seg.changed ? (
+        <Box
+          key={i}
+          component="span"
+          sx={{ backgroundColor: highlightBg, borderRadius: '2px' }}
+        >
+          {seg.text}
+        </Box>
+      ) : (
+        <React.Fragment key={i}>{seg.text}</React.Fragment>
+      ),
+    )}
+  </>
+);
+
+const ChunkHeaderRow: React.FC<{ content: string; colSpan: number }> = ({
+  content,
+  colSpan,
+}) => (
+  <TableRow sx={{ backgroundColor: 'surface.elevated' }}>
+    <TableCell
+      colSpan={colSpan}
+      sx={{
+        color: 'status.open',
+        borderBottom: '1px solid',
+        borderColor: 'border.light',
+        py: 1,
+        px: 2,
+        fontFamily: 'inherit',
+        fontSize: '12px',
+        whiteSpace: 'pre',
+      }}
+    >
+      {content}
+    </TableCell>
+  </TableRow>
+);
 
 const buildFullTree = (
   allFilesParams: { path: string; type: 'blob' | 'tree' }[],
@@ -139,8 +337,6 @@ const buildFullTree = (
           path: currentPath,
           children: {},
           type: isLast ? 'blob' : 'tree',
-          // If it's a folder being created, we mark it changes?
-          // Actually change count will update below.
         };
       }
 
@@ -148,10 +344,9 @@ const buildFullTree = (
       node.hasChanges = true;
       node.changeCount = (node.changeCount || 0) + 1;
 
-      // If it's the actual file, attach the PRFile data
       if (isLast) {
         node.file = file;
-        node.type = 'blob'; // Ensure type is blob
+        node.type = 'blob';
       }
       currentLevel = node.children;
     });
@@ -328,65 +523,99 @@ const FileTreeItem: React.FC<{
   );
 };
 
+// Renders one number cell + content cell for a single side of a diff line.
+// Used by both the wrap and no-wrap variants of the split view.
+const SplitSidePair: React.FC<{
+  side: LineSide | null;
+  numberSx: object;
+  contentSx: object;
+}> = ({ side, numberSx, contentSx }) => {
+  const bg = side ? LINE_BG[side.kind] : 'transparent';
+  return (
+    <>
+      <TableCell sx={{ ...numberSx, backgroundColor: bg }}>
+        {side?.ln ?? ''}
+      </TableCell>
+      <TableCell sx={{ ...contentSx, backgroundColor: bg }}>
+        {side && (
+          <DiffSegs segs={side.segs} highlightBg={TOKEN_BG[side.kind]} />
+        )}
+      </TableCell>
+    </>
+  );
+};
+
+const WRAP_NUMBER_SX = {
+  color: 'status.open',
+  borderRight: '1px solid',
+  borderColor: 'border.light',
+  borderBottom: 'none',
+  textAlign: 'right',
+  verticalAlign: 'top',
+  userSelect: 'none',
+  p: '4px 8px',
+  fontFamily: 'inherit',
+  lineHeight: 1.5,
+};
+const WRAP_CONTENT_SX = {
+  color: 'text.primary',
+  borderRight: '1px solid',
+  borderColor: 'border.light',
+  borderBottom: 'none',
+  verticalAlign: 'top',
+  whiteSpace: 'pre-wrap',
+  wordBreak: 'break-all',
+  p: '4px 8px',
+  fontFamily: 'inherit',
+  lineHeight: 1.5,
+};
+// Trailing pair drops the right border so the row doesn't look like it has a
+// fifth column.
+const WRAP_TRAILING_CONTENT_SX = { ...WRAP_CONTENT_SX, borderRight: 'none' };
+
+const NO_WRAP_NUMBER_SX = {
+  position: 'sticky',
+  left: 0,
+  width: '50px',
+  minWidth: '50px',
+  color: 'status.open',
+  borderRight: '1px solid',
+  borderColor: 'border.light',
+  borderBottom: 'none',
+  textAlign: 'right',
+  verticalAlign: 'top',
+  userSelect: 'none',
+  p: '0 8px',
+  fontFamily: 'inherit',
+  fontSize: '12px',
+  lineHeight: '24px',
+  zIndex: 5,
+  isolation: 'isolate',
+};
+const NO_WRAP_CONTENT_SX = {
+  color: 'text.primary',
+  borderBottom: 'none',
+  verticalAlign: 'top',
+  whiteSpace: 'pre',
+  p: '0 8px',
+  fontFamily: 'inherit',
+  fontSize: '12px',
+  lineHeight: '24px',
+  width: 'auto',
+};
+
 // Split View Component
-const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
-  patch,
+const SplitDiffView: React.FC<{ rows: DiffRow[]; lineWrap: boolean }> = ({
+  rows,
   lineWrap,
 }) => {
-  const files = useMemo(() => parseDiff(patch), [patch]);
-
-  // Scroll Synchronization Refs
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const isSyncingLeftScroll = useRef(false);
   const isSyncingRightScroll = useRef(false);
 
-  if (!files || files.length === 0) return null;
+  if (rows.length === 0) return null;
 
-  const rows: SplitDiffRow[] = [];
-
-  files[0].chunks.forEach((chunk: Chunk) => {
-    rows.push({
-      left: null,
-      right: null,
-      type: 'chunk-header',
-      headerContent: chunk.content,
-    });
-
-    let deletions: Change[] = [];
-    let additions: Change[] = [];
-
-    chunk.changes.forEach((change: Change) => {
-      if (change.type === 'normal') {
-        const maxLen = Math.max(deletions.length, additions.length);
-        for (let i = 0; i < maxLen; i++) {
-          rows.push({
-            left: deletions[i] || null,
-            right: additions[i] || null,
-            type: 'modify',
-          });
-        }
-        deletions = [];
-        additions = [];
-        rows.push({ left: change, right: change, type: 'normal' });
-      } else if (change.type === 'del') {
-        deletions.push(change);
-      } else if (change.type === 'add') {
-        additions.push(change);
-      }
-    });
-
-    const maxLen = Math.max(deletions.length, additions.length);
-    for (let i = 0; i < maxLen; i++) {
-      rows.push({
-        left: deletions[i] || null,
-        right: additions[i] || null,
-        type: 'modify',
-      });
-    }
-  });
-
-  // If Line Wrap is enabled, use a single table layout
   if (lineWrap) {
     return (
       <TableContainer
@@ -405,132 +634,24 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
             <col style={{ width: '50%' }} />
           </colgroup>
           <TableBody>
-            {rows.map((row, idx) => {
-              if (row.type === 'chunk-header') {
-                return (
-                  <TableRow
-                    key={idx}
-                    sx={{ backgroundColor: 'surface.elevated' }}
-                  >
-                    <TableCell
-                      colSpan={4}
-                      sx={{
-                        color: 'status.open',
-                        borderBottom: '1px solid',
-                        borderColor: 'border.light',
-                        py: 1,
-                        px: 2,
-                        fontFamily: 'inherit',
-                        fontSize: '12px',
-                      }}
-                    >
-                      {row.headerContent}
-                    </TableCell>
-                  </TableRow>
-                );
-              }
-
-              return (
+            {rows.map((row, idx) =>
+              row.type === 'chunk-header' ? (
+                <ChunkHeaderRow key={idx} content={row.content} colSpan={4} />
+              ) : (
                 <TableRow key={idx}>
-                  <TableCell
-                    sx={{
-                      color: 'status.open',
-                      borderRight: '1px solid',
-                      borderColor: 'border.light',
-                      borderBottom: 'none',
-                      textAlign: 'right',
-                      verticalAlign: 'top',
-                      backgroundColor:
-                        row.left?.type === 'del'
-                          ? deletedLineBackground
-                          : 'transparent',
-                      userSelect: 'none',
-                      p: '4px 8px',
-                      fontFamily: 'inherit',
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {row.left
-                      ? row.left.type === 'normal'
-                        ? row.left.ln1
-                        : row.left.ln
-                      : ''}
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      borderRight: '1px solid',
-                      borderColor: 'border.light',
-                      borderBottom: 'none',
-                      verticalAlign: 'top',
-                      backgroundColor:
-                        row.left?.type === 'del'
-                          ? deletedLineBackground
-                          : 'transparent',
-                      color: 'text.primary',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-all',
-                      p: '4px 8px',
-                      fontFamily: 'inherit',
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {row.left
-                      ? row.left.content.startsWith('-') ||
-                        row.left.content.startsWith('+')
-                        ? row.left.content.substring(1)
-                        : row.left.content
-                      : ''}
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      color: 'status.open',
-                      borderRight: '1px solid',
-                      borderColor: 'border.light',
-                      borderBottom: 'none',
-                      textAlign: 'right',
-                      verticalAlign: 'top',
-                      backgroundColor:
-                        row.right?.type === 'add'
-                          ? addedLineBackground
-                          : 'transparent',
-                      userSelect: 'none',
-                      p: '4px 8px',
-                      fontFamily: 'inherit',
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {row.right
-                      ? row.right.type === 'normal'
-                        ? row.right.ln2
-                        : row.right.ln
-                      : ''}
-                  </TableCell>
-                  <TableCell
-                    sx={{
-                      borderBottom: 'none',
-                      verticalAlign: 'top',
-                      backgroundColor:
-                        row.right?.type === 'add'
-                          ? addedLineBackground
-                          : 'transparent',
-                      color: 'text.primary',
-                      whiteSpace: 'pre-wrap',
-                      wordBreak: 'break-all',
-                      p: '4px 8px',
-                      fontFamily: 'inherit',
-                      lineHeight: 1.5,
-                    }}
-                  >
-                    {row.right
-                      ? row.right.content.startsWith('+') ||
-                        row.right.content.startsWith('-')
-                        ? row.right.content.substring(1)
-                        : row.right.content
-                      : ''}
-                  </TableCell>
+                  <SplitSidePair
+                    side={row.left}
+                    numberSx={WRAP_NUMBER_SX}
+                    contentSx={WRAP_CONTENT_SX}
+                  />
+                  <SplitSidePair
+                    side={row.right}
+                    numberSx={WRAP_NUMBER_SX}
+                    contentSx={WRAP_TRAILING_CONTENT_SX}
+                  />
                 </TableRow>
-              );
-            })}
+              ),
+            )}
           </TableBody>
         </Table>
       </TableContainer>
@@ -591,20 +712,9 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                 >
                   <TableCell
                     sx={{
-                      position: 'sticky',
-                      left: 0,
-                      width: '50px',
-                      minWidth: '50px',
+                      ...NO_WRAP_NUMBER_SX,
                       backgroundColor: 'surface.elevated',
                       borderBottom: '1px solid',
-                      borderRight: '1px solid',
-                      borderColor: 'border.light',
-                      p: '4px 8px',
-                      color: 'status.open',
-                      fontFamily: 'inherit',
-                      fontSize: '12px',
-                      zIndex: 5,
-                      isolation: 'isolate',
                     }}
                   >
                     ...
@@ -620,75 +730,36 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
                       whiteSpace: 'pre',
                     }}
                   >
-                    {row.headerContent}
+                    {row.content}
                   </TableCell>
                 </TableRow>
               );
             }
 
             const item = side === 'left' ? row.left : row.right;
-            const ln = item
-              ? item.type === 'normal'
-                ? side === 'left'
-                  ? item.ln1
-                  : item.ln2
-                : item.ln
-              : '';
-
-            let bg = 'transparent';
-            if (item && item.type === 'add') bg = addedLineBackground;
-            if (item && item.type === 'del') bg = deletedLineBackground;
-
+            const bg = item ? LINE_BG[item.kind] : 'transparent';
             return (
               <TableRow key={idx} sx={{ height: '24px' }}>
                 <TableCell
                   sx={{
-                    position: 'sticky',
-                    left: 0,
-                    width: '50px',
-                    minWidth: '50px',
+                    ...NO_WRAP_NUMBER_SX,
                     backgroundColor: 'background.paper',
-                    // Isolated sticky cells paint their own layer, so preserve diff tint via a same-color gradient.
+                    // Isolated sticky cells paint their own layer, so preserve
+                    // the diff tint via a same-color gradient.
                     ...(bg !== 'transparent' && {
                       backgroundImage: `linear-gradient(${bg}, ${bg})`,
                     }),
-                    color: 'status.open',
-                    borderRight: '1px solid',
-                    borderColor: 'border.light',
-                    borderBottom: 'none',
-                    textAlign: 'right',
-                    verticalAlign: 'top',
-                    userSelect: 'none',
-                    p: '0 8px',
-                    fontFamily: 'inherit',
-                    fontSize: '12px',
-                    lineHeight: '24px',
-                    zIndex: 5,
-                    isolation: 'isolate',
                   }}
                 >
-                  {ln}
+                  {item?.ln ?? ''}
                 </TableCell>
-                <TableCell
-                  sx={{
-                    backgroundColor: bg,
-                    color: 'text.primary',
-                    borderBottom: 'none',
-                    verticalAlign: 'top',
-                    whiteSpace: 'pre',
-                    p: '0 8px',
-                    fontFamily: 'inherit',
-                    fontSize: '12px',
-                    lineHeight: '24px',
-                    width: 'auto',
-                  }}
-                >
-                  {item
-                    ? item.content.startsWith('+') ||
-                      item.content.startsWith('-')
-                      ? item.content.substring(1)
-                      : item.content
-                    : ''}
+                <TableCell sx={{ ...NO_WRAP_CONTENT_SX, backgroundColor: bg }}>
+                  {item && (
+                    <DiffSegs
+                      segs={item.segs}
+                      highlightBg={TOKEN_BG[item.kind]}
+                    />
+                  )}
                 </TableCell>
               </TableRow>
             );
@@ -714,23 +785,52 @@ const SplitDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
   );
 };
 
+// Flattens a paired-line row into the 1-2 lines the unified view emits.
+// A normal context row collapses to a single combined line; a paired modify
+// emits both deletion and addition; an unpaired side emits one line.
+type UnifiedLine = {
+  ln1: number | '';
+  ln2: number | '';
+  kind: LineKind;
+  segs: WordDiffSeg[];
+};
+const expandUnified = (
+  left: LineSide | null,
+  right: LineSide | null,
+): UnifiedLine[] => {
+  if (left?.kind === 'normal' && right?.kind === 'normal') {
+    return [{ ln1: left.ln, ln2: right.ln, kind: 'normal', segs: left.segs }];
+  }
+  const out: UnifiedLine[] = [];
+  if (left)
+    out.push({ ln1: left.ln, ln2: '', kind: left.kind, segs: left.segs });
+  if (right)
+    out.push({ ln1: '', ln2: right.ln, kind: right.kind, segs: right.segs });
+  return out;
+};
+
+const UNIFIED_NUMBER_SX = {
+  width: '50px',
+  minWidth: '50px',
+  color: 'status.open',
+  borderRight: '1px solid',
+  borderColor: 'border.light',
+  borderBottom: 'none',
+  textAlign: 'right',
+  verticalAlign: 'top',
+  userSelect: 'none',
+  p: '0 8px',
+  fontFamily: 'inherit',
+  fontSize: '12px',
+  lineHeight: '24px',
+};
+
 // Unified View Component
-const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
-  patch,
+const UnifiedDiffView: React.FC<{ rows: DiffRow[]; lineWrap: boolean }> = ({
+  rows,
   lineWrap,
 }) => {
-  const files = useMemo(() => parseDiff(patch), [patch]);
-
-  if (!files || files.length === 0) return null;
-
-  const rows: (Change | { type: 'chunk-header'; content: string })[] = [];
-
-  files[0].chunks.forEach((chunk: Chunk) => {
-    rows.push({ type: 'chunk-header', content: chunk.content });
-    chunk.changes.forEach((change: Change) => {
-      rows.push(change);
-    });
-  });
+  if (rows.length === 0) return null;
 
   return (
     <TableContainer
@@ -750,116 +850,55 @@ const UnifiedDiffView: React.FC<{ patch: string; lineWrap: boolean }> = ({
           <col style={{ width: 'auto' }} />
         </colgroup>
         <TableBody>
-          {rows.map((row, idx) => {
+          {rows.flatMap((row, idx) => {
             if (row.type === 'chunk-header') {
+              return [
+                <ChunkHeaderRow
+                  key={`h-${idx}`}
+                  content={row.content}
+                  colSpan={3}
+                />,
+              ];
+            }
+            return expandUnified(row.left, row.right).map((line, lidx) => {
+              const lineBg = LINE_BG[line.kind];
+              const numberBg =
+                line.kind === 'normal' ? 'background.paper' : lineBg;
               return (
-                <TableRow
-                  key={idx}
-                  sx={{ backgroundColor: 'surface.elevated' }}
-                >
+                <TableRow key={`l-${idx}-${lidx}`}>
                   <TableCell
-                    colSpan={3}
+                    sx={{ ...UNIFIED_NUMBER_SX, backgroundColor: numberBg }}
+                  >
+                    {line.ln1}
+                  </TableCell>
+                  <TableCell
+                    sx={{ ...UNIFIED_NUMBER_SX, backgroundColor: numberBg }}
+                  >
+                    {line.ln2}
+                  </TableCell>
+                  <TableCell
                     sx={{
-                      color: 'status.open',
-                      borderBottom: '1px solid',
-                      borderColor: 'border.light',
-                      py: 1,
-                      px: 2,
+                      backgroundColor: lineBg,
+                      color: 'text.primary',
+                      borderBottom: 'none',
+                      verticalAlign: 'top',
+                      whiteSpace: lineWrap ? 'pre-wrap' : 'pre',
+                      wordBreak: lineWrap ? 'break-all' : 'normal',
+                      p: '0 8px',
                       fontFamily: 'inherit',
                       fontSize: '12px',
-                      whiteSpace: 'pre',
+                      lineHeight: '24px',
+                      width: '100%',
                     }}
                   >
-                    {row.content}
+                    <DiffSegs
+                      segs={line.segs}
+                      highlightBg={TOKEN_BG[line.kind]}
+                    />
                   </TableCell>
                 </TableRow>
               );
-            }
-
-            const change = row as Change;
-            let bg = 'transparent';
-            if (change.type === 'add') bg = addedLineBackground;
-            if (change.type === 'del') bg = deletedLineBackground;
-
-            return (
-              <TableRow key={idx}>
-                {/* Old Line Number */}
-                <TableCell
-                  sx={{
-                    width: '50px',
-                    minWidth: '50px',
-                    backgroundColor:
-                      bg === 'transparent' ? 'background.paper' : bg,
-                    color: 'status.open',
-                    borderRight: '1px solid',
-                    borderColor: 'border.light',
-                    borderBottom: 'none',
-                    textAlign: 'right',
-                    verticalAlign: 'top',
-                    userSelect: 'none',
-                    p: '0 8px',
-                    fontFamily: 'inherit',
-                    fontSize: '12px',
-                    lineHeight: '24px',
-                  }}
-                >
-                  {change.type === 'normal'
-                    ? change.ln1
-                    : change.type === 'del'
-                      ? change.ln
-                      : ''}
-                </TableCell>
-
-                {/* New Line Number */}
-                <TableCell
-                  sx={{
-                    width: '50px',
-                    minWidth: '50px',
-                    backgroundColor:
-                      bg === 'transparent' ? 'background.paper' : bg,
-                    color: 'status.open',
-                    borderRight: '1px solid',
-                    borderColor: 'border.light',
-                    borderBottom: 'none',
-                    textAlign: 'right',
-                    verticalAlign: 'top',
-                    userSelect: 'none',
-                    p: '0 8px',
-                    fontFamily: 'inherit',
-                    fontSize: '12px',
-                    lineHeight: '24px',
-                  }}
-                >
-                  {change.type === 'normal'
-                    ? change.ln2
-                    : change.type === 'add'
-                      ? change.ln
-                      : ''}
-                </TableCell>
-
-                {/* Content */}
-                <TableCell
-                  sx={{
-                    backgroundColor: bg,
-                    color: 'text.primary',
-                    borderBottom: 'none',
-                    verticalAlign: 'top',
-                    whiteSpace: lineWrap ? 'pre-wrap' : 'pre',
-                    wordBreak: lineWrap ? 'break-all' : 'normal',
-                    p: '0 8px',
-                    fontFamily: 'inherit',
-                    fontSize: '12px',
-                    lineHeight: '24px',
-                    width: '100%',
-                  }}
-                >
-                  {change.content.startsWith('+') ||
-                  change.content.startsWith('-')
-                    ? change.content.substring(1)
-                    : change.content}
-                </TableCell>
-              </TableRow>
-            );
+            });
           })}
         </TableBody>
       </Table>
@@ -1070,20 +1109,17 @@ const DiffMinimap: React.FC<{
   );
 };
 
-// Updated SplitDiffView to accept parsed files if desired, or parse internally.
-// Let's parse inside PRFileRow to share state?
-// For now, let's keep SplitDiffView self-contained but we need to parse for Minimap in parent?
-// Actually, let's just make a new wrapper component for the file content.
-
 const PRFileDiffViewer: React.FC<{
   file: PRFile;
   viewMode: 'unified' | 'split';
   lineWrap: boolean;
 }> = ({ file, viewMode, lineWrap }) => {
-  // Memoize parseDiff result
-  const parsedDiff = useMemo(() => {
-    if (!file.patch) return [];
-    return parseDiff(file.patch);
+  // Parse once and derive view rows in the same memo so flipping the
+  // Split/Unified toggle doesn't re-run buildDiffRows.
+  const { parsedDiff, rows } = useMemo(() => {
+    if (!file.patch) return { parsedDiff: [], rows: [] };
+    const parsed = parseDiff(file.patch);
+    return { parsedDiff: parsed, rows: buildDiffRows(parsed) };
   }, [file.patch]);
 
   const { copied, copy, liveRegion } = useClipboardCopy({
@@ -1175,12 +1211,18 @@ const PRFileDiffViewer: React.FC<{
               alignItems: 'center',
               gap: 1,
               overflow: 'hidden',
+              minWidth: 0,
+              flex: 1,
             }}
           >
             <Typography
               sx={{
-                fontSize: '0.9rem',
+                fontSize: { xs: '0.8rem', sm: '0.9rem' },
                 fontWeight: 600,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                minWidth: 0,
               }}
             >
               {file.filename}
@@ -1213,7 +1255,8 @@ const PRFileDiffViewer: React.FC<{
             sx={{
               display: 'flex',
               alignItems: 'center',
-              gap: 2,
+              gap: { xs: 1, sm: 2 },
+              ml: 1,
               mr: 1,
               flexShrink: 0,
             }}
@@ -1221,7 +1264,7 @@ const PRFileDiffViewer: React.FC<{
             <Typography
               sx={{
                 color: 'diff.additions',
-                fontSize: '0.85rem',
+                fontSize: { xs: '0.8rem', sm: '0.85rem' },
                 fontWeight: 600,
               }}
             >
@@ -1230,7 +1273,7 @@ const PRFileDiffViewer: React.FC<{
             <Typography
               sx={{
                 color: 'diff.deletions',
-                fontSize: '0.85rem',
+                fontSize: { xs: '0.8rem', sm: '0.85rem' },
                 fontWeight: 600,
               }}
             >
@@ -1255,22 +1298,24 @@ const PRFileDiffViewer: React.FC<{
               flex: 1,
               overflowX: 'auto',
               overflowY: 'auto',
-              mr: '16px',
+              mr: { xs: 0, sm: '16px' },
               ...scrollbarSx,
             }}
           >
             {viewMode === 'unified' ? (
-              <UnifiedDiffView patch={file.patch} lineWrap={lineWrap} />
+              <UnifiedDiffView rows={rows} lineWrap={lineWrap} />
             ) : (
-              <SplitDiffView patch={file.patch} lineWrap={lineWrap} />
+              <SplitDiffView rows={rows} lineWrap={lineWrap} />
             )}
           </Box>
 
-          {/* Minimap */}
-          <DiffMinimap
-            files={parsedDiff}
-            scrollContainerRef={scrollContainerRef}
-          />
+          {/* Minimap (hidden on mobile) */}
+          <Box sx={{ display: { xs: 'none', sm: 'flex' } }}>
+            <DiffMinimap
+              files={parsedDiff}
+              scrollContainerRef={scrollContainerRef}
+            />
+          </Box>
         </AccordionDetails>
       </Accordion>
     </Paper>
@@ -1290,6 +1335,7 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'unified' | 'split'>('split');
   const [lineWrap, setLineWrap] = useState(false);
+  const [showOnlyChanged, setShowOnlyChanged] = useState(true);
 
   // ... existing useEffect ... (keep it)
   useEffect(() => {
@@ -1316,12 +1362,9 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
             'Failed to fetch full tree, falling back to sparse tree',
             treeErr,
           );
-          setFullTreeData(
-            changedFiles.map((f: PRFile) => ({
-              path: f.filename,
-              type: 'blob' as const,
-            })),
-          );
+          // Empty source → buildFullTree's overlay pass creates nodes for
+          // changed files only (same shape as the "Only Changed" toggle).
+          setFullTreeData([]);
         }
       } catch (err: unknown) {
         console.error('Failed to fetch PR data', err);
@@ -1336,9 +1379,11 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
     }
   }, [repository, pullRequestNumber, headSha]);
 
+  // When "Only Changed" is on, skip the full repo tree — buildFullTree's
+  // overlay pass creates nodes for the changed files itself.
   const fileTree = useMemo(
-    () => buildFullTree(fullTreeData, files),
-    [fullTreeData, files],
+    () => buildFullTree(showOnlyChanged ? [] : fullTreeData, files),
+    [fullTreeData, files, showOnlyChanged],
   );
 
   const handleFileSelect = (file: PRFile) => {
@@ -1384,14 +1429,14 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
   }
 
   return (
-    <Grid container spacing={3}>
+    <Grid container spacing={{ xs: 2, md: 3 }}>
       {/* Sidebar - File Tree */}
       <Grid item xs={12} md={3}>
         <Box
           sx={{
-            position: 'sticky',
-            top: 24,
-            maxHeight: 'calc(100vh - 100px)',
+            position: { xs: 'static', md: 'sticky' },
+            top: { md: 24 },
+            maxHeight: { xs: 280, md: 'calc(100vh - 100px)' },
             overflowY: 'auto',
             backgroundColor: 'background.paper',
             borderRadius: '8px',
@@ -1443,6 +1488,29 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
                   }}
                 >
                   Wrap Lines
+                </Typography>
+              }
+              sx={{ m: 0 }}
+            />
+
+            <FormControlLabel
+              control={
+                <Switch
+                  checked={showOnlyChanged}
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                    setShowOnlyChanged(e.target.checked)
+                  }
+                  size="small"
+                />
+              }
+              label={
+                <Typography
+                  sx={{
+                    fontSize: '0.75rem',
+                    color: 'status.open',
+                  }}
+                >
+                  Only Changed
                 </Typography>
               }
               sx={{ m: 0 }}
@@ -1509,7 +1577,14 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
 
       {/* Content - File Diffs */}
       <Grid item xs={12} md={9}>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3, pb: 20 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: { xs: 2, md: 3 },
+            pb: { xs: 4, md: 20 },
+          }}
+        >
           {files.map((file) => (
             <PRFileDiffViewer
               key={file.sha}

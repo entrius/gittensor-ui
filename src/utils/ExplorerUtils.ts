@@ -5,15 +5,11 @@ import {
   type RepositoryPrScoring,
 } from '../api';
 import { type IssueBounty } from '../api/models/Issues';
+import { getRepositoryOwnerAvatarSrc } from './avatar';
 import { isMergedPr } from './prStatus';
 
-export const getGithubAvatarSrc = (username?: string | null) => {
-  if (username) {
-    return `https://avatars.githubusercontent.com/${username}`;
-  }
-
-  return '';
-};
+export const getGithubAvatarSrc = (username?: string | null) =>
+  getRepositoryOwnerAvatarSrc(username);
 
 // Parses numeric-like values and falls back when the value is missing or invalid.
 export const parseNumber = (value: unknown, fallback = 0): number => {
@@ -127,6 +123,20 @@ export interface RepoStats {
   tokenScore: number;
   weight: number;
   latestPrDate?: string | null;
+  /** Set when subnet repo list marks the repository inactive (miners / enrich layer). */
+  inactiveAt?: string | null;
+}
+
+/** Per-repository stats for Issue Discovery (miner solved bounties via winning PRs). */
+export interface IssueRepoStats {
+  repository: string;
+  solved: number;
+  validSolved: number;
+  issueTokenScore: number;
+  bountyEarned: number;
+  weight: number;
+  latestActivityDate: string | null;
+  inactiveAt?: string | null;
 }
 
 export type RepoSortField =
@@ -136,7 +146,21 @@ export type RepoSortField =
   | 'score'
   | 'tokenScore'
   | 'weight';
+
+export type IssueRepoSortField =
+  | 'rank'
+  | 'repository'
+  | 'solved'
+  | 'validSolved'
+  | 'issueTokenScore'
+  | 'bountyEarned'
+  | 'weight';
+
+export type MinerRepoTableSortField = RepoSortField | IssueRepoSortField;
+
 export type SortOrder = 'asc' | 'desc';
+
+const VALID_ISSUE_SOLVE_TOKEN_THRESHOLD = 5;
 
 export const sortMinerRepoStats = (
   stats: RepoStats[],
@@ -171,6 +195,44 @@ export const sortMinerRepoStats = (
   return sorted;
 };
 
+export const sortIssueRepoStats = (
+  stats: IssueRepoStats[],
+  field: IssueRepoSortField,
+  order: SortOrder,
+): IssueRepoStats[] => {
+  const sorted = [...stats];
+  sorted.sort((a, b) => {
+    let compareValue = 0;
+    switch (field) {
+      case 'repository':
+        compareValue = a.repository.localeCompare(b.repository);
+        break;
+      case 'solved':
+        compareValue = a.solved - b.solved;
+        break;
+      case 'validSolved':
+        compareValue = a.validSolved - b.validSolved;
+        break;
+      case 'issueTokenScore':
+        compareValue = a.issueTokenScore - b.issueTokenScore;
+        break;
+      case 'bountyEarned':
+        compareValue = a.bountyEarned - b.bountyEarned;
+        break;
+      case 'weight':
+        compareValue = a.weight - b.weight;
+        break;
+      case 'rank':
+        compareValue = a.issueTokenScore - b.issueTokenScore;
+        break;
+      default:
+        compareValue = 0;
+    }
+    return order === 'asc' ? compareValue : -compareValue;
+  });
+  return sorted;
+};
+
 // ---------------------------------------------------------------------------
 // Scoring window staleness check
 // ---------------------------------------------------------------------------
@@ -197,7 +259,10 @@ export const buildRepoWeightsMap = (
   if (!Array.isArray(repos)) return map;
   for (const repo of repos) {
     if (repo && repo.fullName) {
-      map.set(repo.fullName.toLowerCase(), parseFloat(repo.weight || '0'));
+      map.set(
+        repo.fullName.toLowerCase(),
+        parseFloat(String(repo.config?.weight ?? 0)),
+      );
     }
   }
   return map;
@@ -238,6 +303,65 @@ export const aggregatePRsByRepository = (
       existing.latestPrDate = pr.mergedAt;
     }
     statsMap.set(repoKey, existing);
+  }
+
+  return Array.from(statsMap.values());
+};
+
+/**
+ * Repositories where this miner’s merged PR was the winning solve for a completed bounty.
+ */
+export const aggregateIssueDiscoveryByRepository = (
+  prs: CommitLog[],
+  issues: IssueBounty[] | undefined,
+  repoWeights: Map<string, number>,
+): IssueRepoStats[] => {
+  if (!prs.length || !issues?.length) return [];
+
+  const winningMinerPrByKey = new Map<string, CommitLog>();
+  for (const pr of prs) {
+    if (!isMergedPr(pr) || !pr.repository) continue;
+    winningMinerPrByKey.set(`${pr.repository}#${pr.pullRequestNumber}`, pr);
+  }
+
+  const statsMap = new Map<string, IssueRepoStats>();
+
+  for (const issue of issues) {
+    if (issue.status !== 'completed' || issue.winningPrNumber == null) continue;
+    const repo = issue.repositoryFullName;
+    if (!repo) continue;
+
+    const pr = winningMinerPrByKey.get(`${repo}#${issue.winningPrNumber}`);
+    if (!pr) continue;
+
+    let row = statsMap.get(repo);
+    if (!row) {
+      row = {
+        repository: repo,
+        solved: 0,
+        validSolved: 0,
+        issueTokenScore: 0,
+        bountyEarned: 0,
+        weight: repoWeights.get(repo) || 0,
+        latestActivityDate: null,
+      };
+      statsMap.set(repo, row);
+    }
+
+    row.solved += 1;
+    const tok = parseNumber(pr.tokenScore);
+    row.issueTokenScore += tok;
+    if (tok >= VALID_ISSUE_SOLVE_TOKEN_THRESHOLD) {
+      row.validSolved += 1;
+    }
+    row.bountyEarned += parseFloat(issue.bountyAmount || '0');
+    const activityTs = issue.completedAt || pr.mergedAt;
+    if (
+      activityTs &&
+      (!row.latestActivityDate || activityTs > row.latestActivityDate)
+    ) {
+      row.latestActivityDate = activityTs;
+    }
   }
 
   return Array.from(statsMap.values());
@@ -502,10 +626,10 @@ export const getDisplayCount = (
   return String(filteredCount);
 };
 
-export const filterBySearch = (
-  stats: RepoStats[],
+export const filterBySearch = <T extends { repository: string }>(
+  stats: T[],
   searchQuery: string,
-): RepoStats[] => {
+): T[] => {
   const q = searchQuery.trim().toLowerCase();
   if (!q) return stats;
   return stats.filter((r) => r.repository.toLowerCase().includes(q));
