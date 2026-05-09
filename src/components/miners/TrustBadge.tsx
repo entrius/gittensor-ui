@@ -25,7 +25,7 @@ interface RiskAssessment {
 
 const ICON_SIZE = { fontSize: 18 };
 
-export const getRiskAssessment = (
+const getRiskAssessment = (
   credibility: number,
   totalPRs: number,
 ): RiskAssessment => {
