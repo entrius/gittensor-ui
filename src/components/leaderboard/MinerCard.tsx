@@ -146,6 +146,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
         >
           <Avatar
             src={avatarSrc}
+            alt={username}
             sx={(theme) => ({
               width: 36,
               height: 36,
@@ -420,10 +421,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
     : [inactiveColor, inactiveColor, inactiveColor];
 
   const issueSegments = getIssueSegments(miner);
-  const issueTotal =
-    (miner.totalSolvedIssues ?? 0) +
-    (miner.totalOpenIssues ?? 0) +
-    (miner.totalClosedIssues ?? 0);
+  const issueDiscoveryScore = Number(miner.issueDiscoveryScore ?? 0);
 
   return (
     <Box
@@ -467,7 +465,9 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
             pl: 1.5,
           })}
         >
-          <StatLabel isEligible={isEligible}>Score</StatLabel>
+          <StatLabel isEligible={isEligible}>
+            {variant === 'watchlist' ? 'OSS' : 'Score'}
+          </StatLabel>
           <Typography
             sx={{
               fontFamily: FONTS.mono,
@@ -484,23 +484,10 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
       {variant === 'watchlist' && (
         <Box
           sx={(theme) => ({
-            pt: 0.35,
+            pt: 0.75,
             borderTop: `1px solid ${theme.palette.border.light}`,
           })}
         >
-          <Typography
-            sx={{
-              fontFamily: FONTS.mono,
-              fontSize: '0.7rem',
-              fontWeight: 700,
-              color: muiTheme.palette.status.open,
-              textTransform: 'uppercase',
-              mb: 0.35,
-              letterSpacing: '0.04em',
-            }}
-          >
-            Issues
-          </Typography>
           <Box
             sx={{
               display: 'grid',
@@ -529,7 +516,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
                 pl: 1.5,
               })}
             >
-              <StatLabel isEligible={isEligible}>Total</StatLabel>
+              <StatLabel isEligible={isEligible}>Discovery</StatLabel>
               <Typography
                 sx={{
                   fontFamily: FONTS.mono,
@@ -540,7 +527,7 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
                   fontWeight: 700,
                 }}
               >
-                {issueTotal}
+                {issueDiscoveryScore.toFixed(2)}
               </Typography>
             </Box>
           </Box>

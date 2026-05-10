@@ -1,4 +1,16 @@
 /**
+ * Extract a square pixel size from an image URL's `s` query param
+ * (e.g. GitHub avatars: `https://avatars.githubusercontent.com/u/58493?s=48`).
+ */
+export const getImageSizeHint = (url: string | undefined): number | null => {
+  if (!url) return null;
+  const match = url.match(/[?&]s=(\d+)/);
+  if (!match) return null;
+  const size = parseInt(match[1], 10);
+  return Number.isFinite(size) && size > 0 ? size : null;
+};
+
+/**
  * Resolve a relative URL to an absolute GitHub URL.
  * Returns the original URL if it's already absolute.
  */

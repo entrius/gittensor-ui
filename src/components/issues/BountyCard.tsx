@@ -11,11 +11,13 @@ import {
   alpha,
 } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import GitHubIcon from '@mui/icons-material/GitHub';
 import { IssueBounty } from '../../api/models/Issues';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import { WatchlistButton } from '../common';
 import BountyProgress from './BountyProgress';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
+import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import {
   formatTokenAmount,
   formatDate,
@@ -29,6 +31,12 @@ interface BountyCardProps {
   linkState?: Record<string, unknown>;
   taoPrice?: number;
   alphaPrice?: number;
+  /**
+   * Compact variant: smaller avatar, no forced 2-line title minHeight, and
+   * the GitHub link row is hidden so card height matches PRCard / RepoCard
+   * in the Watchlist tabs.
+   */
+  compact?: boolean;
 }
 
 export const BountyCard: React.FC<BountyCardProps> = ({
@@ -37,6 +45,7 @@ export const BountyCard: React.FC<BountyCardProps> = ({
   linkState,
   taoPrice,
   alphaPrice,
+  compact = false,
 }) => {
   const owner = issue.repositoryFullName.split('/')[0] || '';
   const statusMeta = getIssueStatusMeta(issue.status);
@@ -46,14 +55,19 @@ export const BountyCard: React.FC<BountyCardProps> = ({
     alphaPrice ?? 0,
   );
   const isPending = issue.status === 'registered';
-  const isHistory =
-    issue.status === 'completed' || issue.status === 'cancelled';
+  const isCompleted = issue.status === 'completed';
+  const isCancelled = issue.status === 'cancelled';
+  const isHistory = isCompleted || isCancelled;
   const bountyLabel = isPending
     ? 'Target Bounty'
-    : isHistory
+    : isCompleted
       ? 'Payout'
       : 'Bounty';
-  const bountyColor = isPending ? STATUS_COLORS.award : STATUS_COLORS.merged;
+  const bountyColor = isPending
+    ? STATUS_COLORS.award
+    : isCancelled
+      ? 'text.tertiary'
+      : STATUS_COLORS.merged;
 
   const linkProps = useLinkBehavior<HTMLAnchorElement>(href ?? '', {
     state: linkState,
@@ -94,12 +108,11 @@ export const BountyCard: React.FC<BountyCardProps> = ({
       {/* Repository header */}
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
         <Avatar
-          src={`https://avatars.githubusercontent.com/${owner}`}
+          src={getRepositoryOwnerAvatarSrc(owner)}
           alt={owner}
           sx={(theme) => ({
-            width: 28,
-            height: 28,
-            borderRadius: 1,
+            width: compact ? 28 : 36,
+            height: compact ? 28 : 36,
             flexShrink: 0,
             border: '1px solid',
             borderColor: theme.palette.border.medium,
@@ -139,12 +152,17 @@ export const BountyCard: React.FC<BountyCardProps> = ({
           category="bounties"
           itemKey={String(issue.id)}
           size="small"
+          sx={{
+            backgroundColor: 'rgba(255,255,255,0.08)',
+            borderRadius: '50%',
+            '&:hover': { backgroundColor: 'rgba(255,255,255,0.15)' },
+          }}
         />
       </Box>
 
       {/* Issue title + GitHub link */}
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5, flex: 1 }}>
-        {issue.title && (
+        <Tooltip title={issue.title} placement="bottom" arrow>
           <Typography
             sx={{
               fontSize: '0.85rem',
@@ -156,33 +174,46 @@ export const BountyCard: React.FC<BountyCardProps> = ({
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
               lineHeight: 1.4,
+              ...(compact ? {} : { minHeight: 'calc(2 * 1.4em)' }),
             }}
           >
             {issue.title}
           </Typography>
+        </Tooltip>
+        {!compact && (
+          <Link
+            href={issue.githubUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            sx={(theme) => ({
+              display: 'inline-flex',
+              alignItems: 'center',
+              gap: 0.6,
+              width: 'fit-content',
+              fontSize: '0.78rem',
+              fontWeight: 500,
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
+              textDecoration: 'none',
+              px: 1,
+              py: 0.5,
+              borderRadius: 1.5,
+              border: `1px solid ${alpha(theme.palette.common.white, 0.12)}`,
+              backgroundColor: alpha(theme.palette.common.white, 0.05),
+              transition: 'all 0.15s',
+              '&:hover': {
+                color: theme.palette.common.white,
+                borderColor: alpha(theme.palette.common.white, 0.28),
+                backgroundColor: alpha(theme.palette.common.white, 0.1),
+                textDecoration: 'none',
+              },
+            })}
+          >
+            <GitHubIcon sx={{ fontSize: 13 }} />#{issue.issueNumber} Open on
+            GitHub
+            <OpenInNewIcon sx={{ fontSize: 11, opacity: 0.6 }} />
+          </Link>
         )}
-        <Link
-          href={issue.githubUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={(e) => e.stopPropagation()}
-          sx={(theme) => ({
-            display: 'inline-flex',
-            alignItems: 'center',
-            gap: 0.5,
-            width: 'fit-content',
-            fontSize: '0.72rem',
-            color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-            textDecoration: 'none',
-            '&:hover': {
-              color: STATUS_COLORS.info,
-              textDecoration: 'underline',
-            },
-          })}
-        >
-          #{issue.issueNumber}
-          <OpenInNewIcon sx={{ fontSize: 11, opacity: 0.5 }} />
-        </Link>
       </Box>
 
       <Divider sx={{ borderColor: 'border.light', opacity: 0.6 }} />

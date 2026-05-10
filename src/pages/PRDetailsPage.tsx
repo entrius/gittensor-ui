@@ -131,6 +131,9 @@ const PRDetailsPage: React.FC = () => {
                 value={tabValue}
                 onChange={handleTabChange}
                 aria-label="pr details tabs"
+                variant="scrollable"
+                scrollButtons={false}
+                allowScrollButtonsMobile={false}
                 sx={(theme) => ({
                   '& .MuiTab-root': {
                     color: STATUS_COLORS.open,
@@ -139,7 +142,9 @@ const PRDetailsPage: React.FC = () => {
                     textTransform: 'none',
                     fontWeight: 500,
                     minHeight: '48px',
-                    fontSize: '14px',
+                    fontSize: { xs: '13px', sm: '14px' },
+                    minWidth: { xs: 'auto', sm: 90 },
+                    px: { xs: 1.25, sm: 2 },
                     '&.Mui-selected': {
                       color: theme.palette.text.primary,
                       fontWeight: 600,

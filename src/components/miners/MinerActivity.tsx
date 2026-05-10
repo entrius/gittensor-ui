@@ -19,6 +19,11 @@ import {
 import ContributionHeatmap from '../ContributionHeatmap';
 import DayPRsPanel from '../DayPRsPanel';
 import { CHART_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import {
+  echartsItemTooltipChrome,
+  echartsRadarChrome,
+  echartsTransparentBackground,
+} from '../../utils/echarts/gittensorChartTheme';
 import { parseNumber } from '../../utils/ExplorerUtils';
 import TrustBadge from './TrustBadge';
 import CredibilityChart from './CredibilityChart';
@@ -83,7 +88,7 @@ const IssueCredibilityChart: React.FC<{
 
   const chartOption = useMemo(
     () => ({
-      backgroundColor: 'transparent',
+      ...echartsTransparentBackground(),
       title: {
         text: `${(credibility * 100).toFixed(0)}%`,
         subtext: 'Credibility',
@@ -103,12 +108,7 @@ const IssueCredibilityChart: React.FC<{
       tooltip: {
         trigger: 'item',
         formatter: '{b}: {c} ({d}%)',
-        backgroundColor: alpha(theme.palette.common.black, 0.9),
-        borderColor: alpha(theme.palette.common.white, TEXT_OPACITY.ghost),
-        borderWidth: 1,
-        textStyle: {
-          color: theme.palette.text.primary,
-        },
+        ...echartsItemTooltipChrome(theme),
       },
       series: [
         {
@@ -201,8 +201,9 @@ const IssuePerformanceRadar: React.FC<{
 
   const chartOption = useMemo(
     () => ({
-      backgroundColor: 'transparent',
+      ...echartsTransparentBackground(),
       radar: {
+        ...echartsRadarChrome(theme),
         indicator: [
           { name: 'Credibility', max: 100 },
           { name: 'Solve\nRate', max: 100 },
@@ -214,24 +215,6 @@ const IssuePerformanceRadar: React.FC<{
         radius: '50%',
         shape: 'circle',
         splitNumber: 5,
-        axisName: {
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-          fontSize: 9,
-          lineHeight: 12,
-        },
-        splitLine: {
-          lineStyle: {
-            color: Array(5).fill(
-              alpha(theme.palette.common.white, TEXT_OPACITY.ghost * 0.25),
-            ),
-          },
-        },
-        splitArea: { show: false },
-        axisLine: {
-          lineStyle: {
-            color: alpha(theme.palette.common.white, TEXT_OPACITY.ghost * 0.5),
-          },
-        },
       },
       series: [
         {
@@ -377,7 +360,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
       return {
         credibility: 0,
         complexity: 0,
-        issuesSolved: 0,
+        mergedPrs: 0,
         uniqueRepos: 0,
         totalPRs: 0,
         avgRepoWeight: 0,
@@ -410,7 +393,10 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
       const repoWeights = new Map<string, number>();
       repos.forEach((repo) => {
         if (repo?.fullName) {
-          repoWeights.set(repo.fullName, parseFloat(repo.weight || '0'));
+          repoWeights.set(
+            repo.fullName,
+            parseFloat(String(repo.config?.weight ?? 0)),
+          );
         }
       });
       const totalWeight = prs.reduce(
@@ -423,7 +409,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
     return {
       credibility: ((minerStats.credibility || 0) / maxCredibility) * 100,
       complexity: ((minerStats.totalNodesScored || 0) / maxComplexity) * 100,
-      issuesSolved: ((minerStats.totalMergedPrs || 0) / maxMergedPrs) * 100,
+      mergedPrs: ((minerStats.totalMergedPrs || 0) / maxMergedPrs) * 100,
       uniqueRepos: ((minerStats.uniqueReposCount || 0) / maxUniqueRepos) * 100,
       totalPRs: ((minerStats.totalPrs || 0) / maxTotalPrs) * 100,
       avgRepoWeight: avgWeightVal,

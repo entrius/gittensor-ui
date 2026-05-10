@@ -20,6 +20,15 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import {
+  echartsAxisTooltipChrome,
+  echartsBarChartTitle,
+  echartsFontFamily,
+  echartsGridBarWithTitle,
+  echartsStrongAxisLabelColor,
+  echartsTransparentBackground,
+} from '../../utils/echarts/gittensorChartTheme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 
 type SortField = 'extension' | 'weight' | 'language';
@@ -116,8 +125,9 @@ const LanguageWeightsTable: React.FC = () => {
 
   const chartOption = useMemo(() => {
     const chartData = paginatedLanguages;
-    const textColor = alpha(theme.palette.common.white, 0.85);
+    const textColor = echartsStrongAxisLabelColor(theme);
     const gridColor = theme.palette.border.subtle;
+    const font = echartsFontFamily(theme);
 
     const xAxisData = chartData.map((item) => item.extension);
     const seriesData = chartData.map((item) => {
@@ -126,44 +136,24 @@ const LanguageWeightsTable: React.FC = () => {
     });
 
     return {
-      backgroundColor: 'transparent',
-      title: {
-        text: 'Language Weight Distribution',
-        subtext: 'Values match the current table sort and page',
-        left: 'center',
-        top: 20,
-        textStyle: {
-          color: theme.palette.text.primary,
-          fontSize: 18,
-          fontWeight: 600,
-        },
-        subtextStyle: {
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-          fontSize: 12,
-        },
-      },
+      ...echartsTransparentBackground(),
+      title: echartsBarChartTitle(
+        theme,
+        'Language Weight Distribution',
+        'Values match the current table sort and page',
+      ),
       tooltip: {
         trigger: 'axis',
         axisPointer: { type: 'shadow' },
-        backgroundColor: alpha(theme.palette.background.default, 0.95),
-        borderColor: alpha(theme.palette.common.white, 0.15),
-        borderWidth: 1,
-        textStyle: {
-          color: theme.palette.text.primary,
-        },
+        ...echartsAxisTooltipChrome(theme),
       },
-      grid: {
-        left: '3%',
-        right: '3%',
-        bottom: '10%',
-        top: '20%',
-        containLabel: true,
-      },
+      grid: echartsGridBarWithTitle(),
       xAxis: {
         type: 'category',
         data: xAxisData,
         axisLabel: {
           color: textColor,
+          fontFamily: font,
           rotate: 45,
           interval: 0,
         },
@@ -172,6 +162,8 @@ const LanguageWeightsTable: React.FC = () => {
       yAxis: {
         type: 'value',
         name: 'Weight',
+        nameTextStyle: { color: textColor, fontFamily: font },
+        axisLabel: { color: textColor, fontFamily: font },
         splitLine: { lineStyle: { color: gridColor, type: 'dashed' } },
       },
       series: [
@@ -277,19 +269,32 @@ const LanguageWeightsTable: React.FC = () => {
       <Box
         sx={{
           display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
           justifyContent: 'space-between',
-          alignItems: 'center',
+          alignItems: { xs: 'stretch', sm: 'center' },
           gap: 2,
           mb: 3,
         }}
       >
         <Box sx={{ flex: 1 }}>
-          <Typography variant="body2" color="text.secondary">
+          <Typography
+            variant="body2"
+            color="text.secondary"
+            sx={{ lineHeight: 1.6 }}
+          >
             Programming language multipliers used in scoring calculations
           </Typography>
         </Box>
 
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: { xs: 'flex-start', sm: 'flex-end' },
+            flexWrap: 'wrap',
+            gap: 1.5,
+          }}
+        >
           <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
             <IconButton
               onClick={() => setShowChart(!showChart)}
@@ -377,9 +382,21 @@ const LanguageWeightsTable: React.FC = () => {
                   />
                 </InputAdornment>
               ),
+              endAdornment: (
+                <ClearSearchAdornment
+                  visible={Boolean(searchQuery)}
+                  onClear={() => setSearchQuery('')}
+                  sx={{
+                    color: alpha(
+                      theme.palette.common.white,
+                      TEXT_OPACITY.muted,
+                    ),
+                  }}
+                />
+              ),
             }}
             sx={{
-              width: '200px',
+              width: { xs: '100%', sm: '200px' },
               '& .MuiOutlinedInput-root': {
                 color: theme.palette.text.primary,
                 backgroundColor: alpha(theme.palette.common.black, 0.4),
