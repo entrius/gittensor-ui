@@ -1033,6 +1033,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       header: '★',
       width: '52px',
       align: 'center',
+      sortKey: 'watch',
       cellSx: { p: 0 },
       renderCell: (repo) =>
         repo.repository ? (

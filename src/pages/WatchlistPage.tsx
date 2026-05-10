@@ -79,9 +79,10 @@ import {
   isOutsideScoringWindow,
 } from '../utils/ExplorerUtils';
 import {
+  comparePRsByWatchlist,
+  serializePRKey,
   useWatchlist,
   useWatchlistCounts,
-  serializePRKey,
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
 import { useWatchedPRs, type WatchedPRSource } from '../hooks/useWatchedPRs';
@@ -93,7 +94,6 @@ import {
 import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatDate, formatTokenAmount } from '../utils/format';
-import { compareByWatchlist } from '../utils/watchlistSort';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import theme, {
   CHART_COLORS,
@@ -3137,11 +3137,8 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         }
         case 'score':
           return cmpNum(parseFloat(a.score || '0'), parseFloat(b.score || '0'));
-        case 'watch': {
-          const key = (pr: CommitLog) =>
-            serializePRKey(pr.repository, pr.pullRequestNumber);
-          return compareByWatchlist(a, b, key, isWatched) * dir;
-        }
+        case 'watch':
+          return comparePRsByWatchlist(a, b, isWatched) * dir;
         default:
           return 0;
       }

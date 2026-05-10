@@ -28,12 +28,22 @@ import {
   type DataTableColumn,
 } from '../../components/common/DataTable';
 import { WatchlistButton } from '../../components/common';
-import { serializePRKey } from '../../hooks/useWatchlist';
+import {
+  comparePRsByWatchlist,
+  serializePRKey,
+  useWatchlist,
+} from '../../hooks/useWatchlist';
 import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
 import { tooltipSlotProps } from '../../theme';
 
-type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
+type PrSortField =
+  | 'number'
+  | 'repository'
+  | 'score'
+  | 'lines'
+  | 'date'
+  | 'watch';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
@@ -53,6 +63,7 @@ const DEFAULT_SORT_DIR: Record<PrSortField, SortDir> = {
   score: 'desc',
   lines: 'desc',
   date: 'desc',
+  watch: 'desc',
 };
 
 // Mirrors the Score cell's render logic so clicking the Score header
@@ -89,6 +100,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
+  const { isWatched } = useWatchlist('prs');
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
@@ -186,11 +198,14 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           cmp = da.localeCompare(db);
           break;
         }
+        case 'watch':
+          cmp = comparePRsByWatchlist(a, b, isWatched);
+          break;
       }
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return sorted;
-  }, [filteredPRs, sortField, sortDir]);
+  }, [filteredPRs, sortField, sortDir, isWatched]);
 
   const pagedPRs = useMemo(
     () => paginateItems(sortedPRs, page, PAGE_SIZE),
@@ -425,6 +440,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       header: '★',
       width: '8%',
       align: 'center',
+      sortKey: 'watch',
       renderCell: (pr) => (
         <WatchlistButton
           category="prs"
