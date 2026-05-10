@@ -8,4 +8,3 @@ export { default as ReadmeViewer } from './ReadmeViewer';
 export { default as RepositoryCodeBrowser } from './RepositoryCodeBrowser';
 export { default as RepositoryMaintainers } from './RepositoryMaintainers';
 export { default as RepositoryCheckTab } from './RepositoryCheckTab';
-export { resolveRelativeUrl } from './MarkdownRenderers';

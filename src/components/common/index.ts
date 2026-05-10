@@ -1,4 +1,4 @@
-export * from './SearchInput';
+export * from './ClearSearchAdornment';
 export * from './linkBehavior';
 export * from './WatchlistButton';
 export * from './DataTable';
