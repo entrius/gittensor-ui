@@ -16,7 +16,9 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  MenuItem,
   Popover,
+  Select,
   Switch,
   TextField,
   Tooltip,
@@ -33,6 +35,7 @@ import {
   useMediaQuery,
   Portal,
 } from '@mui/material';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
@@ -2120,7 +2123,73 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 // ---------------------------------------------------------------------------
 
 type BountyStatusFilter = 'all' | 'available' | 'pending' | 'history';
-type BountySortKey = 'issue' | 'repo' | 'bounty' | 'status' | 'date';
+/** Aligns with `IssuesList` / `/bounties` sort dropdown keys per filter tab. */
+type BountySortKey =
+  | 'id'
+  | 'repository'
+  | 'issue'
+  | 'bounty'
+  | 'funding'
+  | 'status'
+  | 'solver'
+  | 'date';
+
+const BOUNTY_SORT_LABELS: Record<BountySortKey, string> = {
+  id: 'ID',
+  repository: 'Repository',
+  issue: 'Issue',
+  bounty: 'Bounty',
+  funding: 'Funding',
+  status: 'Status',
+  solver: 'Solver',
+  date: 'Date',
+};
+
+const bountyVisibleSortKeysForFilter = (
+  statusFilter: BountyStatusFilter,
+): BountySortKey[] => {
+  const common: BountySortKey[] = ['id', 'repository', 'issue'];
+  if (statusFilter === 'pending')
+    return [...common, 'bounty', 'funding', 'status'];
+  if (statusFilter === 'history')
+    return [...common, 'bounty', 'solver', 'status', 'date'];
+  return [...common, 'bounty', 'status'];
+};
+
+const parseBountyAmount = (value: string | null | undefined): number => {
+  const parsed = Number.parseFloat(value ?? '0');
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getBountySortValue = (
+  issue: IssueBounty,
+  key: BountySortKey,
+): number | string => {
+  switch (key) {
+    case 'id':
+      return issue.id;
+    case 'funding': {
+      const target = parseBountyAmount(issue.targetBounty);
+      return target > 0
+        ? parseBountyAmount(issue.bountyAmount) / target
+        : 0;
+    }
+    case 'solver':
+      return (issue.solverHotkey ?? '').toLowerCase();
+    case 'date':
+      return new Date(
+        issue.completedAt || issue.updatedAt || issue.createdAt || 0,
+      ).getTime();
+    case 'repository':
+      return (issue.repositoryFullName || '').toLowerCase();
+    case 'issue':
+      return `${(issue.title || '').toLowerCase()}::${String(issue.issueNumber).padStart(10, '0')}`;
+    case 'bounty':
+      return parseBountyAmount(issue.targetBounty);
+    case 'status':
+      return getIssueStatusMeta(issue.status).text;
+  }
+};
 
 const BOUNTY_STATUS_FILTERS: readonly BountyStatusFilter[] = [
   'all',
@@ -2202,6 +2271,24 @@ const buildBountyColumns = (): DataTableColumn<
   BountySortKey
 >[] => [
   {
+    key: 'id',
+    header: 'ID',
+    width: '56px',
+    sortKey: 'id',
+    cellSx: bountyCellSx,
+    renderCell: (i) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          color: (t) => alpha(t.palette.text.primary, 0.65),
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        #{i.id}
+      </Typography>
+    ),
+  },
+  {
     key: 'issue',
     header: 'Issue',
     width: '90px',
@@ -2236,7 +2323,7 @@ const buildBountyColumns = (): DataTableColumn<
     key: 'repo',
     header: 'Repository',
     width: '24%',
-    sortKey: 'repo',
+    sortKey: 'repository',
     cellSx: bountyCellSx,
     renderCell: (i) => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
@@ -2344,22 +2431,48 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const observerTarget = useRef<HTMLDivElement>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const [sortField, setSortField] = useState<BountySortKey>('date');
+  const [sortField, setSortField] = useState<BountySortKey>('id');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const bountyVisibleSortKeys = useMemo(
+    () => bountyVisibleSortKeysForFilter(statusFilter),
+    [statusFilter],
+  );
+
+  const getDefaultSortDirection = useCallback(
+    (key: BountySortKey): 'asc' | 'desc' =>
+      key === 'id' || key === 'bounty' || key === 'date' ? 'desc' : 'asc',
+    [],
+  );
+
+  useEffect(() => {
+    if (!bountyVisibleSortKeys.includes(sortField)) {
+      setSortField('id');
+      setSortOrder('desc');
+    }
+  }, [sortField, bountyVisibleSortKeys]);
 
   useEffect(() => {
     setPage(0);
   }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
 
-  const handleSort = (field: BountySortKey) => {
-    if (sortField === field) {
-      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortOrder(field === 'repo' ? 'asc' : 'desc');
-    }
-    setPage(0);
-  };
+  const handleSort = useCallback(
+    (field: BountySortKey) => {
+      if (!bountyVisibleSortKeys.includes(field)) return;
+      if (sortField === field) {
+        setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortField(field);
+        setSortOrder(getDefaultSortDirection(field));
+      }
+      setPage(0);
+    },
+    [
+      sortField,
+      bountyVisibleSortKeys,
+      getDefaultSortDirection,
+    ],
+  );
 
   const counts = useMemo(() => getBountyCounts(items), [items]);
 
@@ -2369,28 +2482,24 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   );
 
   const sorted = useMemo(() => {
-    const dir = sortOrder === 'asc' ? 1 : -1;
-    const cmpStr = (a = '', b = '') => a.localeCompare(b) * dir;
-    const cmpNum = (a = 0, b = 0) => (a - b) * dir;
-    return [...filtered].sort((a, b) => {
-      switch (sortField) {
-        case 'issue':
-          return cmpNum(a.issueNumber, b.issueNumber);
-        case 'repo':
-          return cmpStr(a.repositoryFullName, b.repositoryFullName);
-        case 'bounty':
-          return cmpNum(
-            parseFloat(a.targetBounty || a.bountyAmount || '0'),
-            parseFloat(b.targetBounty || b.bountyAmount || '0'),
-          );
-        case 'status':
-          return cmpStr(a.status, b.status);
-        case 'date':
-          return cmpStr(bountyDate(a), bountyDate(b));
-        default:
-          return 0;
-      }
+    const directionFactor = sortOrder === 'asc' ? 1 : -1;
+    const collator = new Intl.Collator(undefined, {
+      sensitivity: 'base',
+      numeric: true,
     });
+    const decorated = filtered.map((row) => ({
+      row,
+      value: getBountySortValue(row, sortField),
+    }));
+    decorated.sort((a, b) => {
+      if (typeof a.value === 'number' && typeof b.value === 'number') {
+        return (a.value - b.value) * directionFactor;
+      }
+      return (
+        collator.compare(String(a.value), String(b.value)) * directionFactor
+      );
+    });
+    return decorated.map((d) => d.row);
   }, [filtered, sortField, sortOrder]);
 
   const paged = useMemo(
@@ -2451,6 +2560,80 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             ))}
           </Box>
         }
+        sortContent={
+          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Select
+              size="small"
+              value={
+                bountyVisibleSortKeys.includes(sortField) ? sortField : 'id'
+              }
+              onChange={(e) => {
+                const key = e.target.value as BountySortKey;
+                setSortField(key);
+                setSortOrder(getDefaultSortDirection(key));
+                setPage(0);
+              }}
+              sx={{
+                flex: 1,
+                minWidth: 0,
+                borderRadius: 2,
+                backgroundColor: 'background.default',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'border.light',
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'border.medium',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'primary.main',
+                },
+                '& .MuiSelect-select': {
+                  py: 0.75,
+                  fontSize: '0.8rem',
+                  color: 'text.primary',
+                },
+              }}
+            >
+              {bountyVisibleSortKeys.map((key) => (
+                <MenuItem key={key} value={key}>
+                  {BOUNTY_SORT_LABELS[key]}
+                </MenuItem>
+              ))}
+            </Select>
+            <Tooltip
+              title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+              arrow
+            >
+              <IconButton
+                size="small"
+                onClick={() =>
+                  setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+                }
+                sx={{
+                  flexShrink: 0,
+                  color: 'text.primary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
+                  borderRadius: 2,
+                  padding: '6px',
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
+                    borderColor: 'border.medium',
+                  },
+                }}
+              >
+                <ArrowUpwardIcon
+                  fontSize="small"
+                  sx={{
+                    transform:
+                      sortOrder === 'desc' ? 'rotate(180deg)' : 'none',
+                    transition: 'transform 0.2s ease',
+                  }}
+                />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        }
         searchValue={searchQuery}
         searchPlaceholder="Search bounties..."
         onSearchChange={setSearchQuery}
@@ -2478,7 +2661,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           getRowKey={bountyKey}
           getRowHref={getBountyHref}
           linkState={{ backLabel: 'Back to Watchlist' }}
-          minWidth="900px"
+          minWidth="980px"
           stickyHeader
           isLoading={isLoading && items.length === 0}
           emptyLabel="No watched bounties found."
