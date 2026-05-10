@@ -240,7 +240,7 @@ const RepositoryDetailsPage: React.FC = () => {
   );
 
   const statusChips = useMemo(() => {
-    const inactiveAt = trackedRepo?.inactiveAt;
+    const inactiveAt = trackedRepo?.config?.inactiveAt ?? null;
     const inactiveLabel = inactiveAt
       ? `Inactive since ${formatDate(inactiveAt)}`
       : null;
@@ -274,7 +274,7 @@ const RepositoryDetailsPage: React.FC = () => {
         ) : null}
       </>
     );
-  }, [trackedRepo?.inactiveAt]);
+  }, [trackedRepo?.config?.inactiveAt]);
 
   const issuesTabLabel = useMemo(() => {
     const openBounties =
@@ -412,7 +412,7 @@ const RepositoryDetailsPage: React.FC = () => {
                     >
                       <Avatar
                         src={getRepositoryOwnerAvatarSrc(owner)}
-                        alt=""
+                        alt={owner}
                         variant="rounded"
                         imgProps={{ loading: 'lazy', decoding: 'async' }}
                         sx={(theme) => ({
@@ -483,6 +483,7 @@ const RepositoryDetailsPage: React.FC = () => {
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
                     <Avatar
                       src={getRepositoryOwnerAvatarSrc(owner)}
+                      alt={owner}
                       variant="rounded"
                       sx={(theme) => ({
                         width: 32,

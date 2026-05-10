@@ -275,6 +275,7 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
       >
         <Avatar
           src={getGithubAvatarSrc(miner.author || miner.githubId)}
+          alt={miner.author || miner.githubId}
           sx={{ width: 20, height: 20 }}
         />
         <Typography

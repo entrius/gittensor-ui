@@ -17,6 +17,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import RankBadge from './RankBadge';
 import EmptyStateMessage from './EmptyStateMessage';
 import TablePagination from './TablePagination';
@@ -93,7 +94,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     const m = new Map<string, string | null>();
     for (const r of repos || []) {
       if (r?.fullName) {
-        m.set(r.fullName.toLowerCase(), r.inactiveAt ?? null);
+        m.set(r.fullName.toLowerCase(), r.config?.inactiveAt ?? null);
       }
     }
     return m;
@@ -576,6 +577,15 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
                 }}
               />
             </InputAdornment>
+          ),
+          endAdornment: (
+            <ClearSearchAdornment
+              visible={Boolean(searchQuery)}
+              onClear={() => {
+                setSearchQuery('');
+                setPage(0);
+              }}
+            />
           ),
         }}
         sx={searchFieldSx}
