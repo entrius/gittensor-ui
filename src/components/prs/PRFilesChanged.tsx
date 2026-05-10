@@ -1,4 +1,10 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useMemo,
+  useRef,
+  useDeferredValue,
+} from 'react';
 import {
   Box,
   Typography,
@@ -9,11 +15,13 @@ import {
   AccordionDetails,
   Chip,
   Grid,
+  InputAdornment,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
   Collapse,
+  TextField,
   ToggleButton,
   ToggleButtonGroup,
   Table,
@@ -29,6 +37,7 @@ import FolderOpenIcon from '@mui/icons-material/FolderOpen';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import KeyboardArrowRightIcon from '@mui/icons-material/KeyboardArrowRight';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
+import SearchIcon from '@mui/icons-material/Search';
 import ViewAgendaIcon from '@mui/icons-material/ViewAgenda'; // Unified
 import ViewColumnIcon from '@mui/icons-material/ViewColumn'; // Split
 import axios from 'axios';
@@ -48,6 +57,7 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
 import { STATUS_COLORS, DIFF_COLORS, scrollbarSx } from '../../theme';
 import { useClipboardCopy } from '../../hooks/useClipboardCopy';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 
 interface PRFile {
   sha: string;
@@ -86,12 +96,29 @@ interface TreeNode {
   changeCount?: number; // Number of changed files inside
 }
 
+const isFolder = (node: TreeNode): boolean =>
+  Object.keys(node.children).length > 0;
+
+// Folders first, then alpha.
+const sortTreeNodes = (a: TreeNode, b: TreeNode): number => {
+  const aFolder = isFolder(a);
+  const bFolder = isFolder(b);
+  if (aFolder !== bFolder) return aFolder ? -1 : 1;
+  return a.name.localeCompare(b.name);
+};
+
+const pluralize = (n: number, singular: string, plural = `${singular}s`) =>
+  `${n} ${n === 1 ? singular : plural}`;
+
 const selectedFileBackground = alpha(STATUS_COLORS.info, 0.15);
 const addedLineBackground = alpha(DIFF_COLORS.additions, 0.15);
 const deletedLineBackground = alpha(DIFF_COLORS.deletions, 0.15);
 const addedTokenBackground = alpha(DIFF_COLORS.additions, 0.4);
 const deletedTokenBackground = alpha(DIFF_COLORS.deletions, 0.4);
 const unchangedFileColor = alpha(STATUS_COLORS.open, 0.5);
+// Layered on top of diff tints — keep alpha high enough to stay visible.
+const searchMatchBackground = alpha(STATUS_COLORS.warning, 0.5);
+const searchMatchBadgeBackground = alpha(STATUS_COLORS.warning, 0.25);
 
 const stripDiffMarker = (s: string): string =>
   s.startsWith('+') || s.startsWith('-') ? s.slice(1) : s;
@@ -128,6 +155,78 @@ const mergeSegs = (segs: WordDiffSeg[]): WordDiffSeg[] => {
     if (last && last.changed === s.changed) last.text += s.text;
     else out.push({ ...s });
   }
+  return out;
+};
+
+// Skipped when building the searchable haystack (everything else is a
+// content line whose first char is the diff marker).
+const PATCH_METADATA_PREFIXES = [
+  '@@',
+  '---',
+  '+++',
+  'diff ',
+  'index ',
+  'similarity ',
+  'rename ',
+  'new file ',
+  'deleted file ',
+  'Binary ',
+  '\\',
+];
+
+// `query` is pre-normalized (trimmed; lowercased iff !caseSensitive).
+// Callers pass `undefined` when no search is active.
+type SearchSpec = { query: string; caseSensitive: boolean };
+
+// Both forms cached so toggling caseSensitive doesn't re-lowercase patches.
+type FileSearchIndex = { raw: string; lower: string };
+
+// Strips diff markers + chunk headers, returning rendered content (raw + lower).
+const buildSearchIndex = (patch: string | undefined): FileSearchIndex => {
+  if (!patch) return { raw: '', lower: '' };
+  const lines: string[] = [];
+  for (const line of patch.split('\n')) {
+    if (PATCH_METADATA_PREFIXES.some((p) => line.startsWith(p))) continue;
+    lines.push(line.length > 0 ? line.slice(1) : '');
+  }
+  const raw = lines.join('\n');
+  return { raw, lower: raw.toLowerCase() };
+};
+
+const haystackFor = (idx: FileSearchIndex, search: SearchSpec): string =>
+  search.caseSensitive ? idx.raw : idx.lower;
+
+const countMatches = (haystack: string, needle: string): number => {
+  if (!needle) return 0;
+  let count = 0;
+  let idx = haystack.indexOf(needle);
+  while (idx !== -1) {
+    count++;
+    idx = haystack.indexOf(needle, idx + needle.length);
+  }
+  return count;
+};
+
+type QuerySplit = { text: string; isMatch: boolean };
+
+// Slices come from `text` so the user's casing survives in render; the
+// lookup uses the case-folded view only when needed.
+const splitByQuery = (text: string, search: SearchSpec): QuerySplit[] => {
+  const { query, caseSensitive } = search;
+  if (!query) return [{ text, isMatch: false }];
+  const haystack = caseSensitive ? text : text.toLowerCase();
+  const out: QuerySplit[] = [];
+  let cursor = 0;
+  let idx = haystack.indexOf(query);
+  while (idx !== -1) {
+    if (idx > cursor)
+      out.push({ text: text.slice(cursor, idx), isMatch: false });
+    out.push({ text: text.slice(idx, idx + query.length), isMatch: true });
+    cursor = idx + query.length;
+    idx = haystack.indexOf(query, cursor);
+  }
+  if (cursor < text.length)
+    out.push({ text: text.slice(cursor), isMatch: false });
   return out;
 };
 
@@ -248,24 +347,56 @@ const buildDiffRows = (files: DiffFile[]): DiffRow[] => {
   return rows;
 };
 
-const DiffSegs: React.FC<{ segs: WordDiffSeg[]; highlightBg: string }> = ({
-  segs,
-  highlightBg,
-}) => (
+// Wraps query matches in <mark>, layered on top of any existing tint.
+const QueryAwareText: React.FC<{ text: string; search?: SearchSpec }> = ({
+  text,
+  search,
+}) => {
+  if (!search?.query) return <>{text}</>;
+  return (
+    <>
+      {splitByQuery(text, search).map((p, i) =>
+        p.isMatch ? (
+          <Box
+            key={i}
+            component="mark"
+            sx={{
+              backgroundColor: searchMatchBackground,
+              color: 'inherit',
+              borderRadius: '2px',
+              p: 0,
+            }}
+          >
+            {p.text}
+          </Box>
+        ) : (
+          <React.Fragment key={i}>{p.text}</React.Fragment>
+        ),
+      )}
+    </>
+  );
+};
+
+const DiffSegs: React.FC<{
+  segs: WordDiffSeg[];
+  highlightBg: string;
+  search?: SearchSpec;
+}> = ({ segs, highlightBg, search }) => (
   <>
-    {segs.map((seg, i) =>
-      seg.changed ? (
+    {segs.map((seg, i) => {
+      const inner = <QueryAwareText text={seg.text} search={search} />;
+      return seg.changed ? (
         <Box
           key={i}
           component="span"
           sx={{ backgroundColor: highlightBg, borderRadius: '2px' }}
         >
-          {seg.text}
+          {inner}
         </Box>
       ) : (
-        <React.Fragment key={i}>{seg.text}</React.Fragment>
-      ),
-    )}
+        <React.Fragment key={i}>{inner}</React.Fragment>
+      );
+    })}
   </>
 );
 
@@ -355,17 +486,44 @@ const buildFullTree = (
   return root;
 };
 
+// File paths only — badges don't appear on folders.
+const buildHitsByPath = (
+  root: Record<string, TreeNode>,
+  hitsByFilename: Map<string, number>,
+): Map<string, number> => {
+  const out = new Map<string, number>();
+  const visit = (node: TreeNode): void => {
+    if (node.file) {
+      const count = hitsByFilename.get(node.file.filename) ?? 0;
+      if (count > 0) out.set(node.path, count);
+    }
+    for (const child of Object.values(node.children)) visit(child);
+  };
+  for (const node of Object.values(root)) visit(node);
+  return out;
+};
+
 const FileTreeItem: React.FC<{
   node: TreeNode;
   level: number;
   onSelect: (file: PRFile) => void;
   selectedParams: { filename: string | null };
-}> = ({ node, level, onSelect, selectedParams }) => {
+  hitsByPath?: Map<string, number>;
+}> = ({ node, level, onSelect, selectedParams, hitsByPath }) => {
   // Auto-expand if it has changes, otherwise collapse to reduce noise in full tree
   const [open, setOpen] = useState(!!node.hasChanges);
-  const hasChildren = Object.keys(node.children).length > 0;
+  const hasChildren = isFolder(node);
   const isSelected =
     node.file && selectedParams.filename === node.file.filename;
+  const searchActive = hitsByPath !== undefined;
+  const fileHitCount = node.file ? (hitsByPath?.get(node.path) ?? 0) : 0;
+  const showFileHits = fileHitCount > 0;
+
+  // Force-open during search; tree's already filtered to files with hits.
+  // Clearing the query doesn't re-collapse — user can still close manually.
+  useEffect(() => {
+    if (searchActive && hasChildren) setOpen(true);
+  }, [searchActive, hasChildren]);
 
   const handleClick = () => {
     if (hasChildren) {
@@ -463,7 +621,18 @@ const FileTreeItem: React.FC<{
               component="span"
               sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
             >
-              {node.name}
+              <Box
+                component="span"
+                sx={{
+                  flex: 1,
+                  minWidth: 0,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {node.name}
+              </Box>
               {node.hasChanges && !open && hasChildren && (
                 <Box
                   sx={{
@@ -471,8 +640,30 @@ const FileTreeItem: React.FC<{
                     height: 6,
                     borderRadius: '50%',
                     bgcolor: 'status.warning',
+                    flexShrink: 0,
                   }}
                 />
+              )}
+              {showFileHits && (
+                <Box
+                  component="span"
+                  aria-label={pluralize(fileHitCount, 'match', 'matches')}
+                  sx={{
+                    fontSize: '10px',
+                    fontWeight: 600,
+                    px: 0.75,
+                    minWidth: 18,
+                    height: 16,
+                    lineHeight: '16px',
+                    textAlign: 'center',
+                    borderRadius: '8px',
+                    backgroundColor: searchMatchBadgeBackground,
+                    color: 'status.warning',
+                    flexShrink: 0,
+                  }}
+                >
+                  {fileHitCount}
+                </Box>
               )}
             </Box>
           }
@@ -500,13 +691,7 @@ const FileTreeItem: React.FC<{
                 No, standard sort is less confusing.
             */}
             {Object.values(node.children)
-              .sort((a, b) => {
-                const aIsFolder = Object.keys(a.children).length > 0;
-                const bIsFolder = Object.keys(b.children).length > 0;
-                if (aIsFolder && !bIsFolder) return -1;
-                if (!aIsFolder && bIsFolder) return 1;
-                return a.name.localeCompare(b.name);
-              })
+              .sort(sortTreeNodes)
               .map((child) => (
                 <FileTreeItem
                   key={child.path}
@@ -514,6 +699,7 @@ const FileTreeItem: React.FC<{
                   level={level + 1}
                   onSelect={onSelect}
                   selectedParams={selectedParams}
+                  hitsByPath={hitsByPath}
                 />
               ))}
           </List>
@@ -529,7 +715,8 @@ const SplitSidePair: React.FC<{
   side: LineSide | null;
   numberSx: object;
   contentSx: object;
-}> = ({ side, numberSx, contentSx }) => {
+  search?: SearchSpec;
+}> = ({ side, numberSx, contentSx, search }) => {
   const bg = side ? LINE_BG[side.kind] : 'transparent';
   return (
     <>
@@ -538,7 +725,11 @@ const SplitSidePair: React.FC<{
       </TableCell>
       <TableCell sx={{ ...contentSx, backgroundColor: bg }}>
         {side && (
-          <DiffSegs segs={side.segs} highlightBg={TOKEN_BG[side.kind]} />
+          <DiffSegs
+            segs={side.segs}
+            highlightBg={TOKEN_BG[side.kind]}
+            search={search}
+          />
         )}
       </TableCell>
     </>
@@ -605,10 +796,11 @@ const NO_WRAP_CONTENT_SX = {
 };
 
 // Split View Component
-const SplitDiffView: React.FC<{ rows: DiffRow[]; lineWrap: boolean }> = ({
-  rows,
-  lineWrap,
-}) => {
+const SplitDiffView: React.FC<{
+  rows: DiffRow[];
+  lineWrap: boolean;
+  search?: SearchSpec;
+}> = ({ rows, lineWrap, search }) => {
   const leftRef = useRef<HTMLDivElement>(null);
   const rightRef = useRef<HTMLDivElement>(null);
   const isSyncingLeftScroll = useRef(false);
@@ -643,11 +835,13 @@ const SplitDiffView: React.FC<{ rows: DiffRow[]; lineWrap: boolean }> = ({
                     side={row.left}
                     numberSx={WRAP_NUMBER_SX}
                     contentSx={WRAP_CONTENT_SX}
+                    search={search}
                   />
                   <SplitSidePair
                     side={row.right}
                     numberSx={WRAP_NUMBER_SX}
                     contentSx={WRAP_TRAILING_CONTENT_SX}
+                    search={search}
                   />
                 </TableRow>
               ),
@@ -758,6 +952,7 @@ const SplitDiffView: React.FC<{ rows: DiffRow[]; lineWrap: boolean }> = ({
                     <DiffSegs
                       segs={item.segs}
                       highlightBg={TOKEN_BG[item.kind]}
+                      search={search}
                     />
                   )}
                 </TableCell>
@@ -826,10 +1021,11 @@ const UNIFIED_NUMBER_SX = {
 };
 
 // Unified View Component
-const UnifiedDiffView: React.FC<{ rows: DiffRow[]; lineWrap: boolean }> = ({
-  rows,
-  lineWrap,
-}) => {
+const UnifiedDiffView: React.FC<{
+  rows: DiffRow[];
+  lineWrap: boolean;
+  search?: SearchSpec;
+}> = ({ rows, lineWrap, search }) => {
   if (rows.length === 0) return null;
 
   return (
@@ -894,6 +1090,7 @@ const UnifiedDiffView: React.FC<{ rows: DiffRow[]; lineWrap: boolean }> = ({
                     <DiffSegs
                       segs={line.segs}
                       highlightBg={TOKEN_BG[line.kind]}
+                      search={search}
                     />
                   </TableCell>
                 </TableRow>
@@ -1113,7 +1310,8 @@ const PRFileDiffViewer: React.FC<{
   file: PRFile;
   viewMode: 'unified' | 'split';
   lineWrap: boolean;
-}> = ({ file, viewMode, lineWrap }) => {
+  search?: SearchSpec;
+}> = ({ file, viewMode, lineWrap, search }) => {
   // Parse once and derive view rows in the same memo so flipping the
   // Split/Unified toggle doesn't re-run buildDiffRows.
   const { parsedDiff, rows } = useMemo(() => {
@@ -1303,9 +1501,13 @@ const PRFileDiffViewer: React.FC<{
             }}
           >
             {viewMode === 'unified' ? (
-              <UnifiedDiffView rows={rows} lineWrap={lineWrap} />
+              <UnifiedDiffView
+                rows={rows}
+                lineWrap={lineWrap}
+                search={search}
+              />
             ) : (
-              <SplitDiffView rows={rows} lineWrap={lineWrap} />
+              <SplitDiffView rows={rows} lineWrap={lineWrap} search={search} />
             )}
           </Box>
 
@@ -1336,6 +1538,8 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
   const [viewMode, setViewMode] = useState<'unified' | 'split'>('split');
   const [lineWrap, setLineWrap] = useState(false);
   const [showOnlyChanged, setShowOnlyChanged] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [caseSensitive, setCaseSensitive] = useState(false);
 
   // ... existing useEffect ... (keep it)
   useEffect(() => {
@@ -1379,12 +1583,60 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
     }
   }, [repository, pullRequestNumber, headSha]);
 
-  // When "Only Changed" is on, skip the full repo tree — buildFullTree's
-  // overlay pass creates nodes for the changed files itself.
-  const fileTree = useMemo(
-    () => buildFullTree(showOnlyChanged ? [] : fullTreeData, files),
-    [fullTreeData, files, showOnlyChanged],
+  // Heavy work runs against the deferred copy; the input stays live.
+  const deferredSearchQuery = useDeferredValue(searchQuery);
+
+  // Trimming + casing live here once. `undefined` = no active search.
+  const search = useMemo<SearchSpec | undefined>(() => {
+    const trimmed = deferredSearchQuery.trim();
+    if (!trimmed) return undefined;
+    return {
+      query: caseSensitive ? trimmed : trimmed.toLowerCase(),
+      caseSensitive,
+    };
+  }, [deferredSearchQuery, caseSensitive]);
+
+  const fileIndices = useMemo(
+    () => files.map((f) => buildSearchIndex(f.patch)),
+    [files],
   );
+
+  const hitsByFilename = useMemo(() => {
+    const m = new Map<string, number>();
+    if (!search) return m;
+    files.forEach((file, i) => {
+      const c = countMatches(haystackFor(fileIndices[i], search), search.query);
+      if (c > 0) m.set(file.filename, c);
+    });
+    return m;
+  }, [files, fileIndices, search]);
+
+  const totalMatches = useMemo(() => {
+    let total = 0;
+    for (const c of hitsByFilename.values()) total += c;
+    return total;
+  }, [hitsByFilename]);
+
+  // Tree + diff panel both read this, so they can't disagree on scope.
+  const visibleFiles = useMemo(
+    () =>
+      search ? files.filter((f) => hitsByFilename.has(f.filename)) : files,
+    [files, hitsByFilename, search],
+  );
+
+  // Skip the full repo tree when "Only Changed" or a search is active.
+  const fileTree = useMemo(() => {
+    const useFullTree = !showOnlyChanged && !search;
+    return buildFullTree(useFullTree ? fullTreeData : [], visibleFiles);
+  }, [fullTreeData, visibleFiles, showOnlyChanged, search]);
+
+  // `undefined` = no search; FileTreeItem branches on that.
+  const hitsByPath = useMemo(
+    () => (search ? buildHitsByPath(fileTree, hitsByFilename) : undefined),
+    [fileTree, hitsByFilename, search],
+  );
+
+  const queryEcho = deferredSearchQuery.trim();
 
   const handleFileSelect = (file: PRFile) => {
     setSelectedFile(file.filename);
@@ -1393,6 +1645,18 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
       element.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
   };
+
+  // Auto-select first match on the inactive→active transition. Keyed on the
+  // boolean so toggling caseSensitive mid-search doesn't yank the selection.
+  const wasSearchActiveRef = useRef(false);
+  useEffect(() => {
+    const wasActive = wasSearchActiveRef.current;
+    const isActive = !!search;
+    wasSearchActiveRef.current = isActive;
+    if (!wasActive && isActive && visibleFiles.length > 0) {
+      handleFileSelect(visibleFiles[0]);
+    }
+  }, [search, visibleFiles]);
 
   const handleViewModeChange = (
     _event: React.MouseEvent<HTMLElement>,
@@ -1469,6 +1733,88 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
             >
               Files Changed ({files.length})
             </Typography>
+
+            <TextField
+              placeholder="Search in files..."
+              size="small"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              fullWidth
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon
+                      sx={{ color: 'status.open', fontSize: '1rem' }}
+                    />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <>
+                    <InputAdornment position="end">
+                      <Tooltip
+                        title={
+                          caseSensitive ? 'Match case (on)' : 'Match case (off)'
+                        }
+                      >
+                        <IconButton
+                          size="small"
+                          onClick={() => setCaseSensitive((v) => !v)}
+                          onMouseDown={(e) => e.preventDefault()}
+                          aria-label="toggle case sensitive search"
+                          aria-pressed={caseSensitive}
+                          sx={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            fontFamily: 'inherit',
+                            lineHeight: 1,
+                            minWidth: 22,
+                            height: 20,
+                            px: 0.5,
+                            borderRadius: '4px',
+                            color: caseSensitive
+                              ? 'status.info'
+                              : 'text.tertiary',
+                            backgroundColor: caseSensitive
+                              ? selectedFileBackground
+                              : 'transparent',
+                            '&:hover': {
+                              backgroundColor: caseSensitive
+                                ? selectedFileBackground
+                                : 'surface.light',
+                            },
+                          }}
+                        >
+                          Aa
+                        </IconButton>
+                      </Tooltip>
+                    </InputAdornment>
+                    <ClearSearchAdornment
+                      visible={Boolean(searchQuery)}
+                      onClear={() => setSearchQuery('')}
+                    />
+                  </>
+                ),
+              }}
+              sx={{
+                '& .MuiOutlinedInput-root': {
+                  fontSize: '0.8rem',
+                  backgroundColor: 'surface.elevated',
+                },
+              }}
+            />
+
+            {search && visibleFiles.length > 0 && (
+              <Typography
+                sx={{
+                  mt: -1,
+                  fontSize: '0.7rem',
+                  color: 'status.open',
+                }}
+              >
+                {pluralize(totalMatches, 'match', 'matches')} in{' '}
+                {pluralize(visibleFiles.length, 'file')}
+              </Typography>
+            )}
 
             <FormControlLabel
               control={
@@ -1553,25 +1899,34 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
               </ToggleButton>
             </ToggleButtonGroup>
           </Box>
-          <List component="nav" dense disablePadding>
-            {Object.values(fileTree)
-              .sort((a, b) => {
-                const aIsFolder = Object.keys(a.children).length > 0;
-                const bIsFolder = Object.keys(b.children).length > 0;
-                if (aIsFolder && !bIsFolder) return -1;
-                if (!aIsFolder && bIsFolder) return 1;
-                return a.name.localeCompare(b.name);
-              })
-              .map((node) => (
-                <FileTreeItem
-                  key={node.path}
-                  node={node}
-                  level={0}
-                  onSelect={handleFileSelect}
-                  selectedParams={{ filename: selectedFile }}
-                />
-              ))}
-          </List>
+          {search && visibleFiles.length === 0 ? (
+            <Box
+              sx={{
+                px: 2,
+                py: 3,
+                fontSize: '0.75rem',
+                color: 'status.open',
+                textAlign: 'center',
+              }}
+            >
+              No matches for &ldquo;{queryEcho}&rdquo;
+            </Box>
+          ) : (
+            <List component="nav" dense disablePadding>
+              {Object.values(fileTree)
+                .sort(sortTreeNodes)
+                .map((node) => (
+                  <FileTreeItem
+                    key={node.path}
+                    node={node}
+                    level={0}
+                    onSelect={handleFileSelect}
+                    selectedParams={{ filename: selectedFile }}
+                    hitsByPath={hitsByPath}
+                  />
+                ))}
+            </List>
+          )}
         </Box>
       </Grid>
 
@@ -1585,14 +1940,34 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
             pb: { xs: 4, md: 20 },
           }}
         >
-          {files.map((file) => (
-            <PRFileDiffViewer
-              key={file.sha}
-              file={file}
-              viewMode={viewMode}
-              lineWrap={lineWrap}
-            />
-          ))}
+          {search && visibleFiles.length === 0 ? (
+            <Paper
+              elevation={0}
+              sx={{
+                p: 4,
+                textAlign: 'center',
+                color: 'status.open',
+                border: '1px solid',
+                borderColor: 'border.light',
+                borderRadius: '6px',
+                backgroundColor: 'background.paper',
+              }}
+            >
+              <Typography sx={{ fontSize: '0.9rem' }}>
+                No matches for &ldquo;{queryEcho}&rdquo;
+              </Typography>
+            </Paper>
+          ) : (
+            visibleFiles.map((file) => (
+              <PRFileDiffViewer
+                key={file.sha}
+                file={file}
+                viewMode={viewMode}
+                lineWrap={lineWrap}
+                search={search}
+              />
+            ))
+          )}
         </Box>
       </Grid>
     </Grid>
