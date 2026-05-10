@@ -623,43 +623,48 @@ const HomePage: React.FC = () => {
             </Box>
             <Stack
               direction="row"
-              spacing={1}
+              spacing={0}
               sx={{
                 position: 'absolute',
-                bottom: -24,
+                bottom: -28,
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 2,
+                borderRadius: 3,
+                overflow: 'hidden',
+                border: '1px solid',
+                borderColor: 'border.light',
               }}
             >
-              <Box
-                onClick={() => setActiveBottomCard('maintainer')}
-                sx={(theme) => ({
-                  width: 32,
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor:
-                    activeBottomCard === 'maintainer'
-                      ? theme.palette.status.merged
-                      : alpha(theme.palette.text.primary, 0.1),
-                  cursor: 'pointer',
-                  transition: 'background-color 0.3s ease',
-                })}
-              />
-              <Box
-                onClick={() => setActiveBottomCard('miner')}
-                sx={(theme) => ({
-                  width: 32,
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor:
-                    activeBottomCard === 'miner'
-                      ? theme.palette.status.merged
-                      : alpha(theme.palette.text.primary, 0.1),
-                  cursor: 'pointer',
-                  transition: 'background-color 0.3s ease',
-                })}
-              />
+              {(['maintainer', 'miner'] as const).map((tab) => (
+                <Box
+                  key={tab}
+                  onClick={() => setActiveBottomCard(tab)}
+                  sx={(theme) => ({
+                    px: 1.8,
+                    py: 0.5,
+                    cursor: 'pointer',
+                    fontSize: '0.62rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    transition: 'all 0.25s ease',
+                    backgroundColor:
+                      activeBottomCard === tab
+                        ? alpha(theme.palette.status.merged, 0.15)
+                        : 'transparent',
+                    color:
+                      activeBottomCard === tab
+                        ? theme.palette.status.merged
+                        : alpha(theme.palette.text.primary, 0.35),
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.text.primary, 0.06),
+                    },
+                  })}
+                >
+                  {tab === 'maintainer' ? 'Maintainers' : 'Miners'}
+                </Box>
+              ))}
             </Stack>
           </Box>
         </Box>
