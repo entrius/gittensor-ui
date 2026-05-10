@@ -31,6 +31,7 @@ import {
   Tabs,
   Badge,
   useMediaQuery,
+  useTheme,
   Portal,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
@@ -2141,6 +2142,12 @@ const bountyDate = (issue: IssueBounty): string =>
   issue.createdAt ||
   '';
 
+/** Same numeric parsing as `IssuesList` chart aggregation (`targetBounty`). */
+const parseBountyChartAmount = (value: string | null | undefined): number => {
+  const parsed = Number.parseFloat(value ?? '0');
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 // Group raw API status into the filter buckets used on the standalone
 // /bounties page so this tab reads consistently across the app.
 const bountyStatusGroup = (
@@ -2325,6 +2332,7 @@ const buildBountyColumns = (): DataTableColumn<
 ];
 
 const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
+  const theme = useTheme();
   const { data: allIssues, isLoading } = useIssues();
   const { taoPrice, alphaPrice } = usePrices();
   const bountyColumns = useMemo(() => buildBountyColumns(), []);
@@ -2346,6 +2354,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   const [sortField, setSortField] = useState<BountySortKey>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [showChart, setShowChart] = useState(false);
 
   useEffect(() => {
     setPage(0);
@@ -2392,6 +2401,103 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       }
     });
   }, [filtered, sortField, sortOrder]);
+
+  const bountyChartOption = useMemo(() => {
+    const repoTotals = new Map<string, number>();
+    filtered.forEach((issue) => {
+      const amount = parseBountyChartAmount(issue.targetBounty);
+      repoTotals.set(
+        issue.repositoryFullName,
+        (repoTotals.get(issue.repositoryFullName) || 0) + amount,
+      );
+    });
+    const sortedRepos = [...repoTotals.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20);
+    const textColor = alpha(theme.palette.common.white, 0.85);
+    const gridColor = theme.palette.border.subtle;
+
+    return {
+      backgroundColor: 'transparent',
+      title: {
+        text: 'Bounty Pool by Repository',
+        subtext: `${filtered.length} issues`,
+        left: 'center',
+        top: 20,
+        textStyle: {
+          color: theme.palette.text.primary,
+          fontFamily: 'JetBrains Mono',
+          fontSize: 16,
+          fontWeight: 600,
+        },
+        subtextStyle: {
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+          fontFamily: 'JetBrains Mono',
+          fontSize: 12,
+        },
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        backgroundColor: alpha(theme.palette.background.default, 0.95),
+        borderColor: alpha(theme.palette.common.white, 0.15),
+        borderWidth: 1,
+        textStyle: {
+          color: theme.palette.text.primary,
+          fontFamily: 'JetBrains Mono',
+        },
+        formatter: (params: { name: string; value: number }[]) => {
+          const p = params[0];
+          return `${p.name}: ${p.value.toFixed(4)} ل`;
+        },
+      },
+      grid: {
+        left: '3%',
+        right: '3%',
+        bottom: '15%',
+        top: '20%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: sortedRepos.map(([repo]) => repo.split('/')[1] || repo),
+        axisLabel: {
+          color: textColor,
+          fontFamily: 'JetBrains Mono',
+          rotate: 45,
+          interval: 0,
+        },
+        axisLine: { lineStyle: { color: gridColor } },
+      },
+      yAxis: {
+        type: 'value',
+        name: 'Bounty (ل)',
+        nameTextStyle: { color: textColor, fontFamily: 'JetBrains Mono' },
+        axisLabel: { color: textColor, fontFamily: 'JetBrains Mono' },
+        splitLine: { lineStyle: { color: gridColor, type: 'dashed' } },
+      },
+      series: [
+        {
+          data: sortedRepos.map(([, v]) => v),
+          type: 'bar',
+          itemStyle: {
+            color: {
+              type: 'linear',
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: theme.palette.primary.main },
+                { offset: 1, color: theme.palette.status.info },
+              ],
+            },
+            borderRadius: [4, 4, 0, 0],
+          },
+        },
+      ],
+    };
+  }, [filtered, theme]);
 
   const paged = useMemo(
     () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
@@ -2468,8 +2574,68 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             }}
           />
         }
-        hasActiveFilter={statusFilter !== 'all'}
+        extraContent={
+          <Box>
+            <OptionsLabel>Chart</OptionsLabel>
+            <Stack direction="row" alignItems="center" spacing={1}>
+              <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+                <IconButton
+                  onClick={() => setShowChart((v) => !v)}
+                  size="small"
+                  sx={{
+                    color: showChart ? 'text.primary' : 'text.tertiary',
+                    border: '1px solid',
+                    borderColor: 'border.light',
+                    borderRadius: 2,
+                    padding: '6px',
+                    '&:hover': {
+                      backgroundColor: 'surface.light',
+                      borderColor: 'border.medium',
+                    },
+                  }}
+                >
+                  {showChart ? (
+                    <TableChartIcon fontSize="small" />
+                  ) : (
+                    <BarChartIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
+              <Typography
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.78rem',
+                  color: (t) =>
+                    alpha(t.palette.text.primary, TEXT_OPACITY.secondary),
+                }}
+              >
+                {showChart ? 'Hide chart' : 'Show chart'}
+              </Typography>
+            </Stack>
+          </Box>
+        }
+        hasActiveFilter={statusFilter !== 'all' || showChart}
       />
+
+      <Collapse in={showChart}>
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: '1px solid',
+            borderColor: 'border.light',
+            height: 500,
+            backgroundColor: 'surface.subtle',
+          }}
+        >
+          {showChart && filtered.length > 0 && (
+            <ReactECharts
+              option={bountyChartOption}
+              style={{ height: '100%', width: '100%' }}
+              notMerge
+            />
+          )}
+        </Box>
+      </Collapse>
 
       {viewMode === 'list' ? (
         <DataTable<IssueBounty, BountySortKey>
