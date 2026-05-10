@@ -95,6 +95,8 @@ const StatTile: React.FC<StatTileProps> = ({
       display: 'flex',
       flexDirection: 'column',
       gap: 0.5,
+      minWidth: 0,
+      overflow: 'hidden',
     }}
   >
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -174,6 +176,7 @@ const StatTile: React.FC<StatTileProps> = ({
         fontWeight: 600,
         color: color || 'text.primary',
         lineHeight: 1.2,
+        overflowWrap: 'break-word',
       }}
     >
       {value}
@@ -184,6 +187,7 @@ const StatTile: React.FC<StatTileProps> = ({
           fontSize: '0.75rem',
           color: (t) => alpha(t.palette.text.primary, 0.4),
           mt: 0.25,
+          overflowWrap: 'break-word',
         }}
       >
         {sub}
@@ -195,7 +199,8 @@ const StatTile: React.FC<StatTileProps> = ({
 const COPY_FEEDBACK_MS = 1500;
 const HOTKEY_VISIBLE_EDGE_CHARS = 5;
 const STATS_GRID_SX = { mt: { xs: 0, sm: 1.5 } } as const;
-const STAT_COL = { xs: 6, sm: 4, lg: 2 } as const;
+// minWidth: 0 prevents flex children from overflowing the grid row (min-width: auto default)
+const STAT_COL = { xs: 6, sm: 4, lg: 2, sx: { minWidth: 0 } } as const;
 
 const formatHotkeyPreview = (hotkey: string): string => {
   if (!hotkey) return '';
@@ -215,7 +220,7 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
     color: 'inherit',
     fontSize: { xs: '0.55rem', sm: '0.65rem' },
     fontFamily: '"JetBrains Mono", monospace',
-    wordBreak: 'normal',
+    overflowWrap: 'anywhere',
     lineHeight: 1,
   } as const;
 
@@ -233,6 +238,8 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
           lineHeight: 1,
           p: 0,
           m: 0,
+          maxWidth: '100%',
+          overflow: 'hidden',
           color: (t) =>
             copied
               ? t.palette.status.success
@@ -498,6 +505,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                 fontSize: { xs: '1.15rem', sm: '1.35rem' },
                 fontWeight: 700,
                 color: 'text.primary',
+                overflowWrap: 'break-word',
               }}
             >
               {githubData?.name || username}
@@ -511,6 +519,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               alignItems: { xs: 'flex-start', sm: 'center' },
               gap: { xs: 0.35, sm: 1 },
               flexWrap: 'wrap',
+              minWidth: 0,
             }}
           >
             <Typography
