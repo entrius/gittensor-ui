@@ -15,8 +15,9 @@ import { useMinerPRs, useReposAndWeights, useIssues } from '../../api';
 import { LinkBox } from '../common/linkBehavior';
 import {
   DataTable,
+  WatchlistButton,
   type DataTableColumn,
-} from '../../components/common/DataTable';
+} from '../../components/common';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import RankBadge from './RankBadge';
 import EmptyStateMessage from './EmptyStateMessage';
@@ -364,6 +365,21 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       sortKey: 'weight',
       renderCell: (repo) => repo.weight.toFixed(4),
     },
+    {
+      key: 'watch',
+      header: '★',
+      width: '52px',
+      align: 'center',
+      cellSx: { p: 0 },
+      renderCell: (repo) =>
+        repo.repository ? (
+          <WatchlistButton
+            category="repos"
+            itemKey={repo.repository}
+            size="small"
+          />
+        ) : null,
+    },
   ];
 
   const issueColumns: DataTableColumn<IssueRepoStats, IssueRepoSortField>[] = [
@@ -437,6 +453,21 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       align: 'right',
       sortKey: 'weight',
       renderCell: (repo) => repo.weight.toFixed(4),
+    },
+    {
+      key: 'watch',
+      header: '★',
+      width: '52px',
+      align: 'center',
+      cellSx: { p: 0 },
+      renderCell: (repo) =>
+        repo.repository ? (
+          <WatchlistButton
+            category="repos"
+            itemKey={repo.repository}
+            size="small"
+          />
+        ) : null,
     },
   ];
 
