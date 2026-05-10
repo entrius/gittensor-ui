@@ -8,13 +8,25 @@ export type RepoChanges = {
   inactiveAt: string | null;
 };
 
+// Raw config blob from das-gittensor /dash/repos and /repos/:repo. Mirrors
+// gittensor's master_repositories.json with shallow camelCase keys; nested
+// object values (e.g. labelMultipliers) keep their inner keys verbatim.
+export type RepositoryConfig = {
+  weight?: number | string;
+  additionalAcceptableBranches?: string[] | null;
+  inactiveAt?: string | null;
+  mirrorEnabled?: boolean;
+  trustedLabelPipeline?: boolean;
+  labelMultipliers?: Record<string, number>;
+  [key: string]: unknown;
+};
+
 export type Repository = {
   fullName: string;
   owner: string;
   name: string;
-  weight: string; // bc float
-  additionalAcceptableBranches?: string[] | null;
-  inactiveAt?: string | null;
+  updatedAt: string;
+  config: RepositoryConfig;
 };
 
 export type LanguageWeight = {

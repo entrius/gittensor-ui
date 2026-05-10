@@ -23,15 +23,18 @@ const RepositoryDetailsPage = React.lazy(
   () => import('./pages/RepositoryDetailsPage'),
 );
 const PRDetailsPage = React.lazy(() => import('./pages/PRDetailsPage'));
-const DiscoveriesPage = React.lazy(() => import('./pages/DiscoveriesPage'));
+
 const OnboardPage = React.lazy(() => import('./pages/OnboardPage'));
 const WatchlistPage = React.lazy(() => import('./pages/WatchlistPage'));
+const RepositoryRegistrationPage = React.lazy(
+  () => import('./pages/RepositoryRegistrationPage'),
+);
 
 // 404 page
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
 
 const routesArray: AppRoute[] = [
-  { name: 'home', path: '/', element: <HomePage />, showGlobalSearch: true },
+  { name: 'home', path: '/', element: <HomePage /> },
   {
     name: 'dashboard',
     path: '/dashboard',
@@ -51,13 +54,12 @@ const routesArray: AppRoute[] = [
   },
   { name: 'search', path: '/search', element: <SearchPage /> },
   {
-    name: 'discoveries',
+    name: 'discoveries-redirect',
     path: '/discoveries',
-    element: <DiscoveriesPage />,
-    showGlobalSearch: true,
+    element: <Navigate to="/top-miners?timeline=discoveries" replace />,
   },
   {
-    name: 'top-miners',
+    name: 'leaderboard',
     path: '/top-miners',
     element: <TopMinersPage />,
     showGlobalSearch: true,
@@ -103,6 +105,11 @@ const routesArray: AppRoute[] = [
     name: 'onboard',
     path: '/onboard',
     element: <OnboardPage />,
+  },
+  {
+    name: 'repository-registration',
+    path: '/repository-registration',
+    element: <RepositoryRegistrationPage />,
   },
 
   // 404 catch-all route (must be last)

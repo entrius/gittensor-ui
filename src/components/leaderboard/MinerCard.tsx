@@ -146,6 +146,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
         >
           <Avatar
             src={avatarSrc}
+            alt={username}
             sx={(theme) => ({
               width: 36,
               height: 36,
