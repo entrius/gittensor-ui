@@ -46,13 +46,18 @@ import { isOutsideScoringWindow } from '../../utils/ExplorerUtils';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import TablePagination from '../common/TablePagination';
 import { WatchlistButton } from '../common/WatchlistButton';
 import BountyProgress from './BountyProgress';
 import { BountyCard } from './BountyCard';
 import {
   type IssuesViewMode,
   ISSUES_VIEW_QUERY_PARAM,
+  ISSUES_CARD_ROWS,
   ISSUES_DEFAULT_CARD_ROWS,
+  ISSUES_DEFAULT_LIST_ROWS,
+  ISSUES_LIST_ROWS,
+  clampRowsForIssuesView,
   getIssuesViewModeFromQuery,
   readStoredIssuesViewMode,
   writeStoredIssuesViewMode,
@@ -206,6 +211,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [rowsPerPage, setRowsPerPage] = useState(
+    viewMode === 'cards' ? ISSUES_DEFAULT_CARD_ROWS : ISSUES_DEFAULT_LIST_ROWS,
+  );
+  const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [showChart, setShowChart] = useState(false);
 
@@ -221,6 +230,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const optionsOpen = Boolean(optionsAnchorEl);
 
   const { taoPrice, alphaPrice } = usePrices();
+  const validRows = viewMode === 'cards' ? ISSUES_CARD_ROWS : ISSUES_LIST_ROWS;
+  const rowsPerPageForView = clampRowsForIssuesView(rowsPerPage, viewMode);
 
   const syncParams = useCallback(
     (overrides: { filter?: FilterType; view?: IssuesViewMode }) => {
@@ -245,6 +256,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
     (nextMode: IssuesViewMode) => {
       writeStoredIssuesViewMode(nextMode);
       setStoredViewMode(nextMode);
+      setRowsPerPage((prev) => clampRowsForIssuesView(prev, nextMode));
+      setPage(0);
       syncParams({ view: nextMode });
     },
     [syncParams],
@@ -267,7 +280,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     const q = searchQuery.toLowerCase();
     return filteredByType.filter(
       (i) =>
-        i.repositoryFullName.toLowerCase().includes(q) ||
+        (i.repositoryFullName || '').toLowerCase().includes(q) ||
         i.title?.toLowerCase().includes(q) ||
         String(i.issueNumber).includes(q),
     );
@@ -357,13 +370,41 @@ const IssuesList: React.FC<IssuesListProps> = ({
     return decorated.map((d) => d.row);
   }, [filteredIssues, getSortValue, sortKey, sortDirection]);
 
+  const paginationResetKey = [
+    filterType,
+    viewMode,
+    searchQuery,
+    sortKey,
+    sortDirection,
+    rowsPerPageForView,
+  ].join('|');
+  const [lastPaginationResetKey, setLastPaginationResetKey] =
+    useState(paginationResetKey);
+  const pageAfterReset =
+    lastPaginationResetKey === paginationResetKey ? page : 0;
+  const totalPages = Math.ceil(sortedIssues.length / rowsPerPageForView);
+  const activePage = Math.min(pageAfterReset, Math.max(0, totalPages - 1));
+
+  if (lastPaginationResetKey !== paginationResetKey) {
+    setLastPaginationResetKey(paginationResetKey);
+    if (page !== 0) setPage(0);
+  } else if (activePage !== pageAfterReset) {
+    setPage(activePage);
+  }
+
+  const paginatedIssues = useMemo(() => {
+    const start = activePage * rowsPerPageForView;
+    return sortedIssues.slice(start, start + rowsPerPageForView);
+  }, [activePage, rowsPerPageForView, sortedIssues]);
+
   const chartOption = useMemo(() => {
     const repoTotals = new Map<string, number>();
     filteredIssues.forEach((issue) => {
       const amount = parseBountyAmount(issue.targetBounty);
+      const repositoryName = issue.repositoryFullName || 'Unknown repository';
       repoTotals.set(
-        issue.repositoryFullName,
-        (repoTotals.get(issue.repositoryFullName) || 0) + amount,
+        repositoryName,
+        (repoTotals.get(repositoryName) || 0) + amount,
       );
     });
     const sorted = [...repoTotals.entries()]
@@ -555,39 +596,43 @@ const IssuesList: React.FC<IssuesListProps> = ({
       width: '200px',
       sortKey: 'repository',
       cellSx: { overflow: 'hidden' },
-      renderCell: (issue) => (
-        <Tooltip title={issue.repositoryFullName} arrow>
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              minWidth: 0,
-              maxWidth: '100%',
-            }}
-          >
-            <Avatar
-              src={getRepositoryOwnerAvatarSrc(
-                issue.repositoryFullName.split('/')[0],
-              )}
-              alt={issue.repositoryFullName}
-              sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
-            />
-            <Typography
-              component="span"
+      renderCell: (issue) => {
+        const repositoryFullName =
+          issue.repositoryFullName || 'Unknown repository';
+        return (
+          <Tooltip title={repositoryFullName} arrow>
+            <Box
               sx={{
-                fontSize: '0.85rem',
-                color: STATUS_COLORS.info,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                minWidth: 0,
+                maxWidth: '100%',
               }}
             >
-              {issue.repositoryFullName}
-            </Typography>
-          </Box>
-        </Tooltip>
-      ),
+              <Avatar
+                src={getRepositoryOwnerAvatarSrc(
+                  repositoryFullName.split('/')[0],
+                )}
+                alt={repositoryFullName}
+                sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
+              />
+              <Typography
+                component="span"
+                sx={{
+                  fontSize: '0.85rem',
+                  color: STATUS_COLORS.info,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {repositoryFullName}
+              </Typography>
+            </Box>
+          </Tooltip>
+        );
+      },
     };
 
     const titleColumn: DataTableColumn<IssueBounty, SortKey> = {
@@ -883,6 +928,41 @@ const IssuesList: React.FC<IssuesListProps> = ({
     />
   );
 
+  const rowsPerPageControl = (
+    <Stack direction="row" alignItems="center" spacing={1}>
+      <Typography
+        sx={{
+          fontFamily: '"JetBrains Mono", monospace',
+          fontSize: '0.72rem',
+          fontWeight: 600,
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
+          textTransform: 'uppercase',
+        }}
+      >
+        Rows
+      </Typography>
+      <Select
+        value={rowsPerPageForView}
+        onChange={(e) => {
+          setRowsPerPage(Number(e.target.value));
+          setPage(0);
+        }}
+        size="small"
+        sx={{
+          ...inputFieldSx,
+          minWidth: 76,
+          '& .MuiSelect-select': { py: 0.75 },
+        }}
+      >
+        {validRows.map((value) => (
+          <MenuItem key={value} value={value}>
+            {value}
+          </MenuItem>
+        ))}
+      </Select>
+    </Stack>
+  );
+
   const viewToggle = (
     <ViewModeToggle viewMode={viewMode} onChange={handleViewModeChange} />
   );
@@ -1054,10 +1134,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
   );
 
   /* Inline toolbar at the top of the table.
-     - Above xl (usePortal=true): only Rows; the Filters panel in the right
-       sidebar holds Status / View / Search / Chart via Portal.
+     - Above xl (usePortal=true): Rows stay here while Sort / View / Search /
+       Chart render in the right sidebar via Portal.
      - Below xl: Rows + a single "Options" button that opens a popover with
-       Status / View / Search / Chart sections. */
+       Sort / View / Search / Chart sections. */
   const inlineToolbar = (
     <Box
       sx={{
@@ -1072,6 +1152,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         gap: 2,
       }}
     >
+      {rowsPerPageControl}
       {!usePortal && (
         <Box sx={{ ml: 'auto' }}>
           {optionsButton}
@@ -1134,11 +1215,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   const toolbar = (
     <>
+      {inlineToolbar}
       {usePortal ? (
         <Portal container={portalTarget}>{sidebarToolbar}</Portal>
-      ) : (
-        inlineToolbar
-      )}
+      ) : null}
       {chartCollapse}
     </>
   );
@@ -1155,32 +1235,43 @@ const IssuesList: React.FC<IssuesListProps> = ({
     </Box>
   );
 
+  const pagination = (
+    <TablePagination
+      page={activePage}
+      totalPages={totalPages}
+      onPageChange={setPage}
+    />
+  );
+
   return (
     <Card sx={cardSx} elevation={0}>
       {toolbar}
 
       {viewMode === 'cards' ? (
         sortedIssues.length > 0 ? (
-          <Grid container spacing={2}>
-            {sortedIssues.map((issue) => (
-              <Grid item xs={12} sm={6} md={4} key={issue.id}>
-                <BountyCard
-                  issue={issue}
-                  href={getIssueHref ? getIssueHref(issue.id) : undefined}
-                  linkState={linkState}
-                  taoPrice={taoPrice}
-                  alphaPrice={alphaPrice}
-                />
-              </Grid>
-            ))}
-          </Grid>
+          <>
+            <Grid container spacing={2}>
+              {paginatedIssues.map((issue) => (
+                <Grid item xs={12} sm={6} md={4} key={issue.id}>
+                  <BountyCard
+                    issue={issue}
+                    href={getIssueHref ? getIssueHref(issue.id) : undefined}
+                    linkState={linkState}
+                    taoPrice={taoPrice}
+                    alphaPrice={alphaPrice}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+            {pagination}
+          </>
         ) : (
           emptyState
         )
       ) : (
         <DataTable<IssueBounty, SortKey>
           columns={columns}
-          rows={sortedIssues}
+          rows={paginatedIssues}
           getRowKey={(issue) => issue.id}
           getRowHref={
             getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
@@ -1204,6 +1295,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
             order: sortDirection,
             onChange: handleSort,
           }}
+          pagination={pagination}
         />
       )}
     </Card>

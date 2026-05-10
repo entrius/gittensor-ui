@@ -31,7 +31,7 @@ import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { WatchlistButton } from '../../components/common';
 import { serializePRKey } from '../../hooks/useWatchlist';
 import ExplorerFilterButton from './ExplorerFilterButton';
-import TablePagination from './TablePagination';
+import TablePagination from '../common/TablePagination';
 import { tooltipSlotProps } from '../../theme';
 
 type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';

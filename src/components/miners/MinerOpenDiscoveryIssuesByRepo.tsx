@@ -28,7 +28,7 @@ import { getRepositoryOwnerAvatarSrc, paginateItems } from '../../utils';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import ExplorerFilterButton from './ExplorerFilterButton';
-import TablePagination from './TablePagination';
+import TablePagination from '../common/TablePagination';
 import {
   selectMinerIssueScanRepos,
   useMinerRepositoriesOpenIssues,
