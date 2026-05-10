@@ -57,6 +57,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../components/common/DataTable';
+import { ClearSearchAdornment } from '../components/common/ClearSearchAdornment';
 import { LinkBox } from '../components/common/linkBehavior';
 import {
   useAllMiners,
@@ -685,6 +686,12 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
               <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
             </InputAdornment>
           ),
+          endAdornment: (
+            <ClearSearchAdornment
+              visible={Boolean(searchValue)}
+              onClear={() => onSearchChange('')}
+            />
+          ),
         }}
         sx={{
           width: '100%',
@@ -849,6 +856,12 @@ const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
                     sx={{ color: 'text.tertiary', fontSize: '1rem' }}
                   />
                 </InputAdornment>
+              ),
+              endAdornment: (
+                <ClearSearchAdornment
+                  visible={Boolean(searchValue)}
+                  onClear={() => onSearchChange('')}
+                />
               ),
             }}
             sx={{

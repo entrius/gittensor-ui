@@ -45,6 +45,7 @@ import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { isOutsideScoringWindow } from '../../utils/ExplorerUtils';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { WatchlistButton } from '../common/WatchlistButton';
 import BountyProgress from './BountyProgress';
 import { BountyCard } from './BountyCard';
@@ -867,6 +868,12 @@ const IssuesList: React.FC<IssuesListProps> = ({
               }}
             />
           </InputAdornment>
+        ),
+        endAdornment: (
+          <ClearSearchAdornment
+            visible={Boolean(searchQuery)}
+            onClear={() => setSearchQuery('')}
+          />
         ),
       }}
       sx={{
