@@ -45,6 +45,7 @@ import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { isOutsideScoringWindow } from '../../utils/ExplorerUtils';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import { ScrollAwareTooltip } from '../common/ScrollAwareTooltip';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { WatchlistButton } from '../common/WatchlistButton';
 import BountyProgress from './BountyProgress';
@@ -597,18 +598,27 @@ const IssuesList: React.FC<IssuesListProps> = ({
       renderCell: (issue) => (
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
           {issue.title && (
-            <Typography
-              sx={{
-                fontSize: '0.85rem',
-                color: 'text.primary',
-                fontWeight: 500,
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
+            <ScrollAwareTooltip
+              title={issue.title}
+              arrow
+              placement="top-start"
+              enterDelay={200}
             >
-              {issue.title}
-            </Typography>
+              <Typography
+                component="span"
+                sx={{
+                  display: 'block',
+                  fontSize: '0.85rem',
+                  color: 'text.primary',
+                  fontWeight: 500,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {issue.title}
+              </Typography>
+            </ScrollAwareTooltip>
           )}
           <Link
             href={issue.githubUrl}

@@ -14,6 +14,7 @@ import {
 } from '@mui/material';
 import { formatDistanceToNow } from 'date-fns';
 import { LinkBox } from '../../../components/common/linkBehavior';
+import { ScrollAwareTooltip } from '../../../components/common/ScrollAwareTooltip';
 import { useInfiniteCommitLog } from '../../../api';
 import { getRepositoryOwnerAvatarSrc } from '../../../utils/avatar';
 import theme, {
@@ -268,20 +269,28 @@ const CommitLogItem: React.FC<{
               </Typography>
             )}
           </Stack>
-          <Typography
-            sx={{
-              color: 'text.primary',
-              fontSize: '0.9rem',
-              fontWeight: 500,
-              lineHeight: 1.4,
-              display: '-webkit-box',
-              WebkitLineClamp: 2,
-              WebkitBoxOrient: 'vertical',
-              overflow: 'hidden',
-            }}
+          <ScrollAwareTooltip
+            title={entry.pullRequestTitle}
+            arrow
+            placement="top-start"
+            enterDelay={200}
           >
-            {entry.pullRequestTitle}
-          </Typography>
+            <Typography
+              component="span"
+              sx={{
+                color: 'text.primary',
+                fontSize: '0.9rem',
+                fontWeight: 500,
+                lineHeight: 1.4,
+                display: '-webkit-box',
+                WebkitLineClamp: 2,
+                WebkitBoxOrient: 'vertical',
+                overflow: 'hidden',
+              }}
+            >
+              {entry.pullRequestTitle}
+            </Typography>
+          </ScrollAwareTooltip>
         </Box>
 
         <LiveCommitFooter
