@@ -59,6 +59,7 @@ import {
 } from '../components/common/DataTable';
 import { ClearSearchAdornment } from '../components/common/ClearSearchAdornment';
 import { LinkBox } from '../components/common/linkBehavior';
+import { ScrollAwareTooltip } from '../components/common/ScrollAwareTooltip';
 import {
   useAllMiners,
   useReposAndWeights,
@@ -2245,17 +2246,28 @@ const buildBountyColumns = (): DataTableColumn<
           alt={i.repositoryFullName}
           sx={{ width: 20, height: 20, flexShrink: 0 }}
         />
-        <Typography
-          sx={{
-            fontSize: '0.75rem',
-            color: 'text.secondary',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+        <ScrollAwareTooltip
+          title={i.repositoryFullName}
+          arrow
+          placement="top-start"
+          enterDelay={200}
         >
-          {i.repositoryFullName}
-        </Typography>
+          <Typography
+            component="span"
+            sx={{
+              display: 'block',
+              minWidth: 0,
+              flex: 1,
+              fontSize: '0.75rem',
+              color: 'text.secondary',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {i.repositoryFullName}
+          </Typography>
+        </ScrollAwareTooltip>
       </Box>
     ),
   },
@@ -2709,17 +2721,26 @@ const buildPrColumns = (
     sortKey: 'repo',
     cellSx: prCellSx,
     renderCell: (pr) => (
-      <Typography
-        sx={{
-          fontSize: '0.75rem',
-          color: 'text.secondary',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
+      <ScrollAwareTooltip
+        title={pr.repository}
+        arrow
+        placement="top-start"
+        enterDelay={200}
       >
-        {pr.repository}
-      </Typography>
+        <Typography
+          component="span"
+          sx={{
+            display: 'block',
+            fontSize: '0.75rem',
+            color: 'text.secondary',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {pr.repository}
+        </Typography>
+      </ScrollAwareTooltip>
     ),
   },
   {
@@ -2961,17 +2982,26 @@ const PRCard: React.FC<{
               borderColor: 'border.medium',
             }}
           />
-          <Typography
-            sx={{
-              fontSize: '0.72rem',
-              color: 'text.secondary',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
+          <ScrollAwareTooltip
+            title={pr.repository}
+            arrow
+            placement="top-start"
+            enterDelay={200}
           >
-            {pr.repository}
-          </Typography>
+            <Typography
+              component="span"
+              sx={{
+                display: 'block',
+                fontSize: '0.72rem',
+                color: 'text.secondary',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {pr.repository}
+            </Typography>
+          </ScrollAwareTooltip>
         </Stack>
         <Stack
           direction="row"
@@ -3485,17 +3515,26 @@ const buildIssueColumns = (
     sortKey: 'repo',
     cellSx: issueCellSx,
     renderCell: (i) => (
-      <Typography
-        sx={{
-          fontSize: '0.75rem',
-          color: 'text.secondary',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
+      <ScrollAwareTooltip
+        title={i.repo_full_name}
+        arrow
+        placement="top-start"
+        enterDelay={200}
       >
-        {i.repo_full_name}
-      </Typography>
+        <Typography
+          component="span"
+          sx={{
+            display: 'block',
+            fontSize: '0.75rem',
+            color: 'text.secondary',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {i.repo_full_name}
+        </Typography>
+      </ScrollAwareTooltip>
     ),
   },
   {
@@ -3721,17 +3760,26 @@ const IssueCard: React.FC<{
               borderColor: 'border.medium',
             }}
           />
-          <Typography
-            sx={{
-              fontSize: '0.72rem',
-              color: 'text.secondary',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
+          <ScrollAwareTooltip
+            title={issue.repo_full_name}
+            arrow
+            placement="top-start"
+            enterDelay={200}
           >
-            {issue.repo_full_name}
-          </Typography>
+            <Typography
+              component="span"
+              sx={{
+                display: 'block',
+                fontSize: '0.72rem',
+                color: 'text.secondary',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {issue.repo_full_name}
+            </Typography>
+          </ScrollAwareTooltip>
         </Stack>
         <Stack
           direction="row"
