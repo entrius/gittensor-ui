@@ -27,6 +27,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { WatchlistButton } from '../../components/common';
 import { serializePRKey } from '../../hooks/useWatchlist';
 import ExplorerFilterButton from './ExplorerFilterButton';
@@ -564,6 +565,15 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 }}
               />
             </InputAdornment>
+          ),
+          endAdornment: (
+            <ClearSearchAdornment
+              visible={Boolean(searchQuery)}
+              onClear={() => {
+                setSearchQuery('');
+                setPage(0);
+              }}
+            />
           ),
         }}
         sx={{

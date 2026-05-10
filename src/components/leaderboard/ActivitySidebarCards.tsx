@@ -268,7 +268,7 @@ export const ActivitySidebarCards: React.FC<ActivitySidebarCardsProps> = ({
 
 // ── Shared sub-components ────────────────────────────────────────
 
-export interface StatRowProps {
+interface StatRowProps {
   label: string;
   value: number | string;
   valueColor?: string;
