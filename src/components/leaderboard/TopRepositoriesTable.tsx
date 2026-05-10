@@ -258,6 +258,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const { isWatched } = useWatchlist('repos');
   const theme = useTheme();
   const isCompactChart = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobileControls = useMediaQuery(theme.breakpoints.down('md'));
   const trimmedSearch = searchQuery.trim();
   const isDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(trimmedSearch);
 
@@ -1220,15 +1221,17 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               width: { xs: '100%', md: 'auto' },
             }}
           >
-            <Box
-              sx={{
-                display: { xs: 'none', md: 'flex' },
-                alignItems: 'center',
-                gap: 1,
-              }}
-            >
-              {chartControls}
-            </Box>
+            {!isMobileControls && (
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                }}
+              >
+                {chartControls}
+              </Box>
+            )}
 
             <FormControl size="small">
               <Box
@@ -1247,7 +1250,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                     flexShrink: 0,
                   }}
                 >
-                  Row:
+                  Rows:
                 </Typography>
                 <Select
                   value={rowsPerPage}
@@ -1295,7 +1298,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           </Box>
         </Box>
 
-        {viewMode === 'cards' && (
+        {(viewMode === 'cards' || showChart) && (
           <Box
             sx={{
               px: { xs: 1, sm: 1.5, md: 2 },
@@ -1372,17 +1375,19 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           </Box>
         )}
 
-        <Box
-          sx={{
-            display: { xs: 'flex', md: 'none' },
-            alignItems: 'center',
-            gap: 1,
-            px: { xs: 1, sm: 1.5 },
-            pb: { xs: 1, sm: 1.5 },
-          }}
-        >
-          {chartControls}
-        </Box>
+        {isMobileControls && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              px: { xs: 1, sm: 1.5 },
+              pb: { xs: 1, sm: 1.5 },
+            }}
+          >
+            {chartControls}
+          </Box>
+        )}
       </Box>
 
       <Collapse in={showChart}>
