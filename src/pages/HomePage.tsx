@@ -404,10 +404,7 @@ const HomePage: React.FC = () => {
             '0%': { transform: 'scaleX(0)' },
             '100%': { transform: 'scaleX(1)' },
           },
-          '@keyframes heroAuroraDrift': {
-            '0%': { transform: 'translate(0, 0) scale(1)' },
-            '100%': { transform: 'translate(30px, -20px) scale(1.08)' },
-          },
+
           '@media (prefers-reduced-motion: reduce)': {
             '& *, & *::before, & *::after': {
               animation: 'none !important',
@@ -429,7 +426,7 @@ const HomePage: React.FC = () => {
             position: 'relative',
           }}
         >
-          {/* ── Full-width animated canvas with mesh + aurora lights ── */}
+          {/* ── Full-width animated particle mesh ── */}
           <Box
             sx={{
               position: 'absolute',

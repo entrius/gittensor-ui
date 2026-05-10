@@ -1,4 +1,6 @@
 import React, { useEffect, useRef } from 'react';
+import { alpha } from '@mui/material/styles';
+import { UI_COLORS, STATUS_COLORS } from '../../theme';
 
 interface Particle {
   x: number;
@@ -10,19 +12,6 @@ interface Particle {
   isHot: boolean;
 }
 
-interface AuroraBlob {
-  /** Normalised position (0–1) */
-  x: number;
-  y: number;
-  /** Drift velocity (normalised per frame) */
-  vx: number;
-  vy: number;
-  /** Normalised radius */
-  radius: number;
-  color: string;
-  opacity: number;
-}
-
 interface NetworkCanvasProps {
   particleCount?: number;
   connectionDistance?: number;
@@ -30,32 +19,22 @@ interface NetworkCanvasProps {
   color?: string;
   /** Hot-node accent color */
   accentColor?: string;
-  /** Aurora blob configs — rendered as large soft gradient lights on the canvas */
-  auroraBlobs?: Array<{
-    color: string;
-    startX: number;
-    startY: number;
-    radius: number;
-    opacity: number;
-  }>;
   style?: React.CSSProperties;
 }
 
 /**
- * Full-bleed animated particle mesh with integrated aurora gradient lights.
+ * Full-bleed animated particle mesh.
  * Everything is rendered on a single canvas for cohesion.
  */
 const NetworkCanvas: React.FC<NetworkCanvasProps> = ({
   particleCount = 60,
   connectionDistance = 140,
-  color = 'rgba(255,255,255,0.35)',
-  accentColor = 'rgba(63,185,80,0.8)',
-  auroraBlobs: blobConfigs,
+  color = alpha(UI_COLORS.white, 0.35),
+  accentColor = alpha(STATUS_COLORS.merged, 0.8),
   style,
 }) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const particlesRef = useRef<Particle[]>([]);
-  const aurorasRef = useRef<AuroraBlob[]>([]);
   const animFrameRef = useRef<number>(0);
   const sizeRef = useRef({ w: 0, h: 0 });
 
@@ -87,73 +66,9 @@ const NetworkCanvas: React.FC<NetworkCanvasProps> = ({
       }));
     };
 
-    const initAuroras = () => {
-      if (!blobConfigs || blobConfigs.length === 0) {
-        // Default aurora blobs if none provided
-        aurorasRef.current = [
-          {
-            x: 0.2,
-            y: 0.25,
-            vx: 0.00012,
-            vy: -0.00008,
-            radius: 0.4,
-            color: 'rgba(63,185,80,1)',
-            opacity: 0.25,
-          },
-          {
-            x: 0.75,
-            y: 0.7,
-            vx: -0.0001,
-            vy: 0.00006,
-            radius: 0.35,
-            color: 'rgba(88,166,255,1)',
-            opacity: 0.18,
-          },
-        ];
-      } else {
-        aurorasRef.current = blobConfigs.map((cfg) => ({
-          x: cfg.startX,
-          y: cfg.startY,
-          vx: (Math.random() - 0.5) * 0.0002,
-          vy: (Math.random() - 0.5) * 0.0002,
-          radius: cfg.radius,
-          color: cfg.color,
-          opacity: cfg.opacity,
-        }));
-      }
-    };
-
     const draw = () => {
       const { w, h } = sizeRef.current;
       ctx.clearRect(0, 0, w, h);
-
-      // ── Aurora gradient lights ──
-      for (const blob of aurorasRef.current) {
-        // Drift
-        blob.x += blob.vx;
-        blob.y += blob.vy;
-        // Bounce off edges (normalised)
-        if (blob.x < -0.1 || blob.x > 1.1) blob.vx *= -1;
-        if (blob.y < -0.1 || blob.y > 1.1) blob.vy *= -1;
-
-        const cx = blob.x * w;
-        const cy = blob.y * h;
-        const r = blob.radius * Math.max(w, h);
-
-        const grad = ctx.createRadialGradient(cx, cy, 0, cx, cy, r);
-        grad.addColorStop(
-          0,
-          blob.color.replace(/[\d.]+\)$/, `${blob.opacity})`),
-        );
-        grad.addColorStop(
-          0.4,
-          blob.color.replace(/[\d.]+\)$/, `${blob.opacity * 0.35})`),
-        );
-        grad.addColorStop(1, 'rgba(0,0,0,0)');
-
-        ctx.fillStyle = grad;
-        ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
-      }
 
       // ── Mesh lines ──
       const particles = particlesRef.current;
@@ -181,8 +96,8 @@ const NetworkCanvas: React.FC<NetworkCanvasProps> = ({
             ctx.moveTo(particles[i].x, particles[i].y);
             ctx.lineTo(particles[j].x, particles[j].y);
             ctx.strokeStyle = isAccent
-              ? accentColor.replace(/[\d.]+\)$/, `${lineOpacity * 1.6})`)
-              : color.replace(/[\d.]+\)$/, `${lineOpacity})`);
+              ? alpha(STATUS_COLORS.merged, lineOpacity * 1.6)
+              : alpha(UI_COLORS.white, lineOpacity);
             ctx.lineWidth = 0.6;
             ctx.stroke();
           }
@@ -194,7 +109,6 @@ const NetworkCanvas: React.FC<NetworkCanvasProps> = ({
 
     resize();
     initParticles();
-    initAuroras();
     animFrameRef.current = requestAnimationFrame(draw);
 
     const onResize = () => {
@@ -207,7 +121,7 @@ const NetworkCanvas: React.FC<NetworkCanvasProps> = ({
       cancelAnimationFrame(animFrameRef.current);
       window.removeEventListener('resize', onResize);
     };
-  }, [particleCount, connectionDistance, color, accentColor, blobConfigs]);
+  }, [particleCount, connectionDistance, color, accentColor]);
 
   return (
     <canvas
