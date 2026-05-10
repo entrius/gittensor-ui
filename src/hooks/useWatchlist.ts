@@ -4,13 +4,19 @@ import { useCallback, useSyncExternalStore } from 'react';
 const V1_KEY = 'gittensor.watchlist.v1';
 const V2_KEY = 'gittensor.watchlist.v2';
 
-export type WatchlistCategory = 'miners' | 'repos' | 'bounties' | 'prs';
+export type WatchlistCategory =
+  | 'miners'
+  | 'repos'
+  | 'bounties'
+  | 'prs'
+  | 'issues';
 
 const CATEGORIES: readonly WatchlistCategory[] = [
   'miners',
   'repos',
   'bounties',
   'prs',
+  'issues',
 ] as const;
 
 type WatchlistState = Record<WatchlistCategory, string[]>;
@@ -20,6 +26,7 @@ const EMPTY_STATE: WatchlistState = {
   repos: [],
   bounties: [],
   prs: [],
+  issues: [],
 };
 
 type Listener = () => void;
@@ -43,6 +50,7 @@ const readFromStorage = (): WatchlistState => {
           repos: toStringArray((parsed as Record<string, unknown>).repos),
           bounties: toStringArray((parsed as Record<string, unknown>).bounties),
           prs: toStringArray((parsed as Record<string, unknown>).prs),
+          issues: toStringArray((parsed as Record<string, unknown>).issues),
         };
       }
       return EMPTY_STATE;
@@ -121,7 +129,8 @@ const totalCountOf = (state: WatchlistState) =>
   state.miners.length +
   state.repos.length +
   state.bounties.length +
-  state.prs.length;
+  state.prs.length +
+  state.issues.length;
 
 interface UseWatchlist {
   ids: string[];
@@ -218,6 +227,7 @@ let countsCache: CountsMap = {
   repos: snapshot.repos.length,
   bounties: snapshot.bounties.length,
   prs: snapshot.prs.length,
+  issues: snapshot.issues.length,
 };
 let countsCacheSource: WatchlistState = snapshot;
 
@@ -228,6 +238,7 @@ const getCountsSnapshot = (): CountsMap => {
       repos: snapshot.repos.length,
       bounties: snapshot.bounties.length,
       prs: snapshot.prs.length,
+      issues: snapshot.issues.length,
     };
     countsCacheSource = snapshot;
   }

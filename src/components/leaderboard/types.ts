@@ -49,6 +49,7 @@ export interface RepoStats {
   weight: number;
   rank?: number;
   inactiveAt?: string | null;
+  mirrorEnabled?: boolean;
   /** Issue discovery track score (UI: "Issue score"; miner stats + merged multiplier PRs). */
   discoveryScore: number;
   /**
@@ -68,7 +69,8 @@ export type SortOption =
   | 'totalPRs'
   | 'totalIssues'
   | 'issueDiscoveryScore'
-  | 'credibility';
+  | 'credibility'
+  | 'watch';
 
 export const FONTS = {
   mono: '"JetBrains Mono", monospace',
