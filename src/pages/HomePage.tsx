@@ -292,15 +292,6 @@ const HomePage: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    // Coprime cadence vs the top panel (5s) so flips rarely line up.
-    const interval = setInterval(() => {
-      setActiveBottomCard((current) =>
-        current === 'maintainer' ? 'miner' : 'maintainer',
-      );
-    }, 7000);
-    return () => clearInterval(interval);
-  }, []);
   const { datasets, isLoading } = useDashboardData('35d');
   const stats = useStats();
   const onboardLink = useLinkBehavior<HTMLAnchorElement>('/onboard');
