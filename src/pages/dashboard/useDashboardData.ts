@@ -12,6 +12,7 @@ import {
   useAllMiners,
   useAllPrs,
   useIssues,
+  useMinersIssues,
   useReposAndWeights,
 } from '../../api';
 import {
@@ -84,14 +85,43 @@ export const useDashboardData = (range: TrendTimeRange) => {
     [datasets.miners.data, datasets.prs.data],
   );
 
-  const featuredDiscoveryContributors = useMemo(
-    () =>
-      buildFeaturedDiscoveryContributors(
-        datasets.prs.data,
-        datasets.miners.data,
-      ),
-    [datasets.miners.data, datasets.prs.data],
+  // Step 1: pick featured discoverers (repos populated from mirror API below)
+  const discovererCandidates = useMemo(
+    () => buildFeaturedDiscoveryContributors(datasets.miners.data),
+    [datasets.miners.data],
   );
+
+  // Step 2: fan-out per-miner issues from mirror API to get real issue repos
+  const discovererIds = useMemo(
+    () => discovererCandidates.map((d) => d.githubId),
+    [discovererCandidates],
+  );
+  const discovererIssueQueries = useMinersIssues(
+    discovererIds,
+    discovererIds.length > 0,
+  );
+
+  // Step 3: attach repos from MinerIssue.repo_full_name (authoritative source)
+  const featuredDiscoveryContributors = useMemo(() => {
+    return discovererCandidates.map((d, i) => {
+      const minerIssues = discovererIssueQueries[i]?.data ?? [];
+      if (minerIssues.length === 0) return d;
+      const repoCounts = new Map<string, number>();
+      for (const issue of minerIssues) {
+        if (issue.repo_full_name) {
+          repoCounts.set(
+            issue.repo_full_name,
+            (repoCounts.get(issue.repo_full_name) ?? 0) + 1,
+          );
+        }
+      }
+      const repos = [...repoCounts.entries()]
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 3)
+        .map(([repo]) => repo);
+      return { ...d, repos };
+    });
+  }, [discovererCandidates, discovererIssueQueries]);
 
   const featuredWork = useMemo(
     () => buildFeaturedWork(datasets.prs.data, datasets.repos.data),

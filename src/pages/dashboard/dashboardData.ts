@@ -932,7 +932,6 @@ export const buildFeaturedWork = (
 };
 
 const pickTopDiscoveryMiner = (
-  prs: CommitLog[],
   miners: MinerEvaluation[],
   exclude: Set<string> = new Set(),
 ): DashboardFeaturedContributor | undefined => {
@@ -971,7 +970,7 @@ const pickTopDiscoveryMiner = (
       },
       ...optionalCredibilityMetrics(top.issueCredibility),
     ],
-    repos: getTopContributorRepos(prs, top.githubId),
+    repos: [],
     usdPerDay: parseNumber(top.usdPerDay),
     credibility: parseNumber(top.issueCredibility),
     segments: [
@@ -983,7 +982,6 @@ const pickTopDiscoveryMiner = (
 };
 
 const pickMostSolvedIssuesMiner = (
-  prs: CommitLog[],
   miners: MinerEvaluation[],
   exclude: Set<string> = new Set(),
 ): DashboardFeaturedContributor | undefined => {
@@ -1023,7 +1021,7 @@ const pickMostSolvedIssuesMiner = (
       },
       ...optionalCredibilityMetrics(top.issueCredibility),
     ],
-    repos: getTopContributorRepos(prs, top.githubId),
+    repos: [],
     usdPerDay: parseNumber(top.usdPerDay),
     credibility: parseNumber(top.issueCredibility),
     segments: [
@@ -1035,7 +1033,6 @@ const pickMostSolvedIssuesMiner = (
 };
 
 const pickHighestIssueTokenScoreMiner = (
-  prs: CommitLog[],
   miners: MinerEvaluation[],
   exclude: Set<string> = new Set(),
 ): DashboardFeaturedContributor | undefined => {
@@ -1072,7 +1069,7 @@ const pickHighestIssueTokenScoreMiner = (
       },
       ...optionalCredibilityMetrics(top.issueCredibility),
     ],
-    repos: getTopContributorRepos(prs, top.githubId),
+    repos: [],
     usdPerDay: parseNumber(top.usdPerDay),
     credibility: parseNumber(top.issueCredibility),
     segments: [
@@ -1084,15 +1081,14 @@ const pickHighestIssueTokenScoreMiner = (
 };
 
 export const buildFeaturedDiscoveryContributors = (
-  prs: CommitLog[],
   miners: MinerEvaluation[],
 ): DashboardFeaturedContributor[] => {
   const seen = new Set<string>();
   const contributors: DashboardFeaturedContributor[] = [];
   const pickers: Array<() => DashboardFeaturedContributor | undefined> = [
-    () => pickTopDiscoveryMiner(prs, miners, seen),
-    () => pickMostSolvedIssuesMiner(prs, miners, seen),
-    () => pickHighestIssueTokenScoreMiner(prs, miners, seen),
+    () => pickTopDiscoveryMiner(miners, seen),
+    () => pickMostSolvedIssuesMiner(miners, seen),
+    () => pickHighestIssueTokenScoreMiner(miners, seen),
   ];
   for (const pick of pickers) {
     const c = pick();

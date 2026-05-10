@@ -1,5 +1,11 @@
 import React, { useCallback, useMemo } from 'react';
-import { Avatar, Box, CircularProgress, Typography } from '@mui/material';
+import {
+  Avatar,
+  Box,
+  CircularProgress,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { RANK_COLORS } from '../../../theme';
@@ -14,62 +20,66 @@ const KpiBox: React.FC<{
   title: string;
   value: string;
   sub: string;
+  tooltip: string;
   accentColor?: string;
   isLast?: boolean;
-}> = ({ title, value, sub, accentColor, isLast }) => {
+}> = ({ title, value, sub, tooltip, accentColor, isLast }) => {
   const theme = useTheme();
   return (
-    <Box
-      sx={{
-        flex: 1,
-        minWidth: 'max-content',
-        px: { xs: 1, sm: 1.5 },
-        py: 0.85,
-        borderRight: isLast
-          ? 'none'
-          : `1px solid ${alpha(theme.palette.common.white, 0.07)}`,
-      }}
-    >
-      <Typography
+    <Tooltip title={tooltip} placement="top" arrow>
+      <Box
         sx={{
-          ...mono,
-          fontSize: '0.5rem',
-          fontWeight: 600,
-          color: alpha(theme.palette.text.primary, 0.7),
-          textTransform: 'uppercase',
-          letterSpacing: '0.08em',
-          mb: 0.25,
-          whiteSpace: 'nowrap',
+          flex: 1,
+          minWidth: 'max-content',
+          px: { xs: 1, sm: 1.5 },
+          py: 0.85,
+          borderRight: isLast
+            ? 'none'
+            : `1px solid ${alpha(theme.palette.common.white, 0.07)}`,
+          cursor: 'default',
         }}
       >
-        {title}
-      </Typography>
-      <Typography
-        sx={{
-          ...mono,
-          fontSize: { xs: '0.88rem', sm: '0.96rem' },
-          fontWeight: 800,
-          color: accentColor ?? theme.palette.text.primary,
-          lineHeight: 1,
-          mb: 0.2,
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {value}
-      </Typography>
-      <Typography
-        sx={{
-          ...mono,
-          fontSize: '0.5rem',
-          color: accentColor
-            ? alpha(accentColor, 0.7)
-            : alpha(theme.palette.text.primary, 0.65),
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {sub}
-      </Typography>
-    </Box>
+        <Typography
+          sx={{
+            ...mono,
+            fontSize: '0.5rem',
+            fontWeight: 600,
+            color: alpha(theme.palette.text.primary, 0.7),
+            textTransform: 'uppercase',
+            letterSpacing: '0.08em',
+            mb: 0.25,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {title}
+        </Typography>
+        <Typography
+          sx={{
+            ...mono,
+            fontSize: { xs: '0.88rem', sm: '0.96rem' },
+            fontWeight: 800,
+            color: accentColor ?? theme.palette.text.primary,
+            lineHeight: 1,
+            mb: 0.2,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {value}
+        </Typography>
+        <Typography
+          sx={{
+            ...mono,
+            fontSize: '0.5rem',
+            color: accentColor
+              ? alpha(accentColor, 0.7)
+              : alpha(theme.palette.text.primary, 0.65),
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {sub}
+        </Typography>
+      </Box>
+    </Tooltip>
   );
 };
 
@@ -100,31 +110,62 @@ const DiscovererCard: React.FC<{
     [onClick],
   );
 
-  const repoPills = useMemo(
-    () =>
-      d.repos.slice(0, 3).map((repo, idx) => (
-        <Box
-          key={`${d.githubId}-${repo}`}
-          sx={{
-            ...mono,
-            fontSize: '0.58rem',
-            fontWeight: 600,
-            color: alpha(theme.palette.text.primary, 0.8),
-            backgroundColor: alpha(theme.palette.common.white, 0.04),
-            border: `1px solid ${alpha(theme.palette.common.white, 0.08)}`,
-            borderRadius: 99,
-            px: 0.85,
-            py: 0.2,
-            whiteSpace: 'nowrap',
-          }}
-        >
-          {idx === 2 && d.repos.length > 3
-            ? `+${d.repos.length - 2}`
-            : repo.split('/').pop() || repo}
-        </Box>
-      )),
-    [d.repos, d.githubId, theme],
-  );
+  const repoAvatars = useMemo(() => {
+    const show = d.repos.slice(0, 3);
+    const extra = d.repos.length > 3 ? d.repos.length - 2 : 0;
+    return show.map((repo, idx) => {
+      const owner = repo.split('/')[0];
+      if (idx === 2 && extra > 0) {
+        return (
+          <Tooltip
+            key={repo}
+            title={`+${extra} more repos`}
+            placement="top"
+            arrow
+          >
+            <Box
+              sx={{
+                width: 28,
+                height: 28,
+                borderRadius: '50%',
+                backgroundColor: alpha(theme.palette.common.white, 0.1),
+                border: `1px solid ${alpha(theme.palette.common.white, 0.18)}`,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+              }}
+            >
+              <Typography
+                sx={{
+                  ...mono,
+                  fontSize: '0.44rem',
+                  fontWeight: 700,
+                  color: alpha(theme.palette.text.primary, 0.8),
+                }}
+              >
+                +{extra}
+              </Typography>
+            </Box>
+          </Tooltip>
+        );
+      }
+      return (
+        <Tooltip key={repo} title={repo} placement="top" arrow>
+          <Avatar
+            src={`https://github.com/${owner}.png`}
+            alt={repo}
+            sx={{
+              width: 28,
+              height: 28,
+              border: `1px solid ${alpha(theme.palette.common.white, 0.14)}`,
+              flexShrink: 0,
+            }}
+          />
+        </Tooltip>
+      );
+    });
+  }, [d.repos, theme]);
 
   return (
     <Box
@@ -259,37 +300,44 @@ const DiscovererCard: React.FC<{
             alignItems: 'flex-end',
           }}
         >
-          <Box
-            sx={{
-              px: 0.7,
-              py: 0.28,
-              borderRadius: 1,
-              border: `1px solid ${alpha(accent, 0.22)}`,
-              backgroundColor: alpha(accent, 0.07),
-            }}
+          <Tooltip
+            title="Composite issue discovery score based on the quality, reach, and solver activity of issues this miner opened."
+            placement="top"
+            arrow
           >
-            <Typography
+            <Box
               sx={{
-                ...mono,
-                fontSize: '1.05rem',
-                fontWeight: 800,
-                color: accent,
-                lineHeight: 1,
+                px: 0.7,
+                py: 0.28,
+                borderRadius: 1,
+                border: `1px solid ${alpha(accent, 0.22)}`,
+                backgroundColor: alpha(accent, 0.07),
+                cursor: 'default',
               }}
             >
-              {(d.score ?? 0).toLocaleString()}
-            </Typography>
-            <Typography
-              sx={{
-                ...mono,
-                fontSize: '0.48rem',
-                color: alpha(theme.palette.text.primary, 0.7),
-                mt: 0.15,
-              }}
-            >
-              discovery score
-            </Typography>
-          </Box>
+              <Typography
+                sx={{
+                  ...mono,
+                  fontSize: '1.05rem',
+                  fontWeight: 800,
+                  color: accent,
+                  lineHeight: 1,
+                }}
+              >
+                {(d.score ?? 0).toLocaleString()}
+              </Typography>
+              <Typography
+                sx={{
+                  ...mono,
+                  fontSize: '0.48rem',
+                  color: alpha(theme.palette.text.primary, 0.7),
+                  mt: 0.15,
+                }}
+              >
+                discovery score
+              </Typography>
+            </Box>
+          </Tooltip>
           <Box>
             <Typography
               sx={{
@@ -315,41 +363,54 @@ const DiscovererCard: React.FC<{
           </Box>
         </Box>
         {cred > 0 && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Tooltip
+            title="Issue credibility: reflects how reliably this miner opens issues that get solved. Higher means consistently high-value discoveries."
+            placement="top"
+            arrow
+          >
             <Box
               sx={{
-                flex: 1,
-                height: 3,
-                borderRadius: 99,
-                backgroundColor: alpha(theme.palette.common.white, 0.07),
-                overflow: 'hidden',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                cursor: 'default',
               }}
             >
               <Box
                 sx={{
-                  width: `${Math.round(cred * 100)}%`,
-                  height: '100%',
+                  flex: 1,
+                  height: 3,
                   borderRadius: 99,
-                  backgroundColor: accent,
-                  transition: 'width 0.5s ease',
+                  backgroundColor: alpha(theme.palette.common.white, 0.07),
+                  overflow: 'hidden',
                 }}
-              />
+              >
+                <Box
+                  sx={{
+                    width: `${Math.round(cred * 100)}%`,
+                    height: '100%',
+                    borderRadius: 99,
+                    backgroundColor: accent,
+                    transition: 'width 0.5s ease',
+                  }}
+                />
+              </Box>
+              <Typography
+                sx={{
+                  ...mono,
+                  fontSize: '0.52rem',
+                  color: alpha(theme.palette.text.primary, 0.72),
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {Math.round(cred * 100)}% cred
+              </Typography>
             </Box>
-            <Typography
-              sx={{
-                ...mono,
-                fontSize: '0.52rem',
-                color: alpha(theme.palette.text.primary, 0.72),
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {Math.round(cred * 100)}% cred
-            </Typography>
-          </Box>
+          </Tooltip>
         )}
       </Box>
 
-      {/* Right: repo pills + arrow */}
+      {/* Right: owner avatars + arrow */}
       <Box
         sx={{
           display: 'flex',
@@ -358,9 +419,15 @@ const DiscovererCard: React.FC<{
           gap: 0.4,
         }}
       >
-        {repoPills.length > 0 && (
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, gap: 0.4 }}>
-            {repoPills}
+        {repoAvatars.length > 0 && (
+          <Box
+            sx={{
+              display: { xs: 'none', md: 'flex' },
+              gap: 0.5,
+              alignItems: 'center',
+            }}
+          >
+            {repoAvatars}
           </Box>
         )}
         <Typography
@@ -427,7 +494,7 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
           justifyContent: 'space-between',
           flexWrap: 'wrap',
           gap: 0.5,
-          mb: 0.4,
+          mb: 1.25,
         }}
       >
         <Box
@@ -448,24 +515,31 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
           >
             Featured Discoverers
           </Typography>
-          <Box
-            sx={{
-              ...mono,
-              fontSize: '0.52rem',
-              fontWeight: 700,
-              textTransform: 'uppercase',
-              letterSpacing: '0.06em',
-              color: RANK_COLORS.first,
-              backgroundColor: alpha(RANK_COLORS.first, 0.1),
-              border: `1px solid ${alpha(RANK_COLORS.first, 0.22)}`,
-              borderRadius: 99,
-              px: 0.8,
-              py: 0.22,
-              whiteSpace: 'nowrap',
-            }}
+          <Tooltip
+            title="Showing top issue discoverers from the last 35 days based on discovery score, solved issues, and repository reach."
+            placement="top"
+            arrow
           >
-            Issues 35d
-          </Box>
+            <Box
+              sx={{
+                ...mono,
+                fontSize: '0.52rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.06em',
+                color: RANK_COLORS.first,
+                backgroundColor: alpha(RANK_COLORS.first, 0.1),
+                border: `1px solid ${alpha(RANK_COLORS.first, 0.22)}`,
+                borderRadius: 99,
+                px: 0.8,
+                py: 0.22,
+                whiteSpace: 'nowrap',
+                cursor: 'default',
+              }}
+            >
+              Issues 35d
+            </Box>
+          </Tooltip>
         </Box>
         <Box
           sx={{
@@ -502,19 +576,6 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
         </Box>
       </Box>
 
-      {/* Subtitle */}
-      <Typography
-        sx={{
-          ...mono,
-          fontSize: '0.58rem',
-          color: alpha(theme.palette.text.primary, 0.65),
-          mb: 1.25,
-        }}
-      >
-        Issue discovery leaders by score, solved issues output, and repository
-        impact.
-      </Typography>
-
       {/* KPI strip */}
       {!isLoading && kpis && (
         <Box
@@ -532,27 +593,32 @@ const FeaturedDiscoverersSpotlight: React.FC<Props> = ({
             title="Highlighted score"
             value={kpis.topScore.toLocaleString()}
             sub={`${discoverers.length} discoverers`}
+            tooltip="Highest discovery score among the highlighted miners in this 35-day window."
             accentColor={RANK_COLORS.first}
           />
           <KpiBox
             title="Solved Issues"
             value={kpis.totalSolved.toLocaleString()}
             sub="all time"
+            tooltip="Total issues opened by these discoverers that were subsequently solved by a PR, all time."
           />
           <KpiBox
             title="Active Discoverers"
             value={String(discoverers.length)}
             sub="this period"
+            tooltip="Number of highlighted discoverers active in this 35-day scoring window."
           />
           <KpiBox
             title="Repos touched"
             value={String(kpis.uniqueRepos)}
-            sub="35d context"
+            sub="issue repos"
+            tooltip="Unique repositories where these discoverers opened registered issues."
           />
           <KpiBox
             title="Daily earnings"
             value={`$${Math.round(kpis.totalEarnings)}/d`}
             sub="highlighted total"
+            tooltip="Estimated combined daily USD earnings across all highlighted discoverers based on recent scoring."
             accentColor={theme.palette.status.success}
             isLast
           />
