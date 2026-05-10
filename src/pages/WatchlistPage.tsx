@@ -58,6 +58,7 @@ import {
   type DataTableColumn,
 } from '../components/common/DataTable';
 import { ClearSearchAdornment } from '../components/common/ClearSearchAdornment';
+import { ScrollAwareTooltip } from '../components/common/ScrollAwareTooltip';
 import { LinkBox } from '../components/common/linkBehavior';
 import {
   useAllMiners,
@@ -1091,17 +1092,26 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
             ),
           }}
         />
-        <Typography
-          sx={{
-            fontSize: '0.78rem',
-            fontWeight: 500,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+        <ScrollAwareTooltip
+          title={repo.fullName}
+          arrow
+          placement="top-start"
+          enterDelay={200}
         >
-          {repo.fullName}
-        </Typography>
+          <Box
+            sx={{
+              minWidth: 0,
+              flex: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              fontSize: '0.78rem',
+              fontWeight: 500,
+            }}
+          >
+            {repo.fullName}
+          </Box>
+        </ScrollAwareTooltip>
       </Box>
     ),
   },
@@ -1430,7 +1440,12 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
           linkState={{ backLabel: 'Back to Watchlist' }}
           sx={{ flex: 1, minWidth: 0, display: 'block' }}
         >
-          <Tooltip title={repo.fullName} placement="top" arrow>
+          <ScrollAwareTooltip
+            title={repo.fullName}
+            arrow
+            placement="top-start"
+            enterDelay={200}
+          >
             <Typography
               sx={{
                 fontFamily: '"JetBrains Mono", monospace',
@@ -1444,7 +1459,7 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
             >
               {repo.fullName}
             </Typography>
-          </Tooltip>
+          </ScrollAwareTooltip>
         </LinkBox>
         <Typography
           component="span"
@@ -2219,17 +2234,26 @@ const buildBountyColumns = (): DataTableColumn<
     width: '32%',
     cellSx: bountyCellSx,
     renderCell: (i) => (
-      <Typography
-        sx={{
-          fontSize: '0.75rem',
-          fontWeight: 500,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
+      <ScrollAwareTooltip
+        title={i.title || '—'}
+        arrow
+        placement="top-start"
+        enterDelay={200}
       >
-        {i.title || '—'}
-      </Typography>
+        <Box
+          sx={{
+            maxWidth: '300px',
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontSize: '0.75rem',
+            fontWeight: 500,
+          }}
+        >
+          {i.title || '—'}
+        </Box>
+      </ScrollAwareTooltip>
     ),
   },
   {
@@ -2245,17 +2269,26 @@ const buildBountyColumns = (): DataTableColumn<
           alt={i.repositoryFullName}
           sx={{ width: 20, height: 20, flexShrink: 0 }}
         />
-        <Typography
-          sx={{
-            fontSize: '0.75rem',
-            color: 'text.secondary',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+        <ScrollAwareTooltip
+          title={i.repositoryFullName}
+          arrow
+          placement="top-start"
+          enterDelay={200}
         >
-          {i.repositoryFullName}
-        </Typography>
+          <Box
+            sx={{
+              minWidth: 0,
+              flex: 1,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              fontSize: '0.75rem',
+              color: 'text.secondary',
+            }}
+          >
+            {i.repositoryFullName}
+          </Box>
+        </ScrollAwareTooltip>
       </Box>
     ),
   },
@@ -2689,17 +2722,26 @@ const buildPrColumns = (
     sortKey: 'title',
     cellSx: prCellSx,
     renderCell: (pr) => (
-      <Typography
-        sx={{
-          fontSize: '0.75rem',
-          fontWeight: 500,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
+      <ScrollAwareTooltip
+        title={pr.pullRequestTitle}
+        arrow
+        placement="top-start"
+        enterDelay={200}
       >
-        {pr.pullRequestTitle}
-      </Typography>
+        <Box
+          sx={{
+            maxWidth: '300px',
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontSize: '0.75rem',
+            fontWeight: 500,
+          }}
+        >
+          {pr.pullRequestTitle}
+        </Box>
+      </ScrollAwareTooltip>
     ),
   },
   {
@@ -2709,17 +2751,26 @@ const buildPrColumns = (
     sortKey: 'repo',
     cellSx: prCellSx,
     renderCell: (pr) => (
-      <Typography
-        sx={{
-          fontSize: '0.75rem',
-          color: 'text.secondary',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
+      <ScrollAwareTooltip
+        title={pr.repository}
+        arrow
+        placement="top-start"
+        enterDelay={200}
       >
-        {pr.repository}
-      </Typography>
+        <Box
+          sx={{
+            maxWidth: '280px',
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontSize: '0.75rem',
+            color: 'text.secondary',
+          }}
+        >
+          {pr.repository}
+        </Box>
+      </ScrollAwareTooltip>
     ),
   },
   {
@@ -2961,17 +3012,25 @@ const PRCard: React.FC<{
               borderColor: 'border.medium',
             }}
           />
-          <Typography
-            sx={{
-              fontSize: '0.72rem',
-              color: 'text.secondary',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
+          <ScrollAwareTooltip
+            title={pr.repository}
+            arrow
+            placement="top-start"
+            enterDelay={200}
           >
-            {pr.repository}
-          </Typography>
+            <Typography
+              sx={{
+                fontSize: '0.72rem',
+                color: 'text.secondary',
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {pr.repository}
+            </Typography>
+          </ScrollAwareTooltip>
         </Stack>
         <Stack
           direction="row"
@@ -3000,20 +3059,27 @@ const PRCard: React.FC<{
         linkState={{ backLabel: 'Back to Watchlist' }}
         sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}
       >
-        <Typography
-          sx={{
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            color: 'text.primary',
-            lineHeight: 1.4,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}
+        <ScrollAwareTooltip
+          title={`#${pr.pullRequestNumber} ${pr.pullRequestTitle}`}
+          arrow
+          placement="top-start"
+          enterDelay={200}
         >
-          #{pr.pullRequestNumber} {pr.pullRequestTitle}
-        </Typography>
+          <Typography
+            sx={{
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              color: 'text.primary',
+              lineHeight: 1.4,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            #{pr.pullRequestNumber} {pr.pullRequestTitle}
+          </Typography>
+        </ScrollAwareTooltip>
 
         {/* Row 3: footer stats */}
         <Box
@@ -3465,17 +3531,26 @@ const buildIssueColumns = (
     sortKey: 'title',
     cellSx: issueCellSx,
     renderCell: (i) => (
-      <Typography
-        sx={{
-          fontSize: '0.75rem',
-          fontWeight: 500,
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
+      <ScrollAwareTooltip
+        title={i.title || '—'}
+        arrow
+        placement="top-start"
+        enterDelay={200}
       >
-        {i.title || '—'}
-      </Typography>
+        <Box
+          sx={{
+            maxWidth: '300px',
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontSize: '0.75rem',
+            fontWeight: 500,
+          }}
+        >
+          {i.title || '—'}
+        </Box>
+      </ScrollAwareTooltip>
     ),
   },
   {
@@ -3485,17 +3560,26 @@ const buildIssueColumns = (
     sortKey: 'repo',
     cellSx: issueCellSx,
     renderCell: (i) => (
-      <Typography
-        sx={{
-          fontSize: '0.75rem',
-          color: 'text.secondary',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
+      <ScrollAwareTooltip
+        title={i.repo_full_name}
+        arrow
+        placement="top-start"
+        enterDelay={200}
       >
-        {i.repo_full_name}
-      </Typography>
+        <Box
+          sx={{
+            maxWidth: '280px',
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            fontSize: '0.75rem',
+            color: 'text.secondary',
+          }}
+        >
+          {i.repo_full_name}
+        </Box>
+      </ScrollAwareTooltip>
     ),
   },
   {
@@ -3721,17 +3805,25 @@ const IssueCard: React.FC<{
               borderColor: 'border.medium',
             }}
           />
-          <Typography
-            sx={{
-              fontSize: '0.72rem',
-              color: 'text.secondary',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
+          <ScrollAwareTooltip
+            title={issue.repo_full_name}
+            arrow
+            placement="top-start"
+            enterDelay={200}
           >
-            {issue.repo_full_name}
-          </Typography>
+            <Typography
+              sx={{
+                fontSize: '0.72rem',
+                color: 'text.secondary',
+                minWidth: 0,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+              }}
+            >
+              {issue.repo_full_name}
+            </Typography>
+          </ScrollAwareTooltip>
         </Stack>
         <Stack
           direction="row"
@@ -3762,20 +3854,27 @@ const IssueCard: React.FC<{
         href={getIssueHref(issue)}
         sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}
       >
-        <Typography
-          sx={{
-            fontSize: '0.85rem',
-            fontWeight: 600,
-            color: 'text.primary',
-            lineHeight: 1.4,
-            display: '-webkit-box',
-            WebkitLineClamp: 2,
-            WebkitBoxOrient: 'vertical',
-            overflow: 'hidden',
-          }}
+        <ScrollAwareTooltip
+          title={`#${issue.issue_number} ${issue.title || ''}`}
+          arrow
+          placement="top-start"
+          enterDelay={200}
         >
-          #{issue.issue_number} {issue.title}
-        </Typography>
+          <Typography
+            sx={{
+              fontSize: '0.85rem',
+              fontWeight: 600,
+              color: 'text.primary',
+              lineHeight: 1.4,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            }}
+          >
+            #{issue.issue_number} {issue.title}
+          </Typography>
+        </ScrollAwareTooltip>
 
         <Box
           sx={(t) => ({
