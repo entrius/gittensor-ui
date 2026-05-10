@@ -626,7 +626,7 @@ const HomePage: React.FC = () => {
               spacing={0}
               sx={{
                 position: 'absolute',
-                bottom: -28,
+                top: -28,
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 2,
