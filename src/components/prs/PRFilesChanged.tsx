@@ -47,7 +47,8 @@ import FormControlLabel from '@mui/material/FormControlLabel';
 import Switch from '@mui/material/Switch';
 import { STATUS_COLORS, DIFF_COLORS, scrollbarSx } from '../../theme';
 import { useClipboardCopy } from '../../hooks/useClipboardCopy';
-import { githubErrorMessage, useGithubQuery } from '../../api';
+import { useQuery } from '@tanstack/react-query';
+import { RateLimitError, githubFetch } from '../../api';
 
 interface PRFile {
   sha: string;
@@ -1333,16 +1334,29 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
   const [showOnlyChanged, setShowOnlyChanged] = useState(true);
 
   const enabled = !!repository && !!pullRequestNumber;
-  const filesQuery = useGithubQuery<PRFile[]>(
-    `https://api.github.com/repos/${repository}/pulls/${pullRequestNumber}/files`,
-    { params: { per_page: 100 }, enabled },
-  );
-  const treeSha = headSha || 'main';
-  const treeQuery = useGithubQuery<{
-    tree?: { path: string; type: 'blob' | 'tree' }[];
-  }>(`https://api.github.com/repos/${repository}/git/trees/${treeSha}`, {
-    params: { recursive: 1 },
+  const filesQuery = useQuery<PRFile[], Error>({
+    queryKey: ['github', 'prFiles', repository, pullRequestNumber],
+    queryFn: ({ signal }) =>
+      githubFetch<PRFile[]>(
+        `https://api.github.com/repos/${repository}/pulls/${pullRequestNumber}/files`,
+        { signal, params: { per_page: 100 } },
+      ),
     enabled,
+    retry: false,
+  });
+  const treeSha = headSha || 'main';
+  const treeQuery = useQuery<
+    { tree?: { path: string; type: 'blob' | 'tree' }[] },
+    Error
+  >({
+    queryKey: ['github', 'tree', repository, treeSha],
+    queryFn: ({ signal }) =>
+      githubFetch<{ tree?: { path: string; type: 'blob' | 'tree' }[] }>(
+        `https://api.github.com/repos/${repository}/git/trees/${treeSha}`,
+        { signal, params: { recursive: 1 } },
+      ),
+    enabled,
+    retry: false,
   });
 
   const files = useMemo(() => filesQuery.data ?? [], [filesQuery.data]);
@@ -1402,7 +1416,9 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
         }}
       >
         <Typography>
-          {githubErrorMessage(error, 'Failed to load data.')}
+          {error instanceof RateLimitError
+            ? error.message
+            : 'Failed to load data.'}
         </Typography>
       </Box>
     );

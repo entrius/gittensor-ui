@@ -1,4 +1,5 @@
 import React, { useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { formatDate } from '../../utils/format';
 import {
   Box,
@@ -19,7 +20,7 @@ import LaunchIcon from '@mui/icons-material/Launch';
 import PeopleIcon from '@mui/icons-material/People';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import { STATUS_COLORS } from '../../theme';
-import { githubErrorMessage, useGithubQuery } from '../../api';
+import { RateLimitError, githubFetch } from '../../api';
 
 interface RepositoryCheckTabProps {
   repositoryFullName: string;
@@ -193,48 +194,70 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
   const theme = useTheme();
   const enabled = !!repositoryFullName;
 
-  const repoQuery = useGithubQuery<RepoData>(repoApi(repositoryFullName), {
+  const repoQuery = useQuery<RepoData, Error>({
+    queryKey: ['github', 'repo', repositoryFullName],
+    queryFn: ({ signal }) =>
+      githubFetch<RepoData>(repoApi(repositoryFullName), { signal }),
     enabled,
+    retry: false,
   });
 
-  const communityQuery = useGithubQuery<CommunityProfile>(
-    `${repoApi(repositoryFullName)}/community/profile`,
-    { enabled },
-  );
+  const communityQuery = useQuery<CommunityProfile, Error>({
+    queryKey: ['github', 'communityProfile', repositoryFullName],
+    queryFn: ({ signal }) =>
+      githubFetch<CommunityProfile>(
+        `${repoApi(repositoryFullName)}/community/profile`,
+        { signal },
+      ),
+    enabled,
+    retry: false,
+  });
 
   const branch = repoQuery.data?.default_branch || 'main';
-  const treeQuery = useGithubQuery<TreeResponse>(
-    `${repoApi(repositoryFullName)}/git/trees/${branch}`,
-    {
-      params: { recursive: 1 },
-      enabled: enabled && !!repoQuery.data,
-    },
-  );
+  const treeQuery = useQuery<TreeResponse, Error>({
+    queryKey: ['github', 'tree', repositoryFullName, branch],
+    queryFn: ({ signal }) =>
+      githubFetch<TreeResponse>(
+        `${repoApi(repositoryFullName)}/git/trees/${branch}`,
+        { signal, params: { recursive: 1 } },
+      ),
+    enabled: enabled && !!repoQuery.data,
+    retry: false,
+  });
 
-  const openIssuesQuery = useGithubQuery<SearchIssuesResponse>(
-    SEARCH_ISSUES_URL,
-    {
-      queryKey: ['searchIssues', repositoryFullName, 'open'],
-      params: issueSearchParams(repositoryFullName, ''),
-      enabled,
-    },
-  );
-  const goodFirstIssuesQuery = useGithubQuery<SearchIssuesResponse>(
-    SEARCH_ISSUES_URL,
-    {
-      queryKey: ['searchIssues', repositoryFullName, 'good-first'],
-      params: issueSearchParams(repositoryFullName, 'label:"good first issue"'),
-      enabled,
-    },
-  );
-  const helpWantedQuery = useGithubQuery<SearchIssuesResponse>(
-    SEARCH_ISSUES_URL,
-    {
-      queryKey: ['searchIssues', repositoryFullName, 'help-wanted'],
-      params: issueSearchParams(repositoryFullName, 'label:"help wanted"'),
-      enabled,
-    },
-  );
+  const openIssuesQuery = useQuery<SearchIssuesResponse, Error>({
+    queryKey: ['github', 'searchIssues', repositoryFullName, 'open'],
+    queryFn: ({ signal }) =>
+      githubFetch<SearchIssuesResponse>(SEARCH_ISSUES_URL, {
+        signal,
+        params: issueSearchParams(repositoryFullName, ''),
+      }),
+    enabled,
+    retry: false,
+  });
+  const goodFirstIssuesQuery = useQuery<SearchIssuesResponse, Error>({
+    queryKey: ['github', 'searchIssues', repositoryFullName, 'good-first'],
+    queryFn: ({ signal }) =>
+      githubFetch<SearchIssuesResponse>(SEARCH_ISSUES_URL, {
+        signal,
+        params: issueSearchParams(
+          repositoryFullName,
+          'label:"good first issue"',
+        ),
+      }),
+    enabled,
+    retry: false,
+  });
+  const helpWantedQuery = useQuery<SearchIssuesResponse, Error>({
+    queryKey: ['github', 'searchIssues', repositoryFullName, 'help-wanted'],
+    queryFn: ({ signal }) =>
+      githubFetch<SearchIssuesResponse>(SEARCH_ISSUES_URL, {
+        signal,
+        params: issueSearchParams(repositoryFullName, 'label:"help wanted"'),
+      }),
+    enabled,
+    retry: false,
+  });
 
   const fileTree = useMemo(
     () => treeQuery.data?.tree?.map((node) => node.path) ?? [],
@@ -317,10 +340,9 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
   if (repoQuery.error || !repoQuery.data) {
     return (
       <Box sx={{ p: 4, color: 'error.main', textAlign: 'center' }}>
-        {githubErrorMessage(
-          repoQuery.error,
-          'Failed to load repository health data.',
-        )}
+        {repoQuery.error instanceof RateLimitError
+          ? repoQuery.error.message
+          : 'Failed to load repository health data.'}
       </Box>
     );
   }

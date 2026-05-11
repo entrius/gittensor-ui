@@ -20,7 +20,8 @@ import FolderIcon from '@mui/icons-material/Folder';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
 import CodeViewer from './CodeViewer';
 import { buildFileTree, type FileNode } from './fileTree';
-import { githubErrorMessage, githubFetch, useGithubQuery } from '../../api';
+import { useQuery } from '@tanstack/react-query';
+import { RateLimitError, githubFetch } from '../../api';
 
 interface RepositoryCodeBrowserProps {
   repositoryFullName: string;
@@ -142,28 +143,42 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
   const theme = useTheme();
   const [currentPath, setCurrentPath] = useState<string | null>(null);
 
-  const repoQuery = useGithubQuery<GhRepoData>(
-    `https://api.github.com/repos/${repositoryFullName}`,
-    { enabled: !!repositoryFullName },
-  );
+  const repoQuery = useQuery<GhRepoData, Error>({
+    queryKey: ['github', 'repo', repositoryFullName],
+    queryFn: ({ signal }) =>
+      githubFetch<GhRepoData>(
+        `https://api.github.com/repos/${repositoryFullName}`,
+        { signal },
+      ),
+    enabled: !!repositoryFullName,
+    retry: false,
+  });
   const defaultBranch = repoQuery.data?.default_branch || 'main';
 
-  const treeQuery = useGithubQuery<GhTreeResponse>(
-    `https://api.github.com/repos/${repositoryFullName}/git/trees/${defaultBranch}`,
-    {
-      params: { recursive: 1 },
-      enabled: !!repoQuery.data,
-    },
-  );
+  const treeQuery = useQuery<GhTreeResponse, Error>({
+    queryKey: ['github', 'tree', repositoryFullName, defaultBranch],
+    queryFn: ({ signal }) =>
+      githubFetch<GhTreeResponse>(
+        `https://api.github.com/repos/${repositoryFullName}/git/trees/${defaultBranch}`,
+        { signal, params: { recursive: 1 } },
+      ),
+    enabled: !!repoQuery.data,
+    retry: false,
+  });
 
   const tree = useMemo<FileNode[]>(
     () => (treeQuery.data?.tree ? buildFileTree(treeQuery.data.tree) : []),
     [treeQuery.data],
   );
 
-  const commitQuery = useGithubQuery<CommitInfo | null>(null, {
-    queryKey: ['pathCommit', repositoryFullName, defaultBranch, currentPath],
-    enabled: !!repoQuery.data,
+  const commitQuery = useQuery<CommitInfo | null, Error>({
+    queryKey: [
+      'github',
+      'pathCommit',
+      repositoryFullName,
+      defaultBranch,
+      currentPath,
+    ],
     queryFn: async ({ signal }) => {
       const list = await githubFetch<GhCommitListItem[]>(
         `https://api.github.com/repos/${repositoryFullName}/commits`,
@@ -205,6 +220,8 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
         sha: resolved.sha.substring(0, 7),
       };
     },
+    enabled: !!repoQuery.data,
+    retry: false,
   });
 
   const currentNode = useMemo(() => {
@@ -246,7 +263,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
   if (fatalError) {
     return (
       <Box sx={{ p: 4, color: 'error.main', textAlign: 'center' }}>
-        {githubErrorMessage(fatalError, 'Failed to load repository structure.')}
+        {fatalError instanceof RateLimitError
+          ? fatalError.message
+          : 'Failed to load repository structure.'}
       </Box>
     );
   }
@@ -410,10 +429,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
             </>
           ) : (
             <Typography sx={{ fontSize: '13px', color: STATUS_COLORS.open }}>
-              {githubErrorMessage(
-                commitQuery.error,
-                'Latest commit info unavailable',
-              )}
+              {commitQuery.error instanceof RateLimitError
+                ? commitQuery.error.message
+                : 'Latest commit info unavailable'}
             </Typography>
           )}
         </Paper>

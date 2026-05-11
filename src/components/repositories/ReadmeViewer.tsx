@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
   CircularProgress,
@@ -14,12 +14,6 @@ import axios from 'axios';
 import DOMPurify from 'dompurify';
 import { resolveRelativeUrl, getImageSizeHint } from './MarkdownRenderers';
 import { markdownDocumentPaperSx } from '../../theme';
-import {
-  RateLimitError,
-  githubErrorMessage,
-  githubFetch,
-  useGithubQuery,
-} from '../../api';
 
 interface ReadmeViewerProps {
   repositoryFullName: string; // e.g., "opentensor/bittensor"
@@ -58,50 +52,69 @@ export function jsdelivrReadmeMdUrl(
   return `https://cdn.jsdelivr.net/gh/${repositoryFullName}@${branch}/README.md`;
 }
 
-type ReadmeResult =
-  | { renderMode: 'markdown'; content: string; branch: string }
-  | { renderMode: 'html'; content: string };
-
-const README_BRANCHES = ['main', 'master'] as const;
-
 const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
   const theme = useTheme();
+  const [content, setContent] = useState<string | null>(null);
+  const [renderMode, setRenderMode] = useState<ReadmeRenderMode>('markdown');
+  const [defaultBranch, setDefaultBranch] = useState<string>('main');
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const { data, error, isLoading } = useGithubQuery<ReadmeResult>(null, {
-    queryKey: ['readme', repositoryFullName],
-    enabled: !!repositoryFullName,
-    queryFn: async ({ signal }) => {
-      // Fast path: jsDelivr CDN for Markdown READMEs (most repos).
-      for (const branch of README_BRANCHES) {
-        try {
-          const content = await githubFetch<string>(
-            jsdelivrReadmeMdUrl(repositoryFullName, branch),
-            { signal, responseType: 'text' },
-          );
-          return { renderMode: 'markdown', content, branch };
-        } catch (err) {
-          if (axios.isCancel(err) || err instanceof RateLimitError) throw err;
-          // jsDelivr 404 — try next branch, then fall through to GitHub.
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchReadme = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // Fast path: jsDelivr CDN for Markdown READMEs (most repos).
+        for (const branch of ['main', 'master']) {
+          try {
+            const response = await axios.get(
+              jsdelivrReadmeMdUrl(repositoryFullName, branch),
+              { signal: controller.signal },
+            );
+            if (controller.signal.aborted) return;
+            setContent(response.data);
+            setRenderMode('markdown');
+            setDefaultBranch(branch);
+            return;
+          } catch (err) {
+            if (axios.isCancel(err) || controller.signal.aborted) return;
+            // jsDelivr 404 — try next branch, then fall through to GitHub.
+          }
         }
+
+        // Fallback path: GitHub's `/readme` endpoint with the
+        // `application/vnd.github.html` media type returns server-rendered
+        // HTML for any README format the repo has — fixes #852 for `.rst`,
+        // `.adoc`, `.mediawiki`, plus `.org` and other less-common formats.
+        const response = await axios.get(
+          githubReadmeHtmlUrl(repositoryFullName),
+          {
+            signal: controller.signal,
+            headers: { Accept: 'application/vnd.github.html' },
+            responseType: 'text',
+            transformResponse: (data) => data,
+          },
+        );
+        if (controller.signal.aborted) return;
+        setContent(response.data);
+        setRenderMode('html');
+      } catch (err) {
+        if (axios.isCancel(err) || controller.signal.aborted) return;
+        console.error('Failed to fetch README', err);
+        setError('Could not load README');
+      } finally {
+        if (!controller.signal.aborted) setLoading(false);
       }
+    };
 
-      // Fallback path: GitHub's `/readme` endpoint with the
-      // `application/vnd.github.html` media type returns server-rendered HTML
-      // for any README format the repo has — fixes #852 for `.rst`, `.adoc`,
-      // `.mediawiki`, plus `.org` and other less-common formats.
-      const html = await githubFetch<string>(
-        githubReadmeHtmlUrl(repositoryFullName),
-        {
-          signal,
-          headers: { Accept: 'application/vnd.github.html' },
-          responseType: 'text',
-        },
-      );
-      return { renderMode: 'html', content: html };
-    },
-  });
+    if (repositoryFullName) fetchReadme();
+    return () => controller.abort();
+  }, [repositoryFullName]);
 
-  if (isLoading) {
+  if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}>
         <CircularProgress />
@@ -109,7 +122,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
     );
   }
 
-  if (error || !data) {
+  if (error) {
     return (
       <Alert
         severity="warning"
@@ -118,12 +131,12 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
           color: theme.palette.warning.main,
         }}
       >
-        {githubErrorMessage(error, 'Could not load README')}
+        {error}
       </Alert>
     );
   }
 
-  if (data.renderMode === 'html') {
+  if (renderMode === 'html') {
     // GitHub's `application/vnd.github.html` payload is already sanitized by
     // the same renderer github.com itself uses. DOMPurify runs on top as
     // defense in depth — this is the codebase's first dangerouslySetInnerHTML
@@ -135,7 +148,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
         <Box
           className="readme-html"
           dangerouslySetInnerHTML={{
-            __html: DOMPurify.sanitize(data.content),
+            __html: DOMPurify.sanitize(content || ''),
           }}
         />
       </Paper>
@@ -154,7 +167,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
             ...rest
           }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => (
             <a
-              href={resolveRelativeUrl(href, repositoryFullName, data.branch)}
+              href={resolveRelativeUrl(href, repositoryFullName, defaultBranch)}
               target="_blank"
               rel="noopener noreferrer"
               {...rest}
@@ -173,7 +186,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
                 src={resolveRelativeUrl(
                   src,
                   repositoryFullName,
-                  data.branch,
+                  defaultBranch,
                   'cdn',
                 )}
                 alt={alt}
@@ -198,7 +211,7 @@ const ReadmeViewer: React.FC<ReadmeViewerProps> = ({ repositoryFullName }) => {
           },
         }}
       >
-        {data.content}
+        {content || ''}
       </ReactMarkdown>
     </Paper>
   );

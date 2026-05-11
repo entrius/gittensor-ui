@@ -21,12 +21,8 @@ import {
   Search as SearchIcon,
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
-import {
-  githubFetch,
-  useGithubQuery,
-  useMinerGithubData,
-  useMinerPRs,
-} from '../../api';
+import { useQuery } from '@tanstack/react-query';
+import { githubFetch, useMinerGithubData, useMinerPRs } from '../../api';
 import { getRepositoryOwnerAvatarSrc, paginateItems } from '../../utils';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
@@ -255,7 +251,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
     isLoading: isLoadingAuthoredIssues,
     isFetching: isFetchingAuthoredIssues,
     isError: isAuthorFallbackError,
-  } = useGithubQuery<RepositoryIssue[]>(null, {
+  } = useQuery<RepositoryIssue[], Error>({
     queryKey: ['githubAuthorIssues', login],
     queryFn: ({ signal }) => fetchGithubIssuesByAuthor(login, signal),
     enabled: !!login,
