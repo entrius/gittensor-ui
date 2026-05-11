@@ -16,6 +16,7 @@ import {
   Select,
   Skeleton,
   Stack,
+  TablePagination,
   TextField,
   Tooltip,
   Typography,
@@ -52,7 +53,11 @@ import { BountyCard } from './BountyCard';
 import {
   type IssuesViewMode,
   ISSUES_VIEW_QUERY_PARAM,
+  ISSUES_CARD_ROWS,
   ISSUES_DEFAULT_CARD_ROWS,
+  ISSUES_DEFAULT_LIST_ROWS,
+  ISSUES_LIST_ROWS,
+  clampRowsForIssuesView,
   getIssuesViewModeFromQuery,
   readStoredIssuesViewMode,
   writeStoredIssuesViewMode,
@@ -207,6 +212,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState(() =>
+    viewMode === 'cards' ? ISSUES_DEFAULT_CARD_ROWS : ISSUES_DEFAULT_LIST_ROWS,
+  );
   const [showChart, setShowChart] = useState(false);
 
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
@@ -245,6 +254,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
     (nextMode: IssuesViewMode) => {
       writeStoredIssuesViewMode(nextMode);
       setStoredViewMode(nextMode);
+      setRowsPerPage((currentRows) =>
+        clampRowsForIssuesView(currentRows, nextMode),
+      );
+      setPage(0);
       syncParams({ view: nextMode });
     },
     [syncParams],
@@ -356,6 +369,23 @@ const IssuesList: React.FC<IssuesListProps> = ({
     });
     return decorated.map((d) => d.row);
   }, [filteredIssues, getSortValue, sortKey, sortDirection]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [filterType, searchQuery, sortKey, sortDirection]);
+
+  useEffect(() => {
+    const lastPage = Math.max(
+      0,
+      Math.ceil(sortedIssues.length / rowsPerPage) - 1,
+    );
+    setPage((currentPage) => Math.min(currentPage, lastPage));
+  }, [sortedIssues.length, rowsPerPage]);
+
+  const paginatedIssues = useMemo(() => {
+    const start = page * rowsPerPage;
+    return sortedIssues.slice(start, start + rowsPerPage);
+  }, [page, rowsPerPage, sortedIssues]);
 
   const chartOption = useMemo(() => {
     const repoTotals = new Map<string, number>();
@@ -1155,6 +1185,37 @@ const IssuesList: React.FC<IssuesListProps> = ({
     </Box>
   );
 
+  const pagination =
+    sortedIssues.length > 0 ? (
+      <TablePagination
+        rowsPerPageOptions={
+          viewMode === 'cards' ? ISSUES_CARD_ROWS : ISSUES_LIST_ROWS
+        }
+        component="div"
+        count={sortedIssues.length}
+        rowsPerPage={rowsPerPage}
+        page={page}
+        onPageChange={(_event, nextPage) => setPage(nextPage)}
+        onRowsPerPageChange={(event) => {
+          const nextRows = clampRowsForIssuesView(
+            Number(event.target.value),
+            viewMode,
+          );
+          setRowsPerPage(nextRows);
+          setPage(0);
+        }}
+        sx={{
+          borderTop: `1px solid ${theme.palette.border.light}`,
+          color: theme.palette.text.secondary,
+          '.MuiTablePagination-selectLabel, .MuiTablePagination-displayedRows':
+            {
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.78rem',
+            },
+        }}
+      />
+    ) : null;
+
   return (
     <Card sx={cardSx} elevation={0}>
       {toolbar}
@@ -1162,7 +1223,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       {viewMode === 'cards' ? (
         sortedIssues.length > 0 ? (
           <Grid container spacing={2}>
-            {sortedIssues.map((issue) => (
+            {paginatedIssues.map((issue) => (
               <Grid item xs={12} sm={6} md={4} key={issue.id}>
                 <BountyCard
                   issue={issue}
@@ -1180,7 +1241,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       ) : (
         <DataTable<IssueBounty, SortKey>
           columns={columns}
-          rows={sortedIssues}
+          rows={paginatedIssues}
           getRowKey={(issue) => issue.id}
           getRowHref={
             getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
@@ -1206,6 +1267,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
           }}
         />
       )}
+      {pagination}
     </Card>
   );
 };
