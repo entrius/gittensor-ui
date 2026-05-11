@@ -1,13 +1,6 @@
 import { alpha } from '@mui/material/styles';
 import { STATUS_COLORS } from '../theme';
 
-export const UNKNOWN_REPOSITORY_NAME = 'Unknown repository';
-
-/** Coalesce a possibly-missing `repositoryFullName` into a display string. */
-export const getDisplayRepositoryName = (
-  name: string | null | undefined,
-): string => name || UNKNOWN_REPOSITORY_NAME;
-
 export interface IssueStatusMeta {
   bgColor: string;
   borderColor: string;

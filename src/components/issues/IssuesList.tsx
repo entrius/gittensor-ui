@@ -40,10 +40,7 @@ import {
   formatDate,
   formatTokenAmount,
 } from '../../utils/format';
-import {
-  getDisplayRepositoryName,
-  getIssueStatusMeta,
-} from '../../utils/issueStatus';
+import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { isOutsideScoringWindow } from '../../utils/ExplorerUtils';
 import { paginateItems } from '../../utils/prTable';
@@ -280,9 +277,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     const q = searchQuery.toLowerCase();
     return filteredByType.filter(
       (i) =>
-        getDisplayRepositoryName(i.repositoryFullName)
-          .toLowerCase()
-          .includes(q) ||
+        i.repositoryFullName.toLowerCase().includes(q) ||
         i.title?.toLowerCase().includes(q) ||
         String(i.issueNumber).includes(q),
     );
@@ -339,9 +334,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         case 'date':
           return new Date(issue.completedAt || issue.updatedAt || 0).getTime();
         case 'repository':
-          return getDisplayRepositoryName(
-            issue.repositoryFullName,
-          ).toLowerCase();
+          return (issue.repositoryFullName || '').toLowerCase();
         case 'issue':
           return `${(issue.title || '').toLowerCase()}::${String(issue.issueNumber).padStart(10, '0')}`;
         case 'bounty':
@@ -400,8 +393,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
     const repoTotals = new Map<string, number>();
     filteredIssues.forEach((issue) => {
       const amount = parseBountyAmount(issue.targetBounty);
-      const repoName = getDisplayRepositoryName(issue.repositoryFullName);
-      repoTotals.set(repoName, (repoTotals.get(repoName) || 0) + amount);
+      repoTotals.set(
+        issue.repositoryFullName,
+        (repoTotals.get(issue.repositoryFullName) || 0) + amount,
+      );
     });
     const sorted = [...repoTotals.entries()]
       .sort((a, b) => b[1] - a[1])
@@ -592,40 +587,39 @@ const IssuesList: React.FC<IssuesListProps> = ({
       width: '200px',
       sortKey: 'repository',
       cellSx: { overflow: 'hidden' },
-      renderCell: (issue) => {
-        const repoName = getDisplayRepositoryName(issue.repositoryFullName);
-        return (
-          <Tooltip title={repoName} arrow>
-            <Box
+      renderCell: (issue) => (
+        <Tooltip title={issue.repositoryFullName} arrow>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              minWidth: 0,
+              maxWidth: '100%',
+            }}
+          >
+            <Avatar
+              src={getRepositoryOwnerAvatarSrc(
+                issue.repositoryFullName.split('/')[0],
+              )}
+              alt={issue.repositoryFullName}
+              sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
+            />
+            <Typography
+              component="span"
               sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                minWidth: 0,
-                maxWidth: '100%',
+                fontSize: '0.85rem',
+                color: STATUS_COLORS.info,
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
               }}
             >
-              <Avatar
-                src={getRepositoryOwnerAvatarSrc(repoName.split('/')[0])}
-                alt={repoName}
-                sx={{ width: 24, height: 24, borderRadius: 1, flexShrink: 0 }}
-              />
-              <Typography
-                component="span"
-                sx={{
-                  fontSize: '0.85rem',
-                  color: STATUS_COLORS.info,
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {repoName}
-              </Typography>
-            </Box>
-          </Tooltip>
-        );
-      },
+              {issue.repositoryFullName}
+            </Typography>
+          </Box>
+        </Tooltip>
+      ),
     };
 
     const titleColumn: DataTableColumn<IssueBounty, SortKey> = {
@@ -925,20 +919,9 @@ const IssuesList: React.FC<IssuesListProps> = ({
     <ViewModeToggle viewMode={viewMode} onChange={handleViewModeChange} />
   );
 
-  const rowsPerPageControl = (
-    <Stack direction="row" alignItems="center" spacing={1}>
-      <Typography
-        sx={{
-          fontFamily: '"JetBrains Mono", monospace',
-          fontSize: '0.72rem',
-          fontWeight: 600,
-          color: 'text.secondary',
-          textTransform: 'uppercase',
-          letterSpacing: '0.04em',
-        }}
-      >
-        Rows
-      </Typography>
+  const rowsSection = (
+    <Box>
+      <Typography sx={sidebarLabelSx}>Rows</Typography>
       <Select
         value={pageSize}
         onChange={(e) => setRowsPerPage(Number(e.target.value))}
@@ -955,7 +938,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
           </MenuItem>
         ))}
       </Select>
-    </Stack>
+    </Box>
   );
 
   const sortSection = (
@@ -1102,6 +1085,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         <Typography sx={sidebarLabelSx}>View</Typography>
         {viewToggle}
       </Box>
+      {rowsSection}
       <Box>
         <Typography sx={sidebarLabelSx}>Search</Typography>
         {searchField(true)}
@@ -1125,10 +1109,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
   );
 
   /* Inline toolbar at the top of the table.
-     - Above xl (usePortal=true): Rows stays inline; Sort / View / Search /
-       Chart render in the right sidebar via Portal.
-     - Below xl: Rows + a single "Options" button that opens a popover with
-       Sort / View / Search / Chart sections. */
+     - Above xl (usePortal=true): the Filters panel in the right sidebar holds
+       Sort / View / Rows / Search / Chart via Portal, so this is empty.
+     - Below xl: a single "Options" button that opens a popover with
+       Sort / View / Rows / Search / Chart sections. */
   const inlineToolbar = (
     <Box
       sx={{
@@ -1143,7 +1127,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
         gap: 2,
       }}
     >
-      {rowsPerPageControl}
       {!usePortal && (
         <Box sx={{ ml: 'auto' }}>
           {optionsButton}
@@ -1153,8 +1136,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     </Box>
   );
 
-  /* Sidebar-portaled toolbar — Sort, View toggle (grid/cards), Search, and Chart.
-     Rows-per-page stays in the inline toolbar. */
+  /* Sidebar-portaled toolbar — Sort, View, Rows, Search, and Chart. */
   const sidebarToolbar = (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {sortSection}
@@ -1162,6 +1144,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         <Typography sx={sidebarLabelSx}>View</Typography>
         {viewToggle}
       </Box>
+      {rowsSection}
       <Box>
         <Typography sx={sidebarLabelSx}>Search</Typography>
         {searchField(true)}
@@ -1206,8 +1189,11 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   const toolbar = (
     <>
-      {inlineToolbar}
-      {usePortal && <Portal container={portalTarget}>{sidebarToolbar}</Portal>}
+      {usePortal ? (
+        <Portal container={portalTarget}>{sidebarToolbar}</Portal>
+      ) : (
+        inlineToolbar
+      )}
       {chartCollapse}
     </>
   );

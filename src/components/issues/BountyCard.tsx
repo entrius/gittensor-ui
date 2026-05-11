@@ -16,10 +16,7 @@ import { IssueBounty } from '../../api/models/Issues';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import { WatchlistButton } from '../common';
 import BountyProgress from './BountyProgress';
-import {
-  getDisplayRepositoryName,
-  getIssueStatusMeta,
-} from '../../utils/issueStatus';
+import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import {
   formatTokenAmount,
@@ -50,8 +47,7 @@ export const BountyCard: React.FC<BountyCardProps> = ({
   alphaPrice,
   compact = false,
 }) => {
-  const repositoryFullName = getDisplayRepositoryName(issue.repositoryFullName);
-  const owner = repositoryFullName.split('/')[0] || '';
+  const owner = issue.repositoryFullName.split('/')[0] || '';
   const statusMeta = getIssueStatusMeta(issue.status);
   const usdDisplay = formatAlphaToUsd(
     issue.targetBounty,
@@ -122,7 +118,7 @@ export const BountyCard: React.FC<BountyCardProps> = ({
             borderColor: theme.palette.border.medium,
           })}
         />
-        <Tooltip title={repositoryFullName} placement="top" arrow>
+        <Tooltip title={issue.repositoryFullName} placement="top" arrow>
           <Typography
             sx={{
               fontSize: '0.88rem',
@@ -135,7 +131,7 @@ export const BountyCard: React.FC<BountyCardProps> = ({
               whiteSpace: 'nowrap',
             }}
           >
-            {repositoryFullName}
+            {issue.repositoryFullName}
           </Typography>
         </Tooltip>
         <Chip
