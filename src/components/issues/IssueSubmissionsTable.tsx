@@ -25,17 +25,14 @@ import {
 interface IssueSubmissionsTableProps {
   submissions: IssueSubmission[] | undefined;
   isLoading: boolean;
-  backLabel?: string;
 }
 
 const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
   submissions,
   isLoading,
-  backLabel,
 }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const linkState = backLabel ? { backLabel } : undefined;
   const winnerSubmission =
     submissions?.find((submission) => submission.isWinner) ?? null;
   const otherSubmissions =
@@ -86,18 +83,20 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
       renderCell: (submission) =>
         submission.authorGithubId ? (
           <LinkBox
-            component={Typography}
             href={`/miners/details?githubId=${submission.authorGithubId}`}
-            linkState={linkState}
             onClick={(e: React.MouseEvent) => e.stopPropagation()}
             sx={{
+              display: 'inline-flex',
+              alignItems: 'center',
               fontSize: '0.85rem',
               color: STATUS_COLORS.info,
               cursor: 'pointer',
               '&:hover': { textDecoration: 'underline' },
             }}
           >
-            {submission.authorLogin}
+            <Typography component="span" sx={{ fontSize: 'inherit' }}>
+              {submission.authorLogin}
+            </Typography>
           </LinkBox>
         ) : (
           <Typography sx={{ fontSize: '0.85rem', color: STATUS_COLORS.info }}>
@@ -217,7 +216,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
       {winnerSubmission && (
         <LinkBox
           href={`/miners/pr?repo=${encodeURIComponent(winnerSubmission.repositoryFullName)}&number=${winnerSubmission.number}`}
-          linkState={linkState}
           sx={{ textDecoration: 'none', display: 'block' }}
         >
           <Card
@@ -362,18 +360,23 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   <Box>
                     {winnerSubmission.authorGithubId ? (
                       <LinkBox
-                        component={Typography}
                         href={`/miners/details?githubId=${winnerSubmission.authorGithubId}`}
-                        linkState={linkState}
                         onClick={(e: React.MouseEvent) => e.stopPropagation()}
                         sx={{
+                          display: 'inline-flex',
+                          alignItems: 'center',
                           fontSize: '0.92rem',
                           color: STATUS_COLORS.info,
                           cursor: 'pointer',
                           '&:hover': { textDecoration: 'underline' },
                         }}
                       >
-                        {winnerSubmission.authorLogin}
+                        <Typography
+                          component="span"
+                          sx={{ fontSize: 'inherit' }}
+                        >
+                          {winnerSubmission.authorLogin}
+                        </Typography>
                       </LinkBox>
                     ) : (
                       <Typography
@@ -448,7 +451,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
             getRowHref={(submission) =>
               `/miners/pr?repo=${encodeURIComponent(submission.repositoryFullName)}&number=${submission.number}`
             }
-            linkState={linkState}
           />
         </Card>
       )}

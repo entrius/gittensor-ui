@@ -75,7 +75,7 @@ const IssueDetailsPage: React.FC = () => {
           <Typography variant="h6" color="error">
             Issue not found
           </Typography>
-          <BackButton to="/bounties" label="Back to Bounties" />
+          <BackButton to="/bounties" />
         </Box>
       ) : (
         <Box
@@ -98,7 +98,7 @@ const IssueDetailsPage: React.FC = () => {
                 gap: 1,
               }}
             >
-              <BackButton to="/bounties" label="Back to Bounties" mb={0} />
+              <BackButton to="/bounties" mb={0} />
               <Box sx={{ display: { xs: 'inline-flex', sm: 'none' } }}>
                 <WatchlistButton
                   category="bounties"
@@ -182,7 +182,6 @@ const IssueDetailsPage: React.FC = () => {
                 <IssueSubmissionsTable
                   submissions={submissions}
                   isLoading={isLoadingSubmissions}
-                  backLabel={`Back to Issue #${issue.issueNumber}`}
                 />
               )}
             </Box>
