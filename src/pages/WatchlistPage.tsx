@@ -16,7 +16,9 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  MenuItem,
   Popover,
+  Select,
   Switch,
   TextField,
   Tooltip,
@@ -38,6 +40,7 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ReactECharts from 'echarts-for-react';
 import StarIcon from '@mui/icons-material/Star';
 import PersonIcon from '@mui/icons-material/Person';
@@ -2147,6 +2150,25 @@ const BOUNTY_STATUS_FILTERS: readonly BountyStatusFilter[] = [
   'history',
 ];
 
+const BOUNTY_SORT_KEYS: readonly BountySortKey[] = [
+  'issue',
+  'repo',
+  'bounty',
+  'status',
+  'date',
+];
+
+const BOUNTY_SORT_LABELS: Record<BountySortKey, string> = {
+  issue: 'Issue',
+  repo: 'Repository',
+  bounty: 'Bounty',
+  status: 'Status',
+  date: 'Date',
+};
+
+const getDefaultBountySortOrder = (field: BountySortKey): 'asc' | 'desc' =>
+  field === 'repo' ? 'asc' : 'desc';
+
 const bountyKey = (issue: IssueBounty) => String(issue.id);
 
 const getBountyHref = (issue: IssueBounty) =>
@@ -2374,8 +2396,14 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortField(field);
-      setSortOrder(field === 'repo' ? 'asc' : 'desc');
+      setSortOrder(getDefaultBountySortOrder(field));
     }
+    setPage(0);
+  };
+
+  const handleSortFieldChange = (field: BountySortKey) => {
+    setSortField(field);
+    setSortOrder(getDefaultBountySortOrder(field));
     setPage(0);
   };
 
@@ -2469,6 +2497,73 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             ))}
           </Box>
         }
+        sortContent={
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Select
+              value={sortField}
+              onChange={(e) =>
+                handleSortFieldChange(e.target.value as BountySortKey)
+              }
+              size="small"
+              sx={(t) => ({
+                flex: 1,
+                minWidth: 0,
+                borderRadius: 2,
+                color: t.palette.text.primary,
+                '& .MuiSelect-select': {
+                  py: 0.75,
+                  fontSize: '0.8rem',
+                },
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: t.palette.border.light,
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: t.palette.border.medium,
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: t.palette.text.primary,
+                  borderWidth: 1,
+                },
+              })}
+            >
+              {BOUNTY_SORT_KEYS.map((key) => (
+                <MenuItem key={key} value={key}>
+                  {BOUNTY_SORT_LABELS[key]}
+                </MenuItem>
+              ))}
+            </Select>
+            <Tooltip
+              title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+              arrow
+            >
+              <IconButton
+                size="small"
+                onClick={() =>
+                  setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'))
+                }
+                sx={(t) => ({
+                  color: t.palette.text.primary,
+                  border: '1px solid',
+                  borderColor: t.palette.border.light,
+                  borderRadius: 2,
+                  padding: '6px',
+                  '&:hover': {
+                    backgroundColor: t.palette.surface.light,
+                    borderColor: t.palette.border.medium,
+                  },
+                })}
+              >
+                <ArrowUpwardIcon
+                  fontSize="small"
+                  sx={{
+                    transform: sortOrder === 'desc' ? 'rotate(180deg)' : 'none',
+                    transition: 'transform 0.2s ease',
+                  }}
+                />
+              </IconButton>
+            </Tooltip>
+          </Box>
+        }
         searchValue={searchQuery}
         searchPlaceholder="Search bounties..."
         onSearchChange={setSearchQuery}
@@ -2486,7 +2581,9 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             }}
           />
         }
-        hasActiveFilter={statusFilter !== 'all'}
+        hasActiveFilter={
+          statusFilter !== 'all' || sortField !== 'date' || sortOrder !== 'desc'
+        }
       />
 
       {viewMode === 'list' ? (
