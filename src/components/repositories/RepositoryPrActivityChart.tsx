@@ -409,7 +409,7 @@ const RepositoryPrActivityChart: React.FC<RepositoryPrActivityChartProps> = ({
             }}
             size="small"
             sx={{
-              bgcolor: alpha(theme.palette.common.black, 0.45),
+              bgcolor: 'surface.tooltip',
               borderRadius: 999,
               p: 0.25,
               flexShrink: 0,
