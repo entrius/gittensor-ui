@@ -304,8 +304,6 @@ const StatRow: React.FC<StatRowProps> = ({ label, value, valueColor }) => (
   </Box>
 );
 
-export { StatRow };
-
 interface FocusedMinersActivityCardProps {
   total: number;
   eligible: number;
