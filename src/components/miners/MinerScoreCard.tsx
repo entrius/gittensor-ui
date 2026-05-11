@@ -310,6 +310,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
       score: rank('score', (m) => Number(m.totalScore)),
       totalPrs: rank('prs', (m) => Number(m.totalPrs)),
       credibility: rank('credibility', (m) => Number(m.credibility ?? 0)),
+      earnings: rank('earnings', (m) => Number(m.usdPerDay ?? 0)),
       issueCredibility: rank('issueCredibility', (m) =>
         Number(m.issueCredibility ?? 0),
       ),
@@ -674,6 +675,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                   ? STATUS_COLORS.success
                   : undefined
               }
+              rank={rankings?.earnings}
               tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
             />
           </Grid>
@@ -738,6 +740,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                   ? STATUS_COLORS.success
                   : undefined
               }
+              rank={rankings?.earnings}
               tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
             />
           </Grid>
