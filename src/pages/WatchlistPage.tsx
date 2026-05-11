@@ -33,10 +33,13 @@ import {
   useMediaQuery,
   Portal,
   TablePagination,
+  MenuItem,
+  Select,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
@@ -2205,6 +2208,14 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 type BountyStatusFilter = 'all' | 'available' | 'pending' | 'history';
 type BountySortKey = 'issue' | 'repo' | 'bounty' | 'status' | 'date';
 
+const BOUNTY_SORT_LABELS: Record<BountySortKey, string> = {
+  issue: 'ID',
+  repo: 'Repository',
+  bounty: 'Bounty',
+  status: 'Status',
+  date: 'Date',
+};
+
 const BOUNTY_STATUS_FILTERS: readonly BountyStatusFilter[] = [
   'all',
   'available',
@@ -2449,6 +2460,12 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     setPage(0);
   };
 
+  const handleSortFieldChange = (field: BountySortKey) => {
+    setSortField(field);
+    setSortOrder(field === 'repo' ? 'asc' : 'desc');
+    setPage(0);
+  };
+
   const counts = useMemo(() => getBountyCounts(items), [items]);
 
   const filtered = useMemo(
@@ -2550,6 +2567,67 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 onClick={() => setStatusFilter(s)}
               />
             ))}
+          </Box>
+        }
+        sortContent={
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Select
+              value={sortField}
+              onChange={(e) =>
+                handleSortFieldChange(e.target.value as BountySortKey)
+              }
+              size="small"
+              sx={{
+                flex: 1,
+                color: 'text.primary',
+                backgroundColor: 'background.default',
+                fontSize: '0.8rem',
+                height: '36px',
+                borderRadius: 2,
+                '& fieldset': { borderColor: 'border.light' },
+                '&:hover fieldset': { borderColor: 'border.medium' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                '& .MuiSelect-select': { py: 0.75 },
+              }}
+            >
+              {(Object.keys(BOUNTY_SORT_LABELS) as BountySortKey[]).map(
+                (key) => (
+                  <MenuItem key={key} value={key}>
+                    {BOUNTY_SORT_LABELS[key]}
+                  </MenuItem>
+                ),
+              )}
+            </Select>
+            <Tooltip
+              title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+              arrow
+            >
+              <IconButton
+                size="small"
+                onClick={() =>
+                  setSortOrder((order) => (order === 'asc' ? 'desc' : 'asc'))
+                }
+                sx={{
+                  color: 'text.primary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
+                  borderRadius: 2,
+                  padding: '6px',
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
+                    borderColor: 'border.medium',
+                  },
+                }}
+              >
+                <ArrowUpwardIcon
+                  fontSize="small"
+                  sx={{
+                    transform: sortOrder === 'desc' ? 'rotate(180deg)' : 'none',
+                    transition: 'transform 0.2s ease',
+                  }}
+                />
+              </IconButton>
+            </Tooltip>
           </Box>
         }
         searchValue={searchQuery}
