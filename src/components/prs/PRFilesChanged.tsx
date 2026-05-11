@@ -40,7 +40,6 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewAgendaIcon from '@mui/icons-material/ViewAgenda'; // Unified
 import ViewColumnIcon from '@mui/icons-material/ViewColumn'; // Split
-import axios from 'axios';
 
 import parseDiff, {
   type AddChange,
@@ -58,6 +57,8 @@ import Switch from '@mui/material/Switch';
 import { STATUS_COLORS, DIFF_COLORS, scrollbarSx } from '../../theme';
 import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import { useQuery } from '@tanstack/react-query';
+import { RateLimitError, githubFetch } from '../../api';
 
 interface PRFile {
   sha: string;
@@ -1529,11 +1530,6 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
   pullRequestNumber,
   headSha,
 }) => {
-  // ... existing state ...
-  const [files, setFiles] = useState<PRFile[]>([]);
-  const [fullTreeData, setFullTreeData] = useState<any[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'unified' | 'split'>('split');
   const [lineWrap, setLineWrap] = useState(false);
@@ -1541,47 +1537,43 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
   const [searchQuery, setSearchQuery] = useState('');
   const [caseSensitive, setCaseSensitive] = useState(false);
 
-  // ... existing useEffect ... (keep it)
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const filesResponse = await axios.get(
-          `https://api.github.com/repos/${repository}/pulls/${pullRequestNumber}/files?per_page=100`,
-        );
-        const changedFiles = filesResponse.data;
-        setFiles(changedFiles);
+  const enabled = !!repository && !!pullRequestNumber;
+  const filesQuery = useQuery<PRFile[], Error>({
+    queryKey: ['github', 'prFiles', repository, pullRequestNumber],
+    queryFn: ({ signal }) =>
+      githubFetch<PRFile[]>(
+        `https://api.github.com/repos/${repository}/pulls/${pullRequestNumber}/files`,
+        { signal, params: { per_page: 100 } },
+      ),
+    enabled,
+    retry: false,
+  });
+  const treeSha = headSha || 'main';
+  const treeQuery = useQuery<
+    { tree?: { path: string; type: 'blob' | 'tree' }[] },
+    Error
+  >({
+    queryKey: ['github', 'tree', repository, treeSha],
+    queryFn: ({ signal }) =>
+      githubFetch<{ tree?: { path: string; type: 'blob' | 'tree' }[] }>(
+        `https://api.github.com/repos/${repository}/git/trees/${treeSha}`,
+        { signal, params: { recursive: 1 } },
+      ),
+    enabled,
+    retry: false,
+  });
 
-        const treeSha = headSha || 'main';
-        try {
-          const treeResponse = await axios.get(
-            `https://api.github.com/repos/${repository}/git/trees/${treeSha}?recursive=1`,
-          );
-          if (treeResponse.data.tree) {
-            setFullTreeData(treeResponse.data.tree);
-          }
-        } catch (treeErr) {
-          console.error(
-            'Failed to fetch full tree, falling back to sparse tree',
-            treeErr,
-          );
-          // Empty source → buildFullTree's overlay pass creates nodes for
-          // changed files only (same shape as the "Only Changed" toggle).
-          setFullTreeData([]);
-        }
-      } catch (err: unknown) {
-        console.error('Failed to fetch PR data', err);
-        setError('Failed to load data.');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const files = useMemo(() => filesQuery.data ?? [], [filesQuery.data]);
+  const loading = filesQuery.isLoading || (enabled && treeQuery.isLoading);
+  const error = filesQuery.error;
 
-    if (repository && pullRequestNumber) {
-      fetchData();
-    }
-  }, [repository, pullRequestNumber, headSha]);
+  // Tree is best-effort: when GitHub rejects (e.g. SHA missing), fall back to
+  // an empty source so buildFullTree's overlay pass creates nodes for the
+  // changed files only (same shape as the "Only Changed" toggle).
+  const fullTreeData = useMemo(
+    () => treeQuery.data?.tree ?? [],
+    [treeQuery.data],
+  );
 
   // Heavy work runs against the deferred copy; the input stays live.
   const deferredSearchQuery = useDeferredValue(searchQuery);
@@ -1687,7 +1679,11 @@ const PRFilesChanged: React.FC<PRFilesChangedProps> = ({
           textAlign: 'center',
         }}
       >
-        <Typography>{error}</Typography>
+        <Typography>
+          {error instanceof RateLimitError
+            ? error.message
+            : 'Failed to load data.'}
+        </Typography>
       </Box>
     );
   }
