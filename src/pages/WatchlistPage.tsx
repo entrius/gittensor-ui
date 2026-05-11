@@ -16,7 +16,9 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  MenuItem,
   Popover,
+  Select,
   Switch,
   TextField,
   Tooltip,
@@ -38,6 +40,7 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import ReactECharts from 'echarts-for-react';
 import StarIcon from '@mui/icons-material/Star';
 import PersonIcon from '@mui/icons-material/Person';
@@ -2138,7 +2141,26 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 // ---------------------------------------------------------------------------
 
 type BountyStatusFilter = 'all' | 'available' | 'pending' | 'history';
-type BountySortKey = 'issue' | 'repo' | 'bounty' | 'status' | 'date';
+type BountySortKey =
+  | 'id'
+  | 'repository'
+  | 'issue'
+  | 'bounty'
+  | 'status'
+  | 'funding'
+  | 'solver'
+  | 'date';
+
+const BOUNTY_SORT_LABELS: Record<BountySortKey, string> = {
+  id: 'ID',
+  repository: 'Repository',
+  issue: 'Issue',
+  bounty: 'Bounty',
+  status: 'Status',
+  funding: 'Funding',
+  solver: 'Solver',
+  date: 'Date',
+};
 
 const BOUNTY_STATUS_FILTERS: readonly BountyStatusFilter[] = [
   'all',
@@ -2158,6 +2180,27 @@ const bountyDate = (issue: IssueBounty): string =>
   issue.updatedAt ||
   issue.createdAt ||
   '';
+
+const parseBountyAmount = (value: string | null | undefined): number => {
+  const parsed = Number.parseFloat(value ?? '0');
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getDefaultBountySortOrder = (key: BountySortKey): 'asc' | 'desc' =>
+  key === 'id' || key === 'bounty' || key === 'date' ? 'desc' : 'asc';
+
+const getVisibleBountySortKeys = (
+  statusFilter: BountyStatusFilter,
+): BountySortKey[] => {
+  const common: BountySortKey[] = ['id', 'repository', 'issue'];
+  if (statusFilter === 'pending') {
+    return [...common, 'bounty', 'funding', 'status'];
+  }
+  if (statusFilter === 'history') {
+    return [...common, 'bounty', 'solver', 'status', 'date'];
+  }
+  return [...common, 'bounty', 'status'];
+};
 
 // Group raw API status into the filter buckets used on the standalone
 // /bounties page so this tab reads consistently across the app.
@@ -2223,7 +2266,7 @@ const buildBountyColumns = (): DataTableColumn<
     key: 'issue',
     header: 'Issue',
     width: '90px',
-    sortKey: 'issue',
+    sortKey: 'id',
     cellSx: bountyCellSx,
     renderCell: (i) => (
       <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
@@ -2235,6 +2278,7 @@ const buildBountyColumns = (): DataTableColumn<
     key: 'title',
     header: 'Title',
     width: '32%',
+    sortKey: 'issue',
     cellSx: bountyCellSx,
     renderCell: (i) => (
       <Typography
@@ -2254,7 +2298,7 @@ const buildBountyColumns = (): DataTableColumn<
     key: 'repo',
     header: 'Repository',
     width: '24%',
-    sortKey: 'repo',
+    sortKey: 'repository',
     cellSx: bountyCellSx,
     renderCell: (i) => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
@@ -2362,19 +2406,32 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const observerTarget = useRef<HTMLDivElement>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const [sortField, setSortField] = useState<BountySortKey>('date');
+  const [sortField, setSortField] = useState<BountySortKey>('id');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const visibleSortKeys = useMemo(
+    () => getVisibleBountySortKeys(statusFilter),
+    [statusFilter],
+  );
 
   useEffect(() => {
     setPage(0);
   }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
 
+  useEffect(() => {
+    if (!visibleSortKeys.includes(sortField)) {
+      setSortField('id');
+      setSortOrder('desc');
+    }
+  }, [sortField, visibleSortKeys]);
+
   const handleSort = (field: BountySortKey) => {
+    if (!visibleSortKeys.includes(field)) return;
     if (sortField === field) {
       setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
     } else {
       setSortField(field);
-      setSortOrder(field === 'repo' ? 'asc' : 'desc');
+      setSortOrder(getDefaultBountySortOrder(field));
     }
     setPage(0);
   };
@@ -2387,27 +2444,45 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   );
 
   const sorted = useMemo(() => {
-    const dir = sortOrder === 'asc' ? 1 : -1;
-    const cmpStr = (a = '', b = '') => a.localeCompare(b) * dir;
-    const cmpNum = (a = 0, b = 0) => (a - b) * dir;
-    return [...filtered].sort((a, b) => {
+    const directionFactor = sortOrder === 'asc' ? 1 : -1;
+    const collator = new Intl.Collator(undefined, {
+      sensitivity: 'base',
+      numeric: true,
+    });
+    const getSortValue = (issue: IssueBounty): number | string => {
       switch (sortField) {
+        case 'id':
+          return issue.id;
+        case 'repository':
+          return (issue.repositoryFullName || '').toLowerCase();
         case 'issue':
-          return cmpNum(a.issueNumber, b.issueNumber);
-        case 'repo':
-          return cmpStr(a.repositoryFullName, b.repositoryFullName);
+          return `${(issue.title || '').toLowerCase()}::${String(
+            issue.issueNumber,
+          ).padStart(10, '0')}`;
         case 'bounty':
-          return cmpNum(
-            parseFloat(a.targetBounty || a.bountyAmount || '0'),
-            parseFloat(b.targetBounty || b.bountyAmount || '0'),
-          );
+          return parseBountyAmount(issue.targetBounty || issue.bountyAmount);
+        case 'funding': {
+          const target = parseBountyAmount(issue.targetBounty);
+          return target > 0
+            ? parseBountyAmount(issue.bountyAmount) / target
+            : 0;
+        }
+        case 'solver':
+          return (issue.solverHotkey ?? '').toLowerCase();
         case 'status':
-          return cmpStr(a.status, b.status);
+          return getIssueStatusMeta(issue.status).text;
         case 'date':
-          return cmpStr(bountyDate(a), bountyDate(b));
-        default:
-          return 0;
+          return new Date(bountyDate(issue) || 0).getTime();
       }
+    };
+
+    return [...filtered].sort((a, b) => {
+      const aValue = getSortValue(a);
+      const bValue = getSortValue(b);
+      if (typeof aValue === 'number' && typeof bValue === 'number') {
+        return (aValue - bValue) * directionFactor;
+      }
+      return collator.compare(String(aValue), String(bValue)) * directionFactor;
     });
   }, [filtered, sortField, sortOrder]);
 
@@ -2434,6 +2509,67 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     observer.observe(target);
     return () => observer.disconnect();
   }, [page, filtered.length]);
+
+  const sortContent = (
+    <Box sx={{ display: 'flex', gap: 1 }}>
+      <Select
+        value={sortField}
+        onChange={(e) => {
+          const next = e.target.value as BountySortKey;
+          setSortField(next);
+          setSortOrder(getDefaultBountySortOrder(next));
+          setPage(0);
+        }}
+        size="small"
+        sx={{
+          flex: 1,
+          color: 'text.primary',
+          backgroundColor: 'background.default',
+          fontSize: '0.8rem',
+          height: '36px',
+          borderRadius: 2,
+          '& fieldset': { borderColor: 'border.light' },
+          '&:hover fieldset': { borderColor: 'border.medium' },
+          '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+          '& .MuiSelect-select': { py: 0.75 },
+        }}
+      >
+        {visibleSortKeys.map((key) => (
+          <MenuItem key={key} value={key}>
+            {BOUNTY_SORT_LABELS[key]}
+          </MenuItem>
+        ))}
+      </Select>
+      <Tooltip title={sortOrder === 'asc' ? 'Ascending' : 'Descending'} arrow>
+        <IconButton
+          size="small"
+          aria-label={`Sort ${sortOrder === 'asc' ? 'ascending' : 'descending'}`}
+          onClick={() => {
+            setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+            setPage(0);
+          }}
+          sx={(t) => ({
+            color: 'text.primary',
+            border: `1px solid ${t.palette.border.light}`,
+            borderRadius: 2,
+            padding: '6px',
+            '&:hover': {
+              backgroundColor: t.palette.surface.subtle,
+              borderColor: t.palette.border.medium,
+            },
+          })}
+        >
+          <ArrowUpwardIcon
+            fontSize="small"
+            sx={{
+              transform: sortOrder === 'desc' ? 'rotate(180deg)' : 'none',
+              transition: 'transform 0.2s ease',
+            }}
+          />
+        </IconButton>
+      </Tooltip>
+    </Box>
+  );
 
   return (
     <Card
@@ -2469,6 +2605,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             ))}
           </Box>
         }
+        sortContent={sortContent}
         searchValue={searchQuery}
         searchPlaceholder="Search bounties..."
         onSearchChange={setSearchQuery}
