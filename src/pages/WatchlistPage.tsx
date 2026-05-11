@@ -47,6 +47,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { useTwitterStickySidebar } from '../hooks/useTwitterStickySidebar';
+import { useSessionStoredState } from '../hooks/useSessionStoredState';
 import {
   TopMinersTable,
   ActivitySidebarCards,
@@ -960,6 +961,12 @@ const isRepoActive = (repo: Repository): boolean => !repo.config?.inactiveAt;
 
 type RepoStatusFilter = 'all' | 'active' | 'inactive';
 
+const isRepoStatusFilter = (v: unknown): v is RepoStatusFilter =>
+  v === 'all' || v === 'active' || v === 'inactive';
+
+const isPrStatusFilterStored = (v: unknown): v is PrStatusFilter =>
+  v === 'all' || v === 'open' || v === 'merged' || v === 'closed';
+
 type RepoSortKey =
   | 'name'
   | 'weight'
@@ -1604,7 +1611,12 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allPrs } = useAllPrs();
   const { data: allMiners } = useAllMiners();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
+  const [statusFilter, setStatusFilter] =
+    useSessionStoredState<RepoStatusFilter>(
+      'watchlist:repos:statusFilter',
+      'all',
+      isRepoStatusFilter,
+    );
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(false);
@@ -3110,7 +3122,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
   const { isWatched } = useWatchlist('prs');
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useSessionStoredState<PrStatusFilter>(
+    'watchlist:prs:statusFilter',
+    'all',
+    isPrStatusFilterStored,
+  );
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
   const observerTarget = useRef<HTMLDivElement>(null);
