@@ -367,25 +367,20 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       sx={{
         p: 3,
         borderBottom: `1px solid ${theme.palette.border.light}`,
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        flexWrap: 'wrap',
+        gap: 2,
       }}
     >
-      <Box
-        sx={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: 2,
-        }}
+      <Typography
+        variant="h6"
+        sx={{ color: 'text.primary', fontSize: '1.1rem', fontWeight: 500 }}
       >
-        <Typography
-          variant="h6"
-          sx={{ color: 'text.primary', fontSize: '1.1rem', fontWeight: 500 }}
-        >
-          Pull Requests ({sortedPRs.length})
-        </Typography>
-        {filterButtons}
-      </Box>
+        Pull Requests ({sortedPRs.length})
+      </Typography>
+      {filterButtons}
     </Box>
   );
 
