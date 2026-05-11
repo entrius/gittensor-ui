@@ -105,6 +105,22 @@ const tableSx = {
   width: '100%',
 } as const;
 
+const sortLabelSx: SxProps<Theme> = {
+  display: 'inline-grid',
+  gridTemplateColumns: 'minmax(0, auto) 16px',
+  alignItems: 'center',
+  columnGap: 0.5,
+  maxWidth: '100%',
+  verticalAlign: 'middle',
+  '& .MuiTableSortLabel-icon': {
+    justifySelf: 'center',
+    m: 0,
+    width: 16,
+    height: 16,
+    flexShrink: 0,
+  },
+};
+
 const clickableRowSx: SxProps<Theme> = (theme) => ({
   cursor: 'pointer',
   transition: 'background-color 0.2s',
@@ -197,7 +213,9 @@ export const DataTable = <T, SortKey extends string = never>({
                           <TableSortLabel
                             active={isActive}
                             direction={isActive ? sort.order : 'desc'}
+                            hideSortIcon={false}
                             onClick={() => sort.onChange(sortKey)}
+                            sx={sortLabelSx}
                           >
                             {column.header}
                           </TableSortLabel>
