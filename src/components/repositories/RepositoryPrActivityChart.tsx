@@ -6,9 +6,13 @@ import {
   Select,
   Skeleton,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
   Typography,
 } from '@mui/material';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
+import ShowChartIcon from '@mui/icons-material/ShowChart';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import ReactECharts from 'echarts-for-react';
 import {
   eachDayOfInterval,
@@ -22,7 +26,7 @@ import {
   startOfMonth,
   subDays,
 } from 'date-fns';
-import { useAllPrs, type CommitLog } from '../../api';
+import { useAllPrs, useRepositoryIssues } from '../../api';
 import { STATUS_COLORS } from '../../theme';
 import {
   echartsAxisTooltipChrome,
@@ -32,6 +36,7 @@ import {
 } from '../../utils/echarts/gittensorChartTheme';
 
 type ActivityRange = '7d' | '35d' | 'all';
+type ChartMode = 'line' | 'bar';
 
 const RANGE_OPTIONS: { value: ActivityRange; label: string }[] = [
   { value: '7d', label: '7D' },
@@ -52,17 +57,17 @@ function bucketDayKey(d: Date): string {
   return format(startOfDay(d), 'yyyy-MM-dd');
 }
 
-function countByKey(
-  prs: CommitLog[],
+function countByKey<T>(
+  items: T[],
   axisKeys: string[],
-  pickDate: (pr: CommitLog) => string | null,
+  pickDate: (item: T) => string | null,
   bucketKey: (d: Date) => string,
 ): number[] {
   const counts = new Map<string, number>();
   axisKeys.forEach((k) => counts.set(k, 0));
 
-  for (const pr of prs) {
-    const raw = pickDate(pr);
+  for (const item of items) {
+    const raw = pickDate(item);
     if (!raw) continue;
     const d = parseISO(raw);
     if (!isValid(d)) continue;
@@ -75,7 +80,7 @@ function countByKey(
 }
 
 function buildAxis(
-  prs: CommitLog[],
+  dateStrings: string[],
   range: ActivityRange,
 ): { key: string; label: string; bucket: (d: Date) => string }[] {
   const today = new Date();
@@ -91,12 +96,10 @@ function buildAxis(
     }));
   }
 
-  const dates = prs.flatMap((pr) => {
-    const rawDates = [pr.prCreatedAt, pr.mergedAt, pr.closedAt].filter(
-      (raw): raw is string => !!raw,
-    );
-    return rawDates.map((raw) => parseISO(raw)).filter((d) => isValid(d));
-  });
+  const dates = dateStrings
+    .filter((raw): raw is string => !!raw)
+    .map((raw) => parseISO(raw))
+    .filter((d) => isValid(d));
 
   const earliest = dates.length > 0 ? min(dates) : today;
   const latest = dates.length > 0 ? max(dates) : today;
@@ -127,11 +130,15 @@ function areaFill(theme: Theme, color: string) {
 function buildChartOption(
   theme: Theme,
   labels: string[],
-  opened: number[],
-  merged: number[],
+  prOpened: number[],
+  prMerged: number[],
+  mode: ChartMode,
+  firstLabel = 'Opened',
+  secondLabel = 'Merged',
+  secondSeriesColor?: string,
 ) {
-  const openedColor = alpha(theme.palette.primary.main, 0.92);
-  const mergedColor = alpha(STATUS_COLORS.merged, 0.95);
+  const prOpenedColor = alpha(theme.palette.primary.main, 0.92);
+  const prMergedColor = secondSeriesColor ?? alpha(STATUS_COLORS.merged, 0.95);
   const chartFont = echartsFontFamily(theme);
   const { labelColor, axisLineColor, splitLineColor } =
     echartsMutedCartesianAxisColors(theme);
@@ -139,9 +146,9 @@ function buildChartOption(
   return {
     ...echartsTransparentBackground(),
     animationDuration: 380,
-    color: [openedColor, mergedColor],
+    color: [prOpenedColor, prMergedColor],
     legend: {
-      data: ['Opened', 'Merged'],
+      data: [firstLabel, secondLabel],
       top: 0,
       left: 'center',
       itemGap: 16,
@@ -182,7 +189,7 @@ function buildChartOption(
     },
     xAxis: {
       type: 'category',
-      boundaryGap: false,
+      boundaryGap: mode === 'bar',
       data: labels,
       axisLabel: {
         color: labelColor,
@@ -209,26 +216,48 @@ function buildChartOption(
     },
     series: [
       {
-        name: 'Opened',
-        type: 'line',
+        name: firstLabel,
+        type: mode,
         smooth: 0.2,
-        showSymbol: true,
-        symbol: 'circle',
-        symbolSize: 5,
-        data: opened,
-        lineStyle: { width: 2, color: openedColor },
-        areaStyle: { color: areaFill(theme, openedColor) },
+        showSymbol: false,
+        symbol: mode === 'line' ? 'circle' : undefined,
+        symbolSize: mode === 'line' ? 6 : undefined,
+        data: prOpened,
+        lineStyle: { width: 2, color: prOpenedColor },
+        areaStyle:
+          mode === 'line'
+            ? { color: areaFill(theme, prOpenedColor) }
+            : undefined,
+        itemStyle: mode === 'bar' ? { borderRadius: [4, 4, 0, 0] } : undefined,
+        emphasis:
+          mode === 'line'
+            ? {
+                focus: 'series',
+                scale: true,
+              }
+            : undefined,
       },
       {
-        name: 'Merged',
-        type: 'line',
+        name: secondLabel,
+        type: mode,
         smooth: 0.2,
-        showSymbol: true,
-        symbol: 'circle',
-        symbolSize: 5,
-        data: merged,
-        lineStyle: { width: 2, color: mergedColor },
-        areaStyle: { color: areaFill(theme, mergedColor) },
+        showSymbol: false,
+        symbol: mode === 'line' ? 'circle' : undefined,
+        symbolSize: mode === 'line' ? 6 : undefined,
+        data: prMerged,
+        lineStyle: { width: 2, color: prMergedColor },
+        areaStyle:
+          mode === 'line'
+            ? { color: areaFill(theme, prMergedColor) }
+            : undefined,
+        itemStyle: mode === 'bar' ? { borderRadius: [4, 4, 0, 0] } : undefined,
+        emphasis:
+          mode === 'line'
+            ? {
+                focus: 'series',
+                scale: true,
+              }
+            : undefined,
       },
     ],
   };
@@ -236,14 +265,20 @@ function buildChartOption(
 
 interface RepositoryPrActivityChartProps {
   repositoryFullName: string;
+  viewMode?: 'prs' | 'issues';
 }
 
 const RepositoryPrActivityChart: React.FC<RepositoryPrActivityChartProps> = ({
   repositoryFullName,
+  viewMode = 'prs',
 }) => {
   const theme = useTheme();
-  const [range, setRange] = useState<ActivityRange>('7d');
+  const [range, setRange] = useState<ActivityRange>('35d');
+  const [chartMode, setChartMode] = useState<ChartMode>('line');
   const { data: allPrs, isLoading } = useAllPrs();
+  const { data: issues, isLoading: isLoadingIssues } =
+    useRepositoryIssues(repositoryFullName);
+  const isIssueMode = viewMode === 'issues';
 
   const repoPrs = useMemo(() => {
     if (!allPrs) return [];
@@ -251,33 +286,70 @@ const RepositoryPrActivityChart: React.FC<RepositoryPrActivityChartProps> = ({
     return allPrs.filter((pr) => pr.repository.toLowerCase() === lower);
   }, [allPrs, repositoryFullName]);
 
-  const { labels, openedSeries, mergedSeries, hasAny } = useMemo(() => {
-    const axis = buildAxis(repoPrs, range);
+  const { labels, firstSeries, secondSeries, hasAny } = useMemo(() => {
+    const issueRows = issues ?? [];
+    const axis = buildAxis(
+      isIssueMode
+        ? issueRows
+            .flatMap((issue) => [issue.createdAt, issue.closedAt])
+            .filter((v): v is string => Boolean(v))
+        : repoPrs
+            .flatMap((pr) => [pr.prCreatedAt, pr.mergedAt, pr.closedAt])
+            .filter((v): v is string => Boolean(v)),
+      range,
+    );
     const axisKeys = axis.map((item) => item.key);
     const labelsLocal = axis.map((item) => item.label);
     const bucket = axis[0]?.bucket ?? bucketDayKey;
-    const opened = countByKey(
-      repoPrs,
-      axisKeys,
-      (pr) => pr.prCreatedAt,
-      bucket,
-    );
-    const merged = countByKey(repoPrs, axisKeys, (pr) => pr.mergedAt, bucket);
-    const hasAnyLocal = opened.some((n) => n > 0) || merged.some((n) => n > 0);
+    const first = isIssueMode
+      ? countByKey(issueRows, axisKeys, (issue) => issue.createdAt, bucket)
+      : countByKey(repoPrs, axisKeys, (pr) => pr.prCreatedAt, bucket);
+    const second = isIssueMode
+      ? countByKey(issueRows, axisKeys, (issue) => issue.closedAt, bucket)
+      : countByKey(repoPrs, axisKeys, (pr) => pr.mergedAt, bucket);
+    const hasAnyLocal = first.some((n) => n > 0) || second.some((n) => n > 0);
     return {
       labels: labelsLocal,
-      openedSeries: opened,
-      mergedSeries: merged,
+      firstSeries: first,
+      secondSeries: second,
       hasAny: hasAnyLocal,
     };
-  }, [repoPrs, range]);
+  }, [repoPrs, issues, range, isIssueMode]);
+
+  const firstLabel = isIssueMode ? 'Opened' : 'Opened';
+  const secondLabel = isIssueMode ? 'Closed' : 'Merged';
+  const secondColor = isIssueMode
+    ? alpha(STATUS_COLORS.closed, 0.95)
+    : alpha(STATUS_COLORS.merged, 0.95);
 
   const chartOption = useMemo(
-    () => buildChartOption(theme, labels, openedSeries, mergedSeries),
-    [theme, labels, openedSeries, mergedSeries],
+    () =>
+      buildChartOption(
+        theme,
+        labels,
+        firstSeries,
+        secondSeries,
+        chartMode,
+        firstLabel,
+        secondLabel,
+        secondColor,
+      ),
+    [
+      theme,
+      labels,
+      firstSeries,
+      secondSeries,
+      chartMode,
+      firstLabel,
+      secondLabel,
+      secondColor,
+    ],
   );
 
-  if (isLoading && !allPrs) {
+  if (
+    (isLoading && !allPrs && !isIssueMode) ||
+    (isLoadingIssues && !issues && isIssueMode)
+  ) {
     return (
       <Box sx={{ mb: 4 }}>
         <Typography
@@ -289,7 +361,7 @@ const RepositoryPrActivityChart: React.FC<RepositoryPrActivityChartProps> = ({
             fontSize: '14px',
           }}
         >
-          PR Activity
+          {isIssueMode ? 'Issue Activity' : 'PR Activity'}
         </Typography>
         <Skeleton
           variant="rectangular"
@@ -301,13 +373,13 @@ const RepositoryPrActivityChart: React.FC<RepositoryPrActivityChartProps> = ({
   }
 
   return (
-    <Box sx={{ mb: 4 }}>
+    <Box sx={{ mb: 4, minWidth: 0 }}>
       <Stack
-        direction="row"
-        alignItems="center"
+        direction={{ xs: 'column', sm: 'row' }}
+        alignItems={{ xs: 'stretch', sm: 'center' }}
         justifyContent="space-between"
         spacing={1}
-        sx={{ mb: 1.5 }}
+        sx={{ mb: 1.5, flexWrap: 'wrap', rowGap: 1 }}
       >
         <Typography
           variant="subtitle2"
@@ -317,34 +389,82 @@ const RepositoryPrActivityChart: React.FC<RepositoryPrActivityChartProps> = ({
             fontSize: '14px',
           }}
         >
-          PR Activity
+          {isIssueMode ? 'Issue Activity' : 'PR Activity'}
         </Typography>
-        <FormControl size="small" sx={{ minWidth: 88 }}>
-          <Select
-            value={range}
-            onChange={(e) => setRange(e.target.value as ActivityRange)}
-            variant="outlined"
+        <Stack
+          direction="row"
+          spacing={1}
+          alignItems="center"
+          sx={{
+            width: { xs: '100%', sm: 'auto' },
+            justifyContent: { xs: 'space-between', sm: 'flex-end' },
+            minWidth: 0,
+          }}
+        >
+          <ToggleButtonGroup
+            value={chartMode}
+            exclusive
+            onChange={(_, next) => {
+              if (next) setChartMode(next as ChartMode);
+            }}
+            size="small"
             sx={{
-              fontSize: '0.75rem',
-              height: 30,
-              '& .MuiOutlinedInput-notchedOutline': {
-                borderColor: alpha(theme.palette.text.primary, 0.2),
+              bgcolor: alpha(theme.palette.common.black, 0.45),
+              borderRadius: 999,
+              p: 0.25,
+              flexShrink: 0,
+              border: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
+              '& .MuiToggleButtonGroup-grouped': {
+                border: 0,
+                borderRadius: '999px !important',
+                minWidth: 34,
+                height: 26,
+                color: alpha(theme.palette.text.primary, 0.68),
+                px: 0.75,
+                '&.Mui-selected': {
+                  color: theme.palette.background.paper,
+                  bgcolor: alpha(theme.palette.diff.additions, 0.92),
+                },
               },
             }}
           >
-            {RANGE_OPTIONS.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value} dense>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </Select>
-        </FormControl>
+            <ToggleButton value="line" aria-label="Line chart">
+              <ShowChartIcon sx={{ fontSize: 14 }} />
+            </ToggleButton>
+            <ToggleButton value="bar" aria-label="Bar chart">
+              <BarChartIcon sx={{ fontSize: 14 }} />
+            </ToggleButton>
+          </ToggleButtonGroup>
+          <FormControl
+            size="small"
+            sx={{ minWidth: 78, width: { xs: 'auto', sm: 84 }, flexShrink: 0 }}
+          >
+            <Select
+              value={range}
+              onChange={(e) => setRange(e.target.value as ActivityRange)}
+              sx={{
+                height: 28,
+                fontSize: '0.75rem',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: alpha(theme.palette.text.primary, 0.2),
+                },
+              }}
+            >
+              {RANGE_OPTIONS.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value} dense>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+        </Stack>
       </Stack>
 
       <Box
         sx={{
           width: '100%',
           height: 220,
+          overflow: 'hidden',
           borderRadius: 2,
           border: '1px solid',
           borderColor: 'border.light',
@@ -365,7 +485,7 @@ const RepositoryPrActivityChart: React.FC<RepositoryPrActivityChartProps> = ({
                 fontWeight: 600,
               }}
             >
-              No PRs in this range
+              No activity in this range
             </Typography>
             <Typography
               sx={{
