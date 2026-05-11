@@ -40,6 +40,10 @@ interface LanguageRow {
   weight: string;
 }
 
+type IndexedLanguageRow = LanguageRow & {
+  displayIndex: number;
+};
+
 const LanguageWeightsTable: React.FC = () => {
   const theme = useTheme();
   const { data: languages, isLoading } = useLanguagesAndWeights();
@@ -117,10 +121,15 @@ const LanguageWeightsTable: React.FC = () => {
     return filtered;
   }, [languages, searchQuery, sortField, sortOrder]);
 
-  const paginatedLanguages = useMemo(() => {
+  const paginatedLanguages = useMemo<IndexedLanguageRow[]>(() => {
     const startIndex = page * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
-    return filteredAndSortedLanguages.slice(startIndex, endIndex);
+    return filteredAndSortedLanguages
+      .slice(startIndex, endIndex)
+      .map((lang, index) => ({
+        ...lang,
+        displayIndex: startIndex + index + 1,
+      }));
   }, [filteredAndSortedLanguages, page, rowsPerPage]);
 
   const chartOption = useMemo(() => {
@@ -207,8 +216,19 @@ const LanguageWeightsTable: React.FC = () => {
     },
   } as const;
 
-  const columns = useMemo<DataTableColumn<LanguageRow, SortField>[]>(
+  const columns = useMemo<DataTableColumn<IndexedLanguageRow, SortField>[]>(
     () => [
+      {
+        key: 'rowNumber',
+        header: 'No.',
+        width: 72,
+        align: 'right',
+        cellSx: {
+          color: 'text.secondary',
+          fontVariantNumeric: 'tabular-nums',
+        },
+        renderCell: (lang) => lang.displayIndex,
+      },
       {
         key: 'extension',
         header: 'Extension',
@@ -440,7 +460,7 @@ const LanguageWeightsTable: React.FC = () => {
           ...scrollbarSx,
         }}
       >
-        <DataTable<LanguageRow, SortField>
+        <DataTable<IndexedLanguageRow, SortField>
           columns={columns}
           rows={paginatedLanguages}
           getRowKey={(lang) => lang.extension}
