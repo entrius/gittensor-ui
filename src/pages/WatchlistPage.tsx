@@ -2159,6 +2159,11 @@ const bountyDate = (issue: IssueBounty): string =>
   issue.createdAt ||
   '';
 
+const parseBountyAmount = (value: string | null | undefined): number => {
+  const parsed = Number.parseFloat(value ?? '0');
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
 // Group raw API status into the filter buckets used on the standalone
 // /bounties page so this tab reads consistently across the app.
 const bountyStatusGroup = (
@@ -2361,6 +2366,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const [page, setPage] = useState(0);
   const observerTarget = useRef<HTMLDivElement>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [showChart, setShowChart] = useState(false);
 
   const [sortField, setSortField] = useState<BountySortKey>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
@@ -2398,8 +2404,8 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           return cmpStr(a.repositoryFullName, b.repositoryFullName);
         case 'bounty':
           return cmpNum(
-            parseFloat(a.targetBounty || a.bountyAmount || '0'),
-            parseFloat(b.targetBounty || b.bountyAmount || '0'),
+            parseBountyAmount(a.targetBounty || a.bountyAmount),
+            parseBountyAmount(b.targetBounty || b.bountyAmount),
           );
         case 'status':
           return cmpStr(a.status, b.status);
@@ -2410,6 +2416,79 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       }
     });
   }, [filtered, sortField, sortOrder]);
+
+  const chartOption = useMemo(() => {
+    const repoTotals = new Map<string, number>();
+    filtered.forEach((issue) => {
+      const amount = parseBountyAmount(
+        issue.targetBounty || issue.bountyAmount,
+      );
+      repoTotals.set(
+        issue.repositoryFullName,
+        (repoTotals.get(issue.repositoryFullName) || 0) + amount,
+      );
+    });
+
+    const sortedRepos = [...repoTotals.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20);
+
+    return {
+      backgroundColor: 'transparent',
+      title: {
+        text: 'Bounty Pool by Repository',
+        subtext: `${filtered.length} watched bounties`,
+        left: 'center',
+        top: 20,
+        textStyle: {
+          color: theme.palette.text.primary,
+          fontFamily: FONTS.mono,
+          fontSize: 16,
+          fontWeight: 600,
+        },
+        subtextStyle: {
+          color: theme.palette.text.secondary,
+          fontFamily: FONTS.mono,
+          fontSize: 12,
+        },
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        formatter: (params: any) => {
+          const item = Array.isArray(params) ? params[0] : params;
+          return `${item.name}<br/>${formatTokenAmount(item.value)} ل`;
+        },
+      },
+      grid: { left: 80, right: 32, top: 90, bottom: 48 },
+      xAxis: {
+        type: 'value',
+        axisLabel: {
+          color: theme.palette.text.secondary,
+          fontFamily: FONTS.mono,
+        },
+        splitLine: { lineStyle: { color: theme.palette.border.subtle } },
+      },
+      yAxis: {
+        type: 'category',
+        data: sortedRepos.map(([repo]) => repo),
+        axisLabel: {
+          color: theme.palette.text.secondary,
+          fontFamily: FONTS.mono,
+          width: 150,
+          overflow: 'truncate',
+        },
+      },
+      series: [
+        {
+          type: 'bar',
+          data: sortedRepos.map(([, total]) => total),
+          itemStyle: { color: CHART_COLORS.series[0] },
+          barMaxWidth: 18,
+        },
+      ],
+    };
+  }, [filtered]);
 
   const paged = useMemo(
     () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
@@ -2469,6 +2548,34 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             ))}
           </Box>
         }
+        extraContent={
+          <Box>
+            <OptionsLabel>Chart</OptionsLabel>
+            <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+              <IconButton
+                onClick={() => setShowChart((v) => !v)}
+                size="small"
+                sx={{
+                  color: showChart ? 'text.primary' : 'text.tertiary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
+                  borderRadius: 2,
+                  padding: '6px',
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
+                    borderColor: 'border.medium',
+                  },
+                }}
+              >
+                {showChart ? (
+                  <TableChartIcon fontSize="small" />
+                ) : (
+                  <BarChartIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+          </Box>
+        }
         searchValue={searchQuery}
         searchPlaceholder="Search bounties..."
         onSearchChange={setSearchQuery}
@@ -2488,6 +2595,37 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         }
         hasActiveFilter={statusFilter !== 'all'}
       />
+
+      <Collapse in={showChart}>
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: '1px solid',
+            borderColor: 'border.light',
+            height: '420px',
+            backgroundColor: 'surface.subtle',
+          }}
+        >
+          {showChart && filtered.length > 0 ? (
+            <ReactECharts
+              option={chartOption}
+              style={{ height: '100%', width: '100%' }}
+              notMerge
+            />
+          ) : (
+            <Typography
+              sx={{
+                color: 'text.secondary',
+                textAlign: 'center',
+                py: 4,
+                fontSize: '0.85rem',
+              }}
+            >
+              No watched bounties to chart.
+            </Typography>
+          )}
+        </Box>
+      </Collapse>
 
       {viewMode === 'list' ? (
         <DataTable<IssueBounty, BountySortKey>
