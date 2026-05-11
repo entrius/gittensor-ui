@@ -63,6 +63,12 @@ export const useIssueDetails = (id: number) =>
     !!id,
   );
 
+// Shared cache key for an issue's submissions. Used by `useIssueSubmissions`
+// and any fan-out consumers (e.g. the bounty-hunters aggregator) so they share
+// the same React Query entry instead of re-fetching the same payload.
+export const getIssueSubmissionsQueryKey = (id: number) =>
+  ['useIssueSubmissions', `/issues/${id}/submissions`, undefined] as const;
+
 /**
  * Fetch PR submissions for an issue.
  */
