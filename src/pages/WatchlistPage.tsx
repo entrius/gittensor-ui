@@ -88,6 +88,7 @@ import {
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
 import { useWatchedPRs, type WatchedPRSource } from '../hooks/useWatchedPRs';
+import { usePrSourceFilter } from '../hooks/usePrSourceFilter';
 import {
   isMergedPr,
   isClosedUnmergedPr,
@@ -3218,6 +3219,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
   const { isWatched } = useWatchlist('prs');
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
+  const {
+    active: activeSources,
+    toggle: toggleSource,
+    isAllOn: sourcesAllOn,
+  } = usePrSourceFilter();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
@@ -3234,7 +3240,15 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode, isWatched]);
+  }, [
+    statusFilter,
+    searchQuery,
+    sortField,
+    sortOrder,
+    viewMode,
+    isWatched,
+    activeSources,
+  ]);
 
   const handleSort = (field: PrSortKey) => {
     if (sortField === field) {
@@ -3250,15 +3264,36 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     setPage(0);
   };
 
-  const counts = useMemo(() => getPrStatusCounts(items), [items]);
+  const scopedItems = useMemo(() => {
+    if (sourcesAllOn) return items;
+    return items.filter((pr) =>
+      sourcesByKey
+        .get(serializePRKey(pr.repository, pr.pullRequestNumber))
+        ?.some((s) => activeSources.has(s)),
+    );
+  }, [items, sourcesByKey, activeSources, sourcesAllOn]);
+
+  const sourceCounts = useMemo(() => {
+    const counts = { starred: 0, miner: 0, repo: 0 };
+    for (const pr of items) {
+      const sources = sourcesByKey.get(
+        serializePRKey(pr.repository, pr.pullRequestNumber),
+      );
+      if (!sources) continue;
+      for (const s of sources) counts[s] += 1;
+    }
+    return counts;
+  }, [items, sourcesByKey]);
+
+  const counts = useMemo(() => getPrStatusCounts(scopedItems), [scopedItems]);
 
   const filtered = useMemo(() => {
-    return filterPrs(items, {
+    return filterPrs(scopedItems, {
       statusFilter,
       searchQuery,
       includeNumber: true,
     });
-  }, [items, statusFilter, searchQuery]);
+  }, [scopedItems, statusFilter, searchQuery]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -3379,6 +3414,35 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                   isActive={statusFilter === 'closed'}
                   onClick={() => setStatusFilter('closed')}
                 />
+                <Box
+                  sx={{
+                    width: '1px',
+                    height: 20,
+                    backgroundColor: 'border.light',
+                    mx: 0.5,
+                  }}
+                />
+                <FilterButton
+                  label="Starred"
+                  count={sourceCounts.starred}
+                  color={SOURCE_META.starred.color}
+                  isActive={activeSources.has('starred')}
+                  onClick={() => toggleSource('starred')}
+                />
+                <FilterButton
+                  label="Miner"
+                  count={sourceCounts.miner}
+                  color={SOURCE_META.miner.color}
+                  isActive={activeSources.has('miner')}
+                  onClick={() => toggleSource('miner')}
+                />
+                <FilterButton
+                  label="Repo"
+                  count={sourceCounts.repo}
+                  color={SOURCE_META.repo.color}
+                  isActive={activeSources.has('repo')}
+                  onClick={() => toggleSource('repo')}
+                />
               </Box>
             }
             searchValue={draftValue}
@@ -3398,7 +3462,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 }}
               />
             }
-            hasActiveFilter={statusFilter !== 'all'}
+            hasActiveFilter={statusFilter !== 'all' || !sourcesAllOn}
           />
         )}
       </DebouncedSearchInput>
