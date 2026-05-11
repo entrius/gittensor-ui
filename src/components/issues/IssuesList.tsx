@@ -46,6 +46,7 @@ import { isOutsideScoringWindow } from '../../utils/ExplorerUtils';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import TablePagination from '../common/TablePagination';
 import { WatchlistButton } from '../common/WatchlistButton';
 import BountyProgress from './BountyProgress';
 import { BountyCard } from './BountyCard';
@@ -53,6 +54,7 @@ import {
   type IssuesViewMode,
   ISSUES_VIEW_QUERY_PARAM,
   ISSUES_DEFAULT_CARD_ROWS,
+  ISSUES_DEFAULT_LIST_ROWS,
   getIssuesViewModeFromQuery,
   readStoredIssuesViewMode,
   writeStoredIssuesViewMode,
@@ -208,6 +210,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [searchQuery, setSearchQuery] = useState('');
   const [showChart, setShowChart] = useState(false);
+  const [paginationState, setPaginationState] = useState({
+    key: '',
+    page: 0,
+  });
 
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
@@ -356,6 +362,46 @@ const IssuesList: React.FC<IssuesListProps> = ({
     });
     return decorated.map((d) => d.row);
   }, [filteredIssues, getSortValue, sortKey, sortDirection]);
+
+  const paginationKey = [
+    filterType,
+    searchQuery,
+    sortKey,
+    sortDirection,
+    viewMode,
+  ].join('::');
+
+  if (paginationState.key !== paginationKey) {
+    setPaginationState({ key: paginationKey, page: 0 });
+  }
+
+  const rowsPerPage =
+    viewMode === 'cards' ? ISSUES_DEFAULT_CARD_ROWS : ISSUES_DEFAULT_LIST_ROWS;
+  const totalPages = Math.max(1, Math.ceil(sortedIssues.length / rowsPerPage));
+  const currentPage =
+    paginationState.key === paginationKey
+      ? Math.min(paginationState.page, totalPages - 1)
+      : 0;
+
+  if (
+    paginationState.key === paginationKey &&
+    paginationState.page !== currentPage
+  ) {
+    setPaginationState({ key: paginationKey, page: currentPage });
+  }
+
+  const visibleIssues = useMemo(() => {
+    const start = currentPage * rowsPerPage;
+    return sortedIssues.slice(start, start + rowsPerPage);
+  }, [sortedIssues, currentPage, rowsPerPage]);
+
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      const clampedPage = Math.min(Math.max(newPage, 0), totalPages - 1);
+      setPaginationState({ key: paginationKey, page: clampedPage });
+    },
+    [paginationKey, totalPages],
+  );
 
   const chartOption = useMemo(() => {
     const repoTotals = new Map<string, number>();
@@ -1161,50 +1207,64 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
       {viewMode === 'cards' ? (
         sortedIssues.length > 0 ? (
-          <Grid container spacing={2}>
-            {sortedIssues.map((issue) => (
-              <Grid item xs={12} sm={6} md={4} key={issue.id}>
-                <BountyCard
-                  issue={issue}
-                  href={getIssueHref ? getIssueHref(issue.id) : undefined}
-                  linkState={linkState}
-                  taoPrice={taoPrice}
-                  alphaPrice={alphaPrice}
-                />
-              </Grid>
-            ))}
-          </Grid>
+          <>
+            <Grid container spacing={2}>
+              {visibleIssues.map((issue) => (
+                <Grid item xs={12} sm={6} md={4} key={issue.id}>
+                  <BountyCard
+                    issue={issue}
+                    href={getIssueHref ? getIssueHref(issue.id) : undefined}
+                    linkState={linkState}
+                    taoPrice={taoPrice}
+                    alphaPrice={alphaPrice}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+            <TablePagination
+              page={currentPage}
+              totalPages={totalPages}
+              onPageChange={handlePageChange}
+            />
+          </>
         ) : (
           emptyState
         )
       ) : (
-        <DataTable<IssueBounty, SortKey>
-          columns={columns}
-          rows={sortedIssues}
-          getRowKey={(issue) => issue.id}
-          getRowHref={
-            getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
-          }
-          linkState={linkState}
-          minWidth={
-            filterType === 'history'
-              ? '1000px'
-              : filterType === 'pending'
-                ? '900px'
-                : '750px'
-          }
-          emptyState={emptyState}
-          getRowSx={(issue) =>
-            issue.completedAt && isOutsideScoringWindow(issue.completedAt)
-              ? { opacity: 0.4, filter: 'grayscale(0.5)' }
-              : {}
-          }
-          sort={{
-            field: sortKey,
-            order: sortDirection,
-            onChange: handleSort,
-          }}
-        />
+        <>
+          <DataTable<IssueBounty, SortKey>
+            columns={columns}
+            rows={visibleIssues}
+            getRowKey={(issue) => issue.id}
+            getRowHref={
+              getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
+            }
+            linkState={linkState}
+            minWidth={
+              filterType === 'history'
+                ? '1000px'
+                : filterType === 'pending'
+                  ? '900px'
+                  : '750px'
+            }
+            emptyState={emptyState}
+            getRowSx={(issue) =>
+              issue.completedAt && isOutsideScoringWindow(issue.completedAt)
+                ? { opacity: 0.4, filter: 'grayscale(0.5)' }
+                : {}
+            }
+            sort={{
+              field: sortKey,
+              order: sortDirection,
+              onChange: handleSort,
+            }}
+          />
+          <TablePagination
+            page={currentPage}
+            totalPages={totalPages}
+            onPageChange={handlePageChange}
+          />
+        </>
       )}
     </Card>
   );
