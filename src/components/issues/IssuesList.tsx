@@ -53,10 +53,13 @@ import {
   type IssuesViewMode,
   ISSUES_VIEW_QUERY_PARAM,
   ISSUES_DEFAULT_CARD_ROWS,
+  ISSUES_DEFAULT_LIST_ROWS,
+  clampRowsForIssuesView,
   getIssuesViewModeFromQuery,
   readStoredIssuesViewMode,
   writeStoredIssuesViewMode,
 } from './issuesViewMode';
+import TablePagination from '../miners/TablePagination';
 
 export type FilterType = 'all' | 'available' | 'pending' | 'history';
 
@@ -208,6 +211,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [searchQuery, setSearchQuery] = useState('');
   const [showChart, setShowChart] = useState(false);
+  const [page, setPage] = useState(0);
 
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
@@ -356,6 +360,29 @@ const IssuesList: React.FC<IssuesListProps> = ({
     });
     return decorated.map((d) => d.row);
   }, [filteredIssues, getSortValue, sortKey, sortDirection]);
+
+  const rowsPerPage = clampRowsForIssuesView(
+    viewMode === 'cards' ? ISSUES_DEFAULT_CARD_ROWS : ISSUES_DEFAULT_LIST_ROWS,
+    viewMode,
+  );
+
+  const totalPages = Math.ceil(sortedIssues.length / rowsPerPage);
+  const clampedPage = totalPages > 0 ? Math.min(page, totalPages - 1) : 0;
+
+  useEffect(() => {
+    setPage(0);
+  }, [filterType, searchQuery, sortKey, sortDirection, viewMode]);
+
+  useEffect(() => {
+    if (page !== clampedPage) {
+      setPage(clampedPage);
+    }
+  }, [clampedPage, page]);
+
+  const paginatedIssues = useMemo(() => {
+    const start = clampedPage * rowsPerPage;
+    return sortedIssues.slice(start, start + rowsPerPage);
+  }, [clampedPage, rowsPerPage, sortedIssues]);
 
   const chartOption = useMemo(() => {
     const repoTotals = new Map<string, number>();
@@ -1155,32 +1182,43 @@ const IssuesList: React.FC<IssuesListProps> = ({
     </Box>
   );
 
+  const pagination = (
+    <TablePagination
+      page={clampedPage}
+      totalPages={totalPages}
+      onPageChange={setPage}
+    />
+  );
+
   return (
     <Card sx={cardSx} elevation={0}>
       {toolbar}
 
       {viewMode === 'cards' ? (
         sortedIssues.length > 0 ? (
-          <Grid container spacing={2}>
-            {sortedIssues.map((issue) => (
-              <Grid item xs={12} sm={6} md={4} key={issue.id}>
-                <BountyCard
-                  issue={issue}
-                  href={getIssueHref ? getIssueHref(issue.id) : undefined}
-                  linkState={linkState}
-                  taoPrice={taoPrice}
-                  alphaPrice={alphaPrice}
-                />
-              </Grid>
-            ))}
-          </Grid>
+          <>
+            <Grid container spacing={2}>
+              {paginatedIssues.map((issue) => (
+                <Grid item xs={12} sm={6} md={4} key={issue.id}>
+                  <BountyCard
+                    issue={issue}
+                    href={getIssueHref ? getIssueHref(issue.id) : undefined}
+                    linkState={linkState}
+                    taoPrice={taoPrice}
+                    alphaPrice={alphaPrice}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+            {pagination}
+          </>
         ) : (
           emptyState
         )
       ) : (
         <DataTable<IssueBounty, SortKey>
           columns={columns}
-          rows={sortedIssues}
+          rows={paginatedIssues}
           getRowKey={(issue) => issue.id}
           getRowHref={
             getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
@@ -1204,6 +1242,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
             order: sortDirection,
             onChange: handleSort,
           }}
+          pagination={pagination}
         />
       )}
     </Card>
