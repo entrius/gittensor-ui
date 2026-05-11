@@ -258,7 +258,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
     (nextMode: IssuesViewMode) => {
       writeStoredIssuesViewMode(nextMode);
       setStoredViewMode(nextMode);
-      setRowsPerPage((prev) => clampRowsForIssuesView(prev, nextMode));
       syncParams({ view: nextMode });
     },
     [syncParams],
