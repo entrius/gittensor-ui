@@ -403,7 +403,8 @@ const CompletionDonut: React.FC<{
       else if (i.status === 'cancelled') cancelled += 1;
     }
     const total = registered + active + completed + cancelled;
-    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const finished = completed + cancelled;
+    const rate = finished > 0 ? Math.round((completed / finished) * 100) : null;
     return { registered, active, completed, cancelled, total, rate };
   }, [issues]);
 
@@ -506,11 +507,14 @@ const CompletionDonut: React.FC<{
                     fontFamily: FONTS.mono,
                     fontSize: '1rem',
                     fontWeight: 700,
-                    color: rateColor(breakdown.rate),
+                    color:
+                      breakdown.rate == null
+                        ? STATUS_COLORS.open
+                        : rateColor(breakdown.rate),
                     lineHeight: 1,
                   }}
                 >
-                  {breakdown.rate}%
+                  {breakdown.rate == null ? '—' : `${breakdown.rate}%`}
                 </Typography>
                 <Typography
                   sx={{
