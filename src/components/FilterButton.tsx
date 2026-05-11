@@ -37,7 +37,7 @@ const FilterButton: React.FC<FilterButtonProps> = ({
       border: isActive ? `1px solid ${color}` : '1px solid transparent',
       whiteSpace: 'nowrap',
       '&:hover': {
-        backgroundColor: 'border.medium',
+        backgroundColor: 'border.light',
       },
     }}
   >
