@@ -57,6 +57,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../components/common/DataTable';
+import { ClearSearchAdornment } from '../components/common/ClearSearchAdornment';
 import { LinkBox } from '../components/common/linkBehavior';
 import {
   useAllMiners,
@@ -256,15 +257,33 @@ export const WatchlistContent: React.FC = () => {
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
-          variant="fullWidth"
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           sx={(t) => ({
+            maxWidth: '100%',
+            minWidth: 0,
             minHeight: 52,
+            '& .MuiTabs-scroller': {
+              overscrollBehaviorX: 'contain',
+            },
+            '& .MuiTabs-flexContainer': {
+              minWidth: '100%',
+            },
+            '& .MuiTabs-scrollButtons': {
+              color: t.palette.text.primary,
+              width: 32,
+              '&.Mui-disabled': {
+                opacity: 0.25,
+              },
+            },
             '& .MuiTab-root': {
               minHeight: 52,
               fontSize: '0.95rem',
               fontWeight: 700,
               textTransform: 'none',
               letterSpacing: '0.01em',
+              flex: '1 0 auto',
               color: alpha(t.palette.text.primary, 0.45),
               transition: 'color 0.2s, background-color 0.2s',
               '&:hover': {
@@ -685,6 +704,12 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
               <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
             </InputAdornment>
           ),
+          endAdornment: (
+            <ClearSearchAdornment
+              visible={Boolean(searchValue)}
+              onClear={() => onSearchChange('')}
+            />
+          ),
         }}
         sx={{
           width: '100%',
@@ -849,6 +874,12 @@ const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
                     sx={{ color: 'text.tertiary', fontSize: '1rem' }}
                   />
                 </InputAdornment>
+              ),
+              endAdornment: (
+                <ClearSearchAdornment
+                  visible={Boolean(searchValue)}
+                  onClear={() => onSearchChange('')}
+                />
               ),
             }}
             sx={{
