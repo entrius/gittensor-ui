@@ -274,11 +274,7 @@ interface StatRowProps {
   valueColor?: string;
 }
 
-export const StatRow: React.FC<StatRowProps> = ({
-  label,
-  value,
-  valueColor,
-}) => (
+const StatRow: React.FC<StatRowProps> = ({ label, value, valueColor }) => (
   <Box
     sx={{
       display: 'flex',
@@ -307,6 +303,8 @@ export const StatRow: React.FC<StatRowProps> = ({
     </Typography>
   </Box>
 );
+
+export { StatRow };
 
 interface FocusedMinersActivityCardProps {
   total: number;
