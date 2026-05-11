@@ -207,6 +207,7 @@ const RepositoryDetailsPage: React.FC = () => {
   const navigate = useNavigate();
   const repo = searchParams.get('name');
   const tabValue = tabIndexFromSearchParam(searchParams.get('tab'));
+  const isPrActivityVisible = searchParams.get('prView') === 'graph';
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
   const { data: bountySummary } = useRepoBountySummary(repo || '');
   const trackedRepo = repos?.find(
@@ -238,6 +239,18 @@ const RepositoryDetailsPage: React.FC = () => {
     },
     [repo, setSearchParams],
   );
+
+  const handleTogglePrActivity = useCallback(() => {
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        if (next.get('prView') === 'graph') next.delete('prView');
+        else next.set('prView', 'graph');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
 
   const statusChips = useMemo(() => {
     const inactiveAt = trackedRepo?.config?.inactiveAt ?? null;
@@ -614,7 +627,12 @@ const RepositoryDetailsPage: React.FC = () => {
             <CustomTabPanel value={tabValue} index={3}>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={12}>
-                  <RepositoryPRsTable repositoryFullName={repo} state="all" />
+                  <RepositoryPRsTable
+                    repositoryFullName={repo}
+                    state="all"
+                    showActivity={isPrActivityVisible}
+                    onToggleActivity={handleTogglePrActivity}
+                  />
                 </Grid>
               </Grid>
             </CustomTabPanel>

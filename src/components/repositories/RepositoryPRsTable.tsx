@@ -4,11 +4,15 @@ import {
   Box,
   Card,
   Chip,
+  Collapse,
   CircularProgress,
+  IconButton,
   Stack,
+  Tooltip,
   Typography,
   alpha,
 } from '@mui/material';
+import BarChartIcon from '@mui/icons-material/BarChart';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAllPrs, type CommitLog } from '../../api';
 import {
@@ -23,6 +27,7 @@ import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import FilterButton from '../FilterButton';
 import { AUTHOR_FILTER_ALL, AuthorFilter } from './AuthorFilter';
+import RepositoryPrActivityChart from './RepositoryPrActivityChart';
 
 type PrSortField =
   | 'pullRequestNumber'
@@ -38,11 +43,15 @@ type SortOrder = 'asc' | 'desc';
 interface RepositoryPRsTableProps {
   repositoryFullName: string;
   state?: 'open' | 'closed' | 'merged' | 'all';
+  showActivity?: boolean;
+  onToggleActivity?: () => void;
 }
 
 const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   repositoryFullName,
   state = 'all',
+  showActivity = false,
+  onToggleActivity,
 }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -367,20 +376,63 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       sx={{
         p: 3,
         borderBottom: `1px solid ${theme.palette.border.light}`,
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: 2,
       }}
     >
-      <Typography
-        variant="h6"
-        sx={{ color: 'text.primary', fontSize: '1.1rem', fontWeight: 500 }}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
       >
-        Pull Requests ({sortedPRs.length})
-      </Typography>
-      {filterButtons}
+        <Typography
+          variant="h6"
+          sx={{ color: 'text.primary', fontSize: '1.1rem', fontWeight: 500 }}
+        >
+          Pull Requests ({sortedPRs.length})
+        </Typography>
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Tooltip
+            title={showActivity ? 'Hide PR Activity' : 'Show PR Activity'}
+          >
+            <IconButton
+              aria-label="Toggle PR activity graph"
+              size="small"
+              onClick={onToggleActivity}
+              sx={{
+                border: '1px solid',
+                borderColor: alpha(
+                  showActivity
+                    ? theme.palette.primary.main
+                    : theme.palette.text.primary,
+                  showActivity ? 0.48 : 0.2,
+                ),
+                color: showActivity
+                  ? theme.palette.primary.main
+                  : alpha(theme.palette.text.primary, 0.76),
+                backgroundColor: showActivity
+                  ? alpha(theme.palette.primary.main, 0.14)
+                  : 'transparent',
+                '&:hover': {
+                  backgroundColor: showActivity
+                    ? alpha(theme.palette.primary.main, 0.2)
+                    : alpha(theme.palette.text.primary, 0.08),
+                },
+              }}
+            >
+              <BarChartIcon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+          {filterButtons}
+        </Stack>
+      </Box>
+      <Collapse in={showActivity} timeout={320} unmountOnExit>
+        <Box sx={{ mt: 1.5 }}>
+          <RepositoryPrActivityChart repositoryFullName={repositoryFullName} />
+        </Box>
+      </Collapse>
     </Box>
   );
 
