@@ -1,15 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import {
   Avatar,
   Box,
   Card,
   Chip,
   CircularProgress,
+  InputAdornment,
+  Link,
   Stack,
+  TextField,
   Typography,
   alpha,
 } from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAllPrs, type CommitLog } from '../../api';
 import {
@@ -18,6 +21,7 @@ import {
 } from '../../components/common/DataTable';
 import { WatchlistButton } from '../../components/common';
 import TablePagination from '../../components/common/TablePagination';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import {
   comparePRsByWatchlist,
@@ -25,7 +29,12 @@ import {
   useWatchlist,
 } from '../../hooks/useWatchlist';
 import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
-import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
+import {
+  filterPrs,
+  filterPrsBySearchTerms,
+  getPrStatusCounts,
+  type PrStatusFilter,
+} from '../../utils';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { formatDate } from '../../utils/format';
 import FilterButton from '../FilterButton';
@@ -48,8 +57,21 @@ interface RepositoryPRsTableProps {
   state?: 'open' | 'closed' | 'merged' | 'all';
 }
 
-const isPrStatusFilter = (v: unknown): v is PrStatusFilter =>
-  v === 'all' || v === 'open' || v === 'merged' || v === 'closed';
+const PR_STATUS_FILTERS: readonly PrStatusFilter[] = [
+  'all',
+  'open',
+  'merged',
+  'closed',
+];
+
+const isPrStatusFilter = (value: string | null): value is PrStatusFilter =>
+  value !== null && (PR_STATUS_FILTERS as readonly string[]).includes(value);
+
+const chipLabelSx = {
+  maxWidth: 280,
+  overflow: 'hidden',
+  textOverflow: 'ellipsis',
+} as const;
 
 const PR_PAGE_SIZE = 20;
 
@@ -60,15 +82,71 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { isWatched } = useWatchlist('prs');
-  const [filter, setFilter] = useSessionStoredState<PrStatusFilter>(
-    'repository:prs:statusFilter',
-    state,
-    isPrStatusFilter,
-  );
+  const prStatusParam = searchParams.get('prStatus');
+  /** Open / Merged / Closed / All — driven by `prStatus` in the URL so chips and counts stay aligned. */
+  const filter: PrStatusFilter = isPrStatusFilter(prStatusParam)
+    ? prStatusParam
+    : state;
   const [sortField, setSortField] = useState<PrSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [page, setPage] = useState(0);
   const authorFilter = searchParams.get('prAuthor') ?? AUTHOR_FILTER_ALL;
+  /** Each Enter appends one `prQ` param (AND semantics). */
+  const committedPrQRaw = useMemo(
+    () => searchParams.getAll('prQ'),
+    [searchParams],
+  );
+  /** Draft text: live AND-preview with committed terms; Enter appends a chip. */
+  const [draftSearch, setDraftSearch] = useState('');
+
+  const appendCommittedTerm = useCallback(
+    (term: string) => {
+      const t = term.trim();
+      if (!t) return;
+      setSearchParams(
+        (prev) => {
+          const next = new URLSearchParams(prev);
+          next.append('prQ', t);
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const removeCommittedTermAt = useCallback(
+    (index: number) => {
+      setSearchParams(
+        (prev) => {
+          const list = prev.getAll('prQ');
+          const next = new URLSearchParams(prev);
+          next.delete('prQ');
+          list.forEach((raw, i) => {
+            if (i !== index) next.append('prQ', raw);
+          });
+          return next;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
+
+  const setFilterParam = useCallback(
+    (next: PrStatusFilter) => {
+      setSearchParams(
+        (prev) => {
+          const nextParams = new URLSearchParams(prev);
+          if (next === 'all') nextParams.delete('prStatus');
+          else nextParams.set('prStatus', next);
+          return nextParams;
+        },
+        { replace: true },
+      );
+    },
+    [setSearchParams],
+  );
 
   const setAuthorFilter = useCallback(
     (nextAuthor: string) => {
@@ -85,17 +163,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     [setSearchParams],
   );
 
-  const handleSort = (field: PrSortField) => {
-    if (sortField === field) {
-      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortOrder(
-        field === 'pullRequestTitle' || field === 'author' ? 'asc' : 'desc',
-      );
-    }
-  };
-
   // Fetch ALL PRs at once for instant client-side filtering + accurate counts.
   const { data: allMinerPRs, isLoading } = useAllPrs();
 
@@ -106,16 +173,82 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     );
   }, [allMinerPRs, repositoryFullName]);
 
-  const counts = useMemo(() => {
-    if (!allPRs) return { all: 0, open: 0, merged: 0, closed: 0 };
-    return getPrStatusCounts(allPRs);
-  }, [allPRs]);
+  /**
+   * Tab badges show repo-wide status totals (or totals for the selected author only).
+   * Search terms — draft or pinned (`prQ`) — never change these numbers.
+   */
+  const prsForStatusTabCounts = useMemo(
+    () =>
+      filterPrs(allPRs, {
+        author: authorFilter === AUTHOR_FILTER_ALL ? null : authorFilter,
+      }),
+    [allPRs, authorFilter],
+  );
 
-  const filteredPRs = useMemo(() => {
-    const byStatus = filterPrs(allPRs ?? [], { statusFilter: filter });
-    if (authorFilter === AUTHOR_FILTER_ALL) return byStatus;
-    return byStatus.filter((pr) => pr.author === authorFilter);
-  }, [allPRs, filter, authorFilter]);
+  const tabCounts = useMemo(
+    () => getPrStatusCounts(prsForStatusTabCounts),
+    [prsForStatusTabCounts],
+  );
+
+  /** Single pipeline: baseline count (status + author) + search-narrowed rows. */
+  const { filteredPRs, baselinePrCount } = useMemo(() => {
+    const byAuthor = filterPrs(allPRs, {
+      statusFilter: filter,
+      author: authorFilter === AUTHOR_FILTER_ALL ? null : authorFilter,
+    });
+    const baselinePrCount = byAuthor.length;
+    const pool = filterPrsBySearchTerms(
+      byAuthor,
+      [...committedPrQRaw, draftSearch],
+      true,
+    );
+    return { filteredPRs: pool, baselinePrCount };
+  }, [allPRs, filter, authorFilter, committedPrQRaw, draftSearch]);
+
+  const hasCommittedSearchFilters = committedPrQRaw.some((t) => t.trim());
+
+  /** Draft or pinned terms — status chips below only show alongside search context. */
+  const hasSearchContext =
+    draftSearch.trim() !== '' || hasCommittedSearchFilters;
+
+  /** Don’t duplicate Open/Merged/Closed as chips unless search is also active. */
+  const showActiveFiltersRow =
+    authorFilter !== AUTHOR_FILTER_ALL ||
+    hasCommittedSearchFilters ||
+    (filter !== 'all' && hasSearchContext);
+
+  /** “N of M” and Clear all — any narrowing from default + draft typing. */
+  const isNarrowed =
+    filter !== 'all' ||
+    authorFilter !== AUTHOR_FILTER_ALL ||
+    draftSearch.trim() !== '' ||
+    hasCommittedSearchFilters;
+
+  /** One atomic URL write — batched `setSearchParams` calls could reuse stale `prev` and leave `prQ` behind. */
+  const clearAllFilters = useCallback(() => {
+    setDraftSearch('');
+    setSearchParams(
+      (prev) => {
+        const next = new URLSearchParams(prev);
+        next.delete('prQ');
+        next.delete('prStatus');
+        next.delete('prAuthor');
+        return next;
+      },
+      { replace: true },
+    );
+  }, [setSearchParams]);
+
+  const handleSort = (field: PrSortField) => {
+    if (sortField === field) {
+      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortField(field);
+      setSortOrder(
+        field === 'pullRequestTitle' || field === 'author' ? 'asc' : 'desc',
+      );
+    }
+  };
 
   const sortedPRs = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -192,29 +325,29 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       <FilterButton
         label="All"
         isActive={filter === 'all'}
-        onClick={() => setFilter('all')}
-        count={counts.all}
+        onClick={() => setFilterParam('all')}
+        count={tabCounts.all}
         color={theme.palette.status.neutral}
       />
       <FilterButton
         label="Open"
         isActive={filter === 'open'}
-        onClick={() => setFilter('open')}
-        count={counts.open}
+        onClick={() => setFilterParam('open')}
+        count={tabCounts.open}
         color={theme.palette.status.open}
       />
       <FilterButton
         label="Merged"
         isActive={filter === 'merged'}
-        onClick={() => setFilter('merged')}
-        count={counts.merged}
+        onClick={() => setFilterParam('merged')}
+        count={tabCounts.merged}
         color={theme.palette.status.merged}
       />
       <FilterButton
         label="Closed"
         isActive={filter === 'closed'}
-        onClick={() => setFilter('closed')}
-        count={counts.closed}
+        onClick={() => setFilterParam('closed')}
+        count={tabCounts.closed}
         color={theme.palette.status.closed}
       />
       <AuthorFilter
@@ -226,29 +359,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       />
     </Stack>
   );
-
-  if (isLoading) {
-    return (
-      <Card
-        sx={{
-          borderRadius: 3,
-          border: `1px solid ${theme.palette.border.light}`,
-          backgroundColor: 'transparent',
-          p: 4,
-          textAlign: 'center',
-        }}
-        elevation={0}
-      >
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
-          <Typography variant="h6" sx={{ color: 'text.primary' }}>
-            Pull Requests
-          </Typography>
-          {filterButtons}
-        </Box>
-        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
-      </Card>
-    );
-  }
 
   const columns: DataTableColumn<CommitLog, PrSortField>[] = [
     {
@@ -412,25 +522,192 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     },
   ];
 
+  if (isLoading) {
+    return (
+      <Card
+        sx={{
+          borderRadius: 3,
+          border: `1px solid ${theme.palette.border.light}`,
+          backgroundColor: 'transparent',
+          p: 4,
+          textAlign: 'center',
+        }}
+        elevation={0}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3 }}>
+          <Typography variant="h6" sx={{ color: 'text.primary' }}>
+            Pull Requests
+          </Typography>
+          {filterButtons}
+        </Box>
+        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
+      </Card>
+    );
+  }
+
   const headerToolbar = (
     <Box
       sx={{
         p: 3,
         borderBottom: `1px solid ${theme.palette.border.light}`,
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
+        flexDirection: 'column',
         gap: 2,
       }}
     >
-      <Typography
-        variant="h6"
-        sx={{ color: 'text.primary', fontSize: '1.1rem', fontWeight: 500 }}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
       >
-        Pull Requests ({sortedPRs.length})
-      </Typography>
-      {filterButtons}
+        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 1 }}>
+          <Typography
+            variant="h6"
+            sx={{ color: 'text.primary', fontSize: '1.1rem', fontWeight: 500 }}
+          >
+            Pull Requests
+          </Typography>
+          <Typography
+            sx={{
+              color: 'text.tertiary',
+              fontSize: '0.85rem',
+            }}
+          >
+            (
+            {draftSearch.trim() !== '' || sortedPRs.length !== baselinePrCount
+              ? `${sortedPRs.length} of ${baselinePrCount}`
+              : sortedPRs.length}
+            )
+          </Typography>
+        </Box>
+        {filterButtons}
+      </Box>
+
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 2,
+          width: '100%',
+          flexWrap: { xs: 'wrap', sm: 'nowrap' },
+        }}
+      >
+        <TextField
+          size="small"
+          placeholder="Add a term, press Enter — each term narrows results (AND)"
+          value={draftSearch}
+          onChange={(e) => setDraftSearch(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              appendCommittedTerm(draftSearch);
+              setDraftSearch('');
+            }
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
+              </InputAdornment>
+            ),
+            endAdornment: (
+              <ClearSearchAdornment
+                visible={Boolean(draftSearch)}
+                onClear={() => setDraftSearch('')}
+              />
+            ),
+          }}
+          sx={{
+            flex: 1,
+            minWidth: 0,
+            maxWidth: { xs: '100%', sm: 520 },
+            '& .MuiOutlinedInput-root': {
+              fontSize: '0.8rem',
+              color: 'text.primary',
+              backgroundColor: 'surface.subtle',
+              borderRadius: 2,
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            },
+          }}
+        />
+        {isNarrowed && (
+          <Link
+            component="button"
+            type="button"
+            underline="hover"
+            onClick={clearAllFilters}
+            sx={{
+              flexShrink: 0,
+              cursor: 'pointer',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              whiteSpace: 'nowrap',
+              color: 'primary.main',
+            }}
+          >
+            Clear all
+          </Link>
+        )}
+      </Box>
+
+      {showActiveFiltersRow && (
+        <Box
+          sx={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            gap: 1.5,
+          }}
+        >
+          <Typography
+            component="span"
+            sx={{
+              color: 'text.secondary',
+              fontSize: '0.8rem',
+              flexShrink: 0,
+            }}
+          >
+            Active filters:
+          </Typography>
+          <Stack direction="row" flexWrap="wrap" useFlexGap spacing={1}>
+            {filter !== 'all' && hasSearchContext && (
+              <Chip
+                variant="filter"
+                label={filter}
+                onDelete={() => setFilterParam('all')}
+                sx={{ '& .MuiChip-label': chipLabelSx }}
+              />
+            )}
+            {authorFilter !== AUTHOR_FILTER_ALL && (
+              <Chip
+                variant="filter"
+                label={`author: ${authorFilter}`}
+                onDelete={() => setAuthorFilter(AUTHOR_FILTER_ALL)}
+                sx={{ '& .MuiChip-label': chipLabelSx }}
+              />
+            )}
+            {committedPrQRaw.map((raw, index) => {
+              const label = raw.trim();
+              if (!label) return null;
+              return (
+                <Chip
+                  key={`prq-${index}-${label}`}
+                  variant="filter"
+                  label={label}
+                  onDelete={() => removeCommittedTermAt(index)}
+                  sx={{ '& .MuiChip-label': chipLabelSx }}
+                />
+              );
+            })}
+          </Stack>
+        </Box>
+      )}
     </Box>
   );
 
