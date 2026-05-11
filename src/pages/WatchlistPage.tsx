@@ -3575,8 +3575,7 @@ const issueState = (issue: MinerIssue): Exclude<IssueStatusFilter, 'all'> => {
 
 const issueStatusMeta = (issue: MinerIssue) => {
   const s = issueState(issue);
-  if (s === 'resolved')
-    return { label: 'SOLVED', color: STATUS_COLORS.merged };
+  if (s === 'resolved') return { label: 'SOLVED', color: STATUS_COLORS.merged };
   if (s === 'closed') return { label: 'CLOSED', color: STATUS_COLORS.closed };
   return { label: 'OPEN', color: STATUS_COLORS.open };
 };
@@ -4051,7 +4050,11 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   const storedIssueMetaByKey = useMemo(() => {
     const map = new Map<
       string,
-      { state: 'OPEN' | 'CLOSED'; stateReason: string | null; solvedByPr: number | null }
+      {
+        state: 'OPEN' | 'CLOSED';
+        stateReason: string | null;
+        solvedByPr: number | null;
+      }
     >();
     starredIssueIds.forEach((key) => {
       const meta = getWatchlistIssueMeta(key);
@@ -4061,7 +4064,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
       map.set(key, {
         state: isClosed ? 'CLOSED' : 'OPEN',
         stateReason: null,
-        solvedByPr: isSolved ? meta.prNumber ?? null : null,
+        solvedByPr: isSolved ? (meta.prNumber ?? null) : null,
       });
     });
     return map;
@@ -4106,7 +4109,11 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   const starredIssueMetaByKey = useMemo(() => {
     const map = new Map<
       string,
-      { state: 'OPEN' | 'CLOSED'; stateReason: string | null; solvedByPr: number | null }
+      {
+        state: 'OPEN' | 'CLOSED';
+        stateReason: string | null;
+        solvedByPr: number | null;
+      }
     >();
     starredRepoIssueQueries.forEach((q) => {
       (q.data ?? []).forEach((issue: unknown) => {
@@ -4135,7 +4142,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
         map.set(`${entry.repositoryFullName}#${entry.number}`, {
           state: isClosed ? 'CLOSED' : 'OPEN',
           stateReason,
-          solvedByPr: hasLinkedPr ? entry.prNumber ?? null : null,
+          solvedByPr: hasLinkedPr ? (entry.prNumber ?? null) : null,
         });
       });
     });
@@ -4175,7 +4182,8 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
         .map((key) => {
           const parsed = parseIssueKey(key);
           if (!parsed) return null;
-          const meta = storedIssueMetaByKey.get(key) ?? starredIssueMetaByKey.get(key);
+          const meta =
+            storedIssueMetaByKey.get(key) ?? starredIssueMetaByKey.get(key);
           return {
             repo_full_name: parsed.repoFullName,
             issue_number: parsed.issueNumber,
@@ -4192,7 +4200,12 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
           } as MinerIssue;
         })
         .filter((issue): issue is MinerIssue => issue !== null),
-    [starredIssueIds, mirroredIssueKeys, starredIssueMetaByKey, storedIssueMetaByKey],
+    [
+      starredIssueIds,
+      mirroredIssueKeys,
+      starredIssueMetaByKey,
+      storedIssueMetaByKey,
+    ],
   );
 
   const items = useMemo<MinerIssue[]>(() => {
@@ -4213,7 +4226,10 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
       const key = issueKey(issue);
       const sources: WatchedPRSource[] = [];
       if (starredSet.has(key)) sources.push('starred');
-      if (issue.author_github_id && watchedMinerSet.has(issue.author_github_id)) {
+      if (
+        issue.author_github_id &&
+        watchedMinerSet.has(issue.author_github_id)
+      ) {
         sources.push('miner');
       }
       if (watchedRepoSet.has(issue.repo_full_name.toLowerCase())) {
@@ -4368,9 +4384,18 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
             searchPlaceholder="Search issues..."
             onSearchChange={setDraftValue}
             viewMode={viewMode}
-            onViewModeChange={setViewMode}
+            onViewModeChange={(next) => {
+              setViewMode(next);
+              setPage(0);
+            }}
             viewModeToggle={
-              <PRsViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+              <PRsViewModeToggle
+                viewMode={viewMode}
+                onChange={(next) => {
+                  setViewMode(next);
+                  setPage(0);
+                }}
+              />
             }
             hasActiveFilter={statusFilter !== 'all'}
           />
