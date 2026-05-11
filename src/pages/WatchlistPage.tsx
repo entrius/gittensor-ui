@@ -1096,31 +1096,35 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
     sortKey: 'name',
     cellSx: repoCellSx,
     renderCell: (repo) => (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-        <Avatar
-          src={getRepositoryOwnerAvatarSrc(repo.fullName.split('/')[0])}
-          alt={repo.fullName}
-          sx={{
-            width: 20,
-            height: 20,
-            flexShrink: 0,
-            backgroundColor: getRepositoryOwnerAvatarBackground(
-              repo.fullName.split('/')[0] || '',
-            ),
-          }}
-        />
-        <Typography
-          sx={{
-            fontSize: '0.78rem',
-            fontWeight: 500,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-          }}
+      <Tooltip title={repo.fullName} placement="top" arrow>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
         >
-          {repo.fullName}
-        </Typography>
-      </Box>
+          <Avatar
+            src={getRepositoryOwnerAvatarSrc(repo.fullName.split('/')[0])}
+            alt={repo.fullName}
+            sx={{
+              width: 20,
+              height: 20,
+              flexShrink: 0,
+              backgroundColor: getRepositoryOwnerAvatarBackground(
+                repo.fullName.split('/')[0] || '',
+              ),
+            }}
+          />
+          <Typography
+            sx={{
+              fontSize: '0.78rem',
+              fontWeight: 500,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            {repo.fullName}
+          </Typography>
+        </Box>
+      </Tooltip>
     ),
   },
   {
@@ -2238,6 +2242,7 @@ const buildBountyColumns = (): DataTableColumn<
     cellSx: bountyCellSx,
     renderCell: (i) => (
       <Typography
+        title={i.title || `Issue #${i.issueNumber}`}
         sx={{
           fontSize: '0.75rem',
           fontWeight: 500,
@@ -2264,6 +2269,7 @@ const buildBountyColumns = (): DataTableColumn<
           sx={{ width: 20, height: 20, flexShrink: 0 }}
         />
         <Typography
+          title={i.repositoryFullName}
           sx={{
             fontSize: '0.75rem',
             color: 'text.secondary',
@@ -2708,6 +2714,7 @@ const buildPrColumns = (
     cellSx: prCellSx,
     renderCell: (pr) => (
       <Typography
+        title={pr.pullRequestTitle}
         sx={{
           fontSize: '0.75rem',
           fontWeight: 500,
@@ -2728,6 +2735,7 @@ const buildPrColumns = (
     cellSx: prCellSx,
     renderCell: (pr) => (
       <Typography
+        title={pr.repository}
         sx={{
           fontSize: '0.75rem',
           color: 'text.secondary',
@@ -2754,6 +2762,7 @@ const buildPrColumns = (
           sx={{ width: 20, height: 20, flexShrink: 0 }}
         />
         <Typography
+          title={pr.author}
           sx={{
             fontSize: '0.75rem',
             overflow: 'hidden',
@@ -2980,6 +2989,7 @@ const PRCard: React.FC<{
             }}
           />
           <Typography
+            title={pr.repository}
             sx={{
               fontSize: '0.72rem',
               color: 'text.secondary',
@@ -3019,6 +3029,7 @@ const PRCard: React.FC<{
         sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}
       >
         <Typography
+          title={`#${pr.pullRequestNumber} ${pr.pullRequestTitle}`}
           sx={{
             fontSize: '0.85rem',
             fontWeight: 600,
@@ -3052,6 +3063,7 @@ const PRCard: React.FC<{
               sx={{ width: 18, height: 18 }}
             />
             <Typography
+              title={pr.author}
               sx={{
                 fontSize: '0.72rem',
                 color: 'text.secondary',
@@ -3484,6 +3496,7 @@ const buildIssueColumns = (
     cellSx: issueCellSx,
     renderCell: (i) => (
       <Typography
+        title={i.title || `Issue #${i.issue_number}`}
         sx={{
           fontSize: '0.75rem',
           fontWeight: 500,
@@ -3504,6 +3517,7 @@ const buildIssueColumns = (
     cellSx: issueCellSx,
     renderCell: (i) => (
       <Typography
+        title={i.repo_full_name}
         sx={{
           fontSize: '0.75rem',
           color: 'text.secondary',
@@ -3545,6 +3559,7 @@ const buildIssueColumns = (
             sx={{ width: 20, height: 20, flexShrink: 0 }}
           />
           <Typography
+            title={login}
             sx={{
               fontSize: '0.75rem',
               overflow: 'hidden',
@@ -3740,6 +3755,7 @@ const IssueCard: React.FC<{
             }}
           />
           <Typography
+            title={issue.repo_full_name}
             sx={{
               fontSize: '0.72rem',
               color: 'text.secondary',
@@ -3781,6 +3797,7 @@ const IssueCard: React.FC<{
         sx={{ display: 'flex', flexDirection: 'column', gap: 1, flex: 1 }}
       >
         <Typography
+          title={`${issue.issue_number} ${issue.title || ''}`.trim()}
           sx={{
             fontSize: '0.85rem',
             fontWeight: 600,
@@ -3820,6 +3837,7 @@ const IssueCard: React.FC<{
               />
             )}
             <Typography
+              title={issue.author_login || undefined}
               sx={{
                 fontSize: '0.72rem',
                 color: 'text.secondary',
