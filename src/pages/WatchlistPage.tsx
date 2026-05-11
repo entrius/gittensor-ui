@@ -2159,6 +2159,9 @@ const bountyDate = (issue: IssueBounty): string =>
   issue.createdAt ||
   '';
 
+const bountyAmount = (issue: IssueBounty): number =>
+  parseFloat(issue.targetBounty || issue.bountyAmount || '0') || 0;
+
 // Group raw API status into the filter buckets used on the standalone
 // /bounties page so this tab reads consistently across the app.
 const bountyStatusGroup = (
@@ -2358,6 +2361,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<BountyStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
+  const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(0);
   const observerTarget = useRef<HTMLDivElement>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -2397,10 +2401,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         case 'repo':
           return cmpStr(a.repositoryFullName, b.repositoryFullName);
         case 'bounty':
-          return cmpNum(
-            parseFloat(a.targetBounty || a.bountyAmount || '0'),
-            parseFloat(b.targetBounty || b.bountyAmount || '0'),
-          );
+          return cmpNum(bountyAmount(a), bountyAmount(b));
         case 'status':
           return cmpStr(a.status, b.status);
         case 'date':
@@ -2410,6 +2411,128 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       }
     });
   }, [filtered, sortField, sortOrder]);
+
+  const chartOption = useMemo(() => {
+    const repoTotals = new Map<string, number>();
+    filtered.forEach((issue) => {
+      repoTotals.set(
+        issue.repositoryFullName,
+        (repoTotals.get(issue.repositoryFullName) || 0) + bountyAmount(issue),
+      );
+    });
+
+    const chartData = [...repoTotals.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 20)
+      .map(([repository, value]) => ({
+        name: repository.split('/')[1] || repository,
+        repository,
+        value,
+      }));
+
+    const textColor = alpha(UI_COLORS.white, 0.85);
+    const primaryColor = UI_COLORS.white;
+    const gridColor = alpha(UI_COLORS.white, 0.08);
+
+    return {
+      backgroundColor: 'transparent',
+      title: {
+        text: 'Bounty Pool by Repository',
+        subtext: `${filtered.length} watched bounties`,
+        left: 'center',
+        top: 20,
+        textStyle: {
+          color: theme.palette.text.primary,
+          fontFamily: 'JetBrains Mono',
+          fontSize: 16,
+          fontWeight: 600,
+        },
+        subtextStyle: {
+          color: alpha(UI_COLORS.white, TEXT_OPACITY.tertiary),
+          fontFamily: 'JetBrains Mono',
+          fontSize: 12,
+        },
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow',
+          shadowStyle: { color: gridColor },
+        },
+        backgroundColor: UI_COLORS.surfaceTooltip,
+        borderColor: alpha(UI_COLORS.white, 0.15),
+        borderWidth: 1,
+        textStyle: {
+          color: primaryColor,
+          fontFamily: 'JetBrains Mono',
+          fontSize: 12,
+        },
+        formatter: (params: unknown) => {
+          if (!Array.isArray(params)) return '';
+          const item =
+            chartData[(params[0] as { dataIndex: number }).dataIndex];
+          if (!item) return '';
+          return `
+            <div style="font-family: 'JetBrains Mono', monospace;">
+              <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px;">
+                ${item.repository}
+              </div>
+              <div>Bounty Pool: <span style="font-weight: 600;">${item.value.toFixed(4)} τ</span></div>
+            </div>
+          `;
+        },
+      },
+      grid: {
+        left: '3%',
+        right: '3%',
+        bottom: '18%',
+        top: '20%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: chartData.map((item) => item.name),
+        axisLabel: {
+          color: textColor,
+          fontSize: 11,
+          interval: 0,
+          rotate: 45,
+          margin: 12,
+          formatter: (label: string) =>
+            label.length > 15 ? `${label.substring(0, 12)}...` : label,
+        },
+        axisLine: { lineStyle: { color: gridColor, width: 1 } },
+        axisTick: { show: false },
+      },
+      yAxis: {
+        type: 'value',
+        min: 0,
+        name: 'Bounty Pool',
+        nameTextStyle: { color: textColor, fontSize: 12 },
+        axisLabel: {
+          color: textColor,
+          fontSize: 11,
+          formatter: (value: number) => value.toFixed(2),
+        },
+        splitLine: {
+          lineStyle: { color: gridColor, type: 'dashed', opacity: 0.5 },
+        },
+        axisLine: { show: false },
+        axisTick: { show: false },
+      },
+      series: [
+        {
+          data: chartData.map((item) => item.value),
+          type: 'bar',
+          barWidth: '60%',
+          itemStyle: {
+            color: alpha(CHART_COLORS.open, 0.7),
+            borderRadius: [6, 6, 0, 0],
+          },
+        },
+      ],
+    };
+  }, [filtered]);
 
   const paged = useMemo(
     () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
@@ -2469,6 +2592,45 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             ))}
           </Box>
         }
+        extraContent={
+          <Box>
+            <OptionsLabel>Chart</OptionsLabel>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+                <IconButton
+                  onClick={() => setShowChart((v) => !v)}
+                  size="small"
+                  sx={{
+                    color: showChart ? 'text.primary' : 'text.tertiary',
+                    border: '1px solid',
+                    borderColor: 'border.light',
+                    borderRadius: 2,
+                    padding: '6px',
+                    '&:hover': {
+                      backgroundColor: 'surface.light',
+                      borderColor: 'border.medium',
+                    },
+                  }}
+                >
+                  {showChart ? (
+                    <TableChartIcon fontSize="small" />
+                  ) : (
+                    <BarChartIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
+              <Typography
+                sx={{
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.78rem',
+                  color: 'text.secondary',
+                }}
+              >
+                {showChart ? 'Hide chart' : 'Show chart'}
+              </Typography>
+            </Box>
+          </Box>
+        }
         searchValue={searchQuery}
         searchPlaceholder="Search bounties..."
         onSearchChange={setSearchQuery}
@@ -2486,8 +2648,41 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             }}
           />
         }
-        hasActiveFilter={statusFilter !== 'all'}
+        hasActiveFilter={statusFilter !== 'all' || showChart}
       />
+
+      <Collapse in={showChart}>
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: '1px solid',
+            borderColor: 'border.light',
+            height: '500px',
+            backgroundColor: 'surface.subtle',
+          }}
+        >
+          {showChart && filtered.length > 0 ? (
+            <ReactECharts
+              option={chartOption}
+              style={{ height: '100%', width: '100%' }}
+              notMerge
+            />
+          ) : (
+            <Box
+              sx={{
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
+                No watched bounties to chart.
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Collapse>
 
       {viewMode === 'list' ? (
         <DataTable<IssueBounty, BountySortKey>
