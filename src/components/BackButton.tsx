@@ -19,8 +19,10 @@ const BackButton: React.FC<BackButtonProps> = ({
 }) => {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = (location.state as { backTo?: string }) || {};
+  const state =
+    (location.state as { backLabel?: string; backTo?: string }) || {};
   const canGoBack = typeof window !== 'undefined' && window.history.length > 1;
+  const displayLabel = state.backLabel ?? label;
 
   const handleClick = () => {
     if (canGoBack) {
@@ -43,7 +45,7 @@ const BackButton: React.FC<BackButtonProps> = ({
       onClick={handleClick}
       sx={{ mb, alignSelf: 'flex-start' }}
     >
-      {label}
+      {displayLabel}
     </Button>
   );
 };
