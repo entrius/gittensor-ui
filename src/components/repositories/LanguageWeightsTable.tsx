@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Box,
   TablePagination,
@@ -56,6 +56,16 @@ const LanguageWeightsTable: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Scrolls only the table's own scrollport back to the first row. Avoids the
+  // page-level `scrollIntoView` that used to fire from a `[rowsPerPage]` effect
+  // on mount and yanked the Onboard page to the table when Languages was opened.
+  const scrollTableToTop = () => {
+    const scrollport = containerRef.current?.querySelector(
+      '.MuiTableContainer-root',
+    );
+    scrollport?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -75,6 +85,7 @@ const LanguageWeightsTable: React.FC = () => {
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+    scrollTableToTop();
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -202,16 +213,6 @@ const LanguageWeightsTable: React.FC = () => {
       ],
     };
   }, [paginatedLanguages, theme]);
-
-  // Scroll to top when rows per page changes
-  useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }
-  }, [rowsPerPage]);
 
   const sortLabelHeaderSx = {
     '& .MuiTableSortLabel-root:hover': { color: 'secondary.main' },
@@ -359,6 +360,7 @@ const LanguageWeightsTable: React.FC = () => {
                 onChange={(e) => {
                   setRowsPerPage(Number(e.target.value));
                   setPage(0);
+                  scrollTableToTop();
                 }}
                 sx={{
                   color: theme.palette.text.primary,
