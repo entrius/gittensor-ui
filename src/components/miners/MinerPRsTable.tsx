@@ -27,10 +27,10 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
+import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { WatchlistButton } from '../../components/common';
 import { serializePRKey } from '../../hooks/useWatchlist';
-import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
 import { tooltipSlotProps } from '../../theme';
 
@@ -515,32 +515,32 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
               },
             }}
           >
-            <ExplorerFilterButton
+            <FilterButton
               label="All"
               count={statusCounts.all}
               color={theme.palette.status.neutral}
-              selected={statusFilter === 'all'}
+              isActive={statusFilter === 'all'}
               onClick={() => setStatusFilter('all')}
             />
-            <ExplorerFilterButton
+            <FilterButton
               label="Open"
               count={statusCounts.open}
               color={theme.palette.status.open}
-              selected={statusFilter === 'open'}
+              isActive={statusFilter === 'open'}
               onClick={() => setStatusFilter('open')}
             />
-            <ExplorerFilterButton
+            <FilterButton
               label="Merged"
               count={statusCounts.merged}
               color={theme.palette.status.merged}
-              selected={statusFilter === 'merged'}
+              isActive={statusFilter === 'merged'}
               onClick={() => setStatusFilter('merged')}
             />
-            <ExplorerFilterButton
+            <FilterButton
               label="Closed"
               count={statusCounts.closed}
               color={theme.palette.status.closed}
-              selected={statusFilter === 'closed'}
+              isActive={statusFilter === 'closed'}
               onClick={() => setStatusFilter('closed')}
             />
           </Box>
