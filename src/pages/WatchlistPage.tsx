@@ -1608,12 +1608,14 @@ const WatchlistStackedPagination: React.FC<{
   count: number;
   page: number;
   onPageChange: (nextPage: number) => void;
-}> = ({ count, page, onPageChange }) => (
+  /** Defaults to {@link ROWS_PER_PAGE} when omitted. */
+  rowsPerPage?: number;
+}> = ({ count, page, onPageChange, rowsPerPage: rowsPerPageProp = ROWS_PER_PAGE }) => (
   <TablePagination
     rowsPerPageOptions={[]}
     component="div"
     count={count}
-    rowsPerPage={ROWS_PER_PAGE}
+    rowsPerPage={rowsPerPageProp}
     page={page}
     onPageChange={(_event, newPage) => onPageChange(newPage)}
     onRowsPerPageChange={(e: React.ChangeEvent<HTMLInputElement>) => {
