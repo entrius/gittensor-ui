@@ -25,8 +25,8 @@ import { useQuery } from '@tanstack/react-query';
 import { githubFetch, useMinerGithubData, useMinerPRs } from '../../api';
 import { getRepositoryOwnerAvatarSrc, paginateItems } from '../../utils';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
-import ExplorerFilterButton from './ExplorerFilterButton';
 import TablePagination from './TablePagination';
 import {
   selectMinerIssueScanRepos,
@@ -888,38 +888,38 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
             },
           }}
         >
-          <ExplorerFilterButton
+          <FilterButton
             label="All"
             count={counts.all}
             color={theme.palette.status.neutral}
-            selected={filter === 'all'}
+            isActive={filter === 'all'}
             onClick={() => {
               onFilterChange('all');
             }}
           />
-          <ExplorerFilterButton
+          <FilterButton
             label="Open"
             count={counts.open}
             color={theme.palette.status.open}
-            selected={filter === 'open'}
+            isActive={filter === 'open'}
             onClick={() => {
               onFilterChange('open');
             }}
           />
-          <ExplorerFilterButton
+          <FilterButton
             label="Solved"
             count={counts.solved}
             color={theme.palette.status.merged}
-            selected={filter === 'solved'}
+            isActive={filter === 'solved'}
             onClick={() => {
               onFilterChange('solved');
             }}
           />
-          <ExplorerFilterButton
+          <FilterButton
             label="Closed"
             count={counts.closed}
             color={theme.palette.status.closed}
-            selected={filter === 'closed'}
+            isActive={filter === 'closed'}
             onClick={() => {
               onFilterChange('closed');
             }}
