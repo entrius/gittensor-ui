@@ -52,6 +52,7 @@ import { credibilityColor } from '../../utils/format';
 import { buildMergedPillDefs } from '../../utils/multiplierDefs';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import FilterButton from '../FilterButton';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 
 type ViewMode = 'prs' | 'issues';
 
@@ -1133,6 +1134,12 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
               }}
             />
           </InputAdornment>
+        ),
+        endAdornment: (
+          <ClearSearchAdornment
+            visible={Boolean(searchQuery)}
+            onClear={() => setSearchQuery('')}
+          />
         ),
       }}
       sx={{
