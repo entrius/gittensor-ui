@@ -16,7 +16,9 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  MenuItem,
   Popover,
+  Select,
   Switch,
   TextField,
   Tooltip,
@@ -37,6 +39,7 @@ import SearchIcon from '@mui/icons-material/Search';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import BarChartIcon from '@mui/icons-material/BarChart';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
 import StarIcon from '@mui/icons-material/Star';
@@ -2140,6 +2143,14 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 type BountyStatusFilter = 'all' | 'available' | 'pending' | 'history';
 type BountySortKey = 'issue' | 'repo' | 'bounty' | 'status' | 'date';
 
+const BOUNTY_SORT_LABELS: Record<BountySortKey, string> = {
+  issue: 'Issue',
+  repo: 'Repository',
+  bounty: 'Bounty',
+  status: 'Status',
+  date: 'Date',
+};
+
 const BOUNTY_STATUS_FILTERS: readonly BountyStatusFilter[] = [
   'all',
   'available',
@@ -2467,6 +2478,35 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 onClick={() => setStatusFilter(s)}
               />
             ))}
+          </Box>
+        }
+        sortContent={
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Select
+              value={sortField}
+              onChange={(e) => {
+                setSortField(e.target.value as BountySortKey);
+                setSortOrder('desc');
+                setPage(0);
+              }}
+              size="small"
+              sx={watchlistSortSelectSx}
+            >
+              {(Object.keys(BOUNTY_SORT_LABELS) as BountySortKey[]).map(
+                (key) => (
+                  <MenuItem key={key} value={key}>
+                    {BOUNTY_SORT_LABELS[key]}
+                  </MenuItem>
+                ),
+              )}
+            </Select>
+            <SortDirectionButton
+              direction={sortOrder}
+              onToggle={() => {
+                setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+                setPage(0);
+              }}
+            />
           </Box>
         }
         searchValue={searchQuery}
@@ -3392,6 +3432,14 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 type IssueStatusFilter = 'all' | 'open' | 'resolved' | 'closed';
 type IssueSortKey = 'issue' | 'title' | 'repo' | 'author' | 'date';
 
+const ISSUE_SORT_LABELS: Record<IssueSortKey, string> = {
+  issue: 'Issue',
+  title: 'Title',
+  repo: 'Repository',
+  author: 'Author',
+  date: 'Date',
+};
+
 const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
   'all',
   'open',
@@ -3399,6 +3447,52 @@ const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
   'closed',
 ];
 const issueCellSx = { py: 1.5 } as const;
+
+const watchlistSortSelectSx = {
+  flex: 1,
+  minWidth: 0,
+  '& .MuiOutlinedInput-notchedOutline': { borderColor: 'border.light' },
+  '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: 'border.medium' },
+  '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+    borderColor: 'primary.main',
+  },
+  '& .MuiSelect-select': {
+    py: 0.75,
+    fontFamily: '"JetBrains Mono", monospace',
+    fontSize: '0.75rem',
+  },
+} as const;
+
+const SortDirectionButton: React.FC<{
+  direction: 'asc' | 'desc';
+  onToggle: () => void;
+}> = ({ direction, onToggle }) => (
+  <Tooltip title={direction === 'asc' ? 'Ascending' : 'Descending'} arrow>
+    <IconButton
+      size="small"
+      aria-label={direction === 'asc' ? 'Sort ascending' : 'Sort descending'}
+      onClick={onToggle}
+      sx={(t) => ({
+        color: 'text.primary',
+        border: `1px solid ${t.palette.border.light}`,
+        borderRadius: 2,
+        p: '6px',
+        '&:hover': {
+          backgroundColor: alpha(t.palette.text.primary, 0.04),
+          borderColor: t.palette.border.medium,
+        },
+      })}
+    >
+      <ArrowUpwardIcon
+        fontSize="small"
+        sx={{
+          transform: direction === 'desc' ? 'rotate(180deg)' : 'none',
+          transition: 'transform 0.2s ease',
+        }}
+      />
+    </IconButton>
+  </Tooltip>
+);
 
 const issueState = (issue: MinerIssue): Exclude<IssueStatusFilter, 'all'> => {
   if ((issue.state_reason ?? '').toLowerCase() === 'completed')
@@ -4026,6 +4120,33 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
                 onClick={() => setStatusFilter(s)}
               />
             ))}
+          </Box>
+        }
+        sortContent={
+          <Box sx={{ display: 'flex', gap: 1 }}>
+            <Select
+              value={sortField}
+              onChange={(e) => {
+                setSortField(e.target.value as IssueSortKey);
+                setSortOrder('desc');
+                setPage(0);
+              }}
+              size="small"
+              sx={watchlistSortSelectSx}
+            >
+              {(Object.keys(ISSUE_SORT_LABELS) as IssueSortKey[]).map((key) => (
+                <MenuItem key={key} value={key}>
+                  {ISSUE_SORT_LABELS[key]}
+                </MenuItem>
+              ))}
+            </Select>
+            <SortDirectionButton
+              direction={sortOrder}
+              onToggle={() => {
+                setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+                setPage(0);
+              }}
+            />
           </Box>
         }
         searchValue={searchQuery}
