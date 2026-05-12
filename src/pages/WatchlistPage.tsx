@@ -1,3 +1,4 @@
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import React, {
   useCallback,
   useEffect,
@@ -33,6 +34,9 @@ import {
   useMediaQuery,
   Portal,
   TablePagination,
+  Select,
+  MenuItem,
+  useTheme,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
@@ -2407,6 +2411,68 @@ const buildBountyColumns = (): DataTableColumn<
   },
 ];
 
+const WatchlistBountySortDropdown: React.FC<{
+  sortField: BountySortKey;
+  sortOrder: 'asc' | 'desc';
+  onSortChange: (field: BountySortKey, order?: 'asc' | 'desc') => void;
+}> = ({ sortField, sortOrder, onSortChange }) => {
+  const theme = useTheme();
+  const SORT_LABELS: Record<BountySortKey, string> = {
+    issue: 'ID',
+    repo: 'Repository',
+    bounty: 'Bounty',
+    status: 'Status',
+    date: 'Date',
+  };
+
+  return (
+    <Box sx={{ display: 'flex', gap: 1 }}>
+      <Select
+        value={sortField}
+        onChange={(e: any) => onSortChange(e.target.value as BountySortKey)}
+        size="small"
+        sx={{
+          flex: 1,
+          borderRadius: 2,
+          '& .MuiSelect-select': { py: 0.75, fontSize: '0.85rem' },
+        }}
+      >
+        {(Object.keys(SORT_LABELS) as BountySortKey[]).map((key) => (
+          <MenuItem key={key} value={key} sx={{ fontSize: '0.85rem' }}>
+            {SORT_LABELS[key]}
+          </MenuItem>
+        ))}
+      </Select>
+      <Tooltip title={sortOrder === 'asc' ? 'Ascending' : 'Descending'} arrow>
+        <IconButton
+          size="small"
+          onClick={() =>
+            onSortChange(sortField, sortOrder === 'asc' ? 'desc' : 'asc')
+          }
+          sx={{
+            color: theme.palette.text.primary,
+            border: `1px solid ${theme.palette.border.light}`,
+            borderRadius: 2,
+            padding: '6px',
+            '&:hover': {
+              backgroundColor: theme.palette.surface.subtle,
+              borderColor: theme.palette.border.medium,
+            },
+          }}
+        >
+          <ArrowUpwardIcon
+            fontSize="small"
+            sx={{
+              transform: sortOrder === 'desc' ? 'rotate(180deg)' : 'none',
+              transition: 'transform 0.2s ease',
+            }}
+          />
+        </IconButton>
+      </Tooltip>
+    </Box>
+  );
+};
+
 const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allIssues, isLoading } = useIssues();
   const { taoPrice, alphaPrice } = usePrices();
@@ -2430,6 +2496,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   const [sortField, setSortField] = useState<BountySortKey>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [showChart, setShowChart] = useState(true);
 
   useEffect(() => {
     setPage(0);
@@ -2550,6 +2617,49 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 onClick={() => setStatusFilter(s)}
               />
             ))}
+          </Box>
+        }
+        sortContent={
+          <WatchlistBountySortDropdown
+            sortField={sortField}
+            sortOrder={sortOrder}
+            onSortChange={(field, order) => {
+              if (order) {
+                setSortField(field);
+                setSortOrder(order);
+              } else {
+                handleSort(field);
+              }
+            }}
+          />
+        }
+        extraContent={
+          <Box>
+            <OptionsLabel>Chart</OptionsLabel>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+                <IconButton
+                  onClick={() => setShowChart((v) => !v)}
+                  size="small"
+                  sx={{
+                    color: showChart ? 'text.primary' : 'text.tertiary',
+                    border: '1px solid',
+                    borderColor: 'border.light',
+                    borderRadius: 2,
+                    p: 0.5,
+                  }}
+                >
+                  {showChart ? (
+                    <BarChartIcon fontSize="small" />
+                  ) : (
+                    <TableChartIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Tooltip>
+              <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
+                {showChart ? 'Visible' : 'Hidden'}
+              </Typography>
+            </Box>
           </Box>
         }
         searchValue={searchQuery}
