@@ -36,6 +36,7 @@ import {
 } from '@mui/icons-material';
 import { useSearchParams } from 'react-router-dom';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import {
   useMinerStats,
   useMinerPRs,
@@ -1133,6 +1134,12 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
               }}
             />
           </InputAdornment>
+        ),
+        endAdornment: (
+          <ClearSearchAdornment
+            visible={Boolean(searchQuery)}
+            onClear={() => setSearchQuery('')}
+          />
         ),
       }}
       sx={{
