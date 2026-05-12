@@ -53,6 +53,7 @@ import {
   ActivitySidebarCards,
   SEO,
   WatchlistButton,
+  WatchlistClearButton,
 } from '../components';
 import {
   DataTable,
@@ -243,6 +244,14 @@ export const WatchlistContent: React.FC = () => {
     );
   };
 
+  const clearAction = (
+    <WatchlistClearButton
+      count={count}
+      itemNoun={count === 1 ? noun.single : noun.plural}
+      onTrigger={() => setConfirmOpen(true)}
+    />
+  );
+
   return (
     <>
       <Box
@@ -368,15 +377,15 @@ export const WatchlistContent: React.FC = () => {
           </Button>
         </Box>
       ) : activeTab === 'miners' ? (
-        <MinersList itemKeys={ids} />
+        <MinersList itemKeys={ids} clearAction={clearAction} />
       ) : activeTab === 'repos' ? (
-        <ReposList itemKeys={ids} />
+        <ReposList itemKeys={ids} clearAction={clearAction} />
       ) : activeTab === 'bounties' ? (
-        <BountiesList itemKeys={ids} />
+        <BountiesList itemKeys={ids} clearAction={clearAction} />
       ) : activeTab === 'issues' ? (
-        <IssuesList minerIds={minerIds} />
+        <IssuesList minerIds={minerIds} clearAction={clearAction} />
       ) : (
-        <PRsList itemKeys={ids} />
+        <PRsList itemKeys={ids} clearAction={clearAction} />
       )}
 
       <Dialog
@@ -673,6 +682,7 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
   filterContent,
   sortContent,
   extraContent,
+  actionContent,
   searchValue,
   searchPlaceholder,
   onSearchChange,
@@ -737,6 +747,21 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
 
     {/* Extra content (e.g. chart controls) */}
     {extraContent}
+
+    {actionContent ? (
+      <Box
+        sx={{
+          pt: 1.25,
+          mt: -0.25,
+          borderTop: '1px solid',
+          borderColor: 'border.light',
+          display: 'flex',
+          justifyContent: 'flex-start',
+        }}
+      >
+        {actionContent}
+      </Box>
+    ) : null}
   </>
 );
 
@@ -746,6 +771,7 @@ interface WatchlistOptionsButtonProps {
   /** Shown under Filter when set (e.g. repositories card view). */
   sortContent?: React.ReactNode;
   extraContent?: React.ReactNode;
+  actionContent?: React.ReactNode;
   searchValue: string;
   searchPlaceholder: string;
   onSearchChange: (v: string) => void;
@@ -759,6 +785,7 @@ const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
   filterContent,
   sortContent,
   extraContent,
+  actionContent,
   searchValue,
   searchPlaceholder,
   onSearchChange,
@@ -908,12 +935,34 @@ const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
 
         {/* Extra content (e.g. chart controls) */}
         {extraContent}
+
+        {actionContent ? (
+          <Box
+            sx={{
+              pt: 1.25,
+              mt: -0.75,
+              borderTop: '1px solid',
+              borderColor: 'border.light',
+              display: 'flex',
+              justifyContent: 'flex-start',
+            }}
+          >
+            {actionContent}
+          </Box>
+        ) : null}
       </Popover>
     </>
   );
 };
 
-const MinersList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
+interface WatchlistActionProps {
+  clearAction?: React.ReactNode;
+}
+
+const MinersList: React.FC<{ itemKeys: string[] } & WatchlistActionProps> = ({
+  itemKeys,
+  clearAction,
+}) => {
   const { data: allMinersStats, isLoading } = useAllMiners();
   const watchedSet = useMemo(() => new Set(itemKeys), [itemKeys]);
 
@@ -940,6 +989,7 @@ const MinersList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         linkState={{ backLabel: 'Back to Watchlist' }}
         variant="watchlist"
         showDualEligibilityBadges
+        toolbarActionContent={clearAction}
       />
     </Box>
   );
@@ -1631,7 +1681,10 @@ const WatchlistStackedPagination: React.FC<{
 const useWatchlistSidebarFixedRight = () =>
   useMediaQuery(theme.breakpoints.up('xl'));
 
-const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
+const ReposList: React.FC<{ itemKeys: string[] } & WatchlistActionProps> = ({
+  itemKeys,
+  clearAction,
+}) => {
   const { data: repos } = useReposAndWeights();
   const { data: allPrs } = useAllPrs();
   const { data: allMiners } = useAllMiners();
@@ -2057,6 +2110,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 </Box>
               </>
             }
+            actionContent={clearAction}
             searchValue={draftValue}
             searchPlaceholder="Search repositories..."
             onSearchChange={setDraftValue}
@@ -2412,7 +2466,10 @@ const buildBountyColumns = (): DataTableColumn<
   },
 ];
 
-const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
+const BountiesList: React.FC<{ itemKeys: string[] } & WatchlistActionProps> = ({
+  itemKeys,
+  clearAction,
+}) => {
   const { data: allIssues, isLoading } = useIssues();
   const { taoPrice, alphaPrice } = usePrices();
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
@@ -2559,6 +2616,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 ))}
               </Box>
             }
+            actionContent={clearAction}
             searchValue={draftValue}
             searchPlaceholder="Search bounties..."
             onSearchChange={setDraftValue}
@@ -3213,7 +3271,10 @@ const PRCard: React.FC<{
   );
 };
 
-const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
+const PRsList: React.FC<{ itemKeys: string[] } & WatchlistActionProps> = ({
+  itemKeys,
+  clearAction,
+}) => {
   const { items, sourcesByKey, isLoading } = useWatchedPRs(itemKeys);
   const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
   const { isWatched } = useWatchlist('prs');
@@ -3381,6 +3442,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 />
               </Box>
             }
+            actionContent={clearAction}
             searchValue={draftValue}
             searchPlaceholder="Search PRs..."
             onSearchChange={setDraftValue}
@@ -4000,7 +4062,10 @@ const IssueCard: React.FC<{
   );
 };
 
-const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
+const IssuesList: React.FC<{ minerIds: string[] } & WatchlistActionProps> = ({
+  minerIds,
+  clearAction,
+}) => {
   const issueQueries = useMinersIssues(minerIds, minerIds.length > 0);
   const isLoading = issueQueries.some((q) => q.isLoading);
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
@@ -4191,6 +4256,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
                 ))}
               </Box>
             }
+            actionContent={clearAction}
             searchValue={draftValue}
             searchPlaceholder="Search issues..."
             onSearchChange={setDraftValue}

@@ -91,6 +91,7 @@ interface TopMinersTableProps {
   linkState?: Record<string, unknown>;
   variant?: LeaderboardVariant;
   showDualEligibilityBadges?: boolean;
+  toolbarActionContent?: React.ReactNode;
 }
 
 const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] => {
@@ -210,6 +211,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   linkState,
   variant = 'oss',
   showDualEligibilityBadges = false,
+  toolbarActionContent,
 }) => {
   const allowedSortKeys = useMemo(
     () => getAllowedSortOptions(variant),
@@ -503,6 +505,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             onEligibleDiscoveryChange={handleEligibleDiscoveryChange}
             open={filtersOpen}
             onOpenChange={handleFiltersOpenChange}
+            actionContent={toolbarActionContent}
           />
         </Portal>
       ) : (
@@ -525,6 +528,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             eligibleDiscoveryFilter={eligibleDiscoveryFilter}
             onEligibleOssChange={handleEligibleOssChange}
             onEligibleDiscoveryChange={handleEligibleDiscoveryChange}
+            actionContent={toolbarActionContent}
           />
         </Box>
       )}
@@ -1136,6 +1140,7 @@ const ToolbarSidebarPanelContent: React.FC<ToolbarPopoverProps> = ({
   eligibleDiscoveryFilter,
   onEligibleOssChange,
   onEligibleDiscoveryChange,
+  actionContent,
 }) => (
   <>
     {/* Sort */}
@@ -1210,6 +1215,21 @@ const ToolbarSidebarPanelContent: React.FC<ToolbarPopoverProps> = ({
       <Typography sx={sidebarLabelSx}>View</Typography>
       <ViewModeToggle viewMode={viewMode} onChange={onViewModeChange} />
     </Box>
+
+    {actionContent ? (
+      <Box
+        sx={{
+          pt: 1.25,
+          mt: -0.25,
+          borderTop: '1px solid',
+          borderColor: 'border.light',
+          display: 'flex',
+          justifyContent: 'flex-start',
+        }}
+      >
+        {actionContent}
+      </Box>
+    ) : null}
   </>
 );
 
@@ -1226,6 +1246,7 @@ interface ToolbarPopoverProps {
   eligibleDiscoveryFilter: EligibilityFilter;
   onEligibleOssChange: (next: EligibilityFilter) => void;
   onEligibleDiscoveryChange: (next: EligibilityFilter) => void;
+  actionContent?: React.ReactNode;
 }
 
 const ToolbarPopover: React.FC<ToolbarPopoverProps> = ({
@@ -1239,6 +1260,7 @@ const ToolbarPopover: React.FC<ToolbarPopoverProps> = ({
   eligibleDiscoveryFilter,
   onEligibleOssChange,
   onEligibleDiscoveryChange,
+  actionContent,
 }) => {
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const open = Boolean(anchorEl);
@@ -1397,6 +1419,21 @@ const ToolbarPopover: React.FC<ToolbarPopoverProps> = ({
           </Typography>
           <ViewModeToggle viewMode={viewMode} onChange={onViewModeChange} />
         </Box>
+
+        {actionContent ? (
+          <Box
+            sx={{
+              pt: 1.25,
+              mt: -0.75,
+              borderTop: '1px solid',
+              borderColor: 'border.light',
+              display: 'flex',
+              justifyContent: 'flex-start',
+            }}
+          >
+            {actionContent}
+          </Box>
+        ) : null}
       </Popover>
     </>
   );
