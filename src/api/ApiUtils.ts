@@ -78,3 +78,61 @@ export const useMirrorApiQuery = <TResponse = unknown, TSelect = TResponse>(
     refetchInterval: options?.refetchInterval,
   });
 };
+
+// ---------------------------------------------------------------------------
+// GitHub fetch helper
+// ---------------------------------------------------------------------------
+//
+// Use `githubFetch` from inside a TanStack Query `queryFn` instead of calling
+// `axios.get` directly when hitting `api.github.com`. It forwards the query's
+// `AbortSignal` to axios so cancellation works without bespoke controller
+// glue, and converts a 403 with `X-RateLimit-Remaining: 0` into a typed
+// `RateLimitError` carrying the reset time, so the UI can render
+// "Retries available at HH:MM" instead of a generic "Failed to load".
+
+export class RateLimitError extends Error {
+  readonly resetAt: Date | null;
+
+  constructor(resetAt: Date | null) {
+    super(
+      resetAt
+        ? `GitHub rate limit reached. Retries available at ${resetAt.toLocaleTimeString(
+            undefined,
+            { hour: '2-digit', minute: '2-digit' },
+          )}.`
+        : 'GitHub rate limit reached. Please try again later.',
+    );
+    this.name = 'RateLimitError';
+    this.resetAt = resetAt;
+  }
+}
+
+interface GithubFetchOptions {
+  signal?: AbortSignal;
+  params?: Record<string, string | number | undefined>;
+  headers?: Record<string, string>;
+}
+
+export async function githubFetch<T = unknown>(
+  url: string,
+  options: GithubFetchOptions = {},
+): Promise<T> {
+  try {
+    const { data } = await axios.get<T>(url, options);
+    return data;
+  } catch (err) {
+    if (
+      axios.isAxiosError(err) &&
+      err.response?.status === 403 &&
+      err.response.headers?.['x-ratelimit-remaining'] === '0'
+    ) {
+      const seconds = Number(err.response.headers['x-ratelimit-reset']);
+      const resetAt =
+        Number.isFinite(seconds) && seconds > 0
+          ? new Date(seconds * 1000)
+          : null;
+      throw new RateLimitError(resetAt);
+    }
+    throw err;
+  }
+}
