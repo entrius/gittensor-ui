@@ -21,7 +21,7 @@ import {
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import RankBadge from './RankBadge';
 import EmptyStateMessage from './EmptyStateMessage';
-import TablePagination from './TablePagination';
+import TablePagination from '../common/TablePagination';
 import FilterButton from '../FilterButton';
 import { searchFieldSx } from './MinerRepositoriesTable.styles';
 import {

@@ -336,6 +336,30 @@ const IssuesList: React.FC<IssuesListProps> = ({
     [],
   );
 
+  const [prevFilterState, setPrevFilterState] = useState({
+    filterType,
+    searchQuery,
+    sortKey,
+    sortDirection,
+    viewMode,
+  });
+  if (
+    filterType !== prevFilterState.filterType ||
+    searchQuery !== prevFilterState.searchQuery ||
+    sortKey !== prevFilterState.sortKey ||
+    sortDirection !== prevFilterState.sortDirection ||
+    viewMode !== prevFilterState.viewMode
+  ) {
+    setPrevFilterState({
+      filterType,
+      searchQuery,
+      sortKey,
+      sortDirection,
+      viewMode,
+    });
+    setPage(0);
+  }
+
   const sortedIssues = useMemo(() => {
     const directionFactor = sortDirection === 'asc' ? 1 : -1;
     const collator = new Intl.Collator(undefined, {
@@ -799,6 +823,14 @@ const IssuesList: React.FC<IssuesListProps> = ({
             </>
           )}
         </Box>
+
+        {sortedIssues.length > 0 && (
+          <TablePagination
+            count={sortedIssues.length}
+            page={page}
+            onPageChange={setPage}
+          />
+        )}
       </Card>
     );
   }
@@ -1162,17 +1194,19 @@ const IssuesList: React.FC<IssuesListProps> = ({
       {viewMode === 'cards' ? (
         sortedIssues.length > 0 ? (
           <Grid container spacing={2}>
-            {sortedIssues.map((issue) => (
-              <Grid item xs={12} sm={6} md={4} key={issue.id}>
-                <BountyCard
-                  issue={issue}
-                  href={getIssueHref ? getIssueHref(issue.id) : undefined}
-                  linkState={linkState}
-                  taoPrice={taoPrice}
-                  alphaPrice={alphaPrice}
-                />
-              </Grid>
-            ))}
+            {sortedIssues
+              .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
+              .map((issue) => (
+                <Grid item xs={12} sm={6} md={4} key={issue.id}>
+                  <BountyCard
+                    issue={issue}
+                    href={getIssueHref ? getIssueHref(issue.id) : undefined}
+                    linkState={linkState}
+                    taoPrice={taoPrice}
+                    alphaPrice={alphaPrice}
+                  />
+                </Grid>
+              ))}
           </Grid>
         ) : (
           emptyState
@@ -1180,7 +1214,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
       ) : (
         <DataTable<IssueBounty, SortKey>
           columns={columns}
-          rows={sortedIssues}
+          rows={sortedIssues.slice(
+            page * rowsPerPage,
+            page * rowsPerPage + rowsPerPage,
+          )}
           getRowKey={(issue) => issue.id}
           getRowHref={
             getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
@@ -1204,6 +1241,14 @@ const IssuesList: React.FC<IssuesListProps> = ({
             order: sortDirection,
             onChange: handleSort,
           }}
+        />
+      )}
+
+      {sortedIssues.length > 0 && (
+        <TablePagination
+          count={sortedIssues.length}
+          page={page}
+          onPageChange={setPage}
         />
       )}
     </Card>
