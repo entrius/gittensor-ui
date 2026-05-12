@@ -172,11 +172,12 @@ const passesSingleProgramEligibility = (
   filter === 'all' ||
   (filter === 'eligible' ? Boolean(miner.isEligible) : !miner.isEligible);
 
-const compareMiners = (
+export const compareMiners = (
   a: MinerStats,
   b: MinerStats,
   option: SortOption,
   isWatched: (key: string) => boolean,
+  variant: LeaderboardVariant = 'oss',
 ): number => {
   switch (option) {
     case 'totalScore':
@@ -191,8 +192,21 @@ const compareMiners = (
       return (
         Number(a.issueDiscoveryScore ?? 0) - Number(b.issueDiscoveryScore ?? 0)
       );
-    case 'credibility':
-      return (a.credibility ?? 0) - (b.credibility ?? 0);
+    case 'credibility': {
+      // The Discoveries variant displays issue credibility on each card
+      // (MinerCard chooses issueCredibility when isDiscoveries), so the
+      // sort needs to read the same field for the column to match the UI.
+      // Other variants keep PR credibility.
+      const credA =
+        variant === 'discoveries'
+          ? (a.issueCredibility ?? 0)
+          : (a.credibility ?? 0);
+      const credB =
+        variant === 'discoveries'
+          ? (b.issueCredibility ?? 0)
+          : (b.credibility ?? 0);
+      return credA - credB;
+    }
     case 'watch':
       return compareByWatchlist(a, b, (m) => m.githubId, isWatched);
     default:
@@ -321,9 +335,9 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   const rankedMiners = useMemo(() => {
     const dir = sortDirection === 'asc' ? 1 : -1;
     return [...miners]
-      .sort((a, b) => compareMiners(a, b, sortOption, isWatched) * dir)
+      .sort((a, b) => compareMiners(a, b, sortOption, isWatched, variant) * dir)
       .map((miner, index) => ({ ...miner, rank: index + 1 }));
-  }, [miners, sortOption, sortDirection, isWatched]);
+  }, [miners, sortOption, sortDirection, isWatched, variant]);
 
   const filteredMiners = useMemo(() => {
     let result = rankedMiners;
