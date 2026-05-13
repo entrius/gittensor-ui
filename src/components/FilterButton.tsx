@@ -26,14 +26,16 @@ const FilterButton: React.FC<FilterButtonProps> = ({
     onClick={onClick}
     fullWidth={fullWidth}
     sx={{
-      color: isActive ? activeTextColor : 'text.tertiary',
-      backgroundColor: isActive ? 'border.subtle' : 'transparent',
+      color: isActive ? activeTextColor : (t) => t.palette.text.secondary,
+      backgroundColor: isActive ? 'surface.light' : 'surface.transparent',
       borderRadius: '6px',
-      px: 2,
+      px: { xs: 1, sm: 1.5 },
+      py: { xs: 0.5, sm: 0.75 },
       minWidth: fullWidth ? 0 : 'auto',
       textTransform: 'none',
-      fontSize: '0.8rem',
+      fontSize: { xs: '0.65rem', sm: '0.75rem' },
       border: isActive ? `1px solid ${color}` : '1px solid transparent',
+      whiteSpace: 'nowrap',
       '&:hover': {
         backgroundColor: 'border.light',
       },
@@ -43,7 +45,11 @@ const FilterButton: React.FC<FilterButtonProps> = ({
     {count !== undefined && (
       <Box
         component="span"
-        sx={{ opacity: 0.6, ml: '6px', fontSize: '0.75rem' }}
+        sx={{
+          opacity: 0.6,
+          ml: '6px',
+          fontSize: { xs: '0.6rem', sm: '0.7rem' },
+        }}
       >
         {count}
       </Box>
