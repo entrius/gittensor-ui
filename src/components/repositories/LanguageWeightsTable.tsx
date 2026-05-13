@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Box,
   TablePagination,
@@ -21,6 +21,7 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import {
   echartsAxisTooltipChrome,
   echartsBarChartTitle,
@@ -88,10 +89,9 @@ const LanguageWeightsTable: React.FC = () => {
     scrollTableToTop();
   };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value);
+  useEffect(() => {
     setPage(0);
-  };
+  }, [searchQuery]);
 
   const filteredAndSortedLanguages = useMemo<LanguageRow[]>(() => {
     if (!languages) return [];
@@ -386,54 +386,60 @@ const LanguageWeightsTable: React.FC = () => {
               </Select>
             </Box>
           </FormControl>
-          <TextField
-            placeholder="Search..."
-            size="small"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search
-                    sx={{
-                      color: alpha(
-                        theme.palette.common.white,
-                        TEXT_OPACITY.muted,
-                      ),
-                      fontSize: '1rem',
-                    }}
-                  />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <ClearSearchAdornment
-                  visible={Boolean(searchQuery)}
-                  onClear={() => setSearchQuery('')}
-                  sx={{
-                    color: alpha(
-                      theme.palette.common.white,
-                      TEXT_OPACITY.muted,
-                    ),
-                  }}
-                />
-              ),
-            }}
-            sx={{
-              width: { xs: '100%', sm: '200px' },
-              '& .MuiOutlinedInput-root': {
-                color: theme.palette.text.primary,
-                backgroundColor: alpha(theme.palette.common.black, 0.4),
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                '& fieldset': { borderColor: theme.palette.border.light },
-                '&:hover fieldset': {
-                  borderColor: theme.palette.border.medium,
-                },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-              },
-            }}
-          />
+          <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+            {({ draftValue, setDraftValue }) => (
+              <TextField
+                placeholder="Search..."
+                size="small"
+                value={draftValue}
+                onChange={(e) => {
+                  setDraftValue(e.target.value);
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search
+                        sx={{
+                          color: alpha(
+                            theme.palette.common.white,
+                            TEXT_OPACITY.muted,
+                          ),
+                          fontSize: '1rem',
+                        }}
+                      />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <ClearSearchAdornment
+                      visible={Boolean(draftValue)}
+                      onClear={() => setDraftValue('')}
+                      sx={{
+                        color: alpha(
+                          theme.palette.common.white,
+                          TEXT_OPACITY.muted,
+                        ),
+                      }}
+                    />
+                  ),
+                }}
+                sx={{
+                  width: { xs: '100%', sm: '200px' },
+                  '& .MuiOutlinedInput-root': {
+                    color: theme.palette.text.primary,
+                    backgroundColor: alpha(theme.palette.common.black, 0.4),
+                    fontSize: '0.8rem',
+                    height: '36px',
+                    borderRadius: 2,
+                    '& fieldset': { borderColor: theme.palette.border.light },
+                    '&:hover fieldset': {
+                      borderColor: theme.palette.border.medium,
+                    },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                  },
+                }}
+              />
+            )}
+          </DebouncedSearchInput>
         </Box>
       </Box>
 

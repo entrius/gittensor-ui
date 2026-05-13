@@ -74,6 +74,7 @@ import type {
 } from '../api/models/Dashboard';
 import type { IssueBounty } from '../api/models/Issues';
 import { usePrices } from '../hooks/usePrices';
+import { DebouncedSearchInput } from '../components/common/DebouncedSearchInput';
 import { BountyCard } from '../components/issues/BountyCard';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import {
@@ -1953,117 +1954,121 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         overflow: 'hidden',
       }}
     >
-      <WatchlistPortal
-        filterContent={
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 0.5,
-              alignItems: 'center',
-              flexWrap: 'wrap',
-            }}
-          >
-            <FilterButton
-              label="All"
-              count={counts.all}
-              color={STATUS_COLORS.neutral}
-              isActive={statusFilter === 'all'}
-              onClick={() => setStatusFilter('all')}
-            />
-            <FilterButton
-              label="Active"
-              count={counts.active}
-              color={STATUS_COLORS.success}
-              isActive={statusFilter === 'active'}
-              onClick={() => setStatusFilter('active')}
-            />
-            <FilterButton
-              label="Inactive"
-              count={counts.inactive}
-              color={STATUS_COLORS.closed}
-              isActive={statusFilter === 'inactive'}
-              onClick={() => setStatusFilter('inactive')}
-            />
-          </Box>
-        }
-        sortContent={
-          viewMode === 'cards' ? (
-            <WatchlistRepoCardSortPills
-              sortField={sortField}
-              sortOrder={sortOrder}
-              onSortChange={handleSort}
-            />
-          ) : undefined
-        }
-        extraContent={
-          <>
-            <Box>
-              <OptionsLabel>Chart</OptionsLabel>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-                  <IconButton
-                    onClick={() => setShowChart((v) => !v)}
-                    size="small"
-                    sx={{
-                      color: showChart ? 'text.primary' : 'text.tertiary',
-                      border: '1px solid',
-                      borderColor: 'border.light',
-                      borderRadius: 2,
-                      padding: '6px',
-                      '&:hover': {
-                        backgroundColor: 'surface.light',
-                        borderColor: 'border.medium',
-                      },
-                    }}
-                  >
-                    {showChart ? (
-                      <TableChartIcon fontSize="small" />
-                    ) : (
-                      <BarChartIcon fontSize="small" />
-                    )}
-                  </IconButton>
-                </Tooltip>
-                {showChart && (
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={useLogScale}
-                        onChange={(e) => setUseLogScale(e.target.checked)}
+      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+        {({ draftValue, setDraftValue }) => (
+          <WatchlistPortal
+            filterContent={
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 0.5,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <FilterButton
+                  label="All"
+                  count={counts.all}
+                  color={STATUS_COLORS.neutral}
+                  isActive={statusFilter === 'all'}
+                  onClick={() => setStatusFilter('all')}
+                />
+                <FilterButton
+                  label="Active"
+                  count={counts.active}
+                  color={STATUS_COLORS.success}
+                  isActive={statusFilter === 'active'}
+                  onClick={() => setStatusFilter('active')}
+                />
+                <FilterButton
+                  label="Inactive"
+                  count={counts.inactive}
+                  color={STATUS_COLORS.closed}
+                  isActive={statusFilter === 'inactive'}
+                  onClick={() => setStatusFilter('inactive')}
+                />
+              </Box>
+            }
+            sortContent={
+              viewMode === 'cards' ? (
+                <WatchlistRepoCardSortPills
+                  sortField={sortField}
+                  sortOrder={sortOrder}
+                  onSortChange={handleSort}
+                />
+              ) : undefined
+            }
+            extraContent={
+              <>
+                <Box>
+                  <OptionsLabel>Chart</OptionsLabel>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+                      <IconButton
+                        onClick={() => setShowChart((v) => !v)}
                         size="small"
                         sx={{
-                          '& .MuiSwitch-switchBase.Mui-checked': {
-                            color: 'primary.main',
-                          },
-                          '& .MuiSwitch-track': {
-                            backgroundColor: 'border.medium',
+                          color: showChart ? 'text.primary' : 'text.tertiary',
+                          border: '1px solid',
+                          borderColor: 'border.light',
+                          borderRadius: 2,
+                          padding: '6px',
+                          '&:hover': {
+                            backgroundColor: 'surface.light',
+                            borderColor: 'border.medium',
                           },
                         }}
-                      />
-                    }
-                    label={
-                      <Typography
-                        variant="body2"
-                        sx={{ fontSize: '0.8rem', color: 'text.secondary' }}
                       >
-                        Log Scale
-                      </Typography>
-                    }
-                  />
-                )}
-              </Box>
-            </Box>
-          </>
-        }
-        searchValue={searchQuery}
-        searchPlaceholder="Search repositories..."
-        onSearchChange={setSearchQuery}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        viewModeToggle={
-          <ReposViewModeToggle viewMode={viewMode} onChange={setViewMode} />
-        }
-        hasActiveFilter={statusFilter !== 'all'}
-      />
+                        {showChart ? (
+                          <TableChartIcon fontSize="small" />
+                        ) : (
+                          <BarChartIcon fontSize="small" />
+                        )}
+                      </IconButton>
+                    </Tooltip>
+                    {showChart && (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={useLogScale}
+                            onChange={(e) => setUseLogScale(e.target.checked)}
+                            size="small"
+                            sx={{
+                              '& .MuiSwitch-switchBase.Mui-checked': {
+                                color: 'primary.main',
+                              },
+                              '& .MuiSwitch-track': {
+                                backgroundColor: 'border.medium',
+                              },
+                            }}
+                          />
+                        }
+                        label={
+                          <Typography
+                            variant="body2"
+                            sx={{ fontSize: '0.8rem', color: 'text.secondary' }}
+                          >
+                            Log Scale
+                          </Typography>
+                        }
+                      />
+                    )}
+                  </Box>
+                </Box>
+              </>
+            }
+            searchValue={draftValue}
+            searchPlaceholder="Search repositories..."
+            onSearchChange={setDraftValue}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            viewModeToggle={
+              <ReposViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+            }
+            hasActiveFilter={statusFilter !== 'all'}
+          />
+        )}
+      </DebouncedSearchInput>
 
       <Collapse in={showChart}>
         <Box
@@ -2530,47 +2535,51 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         flexDirection: 'column',
       }}
     >
-      <WatchlistPortal
-        filterContent={
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 0.5,
-              alignItems: 'center',
-              flexWrap: 'wrap',
-            }}
-          >
-            {BOUNTY_STATUS_FILTERS.map((s) => (
-              <FilterButton
-                key={s}
-                label={s[0].toUpperCase() + s.slice(1)}
-                count={counts[s]}
-                color={bountyStatusColor(s)}
-                isActive={statusFilter === s}
-                onClick={() => setStatusFilter(s)}
-              />
-            ))}
-          </Box>
-        }
-        searchValue={searchQuery}
-        searchPlaceholder="Search bounties..."
-        onSearchChange={setSearchQuery}
-        viewMode={viewMode}
-        onViewModeChange={(next) => {
-          setViewMode(next);
-          setPage(0);
-        }}
-        viewModeToggle={
-          <PRsViewModeToggle
+      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+        {({ draftValue, setDraftValue }) => (
+          <WatchlistPortal
+            filterContent={
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 0.5,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                {BOUNTY_STATUS_FILTERS.map((s) => (
+                  <FilterButton
+                    key={s}
+                    label={s[0].toUpperCase() + s.slice(1)}
+                    count={counts[s]}
+                    color={bountyStatusColor(s)}
+                    isActive={statusFilter === s}
+                    onClick={() => setStatusFilter(s)}
+                  />
+                ))}
+              </Box>
+            }
+            searchValue={draftValue}
+            searchPlaceholder="Search bounties..."
+            onSearchChange={setDraftValue}
             viewMode={viewMode}
-            onChange={(next) => {
+            onViewModeChange={(next) => {
               setViewMode(next);
               setPage(0);
             }}
+            viewModeToggle={
+              <PRsViewModeToggle
+                viewMode={viewMode}
+                onChange={(next) => {
+                  setViewMode(next);
+                  setPage(0);
+                }}
+              />
+            }
+            hasActiveFilter={statusFilter !== 'all'}
           />
-        }
-        hasActiveFilter={statusFilter !== 'all'}
-      />
+        )}
+      </DebouncedSearchInput>
 
       {viewMode === 'list' ? (
         <DataTable<IssueBounty, BountySortKey>
@@ -3330,65 +3339,69 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       }}
     >
       {/* Compact Options trigger */}
-      <WatchlistPortal
-        filterContent={
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 0.5,
-              alignItems: 'center',
-              flexWrap: 'wrap',
-            }}
-          >
-            <FilterButton
-              label="All"
-              count={counts.all}
-              color={STATUS_COLORS.neutral}
-              isActive={statusFilter === 'all'}
-              onClick={() => setStatusFilter('all')}
-            />
-            <FilterButton
-              label="Open"
-              count={counts.open}
-              color={STATUS_COLORS.open}
-              isActive={statusFilter === 'open'}
-              onClick={() => setStatusFilter('open')}
-            />
-            <FilterButton
-              label="Merged"
-              count={counts.merged}
-              color={STATUS_COLORS.merged}
-              isActive={statusFilter === 'merged'}
-              onClick={() => setStatusFilter('merged')}
-            />
-            <FilterButton
-              label="Closed"
-              count={counts.closed}
-              color={STATUS_COLORS.closed}
-              isActive={statusFilter === 'closed'}
-              onClick={() => setStatusFilter('closed')}
-            />
-          </Box>
-        }
-        searchValue={searchQuery}
-        searchPlaceholder="Search PRs..."
-        onSearchChange={setSearchQuery}
-        viewMode={viewMode}
-        onViewModeChange={(next) => {
-          setViewMode(next);
-          setPage(0);
-        }}
-        viewModeToggle={
-          <PRsViewModeToggle
+      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+        {({ draftValue, setDraftValue }) => (
+          <WatchlistPortal
+            filterContent={
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 0.5,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <FilterButton
+                  label="All"
+                  count={counts.all}
+                  color={STATUS_COLORS.neutral}
+                  isActive={statusFilter === 'all'}
+                  onClick={() => setStatusFilter('all')}
+                />
+                <FilterButton
+                  label="Open"
+                  count={counts.open}
+                  color={STATUS_COLORS.open}
+                  isActive={statusFilter === 'open'}
+                  onClick={() => setStatusFilter('open')}
+                />
+                <FilterButton
+                  label="Merged"
+                  count={counts.merged}
+                  color={STATUS_COLORS.merged}
+                  isActive={statusFilter === 'merged'}
+                  onClick={() => setStatusFilter('merged')}
+                />
+                <FilterButton
+                  label="Closed"
+                  count={counts.closed}
+                  color={STATUS_COLORS.closed}
+                  isActive={statusFilter === 'closed'}
+                  onClick={() => setStatusFilter('closed')}
+                />
+              </Box>
+            }
+            searchValue={draftValue}
+            searchPlaceholder="Search PRs..."
+            onSearchChange={setDraftValue}
             viewMode={viewMode}
-            onChange={(next) => {
+            onViewModeChange={(next) => {
               setViewMode(next);
               setPage(0);
             }}
+            viewModeToggle={
+              <PRsViewModeToggle
+                viewMode={viewMode}
+                onChange={(next) => {
+                  setViewMode(next);
+                  setPage(0);
+                }}
+              />
+            }
+            hasActiveFilter={statusFilter !== 'all'}
           />
-        }
-        hasActiveFilter={statusFilter !== 'all'}
-      />
+        )}
+      </DebouncedSearchInput>
 
       {/* Content */}
       {viewMode === 'list' ? (
@@ -4154,38 +4167,42 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
       }}
     >
       {/* Compact Options trigger */}
-      <WatchlistPortal
-        filterContent={
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 0.5,
-              alignItems: 'center',
-              flexWrap: 'wrap',
-            }}
-          >
-            {ISSUE_STATUS_FILTERS.map((s) => (
-              <FilterButton
-                key={s}
-                label={s[0].toUpperCase() + s.slice(1)}
-                count={counts[s]}
-                color={issueStatusColor(s)}
-                isActive={statusFilter === s}
-                onClick={() => setStatusFilter(s)}
-              />
-            ))}
-          </Box>
-        }
-        searchValue={searchQuery}
-        searchPlaceholder="Search issues..."
-        onSearchChange={setSearchQuery}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        viewModeToggle={
-          <PRsViewModeToggle viewMode={viewMode} onChange={setViewMode} />
-        }
-        hasActiveFilter={statusFilter !== 'all'}
-      />
+      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+        {({ draftValue, setDraftValue }) => (
+          <WatchlistPortal
+            filterContent={
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 0.5,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                {ISSUE_STATUS_FILTERS.map((s) => (
+                  <FilterButton
+                    key={s}
+                    label={s[0].toUpperCase() + s.slice(1)}
+                    count={counts[s]}
+                    color={issueStatusColor(s)}
+                    isActive={statusFilter === s}
+                    onClick={() => setStatusFilter(s)}
+                  />
+                ))}
+              </Box>
+            }
+            searchValue={draftValue}
+            searchPlaceholder="Search issues..."
+            onSearchChange={setDraftValue}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            viewModeToggle={
+              <PRsViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+            }
+            hasActiveFilter={statusFilter !== 'all'}
+          />
+        )}
+      </DebouncedSearchInput>
 
       {viewMode === 'list' ? (
         <DataTable<MinerIssue, IssueSortKey>
