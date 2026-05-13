@@ -57,10 +57,12 @@ import {
   type IssuesViewMode,
   ISSUES_VIEW_QUERY_PARAM,
   ISSUES_DEFAULT_CARD_ROWS,
+  ISSUES_DEFAULT_LIST_ROWS,
   getIssuesViewModeFromQuery,
   readStoredIssuesViewMode,
   writeStoredIssuesViewMode,
 } from './issuesViewMode';
+import TablePagination from '../miners/TablePagination';
 
 export type FilterType = 'all' | 'available' | 'pending' | 'history';
 
@@ -258,6 +260,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
 
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
+  const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [showChart, setShowChart] = useState(false);
 
@@ -408,6 +411,25 @@ const IssuesList: React.FC<IssuesListProps> = ({
     });
     return decorated.map((d) => d.row);
   }, [filteredIssues, getSortValue, sortKey, sortDirection]);
+
+  const rowsPerPage =
+    viewMode === 'cards' ? ISSUES_DEFAULT_CARD_ROWS : ISSUES_DEFAULT_LIST_ROWS;
+  const totalPages = Math.max(1, Math.ceil(sortedIssues.length / rowsPerPage));
+  const safePage = Math.min(page, totalPages - 1);
+  const paginatedIssues = useMemo(() => {
+    const start = safePage * rowsPerPage;
+    return sortedIssues.slice(start, start + rowsPerPage);
+  }, [rowsPerPage, safePage, sortedIssues]);
+
+  useEffect(() => {
+    if (page !== safePage) {
+      setPage(safePage);
+    }
+  }, [page, safePage]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [filterType, searchQuery, sortKey, sortDirection, viewMode]);
 
   const chartOption = useMemo(() => {
     const repoTotals = new Map<string, number>();
@@ -1154,9 +1176,9 @@ const IssuesList: React.FC<IssuesListProps> = ({
         {chartCollapse}
 
         {viewMode === 'cards' ? (
-          sortedIssues.length > 0 ? (
+          paginatedIssues.length > 0 ? (
             <Grid container spacing={2}>
-              {sortedIssues.map((issue) => (
+              {paginatedIssues.map((issue) => (
                 <Grid item xs={12} sm={6} md={4} key={issue.id}>
                   <BountyCard
                     issue={issue}
@@ -1174,7 +1196,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         ) : (
           <DataTable<IssueBounty, SortKey>
             columns={columns}
-            rows={sortedIssues}
+            rows={paginatedIssues}
             getRowKey={(issue) => issue.id}
             getRowHref={
               getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
@@ -1200,6 +1222,11 @@ const IssuesList: React.FC<IssuesListProps> = ({
             }}
           />
         )}
+        <TablePagination
+          page={safePage}
+          totalPages={totalPages}
+          onPageChange={setPage}
+        />
       </Card>
     </>
   );
