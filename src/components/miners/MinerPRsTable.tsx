@@ -14,14 +14,7 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  useGithubPrDates,
-  useMinerPRs,
-  useMinerPullDates,
-  minerPullDatesKey,
-  type CommitLog,
-  type PrDateOverride,
-} from '../../api';
+import { useMinerPRs, type CommitLog } from '../../api';
 import {
   filterPrs,
   getRepositoryOwnerAvatarSrc,
@@ -77,23 +70,14 @@ const getEffectiveScore = (pr: CommitLog): number => {
 // The Date column should always show a real date; the milestone it refers to
 // depends on PR state. Returns the ISO string to render plus the label that
 // explains which milestone — used for both the cell and the sort comparator
-// so the visible value matches the ordering. `extra` lets the caller layer in
-// dates from the mirror API for fields the camelCase /miners/:id/prs endpoint
-// doesn't include (`prCreatedAt`, `closedAt`).
+// so the visible value matches the ordering.
 const getPrDateInfo = (
   pr: CommitLog,
-  extra?: PrDateOverride,
 ): { iso: string | null; label: 'Merged' | 'Closed' | 'Opened' } => {
   if (pr.mergedAt) return { iso: pr.mergedAt, label: 'Merged' };
-  const closedAt = pr.closedAt ?? extra?.closedAt ?? null;
-  const createdAt = pr.prCreatedAt || extra?.createdAt || null;
-  if (pr.prState === 'CLOSED') {
-    return {
-      iso: closedAt ?? createdAt,
-      label: closedAt ? 'Closed' : 'Opened',
-    };
-  }
-  return { iso: createdAt, label: 'Opened' };
+  if (pr.prState === 'CLOSED' && pr.closedAt)
+    return { iso: pr.closedAt, label: 'Closed' };
+  return { iso: pr.prCreatedAt || null, label: 'Opened' };
 };
 
 const getScoreTooltip = (pr: CommitLog): string | null => {
@@ -119,10 +103,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
-  // Pull `created_at` / `closed_at` from the mirror so the Date column shows
-  // a real date for open and closed-unmerged rows. The component renders fine
-  // before this resolves — cells just fall back to whatever the das API gave.
-  const { data: dateOverrides } = useMinerPullDates(githubId);
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
@@ -215,20 +195,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           cmp = a.additions + a.deletions - (b.additions + b.deletions);
           break;
         case 'date': {
-          const da =
-            getPrDateInfo(
-              a,
-              dateOverrides?.get(
-                minerPullDatesKey(a.repository, a.pullRequestNumber),
-              ),
-            ).iso || '';
-          const db =
-            getPrDateInfo(
-              b,
-              dateOverrides?.get(
-                minerPullDatesKey(b.repository, b.pullRequestNumber),
-              ),
-            ).iso || '';
+          const da = getPrDateInfo(a).iso || '';
+          const db = getPrDateInfo(b).iso || '';
           cmp = da.localeCompare(db);
           break;
         }
@@ -236,34 +204,11 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return sorted;
-  }, [filteredPRs, sortField, sortDir, dateOverrides]);
+  }, [filteredPRs, sortField, sortDir]);
 
   const pagedPRs = useMemo(
     () => paginateItems(sortedPRs, page, PAGE_SIZE),
     [sortedPRs, page],
-  );
-
-  // For visible-page rows that have no merge date AND the mirror has nothing,
-  // fall back to GitHub's PR REST endpoint. Fetched lazily, cached forever,
-  // and limited to the current page so we don't blow the 60-req/hr
-  // unauthenticated rate limit on miners with hundreds of PRs.
-  const githubFallbackTargets = useMemo(
-    () =>
-      pagedPRs.filter((pr) => {
-        if (pr.mergedAt) return false;
-        const key = minerPullDatesKey(pr.repository, pr.pullRequestNumber);
-        const override = dateOverrides?.get(key);
-        return !override?.createdAt && !override?.closedAt;
-      }),
-    [pagedPRs, dateOverrides],
-  );
-  const githubDates = useGithubPrDates(githubFallbackTargets);
-  const resolveDateOverride = useCallback(
-    (pr: CommitLog): PrDateOverride | undefined => {
-      const key = minerPullDatesKey(pr.repository, pr.pullRequestNumber);
-      return dateOverrides?.get(key) ?? githubDates.get(key);
-    },
-    [dateOverrides, githubDates],
   );
 
   const totalPages = Math.ceil(sortedPRs.length / PAGE_SIZE);
@@ -483,7 +428,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         color: (theme) => alpha(theme.palette.text.primary, 0.7),
       },
       renderCell: (pr) => {
-        const { iso, label } = getPrDateInfo(pr, resolveDateOverride(pr));
+        const { iso, label } = getPrDateInfo(pr);
         if (!iso) return '—';
         const d = new Date(iso);
         return (
