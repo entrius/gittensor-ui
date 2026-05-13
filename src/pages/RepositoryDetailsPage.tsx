@@ -480,7 +480,15 @@ const RepositoryDetailsPage: React.FC = () => {
 
                 {/* Desktop (md+) — original single-row header */}
                 <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 2,
+                      flexWrap: 'wrap',
+                      rowGap: 1,
+                    }}
+                  >
                     <Avatar
                       src={getRepositoryOwnerAvatarSrc(owner)}
                       alt={owner}
