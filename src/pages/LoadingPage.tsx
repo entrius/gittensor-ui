@@ -7,7 +7,8 @@ const LoadingPage: React.FC = () => (
       justifyContent: 'center',
       alignItems: 'center',
       width: '100%',
-      height: '100%',
+      minHeight: { xs: '240px', sm: '320px' },
+      flex: '1 1 auto',
     }}
   >
     <CircularProgress sx={{ m: 5, color: 'primary.main' }} />

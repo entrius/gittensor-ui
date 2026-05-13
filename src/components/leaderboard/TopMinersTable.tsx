@@ -15,6 +15,7 @@ import {
   Popover,
   Portal,
   useMediaQuery,
+  TablePagination,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
@@ -48,6 +49,7 @@ const DISC_ELIGIBLE_QUERY_PARAM = 'discElig';
 const VIEW_QUERY_PARAM = 'view';
 const SEARCH_QUERY_PARAM = 'search';
 const VISIBLE_QUERY_PARAM = 'visible';
+const FILTERS_PANEL_QUERY_PARAM = 'filters';
 const VIEW_STORAGE_KEY_LEADERBOARD = 'leaderboard:viewMode';
 const VIEW_STORAGE_KEY_WATCHLIST = 'watchlist:viewMode';
 
@@ -112,6 +114,7 @@ type EligibilityFilter = 'all' | 'eligible' | 'ineligible';
 type TopMinersUrlFilters = {
   view: ViewMode;
   search: string;
+  filtersOpen: boolean;
   /** OSS Contributions / Discoveries: single toggle. Inactive on watchlist (always `all`). */
   eligible: EligibilityFilter;
   /** Watchlist OSS column. Inactive on other variants (always `all`). */
@@ -240,6 +243,13 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
         parse: (raw: string | null): string => raw ?? '',
         serialize: (value: string): string | null => value.trim() || null,
       },
+      filtersOpen: {
+        paramKey: FILTERS_PANEL_QUERY_PARAM,
+        parse: (raw: string | null): boolean =>
+          raw === 'open' || raw === 'true',
+        serialize: (value: boolean): string | null => (value ? 'open' : null),
+        resetPageOnChange: false,
+      },
       eligible:
         variant === 'watchlist'
           ? inactiveEligibilitySlot('minersEligibleUnusedLegacy')
@@ -275,6 +285,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
   const viewMode = filters.view;
   const searchQuery = filters.search;
+  const filtersOpen = filters.filtersOpen;
   const eligibleOssFilter: EligibilityFilter =
     variant === 'watchlist' ? filters.eligibleOss : filters.eligible;
   const eligibleDiscoveryFilter: EligibilityFilter =
@@ -296,6 +307,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       setFilter('view', nextMode);
     },
     [setFilter, variant],
+  );
+
+  const handleFiltersOpenChange = useCallback(
+    (nextOpen: boolean) => setFilter('filtersOpen', nextOpen),
+    [setFilter],
   );
 
   const handleEligibleOssChange = useCallback(
@@ -361,26 +377,78 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     setVisibleCount(0);
   }, [filteredMiners.length, visibleCount, setVisibleCount]);
 
-  const visibleMiners = useMemo(
-    () => filteredMiners.slice(0, visibleCount),
-    [filteredMiners, visibleCount],
-  );
-
-  const remainingMiners = Math.max(
-    0,
-    filteredMiners.length - visibleMiners.length,
-  );
-
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
+  const [stackedLayoutPage, setStackedLayoutPage] = useState(0);
+
+  useEffect(() => {
+    setStackedLayoutPage(0);
+  }, [
+    sortOption,
+    sortDirection,
+    viewMode,
+    searchQuery,
+    eligibleOssFilter,
+    eligibleDiscoveryFilter,
+  ]);
+
+  useEffect(() => {
+    setStackedLayoutPage(0);
+  }, [isLargeScreen]);
+
+  const stackedLayoutTotalPages = Math.max(
+    1,
+    Math.ceil(filteredMiners.length / MINERS_PAGE_SIZE),
+  );
+
+  useEffect(() => {
+    setStackedLayoutPage((p) => Math.min(p, stackedLayoutTotalPages - 1));
+  }, [stackedLayoutTotalPages]);
+
+  const visibleMiners = useMemo(() => {
+    if (isLargeScreen) {
+      return filteredMiners.slice(0, visibleCount);
+    }
+    const start = stackedLayoutPage * MINERS_PAGE_SIZE;
+    return filteredMiners.slice(start, start + MINERS_PAGE_SIZE);
+  }, [filteredMiners, isLargeScreen, visibleCount, stackedLayoutPage]);
+
+  const remainingMiners = isLargeScreen
+    ? Math.max(0, filteredMiners.length - visibleMiners.length)
+    : 0;
+
+  /** Same MUI `TablePagination` pattern as `TopRepositoriesTable` for stacked (< xl) layouts. */
+  const stackedPaginationControls = !isLargeScreen ? (
+    <TablePagination
+      rowsPerPageOptions={[]}
+      component="div"
+      count={filteredMiners.length}
+      rowsPerPage={MINERS_PAGE_SIZE}
+      page={stackedLayoutPage}
+      onPageChange={(_event, newPage) => setStackedLayoutPage(newPage)}
+      onRowsPerPageChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+        void e;
+      }}
+      showFirstButton
+      showLastButton
+      sx={{
+        borderTop: '1px solid',
+        borderColor: 'border.light',
+        color: 'text.secondary',
+        '.MuiTablePagination-displayedRows': {},
+      }}
+    />
+  ) : null;
 
   useEffect(() => {
     setPortalTarget(document.getElementById('tabs-options-portal'));
   }, []);
 
   useEffect(() => {
-    if (!observerTarget.current || remainingMiners <= 0) return;
+    if (!isLargeScreen || !observerTarget.current || remainingMiners <= 0) {
+      return;
+    }
 
     const observer = new IntersectionObserver(
       (entries) => {
@@ -399,7 +467,13 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
     observer.observe(observerTarget.current);
     return () => observer.disconnect();
-  }, [remainingMiners, visibleCount, filteredMiners.length, setVisibleCount]);
+  }, [
+    isLargeScreen,
+    remainingMiners,
+    visibleCount,
+    filteredMiners.length,
+    setVisibleCount,
+  ]);
 
   if (isLoading) {
     return (
@@ -427,6 +501,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             eligibleDiscoveryFilter={eligibleDiscoveryFilter}
             onEligibleOssChange={handleEligibleOssChange}
             onEligibleDiscoveryChange={handleEligibleDiscoveryChange}
+            open={filtersOpen}
+            onOpenChange={handleFiltersOpenChange}
           />
         </Portal>
       ) : (
@@ -455,19 +531,22 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
         {filteredMiners.length > 0 && viewMode === 'cards' && (
-          <Grid container spacing={2}>
-            {visibleMiners.map((miner) => (
-              <Grid item xs={12} sm={12} md={6} lg={4} xl={4} key={miner.id}>
-                <MinerCard
-                  miner={miner}
-                  variant={variant}
-                  href={getMinerHref(miner)}
-                  linkState={linkState}
-                  showDualEligibilityBadges={showDualEligibilityBadges}
-                />
-              </Grid>
-            ))}
-          </Grid>
+          <>
+            <Grid container spacing={2}>
+              {visibleMiners.map((miner) => (
+                <Grid item xs={12} sm={12} md={6} lg={4} xl={4} key={miner.id}>
+                  <MinerCard
+                    miner={miner}
+                    variant={variant}
+                    href={getMinerHref(miner)}
+                    linkState={linkState}
+                    showDualEligibilityBadges={showDualEligibilityBadges}
+                  />
+                </Grid>
+              ))}
+            </Grid>
+            {stackedPaginationControls}
+          </>
         )}
 
         {filteredMiners.length > 0 && viewMode === 'list' && (
@@ -479,6 +558,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             onSort={handleSortChange}
             getHref={getMinerHref}
             linkState={linkState}
+            pagination={stackedPaginationControls ?? undefined}
           />
         )}
 
@@ -968,9 +1048,16 @@ const sidebarLabelSx = {
   mb: 1,
 } as const;
 
-const ToolbarSidebarPanel: React.FC<ToolbarPopoverProps> = (props) => {
-  const [open, setOpen] = useState(false);
+type ToolbarSidebarPanelProps = ToolbarPopoverProps & {
+  open: boolean;
+  onOpenChange: (nextOpen: boolean) => void;
+};
 
+const ToolbarSidebarPanel: React.FC<ToolbarSidebarPanelProps> = ({
+  open,
+  onOpenChange,
+  ...props
+}) => {
   const defaultOssFilter = props.variant === 'watchlist' ? 'all' : 'eligible';
   const hasActiveFilter =
     props.eligibleOssFilter !== defaultOssFilter ||
@@ -982,7 +1069,7 @@ const ToolbarSidebarPanel: React.FC<ToolbarPopoverProps> = (props) => {
       <Box
         component="button"
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => onOpenChange(!open)}
         sx={(t) => ({
           display: 'flex',
           alignItems: 'center',

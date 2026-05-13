@@ -1,4 +1,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import {
+  DebouncedSearchInput,
+  useDebouncedSearchDraft,
+} from '../common/DebouncedSearchInput';
 import { useSearchParams } from 'react-router-dom';
 import {
   Avatar,
@@ -180,6 +184,54 @@ const ViewModeToggle: React.FC<ViewModeToggleProps> = ({
         );
       })}
     </Box>
+  );
+};
+
+const IssuesListSearchTextField: React.FC<{ fullWidth?: boolean }> = ({
+  fullWidth,
+}) => {
+  const theme = useTheme();
+  const { draftValue, setDraftValue } = useDebouncedSearchDraft();
+  const inputFieldSx = {
+    color: theme.palette.text.primary,
+    backgroundColor: alpha(theme.palette.common.black, 0.4),
+    fontSize: '0.8rem',
+    height: '36px',
+    borderRadius: 2,
+    '& fieldset': { borderColor: theme.palette.border.light },
+    '&:hover fieldset': { borderColor: theme.palette.border.medium },
+    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+  } as const;
+
+  return (
+    <TextField
+      placeholder="Search..."
+      size="small"
+      value={draftValue}
+      onChange={(e) => setDraftValue(e.target.value)}
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <SearchIcon
+              sx={{
+                color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
+                fontSize: '1rem',
+              }}
+            />
+          </InputAdornment>
+        ),
+        endAdornment: (
+          <ClearSearchAdornment
+            visible={Boolean(draftValue)}
+            onClear={() => setDraftValue('')}
+          />
+        ),
+      }}
+      sx={{
+        width: fullWidth ? '100%' : '200px',
+        '& .MuiOutlinedInput-root': inputFieldSx,
+      }}
+    />
   );
 };
 
@@ -884,37 +936,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
     </Tooltip>
   );
 
-  const searchField = (fullWidth = false) => (
-    <TextField
-      placeholder="Search..."
-      size="small"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      InputProps={{
-        startAdornment: (
-          <InputAdornment position="start">
-            <SearchIcon
-              sx={{
-                color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
-                fontSize: '1rem',
-              }}
-            />
-          </InputAdornment>
-        ),
-        endAdornment: (
-          <ClearSearchAdornment
-            visible={Boolean(searchQuery)}
-            onClear={() => setSearchQuery('')}
-          />
-        ),
-      }}
-      sx={{
-        width: fullWidth ? '100%' : '200px',
-        '& .MuiOutlinedInput-root': inputFieldSx,
-      }}
-    />
-  );
-
   const viewToggle = (
     <ViewModeToggle viewMode={viewMode} onChange={handleViewModeChange} />
   );
@@ -992,6 +1013,36 @@ const IssuesList: React.FC<IssuesListProps> = ({
         </Tooltip>
       </Box>
     </Box>
+  );
+
+  const optionsPortalFilters = (
+    <>
+      {sortSection}
+      <Box>
+        <Typography sx={sidebarLabelSx}>View</Typography>
+        {viewToggle}
+      </Box>
+      {rowsSection}
+      <Box>
+        <Typography sx={sidebarLabelSx}>Search</Typography>
+        <IssuesListSearchTextField fullWidth />
+      </Box>
+      <Box>
+        <Typography sx={sidebarLabelSx}>Chart</Typography>
+        <Stack direction="row" alignItems="center" spacing={1}>
+          {chartToggleButton}
+          <Typography
+            sx={{
+              fontFamily: '"JetBrains Mono", monospace',
+              fontSize: '0.78rem',
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
+            }}
+          >
+            {showChart ? 'Hide chart' : 'Show chart'}
+          </Typography>
+        </Stack>
+      </Box>
+    </>
   );
 
   const usePortal = !!portalTarget && isLargeScreen;
@@ -1080,31 +1131,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         },
       }}
     >
-      {sortSection}
-      <Box>
-        <Typography sx={sidebarLabelSx}>View</Typography>
-        {viewToggle}
-      </Box>
-      {rowsSection}
-      <Box>
-        <Typography sx={sidebarLabelSx}>Search</Typography>
-        {searchField(true)}
-      </Box>
-      <Box>
-        <Typography sx={sidebarLabelSx}>Chart</Typography>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          {chartToggleButton}
-          <Typography
-            sx={{
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '0.78rem',
-              color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
-            }}
-          >
-            {showChart ? 'Hide chart' : 'Show chart'}
-          </Typography>
-        </Stack>
-      </Box>
+      {optionsPortalFilters}
     </Popover>
   );
 
@@ -1127,43 +1154,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         gap: 2,
       }}
     >
-      {!usePortal && (
-        <Box sx={{ ml: 'auto' }}>
-          {optionsButton}
-          {optionsPopover}
-        </Box>
-      )}
-    </Box>
-  );
-
-  /* Sidebar-portaled toolbar — Sort, View, Rows, Search, and Chart. */
-  const sidebarToolbar = (
-    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-      {sortSection}
-      <Box>
-        <Typography sx={sidebarLabelSx}>View</Typography>
-        {viewToggle}
-      </Box>
-      {rowsSection}
-      <Box>
-        <Typography sx={sidebarLabelSx}>Search</Typography>
-        {searchField(true)}
-      </Box>
-      <Box>
-        <Typography sx={sidebarLabelSx}>Chart</Typography>
-        <Stack direction="row" alignItems="center" spacing={1}>
-          {chartToggleButton}
-          <Typography
-            sx={{
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '0.78rem',
-              color: alpha(theme.palette.common.white, TEXT_OPACITY.secondary),
-            }}
-          >
-            {showChart ? 'Hide chart' : 'Show chart'}
-          </Typography>
-        </Stack>
-      </Box>
+      {!usePortal && <Box sx={{ ml: 'auto' }}>{optionsButton}</Box>}
     </Box>
   );
 
@@ -1187,17 +1178,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
     </Collapse>
   );
 
-  const toolbar = (
-    <>
-      {usePortal ? (
-        <Portal container={portalTarget}>{sidebarToolbar}</Portal>
-      ) : (
-        inlineToolbar
-      )}
-      {chartCollapse}
-    </>
-  );
-
   const emptyState = (
     <Box sx={{ p: 4, textAlign: 'center' }}>
       <Typography
@@ -1219,61 +1199,76 @@ const IssuesList: React.FC<IssuesListProps> = ({
   );
 
   return (
-    <Card sx={cardSx} elevation={0}>
-      {toolbar}
+    <>
+      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+        <>
+          {usePortal && portalTarget && (
+            <Portal container={portalTarget}>
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+                {optionsPortalFilters}
+              </Box>
+            </Portal>
+          )}
+          {optionsPopover}
+        </>
+      </DebouncedSearchInput>
+      <Card sx={cardSx} elevation={0}>
+        {!usePortal ? inlineToolbar : null}
+        {chartCollapse}
 
-      {viewMode === 'cards' ? (
-        pagedIssues.length > 0 ? (
-          <>
-            <Grid container spacing={2}>
-              {pagedIssues.map((issue) => (
-                <Grid item xs={12} sm={6} md={4} key={issue.id}>
-                  <BountyCard
-                    issue={issue}
-                    href={getIssueHref ? getIssueHref(issue.id) : undefined}
-                    linkState={linkState}
-                    taoPrice={taoPrice}
-                    alphaPrice={alphaPrice}
-                  />
-                </Grid>
-              ))}
-            </Grid>
-            {paginationControl}
-          </>
+        {viewMode === 'cards' ? (
+          pagedIssues.length > 0 ? (
+            <>
+              <Grid container spacing={2}>
+                {pagedIssues.map((issue) => (
+                  <Grid item xs={12} sm={6} md={4} key={issue.id}>
+                    <BountyCard
+                      issue={issue}
+                      href={getIssueHref ? getIssueHref(issue.id) : undefined}
+                      linkState={linkState}
+                      taoPrice={taoPrice}
+                      alphaPrice={alphaPrice}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+              {paginationControl}
+            </>
+          ) : (
+            emptyState
+          )
         ) : (
-          emptyState
-        )
-      ) : (
-        <DataTable<IssueBounty, SortKey>
-          columns={columns}
-          rows={pagedIssues}
-          getRowKey={(issue) => issue.id}
-          getRowHref={
-            getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
-          }
-          linkState={linkState}
-          minWidth={
-            filterType === 'history'
-              ? '1000px'
-              : filterType === 'pending'
-                ? '900px'
-                : '750px'
-          }
-          emptyState={emptyState}
-          getRowSx={(issue) =>
-            issue.completedAt && isOutsideScoringWindow(issue.completedAt)
-              ? { opacity: 0.4, filter: 'grayscale(0.5)' }
-              : {}
-          }
-          sort={{
-            field: sortKey,
-            order: sortDirection,
-            onChange: handleSort,
-          }}
-          pagination={paginationControl}
-        />
-      )}
-    </Card>
+          <DataTable<IssueBounty, SortKey>
+            columns={columns}
+            rows={pagedIssues}
+            getRowKey={(issue) => issue.id}
+            getRowHref={
+              getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
+            }
+            linkState={linkState}
+            minWidth={
+              filterType === 'history'
+                ? '1000px'
+                : filterType === 'pending'
+                  ? '900px'
+                  : '750px'
+            }
+            emptyState={emptyState}
+            getRowSx={(issue) =>
+              issue.completedAt && isOutsideScoringWindow(issue.completedAt)
+                ? { opacity: 0.4, filter: 'grayscale(0.5)' }
+                : {}
+            }
+            sort={{
+              field: sortKey,
+              order: sortDirection,
+              onChange: handleSort,
+            }}
+            pagination={paginationControl}
+          />
+        )}
+      </Card>
+    </>
   );
 };
 

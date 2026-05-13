@@ -190,7 +190,7 @@ const TopMinersPage: React.FC = () => {
               borderBottom: '1px solid',
               borderColor: 'border.light',
               position: 'sticky',
-              top: 64,
+              top: 60,
               zIndex: 50,
               backgroundColor: (t) => alpha(t.palette.background.default, 0.85),
               backdropFilter: 'blur(12px)',
