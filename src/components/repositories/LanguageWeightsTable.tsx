@@ -20,6 +20,8 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import {
   echartsAxisTooltipChrome,
   echartsBarChartTitle,
@@ -39,6 +41,11 @@ interface LanguageRow {
   weight: string;
 }
 
+/** Row shown in the table: language data plus 1-based index in the full filtered list. */
+interface LanguageDisplayRow extends LanguageRow {
+  displayNumber: number;
+}
+
 const LanguageWeightsTable: React.FC = () => {
   const theme = useTheme();
   const { data: languages, isLoading } = useLanguagesAndWeights();
@@ -49,6 +56,16 @@ const LanguageWeightsTable: React.FC = () => {
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // Scrolls only the table's own scrollport back to the first row. Avoids the
+  // page-level `scrollIntoView` that used to fire from a `[rowsPerPage]` effect
+  // on mount and yanked the Onboard page to the table when Languages was opened.
+  const scrollTableToTop = () => {
+    const scrollport = containerRef.current?.querySelector(
+      '.MuiTableContainer-root',
+    );
+    scrollport?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleSort = (field: SortField) => {
     if (sortField === field) {
@@ -69,12 +86,12 @@ const LanguageWeightsTable: React.FC = () => {
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+    scrollTableToTop();
   };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value);
+  useEffect(() => {
     setPage(0);
-  };
+  }, [searchQuery]);
 
   const filteredAndSortedLanguages = useMemo<LanguageRow[]>(() => {
     if (!languages) return [];
@@ -121,6 +138,15 @@ const LanguageWeightsTable: React.FC = () => {
     const endIndex = startIndex + rowsPerPage;
     return filteredAndSortedLanguages.slice(startIndex, endIndex);
   }, [filteredAndSortedLanguages, page, rowsPerPage]);
+
+  const displayRows = useMemo<LanguageDisplayRow[]>(
+    () =>
+      paginatedLanguages.map((lang, i) => ({
+        ...lang,
+        displayNumber: page * rowsPerPage + i + 1,
+      })),
+    [paginatedLanguages, page, rowsPerPage],
+  );
 
   const chartOption = useMemo(() => {
     const chartData = paginatedLanguages;
@@ -188,16 +214,6 @@ const LanguageWeightsTable: React.FC = () => {
     };
   }, [paginatedLanguages, theme]);
 
-  // Scroll to top when rows per page changes
-  useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }
-  }, [rowsPerPage]);
-
   const sortLabelHeaderSx = {
     '& .MuiTableSortLabel-root:hover': { color: 'secondary.main' },
     '& .MuiTableSortLabel-root.Mui-active': { color: 'secondary.main' },
@@ -206,8 +222,15 @@ const LanguageWeightsTable: React.FC = () => {
     },
   } as const;
 
-  const columns = useMemo<DataTableColumn<LanguageRow, SortField>[]>(
+  const columns = useMemo<DataTableColumn<LanguageDisplayRow, SortField>[]>(
     () => [
+      {
+        key: 'count',
+        header: '#',
+        width: 52,
+        align: 'right',
+        renderCell: (row) => row.displayNumber,
+      },
       {
         key: 'extension',
         header: 'Extension',
@@ -335,8 +358,9 @@ const LanguageWeightsTable: React.FC = () => {
               <Select
                 value={rowsPerPage}
                 onChange={(e) => {
-                  setRowsPerPage(e.target.value as number);
+                  setRowsPerPage(Number(e.target.value));
                   setPage(0);
+                  scrollTableToTop();
                 }}
                 sx={{
                   color: theme.palette.text.primary,
@@ -362,42 +386,60 @@ const LanguageWeightsTable: React.FC = () => {
               </Select>
             </Box>
           </FormControl>
-          <TextField
-            placeholder="Search..."
-            size="small"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search
-                    sx={{
-                      color: alpha(
-                        theme.palette.common.white,
-                        TEXT_OPACITY.muted,
-                      ),
-                      fontSize: '1rem',
-                    }}
-                  />
-                </InputAdornment>
-              ),
-            }}
-            sx={{
-              width: { xs: '100%', sm: '200px' },
-              '& .MuiOutlinedInput-root': {
-                color: theme.palette.text.primary,
-                backgroundColor: alpha(theme.palette.common.black, 0.4),
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                '& fieldset': { borderColor: theme.palette.border.light },
-                '&:hover fieldset': {
-                  borderColor: theme.palette.border.medium,
-                },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-              },
-            }}
-          />
+          <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+            {({ draftValue, setDraftValue }) => (
+              <TextField
+                placeholder="Search..."
+                size="small"
+                value={draftValue}
+                onChange={(e) => {
+                  setDraftValue(e.target.value);
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search
+                        sx={{
+                          color: alpha(
+                            theme.palette.common.white,
+                            TEXT_OPACITY.muted,
+                          ),
+                          fontSize: '1rem',
+                        }}
+                      />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <ClearSearchAdornment
+                      visible={Boolean(draftValue)}
+                      onClear={() => setDraftValue('')}
+                      sx={{
+                        color: alpha(
+                          theme.palette.common.white,
+                          TEXT_OPACITY.muted,
+                        ),
+                      }}
+                    />
+                  ),
+                }}
+                sx={{
+                  width: { xs: '100%', sm: '200px' },
+                  '& .MuiOutlinedInput-root': {
+                    color: theme.palette.text.primary,
+                    backgroundColor: alpha(theme.palette.common.black, 0.4),
+                    fontSize: '0.8rem',
+                    height: '36px',
+                    borderRadius: 2,
+                    '& fieldset': { borderColor: theme.palette.border.light },
+                    '&:hover fieldset': {
+                      borderColor: theme.palette.border.medium,
+                    },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                  },
+                }}
+              />
+            )}
+          </DebouncedSearchInput>
         </Box>
       </Box>
 
@@ -419,31 +461,28 @@ const LanguageWeightsTable: React.FC = () => {
         </Box>
       </Collapse>
 
-      <Box
-        sx={{
-          maxHeight: '800px',
-          overflowY: 'auto',
+      <DataTable<LanguageDisplayRow, SortField>
+        columns={columns}
+        rows={displayRows}
+        getRowKey={(row) => `${row.displayNumber}-${row.extension}`}
+        isLoading={isLoading}
+        stickyHeader
+        tableContainerSx={{
+          maxHeight: 'min(800px, 75vh)',
+          overflow: 'auto',
           backgroundColor: 'transparent',
           ...scrollbarSx,
         }}
-      >
-        <DataTable<LanguageRow, SortField>
-          columns={columns}
-          rows={paginatedLanguages}
-          getRowKey={(lang) => lang.extension}
-          isLoading={isLoading}
-          stickyHeader
-          emptyState={null}
-          getRowSx={() => ({
-            '&:hover': { backgroundColor: 'action.hover' },
-          })}
-          sort={{
-            field: sortField,
-            order: sortOrder,
-            onChange: handleSort,
-          }}
-        />
-      </Box>
+        emptyState={null}
+        getRowSx={() => ({
+          '&:hover': { backgroundColor: 'action.hover' },
+        })}
+        sort={{
+          field: sortField,
+          order: sortOrder,
+          onChange: handleSort,
+        }}
+      />
 
       <TablePagination
         rowsPerPageOptions={[]}

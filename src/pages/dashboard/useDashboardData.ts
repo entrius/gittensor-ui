@@ -12,6 +12,7 @@ import {
   useAllMiners,
   useAllPrs,
   useIssues,
+  useMinersIssues,
   useReposAndWeights,
 } from '../../api';
 import {
@@ -19,6 +20,7 @@ import {
   type DatasetState,
   type IssueBounty,
   type MinerEvaluation,
+  type MinerIssue,
   type Repository,
 } from '../../api/models';
 import {
@@ -28,6 +30,8 @@ import {
   buildFeaturedContributors,
   buildFeaturedWork,
   buildFeaturedDiscoveryContributors,
+  flattenMinerIssues,
+  getMirrorSinceParam,
   type TrendTimeRange,
 } from './dashboardData';
 
@@ -36,13 +40,46 @@ type DashboardDatasets = {
   miners: DatasetState<MinerEvaluation>;
   issues: DatasetState<IssueBounty>;
   repos: DatasetState<Repository>;
+  minerIssues: DatasetState<MinerIssue>;
 };
 
-const useDashboardData = (range: TrendTimeRange) => {
+const hasIssueActivity = (miner: MinerEvaluation): boolean =>
+  (miner.totalSolvedIssues ?? 0) +
+    (miner.totalOpenIssues ?? 0) +
+    (miner.totalClosedIssues ?? 0) >
+  0;
+
+export const useDashboardData = (range: TrendTimeRange) => {
   const prsQuery = useAllPrs();
   const minersQuery = useAllMiners();
   const issuesQuery = useIssues();
   const reposQuery = useReposAndWeights();
+
+  // Fan-out per-miner mirror calls; gate on issue activity to bound parallel requests.
+  const activeMinerGithubIds = useMemo(
+    () =>
+      (minersQuery.data ?? [])
+        .filter(hasIssueActivity)
+        .map((m) => m.githubId)
+        .filter((id): id is string => Boolean(id)),
+    [minersQuery.data],
+  );
+
+  const minerIssuesSince = getMirrorSinceParam(range);
+  const minerIssuesQueries = useMinersIssues(
+    activeMinerGithubIds,
+    activeMinerGithubIds.length > 0,
+    minerIssuesSince,
+  );
+
+  const minerIssuesData = useMemo<MinerIssue[]>(
+    () => flattenMinerIssues(minerIssuesQueries.map((q) => q.data ?? [])),
+    [minerIssuesQueries],
+  );
+  const isMinerIssuesLoading =
+    activeMinerGithubIds.length > 0 &&
+    minerIssuesQueries.some((q) => q.isLoading);
+  const isMinerIssuesError = minerIssuesQueries.some((q) => q.isError);
 
   const datasets: DashboardDatasets = {
     prs: {
@@ -65,6 +102,11 @@ const useDashboardData = (range: TrendTimeRange) => {
       isLoading: reposQuery.isLoading,
       isError: reposQuery.isError,
     },
+    minerIssues: {
+      data: minerIssuesData,
+      isLoading: isMinerIssuesLoading,
+      isError: isMinerIssuesError,
+    },
   };
 
   const overview = useMemo(
@@ -75,8 +117,12 @@ const useDashboardData = (range: TrendTimeRange) => {
 
   const trendData = useMemo(
     () =>
-      buildDashboardTrendData(datasets.prs.data, datasets.issues.data, range),
-    [datasets.issues.data, datasets.prs.data, range],
+      buildDashboardTrendData(
+        datasets.prs.data,
+        datasets.minerIssues.data,
+        range,
+      ),
+    [datasets.minerIssues.data, datasets.prs.data, range],
   );
 
   const featuredContributors = useMemo(
@@ -99,8 +145,9 @@ const useDashboardData = (range: TrendTimeRange) => {
   );
 
   const kpis = useMemo(
-    () => buildDashboardKpis(datasets.prs.data, datasets.issues.data, range),
-    [datasets.issues.data, datasets.prs.data, range],
+    () =>
+      buildDashboardKpis(datasets.prs.data, datasets.minerIssues.data, range),
+    [datasets.minerIssues.data, datasets.prs.data, range],
   );
 
   const isFeaturedWorkLoading =
@@ -119,11 +166,13 @@ const useDashboardData = (range: TrendTimeRange) => {
     isLoading:
       datasets.prs.isLoading ||
       datasets.miners.isLoading ||
-      datasets.issues.isLoading,
+      datasets.issues.isLoading ||
+      datasets.minerIssues.isLoading,
     isError:
       datasets.prs.isError ||
       datasets.miners.isError ||
-      datasets.issues.isError,
+      datasets.issues.isError ||
+      datasets.minerIssues.isError,
   };
 };
 

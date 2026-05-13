@@ -1,6 +1,4 @@
 import React, { useState, useMemo, useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
-import axios from 'axios';
 import { formatDistanceToNow } from 'date-fns';
 import {
   Alert,
@@ -23,10 +21,12 @@ import {
   Search as SearchIcon,
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
-import { useMinerGithubData, useMinerPRs } from '../../api';
+import { useQuery } from '@tanstack/react-query';
+import { githubFetch, useMinerGithubData, useMinerPRs } from '../../api';
 import { getRepositoryOwnerAvatarSrc, paginateItems } from '../../utils';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
-import ExplorerFilterButton from './ExplorerFilterButton';
+import FilterButton from '../FilterButton';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import TablePagination from './TablePagination';
 import {
   selectMinerIssueScanRepos,
@@ -106,11 +106,13 @@ interface GithubIssueTimelineEvent {
 const fetchLinkedPrNumberForIssue = async (
   repositoryFullName: string,
   issueNumber: number,
+  signal: AbortSignal,
 ): Promise<number | null> => {
   try {
-    const { data } = await axios.get<GithubIssueTimelineEvent[]>(
+    const data = await githubFetch<GithubIssueTimelineEvent[]>(
       `https://api.github.com/repos/${repositoryFullName}/issues/${issueNumber}/timeline`,
       {
+        signal,
         headers: {
           Accept: 'application/vnd.github+json',
           'X-GitHub-Api-Version': '2022-11-28',
@@ -131,10 +133,12 @@ const fetchLinkedPrNumberForIssue = async (
 
 const fetchGithubIssuesByAuthor = async (
   login: string,
+  signal: AbortSignal,
 ): Promise<RepositoryIssue[]> => {
-  const { data } = await axios.get<GithubSearchIssuesResponse>(
+  const data = await githubFetch<GithubSearchIssuesResponse>(
     'https://api.github.com/search/issues',
     {
+      signal,
       params: { q: `is:issue author:${login}`, per_page: 100 },
     },
   );
@@ -165,6 +169,7 @@ const fetchGithubIssuesByAuthor = async (
       const prNumber = await fetchLinkedPrNumberForIssue(
         issue.repositoryFullName,
         issue.number,
+        signal,
       );
       return { ...issue, prNumber } satisfies RepositoryIssue;
     }),
@@ -246,9 +251,9 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
     isLoading: isLoadingAuthoredIssues,
     isFetching: isFetchingAuthoredIssues,
     isError: isAuthorFallbackError,
-  } = useQuery({
+  } = useQuery<RepositoryIssue[], Error>({
     queryKey: ['githubAuthorIssues', login],
-    queryFn: () => fetchGithubIssuesByAuthor(login),
+    queryFn: ({ signal }) => fetchGithubIssuesByAuthor(login, signal),
     enabled: !!login,
     staleTime: 60_000,
     retry: 1,
@@ -847,6 +852,12 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                 />
               </InputAdornment>
             ),
+            endAdornment: (
+              <ClearSearchAdornment
+                visible={Boolean(search)}
+                onClear={() => onSearchChange('')}
+              />
+            ),
           }}
           sx={{
             width: { xs: '100%', sm: 'auto' },
@@ -877,38 +888,38 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
             },
           }}
         >
-          <ExplorerFilterButton
+          <FilterButton
             label="All"
             count={counts.all}
             color={theme.palette.status.neutral}
-            selected={filter === 'all'}
+            isActive={filter === 'all'}
             onClick={() => {
               onFilterChange('all');
             }}
           />
-          <ExplorerFilterButton
+          <FilterButton
             label="Open"
             count={counts.open}
             color={theme.palette.status.open}
-            selected={filter === 'open'}
+            isActive={filter === 'open'}
             onClick={() => {
               onFilterChange('open');
             }}
           />
-          <ExplorerFilterButton
+          <FilterButton
             label="Solved"
             count={counts.solved}
             color={theme.palette.status.merged}
-            selected={filter === 'solved'}
+            isActive={filter === 'solved'}
             onClick={() => {
               onFilterChange('solved');
             }}
           />
-          <ExplorerFilterButton
+          <FilterButton
             label="Closed"
             count={counts.closed}
             color={theme.palette.status.closed}
-            selected={filter === 'closed'}
+            isActive={filter === 'closed'}
             onClick={() => {
               onFilterChange('closed');
             }}
