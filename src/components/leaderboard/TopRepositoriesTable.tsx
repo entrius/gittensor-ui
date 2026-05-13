@@ -55,7 +55,11 @@ import ReactECharts from 'echarts-for-react';
 import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
-import { ClearSearchAdornment, WatchlistButton } from '../common';
+import {
+  ClearSearchAdornment,
+  ChartEmptyPanel,
+  WatchlistButton,
+} from '../common';
 import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import {
   compareByWatchlist,
@@ -1414,12 +1418,20 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             backgroundColor: 'surface.subtle',
           }}
         >
-          {showChart && chartTopRepositories.length > 0 && (
-            <ReactECharts
-              option={getChartOption()}
-              style={{ height: '100%', width: '100%' }}
-            />
-          )}
+          {showChart &&
+            (chartTopRepositories.length > 0 ? (
+              <ReactECharts
+                option={getChartOption()}
+                style={{ height: '100%', width: '100%' }}
+              />
+            ) : (
+              <ChartEmptyPanel
+                empty
+                minHeight="100%"
+                title="No repositories to chart"
+                hint="Adjust filters or search so at least one repository appears in the list, or switch back to table view."
+              />
+            ))}
         </Box>
       </Collapse>
 
