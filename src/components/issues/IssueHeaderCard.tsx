@@ -94,9 +94,10 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             sx={{
               fontFamily:
                 '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-              fontSize: '1.5rem',
+              fontSize: { xs: '1.15rem', sm: '1.5rem' },
               fontWeight: 600,
               color: 'text.primary',
+              wordBreak: 'break-word',
             }}
           >
             {issue.title}
