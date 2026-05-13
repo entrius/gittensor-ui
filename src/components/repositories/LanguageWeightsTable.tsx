@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useEffect, useState, useMemo, useRef } from 'react';
 import {
   Box,
   TablePagination,
@@ -20,6 +20,7 @@ import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import {
   echartsAxisTooltipChrome,
@@ -49,6 +50,7 @@ const LanguageWeightsTable: React.FC = () => {
   const theme = useTheme();
   const { data: languages, isLoading } = useLanguagesAndWeights();
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery);
   const [sortField, setSortField] = useState<SortField>('weight');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [showChart, setShowChart] = useState(false);
@@ -90,14 +92,17 @@ const LanguageWeightsTable: React.FC = () => {
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setSearchQuery(event.target.value);
-    setPage(0);
   };
+
+  useEffect(() => {
+    setPage(0);
+  }, [debouncedSearchQuery]);
 
   const filteredAndSortedLanguages = useMemo<LanguageRow[]>(() => {
     if (!languages) return [];
 
     const filtered = languages.filter((lang) => {
-      const searchLower = searchQuery.toLowerCase();
+      const searchLower = debouncedSearchQuery.toLowerCase();
       return (
         lang.extension.toLowerCase().includes(searchLower) ||
         (lang.language && lang.language.toLowerCase().includes(searchLower))
@@ -131,7 +136,7 @@ const LanguageWeightsTable: React.FC = () => {
     });
 
     return filtered;
-  }, [languages, searchQuery, sortField, sortOrder]);
+  }, [languages, debouncedSearchQuery, sortField, sortOrder]);
 
   const paginatedLanguages = useMemo(() => {
     const startIndex = page * rowsPerPage;

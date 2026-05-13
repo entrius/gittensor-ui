@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { useMinerPRs, useReposAndWeights, useIssues } from '../../api';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { LinkBox } from '../common/linkBehavior';
 import {
   DataTable,
@@ -84,6 +85,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     useState<IssueRepoSortField>('issueTokenScore');
   const [issueSortOrder, setIssueSortOrder] = useState<SortOrder>('desc');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery);
   const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
   const [page, setPage] = useState(0);
 
@@ -180,13 +182,13 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
   );
 
   const filteredRepoStats = useMemo(
-    () => filterBySearch(statusFilteredRepoStats, searchQuery),
-    [statusFilteredRepoStats, searchQuery],
+    () => filterBySearch(statusFilteredRepoStats, debouncedSearchQuery),
+    [statusFilteredRepoStats, debouncedSearchQuery],
   );
 
   const filteredIssueRepoStats = useMemo(
-    () => filterBySearch(statusFilteredIssueRepoStats, searchQuery),
-    [statusFilteredIssueRepoStats, searchQuery],
+    () => filterBySearch(statusFilteredIssueRepoStats, debouncedSearchQuery),
+    [statusFilteredIssueRepoStats, debouncedSearchQuery],
   );
 
   const sortedRepoStats = useMemo(

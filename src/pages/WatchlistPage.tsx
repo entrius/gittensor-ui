@@ -47,6 +47,7 @@ import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
+import { useDebouncedValue } from '../hooks/useDebouncedValue';
 import { useTwitterStickySidebar } from '../hooks/useTwitterStickySidebar';
 import {
   TopMinersTable,
@@ -1636,6 +1637,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allMiners } = useAllMiners();
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery);
   const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [showChart, setShowChart] = useState(false);
@@ -1653,7 +1655,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
+  }, [statusFilter, debouncedSearchQuery, sortField, sortOrder, viewMode]);
 
   const handleSort = (field: RepoSortKey) => {
     if (sortField === field) {
@@ -1731,11 +1733,11 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     else if (statusFilter === 'inactive')
       result = result.filter((r) => !isRepoActive(r));
 
-    const q = searchQuery.trim().toLowerCase();
+    const q = debouncedSearchQuery.trim().toLowerCase();
     if (q) result = result.filter((r) => r.fullName.toLowerCase().includes(q));
 
     return result;
-  }, [items, statusFilter, searchQuery]);
+  }, [items, statusFilter, debouncedSearchQuery]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -2422,6 +2424,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   }, [allIssues, itemKeys]);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery);
   const [statusFilter, setStatusFilter] = useState<BountyStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
@@ -2437,7 +2440,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
+  }, [statusFilter, debouncedSearchQuery, sortField, sortOrder, viewMode]);
 
   const handleSort = (field: BountySortKey) => {
     if (sortField === field) {
@@ -2452,8 +2455,12 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const counts = useMemo(() => getBountyCounts(items), [items]);
 
   const filtered = useMemo(
-    () => filterBounties(items, { statusFilter, searchQuery }),
-    [items, statusFilter, searchQuery],
+    () =>
+      filterBounties(items, {
+        statusFilter,
+        searchQuery: debouncedSearchQuery,
+      }),
+    [items, statusFilter, debouncedSearchQuery],
   );
 
   const sorted = useMemo(() => {
@@ -3210,6 +3217,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { isWatched } = useWatchlist('prs');
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery);
   const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
@@ -3225,7 +3233,14 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode, isWatched]);
+  }, [
+    statusFilter,
+    debouncedSearchQuery,
+    sortField,
+    sortOrder,
+    viewMode,
+    isWatched,
+  ]);
 
   const handleSort = (field: PrSortKey) => {
     if (sortField === field) {
@@ -3246,10 +3261,10 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const filtered = useMemo(() => {
     return filterPrs(items, {
       statusFilter,
-      searchQuery,
+      searchQuery: debouncedSearchQuery,
       includeNumber: true,
     });
-  }, [items, statusFilter, searchQuery]);
+  }, [items, statusFilter, debouncedSearchQuery]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -4048,6 +4063,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   }, [issueQueries]);
 
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery);
   const [statusFilter, setStatusFilter] = useState<IssueStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
@@ -4063,7 +4079,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
 
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
+  }, [statusFilter, debouncedSearchQuery, sortField, sortOrder, viewMode]);
 
   const handleSort = (field: IssueSortKey) => {
     if (sortField === field) {
@@ -4078,8 +4094,12 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   const counts = useMemo(() => getIssueCounts(items), [items]);
 
   const filtered = useMemo(
-    () => filterIssues(items, { statusFilter, searchQuery }),
-    [items, statusFilter, searchQuery],
+    () =>
+      filterIssues(items, {
+        statusFilter,
+        searchQuery: debouncedSearchQuery,
+      }),
+    [items, statusFilter, debouncedSearchQuery],
   );
 
   const sorted = useMemo(() => {

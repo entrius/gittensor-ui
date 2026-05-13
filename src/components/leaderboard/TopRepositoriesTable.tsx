@@ -61,6 +61,7 @@ import {
   getRepositoryOwnerAvatarSrc,
   truncateText,
 } from '../../utils';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { useWatchlist } from '../../hooks/useWatchlist';
 import { RankIcon } from './RankIcon';
 import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
@@ -238,6 +239,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     urlDir === 'asc' || urlDir === 'desc' ? urlDir : 'desc',
   );
   const [useLogScale, setUseLogScale] = useState(true);
+  const debouncedSearchQuery = useDebouncedValue(searchQuery);
   const chartMetricKey: ChartMetricKey = VALID_CHART_METRIC_KEYS.has(
     sortColumn as ChartMetricKey,
   )
@@ -392,15 +394,15 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     }
 
     // Apply search filter
-    if (searchQuery) {
-      const lowerQuery = searchQuery.toLowerCase();
+    if (debouncedSearchQuery) {
+      const lowerQuery = debouncedSearchQuery.toLowerCase();
       filtered = filtered.filter((repo) =>
         repo.repository?.toLowerCase().includes(lowerQuery),
       );
     }
 
     return filtered;
-  }, [rankedRepositories, statusFilter, searchQuery]);
+  }, [rankedRepositories, statusFilter, debouncedSearchQuery]);
 
   const maxWeight = useMemo(
     () => rankedRepositories.reduce((m, r) => (r.weight > m ? r.weight : m), 0),
@@ -1122,8 +1124,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       return;
     }
     setPage(0);
-    syncToUrl({ search: searchQuery, page: '0' });
-  }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
+    syncToUrl({ search: debouncedSearchQuery, page: '0' });
+  }, [debouncedSearchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (isLoading) {
     return (

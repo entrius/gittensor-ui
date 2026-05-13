@@ -42,6 +42,7 @@ import {
   usePullRequestDetails,
   type CommitLog,
 } from '../../api';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import {
   parseNumber,
@@ -953,6 +954,7 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery);
   const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
 
   const statusFilter = scoreStatusFromSearchParam(
@@ -1017,11 +1019,11 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
   const prevSearchRef = useRef<string | null>(null);
   useEffect(() => {
     if (prevSearchRef.current === null) {
-      prevSearchRef.current = searchQuery;
+      prevSearchRef.current = debouncedSearchQuery;
       return;
     }
-    if (prevSearchRef.current === searchQuery) return;
-    prevSearchRef.current = searchQuery;
+    if (prevSearchRef.current === debouncedSearchQuery) return;
+    prevSearchRef.current = debouncedSearchQuery;
     setSearchParams(
       (prev) => {
         const p = new URLSearchParams(prev);
@@ -1030,7 +1032,7 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
       },
       { replace: true },
     );
-  }, [searchQuery, setSearchParams]);
+  }, [debouncedSearchQuery, setSearchParams]);
 
   useEffect(() => {
     if (!isMobile) setIsMobileSearchOpen(false);
@@ -1058,7 +1060,7 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
     let list = [...filterPrs(prs, { statusFilter })].sort(
       (a, b) => parseFloat(b.score || '0') - parseFloat(a.score || '0'),
     );
-    const q = searchQuery.trim().toLowerCase();
+    const q = debouncedSearchQuery.trim().toLowerCase();
     if (q) {
       list = list.filter((pr) => {
         const title = (pr.pullRequestTitle || '').toLowerCase();
@@ -1073,7 +1075,7 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
       });
     }
     return list;
-  }, [prs, statusFilter, searchQuery]);
+  }, [prs, statusFilter, debouncedSearchQuery]);
 
   const paging = useMemo(() => {
     const isAllRows = pageSize === 'all';

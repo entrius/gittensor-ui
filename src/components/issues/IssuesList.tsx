@@ -34,6 +34,7 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ReactECharts from 'echarts-for-react';
 import { format } from 'date-fns';
 import { IssueBounty } from '../../api/models/Issues';
+import { useDebouncedValue } from '../../hooks/useDebouncedValue';
 import { usePrices } from '../../hooks/usePrices';
 import {
   formatAlphaToUsd,
@@ -207,6 +208,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const [sortKey, setSortKey] = useState<SortKey>('id');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [searchQuery, setSearchQuery] = useState('');
+  const debouncedSearchQuery = useDebouncedValue(searchQuery);
   const [showChart, setShowChart] = useState(false);
 
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
@@ -263,15 +265,15 @@ const IssuesList: React.FC<IssuesListProps> = ({
   }, [issues, filterType]);
 
   const filteredIssues = useMemo(() => {
-    if (!searchQuery) return filteredByType;
-    const q = searchQuery.toLowerCase();
+    if (!debouncedSearchQuery) return filteredByType;
+    const q = debouncedSearchQuery.toLowerCase();
     return filteredByType.filter(
       (i) =>
         i.repositoryFullName.toLowerCase().includes(q) ||
         i.title?.toLowerCase().includes(q) ||
         String(i.issueNumber).includes(q),
     );
-  }, [filteredByType, searchQuery]);
+  }, [filteredByType, debouncedSearchQuery]);
 
   const getDefaultSortDirection = useCallback(
     (key: SortKey): SortDirection =>
