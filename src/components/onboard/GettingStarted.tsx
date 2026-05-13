@@ -14,7 +14,12 @@ import CheckIcon from '@mui/icons-material/Check';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { alpha, darken, useTheme } from '@mui/material/styles';
-import { STATUS_COLORS, scrollbarSx, tooltipSlotProps } from '../../theme';
+import {
+  STATUS_COLORS,
+  UI_COLORS,
+  scrollbarSx,
+  tooltipSlotProps,
+} from '../../theme';
 import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 
 const GREEN = STATUS_COLORS.merged;
@@ -467,8 +472,8 @@ uv pip install -e .`}</CodeBlock>
               sx={{
                 p: 2.5,
                 borderRadius: 1.5,
-                border: `1px solid ${alpha('#facc15', 0.3)}`,
-                background: `linear-gradient(180deg, ${alpha('#facc15', 0.06)} 0%, transparent 100%)`,
+                border: `1px solid ${alpha(STATUS_COLORS.warning, 0.3)}`,
+                background: `linear-gradient(180deg, ${alpha(STATUS_COLORS.warning, 0.06)} 0%, transparent 100%)`,
               }}
             >
               <Box
@@ -479,7 +484,7 @@ uv pip install -e .`}</CodeBlock>
                     fontFamily: MONO,
                     fontSize: '1.4rem',
                     fontWeight: 800,
-                    color: '#facc15',
+                    color: STATUS_COLORS.warning,
                     letterSpacing: '-0.03em',
                     lineHeight: 1,
                   }}
@@ -524,7 +529,7 @@ uv pip install -e .`}</CodeBlock>
                 sx={{
                   fontFamily: MONO,
                   fontSize: '0.72rem',
-                  color: '#facc15',
+                  color: STATUS_COLORS.warning,
                   fontWeight: 600,
                   letterSpacing: '0.02em',
                 }}
@@ -634,7 +639,7 @@ export const GettingStarted: React.FC = () => {
             fontSize: { xs: '2.5rem', md: '4rem' },
             fontWeight: 800,
             letterSpacing: '-0.03em',
-            color: '#ffffff',
+            color: UI_COLORS.white,
             lineHeight: 1,
           }}
         >
@@ -646,7 +651,7 @@ export const GettingStarted: React.FC = () => {
             fontWeight: 200,
             fontStyle: 'italic',
             letterSpacing: '-0.03em',
-            color: alpha('#ffffff', 0.5),
+            color: alpha(UI_COLORS.white, 0.5),
             lineHeight: 1,
           }}
         >
@@ -665,7 +670,7 @@ export const GettingStarted: React.FC = () => {
             right: { xs: 'auto', md: '7%' },
             width: { xs: 2, md: 'auto' },
             height: { xs: 'calc(100% - 22px)', md: 2 },
-            bgcolor: alpha('#ffffff', 0.08),
+            bgcolor: alpha(UI_COLORS.white, 0.08),
             zIndex: 0,
           }}
         />
@@ -735,11 +740,11 @@ export const GettingStarted: React.FC = () => {
                     borderColor:
                       isActive || isComplete
                         ? stepAccent
-                        : alpha('#ffffff', 0.12),
+                        : alpha(UI_COLORS.white, 0.12),
                     color:
                       isActive || isComplete
                         ? stepAccent
-                        : alpha('#ffffff', 0.45),
+                        : alpha(UI_COLORS.white, 0.45),
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -771,10 +776,10 @@ export const GettingStarted: React.FC = () => {
                       fontSize: '0.78rem',
                       fontWeight: isActive ? 600 : 500,
                       color: isActive
-                        ? '#ffffff'
+                        ? UI_COLORS.white
                         : isComplete
-                          ? alpha('#ffffff', 0.75)
-                          : alpha('#ffffff', 0.55),
+                          ? alpha(UI_COLORS.white, 0.75)
+                          : alpha(UI_COLORS.white, 0.55),
                       letterSpacing: '-0.005em',
                       mb: 0.25,
                       transition: 'color 0.2s',
@@ -786,7 +791,7 @@ export const GettingStarted: React.FC = () => {
                     sx={{
                       fontFamily: MONO,
                       fontSize: '0.65rem',
-                      color: alpha('#ffffff', 0.35),
+                      color: alpha(UI_COLORS.white, 0.35),
                       letterSpacing: '0.02em',
                       maxWidth: { md: 110 },
                       mx: { md: 'auto' },
@@ -806,9 +811,9 @@ export const GettingStarted: React.FC = () => {
       <Box
         sx={{
           position: 'relative',
-          border: `1px solid ${alpha('#ffffff', 0.08)}`,
+          border: `1px solid ${alpha(UI_COLORS.white, 0.08)}`,
           borderRadius: 2,
-          background: alpha('#ffffff', 0.02),
+          background: alpha(UI_COLORS.white, 0.02),
           overflow: 'hidden',
           mb: 5,
         }}
@@ -853,7 +858,7 @@ export const GettingStarted: React.FC = () => {
                   fontSize: '0.65rem',
                   fontWeight: 700,
                   letterSpacing: '0.2em',
-                  color: alpha('#ffffff', 0.4),
+                  color: alpha(UI_COLORS.white, 0.4),
                   textTransform: 'uppercase',
                   mb: 0.5,
                 }}
@@ -864,7 +869,7 @@ export const GettingStarted: React.FC = () => {
                 sx={{
                   fontSize: { xs: '1.5rem', md: '2rem' },
                   fontWeight: 700,
-                  color: '#ffffff',
+                  color: UI_COLORS.white,
                   letterSpacing: '-0.02em',
                   lineHeight: 1.1,
                 }}
@@ -886,7 +891,7 @@ export const GettingStarted: React.FC = () => {
               alignItems: 'center',
               justifyContent: 'space-between',
               pt: 3,
-              borderTop: `1px solid ${alpha('#ffffff', 0.06)}`,
+              borderTop: `1px solid ${alpha(UI_COLORS.white, 0.06)}`,
               gap: 2,
               flexWrap: 'wrap',
             }}
@@ -896,20 +901,20 @@ export const GettingStarted: React.FC = () => {
               disabled={activeStep === 0}
               startIcon={<ArrowBackIcon />}
               sx={{
-                color: alpha('#ffffff', 0.7),
+                color: alpha(UI_COLORS.white, 0.7),
                 fontWeight: 500,
                 textTransform: 'none',
                 px: 2,
                 py: 0.75,
                 borderRadius: 1.5,
-                border: `1px solid ${alpha('#ffffff', 0.12)}`,
+                border: `1px solid ${alpha(UI_COLORS.white, 0.12)}`,
                 '&:hover': {
-                  background: alpha('#ffffff', 0.04),
-                  borderColor: alpha('#ffffff', 0.25),
+                  background: alpha(UI_COLORS.white, 0.04),
+                  borderColor: alpha(UI_COLORS.white, 0.25),
                 },
                 '&.Mui-disabled': {
-                  color: alpha('#ffffff', 0.2),
-                  borderColor: alpha('#ffffff', 0.06),
+                  color: alpha(UI_COLORS.white, 0.2),
+                  borderColor: alpha(UI_COLORS.white, 0.06),
                 },
               }}
             >
@@ -920,7 +925,7 @@ export const GettingStarted: React.FC = () => {
               sx={{
                 fontFamily: MONO,
                 fontSize: '0.7rem',
-                color: alpha('#ffffff', 0.4),
+                color: alpha(UI_COLORS.white, 0.4),
                 letterSpacing: '0.1em',
               }}
             >
@@ -938,7 +943,7 @@ export const GettingStarted: React.FC = () => {
                 background: isFinal
                   ? 'transparent'
                   : `linear-gradient(135deg, ${nextAccent} 0%, ${alpha(nextAccent, 0.8)} 100%)`,
-                color: nextAccent === BLUE ? '#000000' : '#ffffff',
+                color: nextAccent === BLUE ? UI_COLORS.black : UI_COLORS.white,
                 fontWeight: 600,
                 textTransform: 'none',
                 px: 2.5,
@@ -954,7 +959,7 @@ export const GettingStarted: React.FC = () => {
                     : `0 0 24px ${alpha(nextAccent, 0.55)}`,
                 },
                 '&.Mui-disabled': {
-                  color: alpha('#ffffff', 0.2),
+                  color: alpha(UI_COLORS.white, 0.2),
                 },
               }}
             >
@@ -969,7 +974,7 @@ export const GettingStarted: React.FC = () => {
         sx={{
           p: { xs: 3, md: 4 },
           borderRadius: 2,
-          border: `1px solid ${alpha('#ffffff', 0.08)}`,
+          border: `1px solid ${alpha(UI_COLORS.white, 0.08)}`,
           background: `linear-gradient(135deg, ${alpha(theme.palette.primary.main, 0.08)} 0%, ${alpha(GREEN, 0.04)} 100%)`,
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
@@ -996,7 +1001,7 @@ export const GettingStarted: React.FC = () => {
             sx={{
               fontSize: { xs: '1.1rem', md: '1.3rem' },
               fontWeight: 600,
-              color: '#ffffff',
+              color: UI_COLORS.white,
               letterSpacing: '-0.01em',
             }}
           >
@@ -1009,9 +1014,9 @@ export const GettingStarted: React.FC = () => {
           rel="noopener noreferrer"
           endIcon={<OpenInNewIcon />}
           sx={{
-            background: alpha('#ffffff', 0.08),
-            border: `1px solid ${alpha('#ffffff', 0.2)}`,
-            color: '#ffffff',
+            background: alpha(UI_COLORS.white, 0.08),
+            border: `1px solid ${alpha(UI_COLORS.white, 0.2)}`,
+            color: UI_COLORS.white,
             fontWeight: 600,
             fontSize: '0.9rem',
             textTransform: 'none',
@@ -1020,8 +1025,8 @@ export const GettingStarted: React.FC = () => {
             borderRadius: 1.5,
             whiteSpace: 'nowrap',
             '&:hover': {
-              background: alpha('#ffffff', 0.15),
-              borderColor: alpha('#ffffff', 0.35),
+              background: alpha(UI_COLORS.white, 0.15),
+              borderColor: alpha(UI_COLORS.white, 0.35),
             },
           }}
         >

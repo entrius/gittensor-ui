@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Box, Typography, ButtonBase, Button, alpha } from '@mui/material';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
-import { CREDIBILITY_COLORS } from '../../theme';
+import { CREDIBILITY_COLORS, UI_COLORS } from '../../theme';
 
 const MONO = '"JetBrains Mono", monospace';
 const AMBER = CREDIBILITY_COLORS.moderate;
@@ -77,7 +77,7 @@ const CATEGORIES: {
     value: 'oss',
     label: 'OSS Contributions',
     allocation: '30%',
-    color: '#1d37fc',
+    color: UI_COLORS.primary,
     docsUrl: 'https://docs.gittensor.io/oss-contributions.html',
   },
   {
@@ -103,7 +103,7 @@ export const Scoring: React.FC = () => {
             fontSize: '0.65rem',
             fontWeight: 700,
             letterSpacing: '0.2em',
-            color: alpha('#ffffff', 0.4),
+            color: alpha(UI_COLORS.white, 0.4),
             textTransform: 'uppercase',
             mb: 2,
           }}
@@ -115,7 +115,7 @@ export const Scoring: React.FC = () => {
             fontSize: { xs: '2.5rem', md: '4rem' },
             fontWeight: 800,
             letterSpacing: '-0.03em',
-            color: '#ffffff',
+            color: UI_COLORS.white,
             lineHeight: 1,
           }}
         >
@@ -127,7 +127,7 @@ export const Scoring: React.FC = () => {
             fontWeight: 200,
             fontStyle: 'italic',
             letterSpacing: '-0.03em',
-            color: alpha('#ffffff', 0.5),
+            color: alpha(UI_COLORS.white, 0.5),
             lineHeight: 1,
           }}
         >
@@ -141,7 +141,7 @@ export const Scoring: React.FC = () => {
           display: 'grid',
           gridTemplateColumns: '1fr 1fr',
           mb: 4,
-          border: `1px solid ${alpha('#ffffff', 0.1)}`,
+          border: `1px solid ${alpha(UI_COLORS.white, 0.1)}`,
           borderRadius: 2,
           overflow: 'hidden',
         }}
@@ -163,12 +163,14 @@ export const Scoring: React.FC = () => {
                   : 'transparent',
                 borderRight:
                   cat.value === 'oss'
-                    ? `1px solid ${alpha('#ffffff', 0.1)}`
+                    ? `1px solid ${alpha(UI_COLORS.white, 0.1)}`
                     : 'none',
                 position: 'relative',
                 transition: 'all 0.25s',
                 '&:hover': {
-                  background: isActive ? undefined : alpha('#ffffff', 0.02),
+                  background: isActive
+                    ? undefined
+                    : alpha(UI_COLORS.white, 0.02),
                 },
                 '&::after': isActive
                   ? {
@@ -197,7 +199,7 @@ export const Scoring: React.FC = () => {
                     fontFamily: MONO,
                     fontSize: { xs: '1.5rem', md: '2rem' },
                     fontWeight: 800,
-                    color: isActive ? cat.color : alpha('#ffffff', 0.3),
+                    color: isActive ? cat.color : alpha(UI_COLORS.white, 0.3),
                     letterSpacing: '-0.03em',
                     textShadow: isActive
                       ? `0 0 16px ${alpha(cat.color, 0.5)}`
@@ -213,7 +215,7 @@ export const Scoring: React.FC = () => {
                     fontSize: '0.6rem',
                     fontWeight: 600,
                     letterSpacing: '0.18em',
-                    color: alpha('#ffffff', 0.35),
+                    color: alpha(UI_COLORS.white, 0.35),
                     textTransform: 'uppercase',
                   }}
                 >
@@ -224,7 +226,9 @@ export const Scoring: React.FC = () => {
                 sx={{
                   fontSize: { xs: '0.95rem', md: '1.1rem' },
                   fontWeight: 600,
-                  color: isActive ? '#ffffff' : alpha('#ffffff', 0.5),
+                  color: isActive
+                    ? UI_COLORS.white
+                    : alpha(UI_COLORS.white, 0.5),
                   letterSpacing: '-0.01em',
                 }}
               >
@@ -249,13 +253,13 @@ export const Scoring: React.FC = () => {
             key={rule.title}
             sx={{
               p: { xs: 3, md: 3.5 },
-              border: `1px solid ${alpha('#ffffff', 0.08)}`,
+              border: `1px solid ${alpha(UI_COLORS.white, 0.08)}`,
               borderRadius: 2,
-              background: alpha('#ffffff', 0.02),
+              background: alpha(UI_COLORS.white, 0.02),
               transition: 'all 0.25s',
               '&:hover': {
                 borderColor: alpha(activeCategory.color, 0.4),
-                background: alpha('#ffffff', 0.03),
+                background: alpha(UI_COLORS.white, 0.03),
                 '& .rule-num': {
                   color: activeCategory.color,
                   textShadow: `0 0 24px ${alpha(activeCategory.color, 0.5)}`,
@@ -273,7 +277,7 @@ export const Scoring: React.FC = () => {
                   fontSize: { xs: '2.5rem', md: '3.5rem' },
                   fontWeight: 200,
                   lineHeight: 1,
-                  color: alpha('#ffffff', 0.2),
+                  color: alpha(UI_COLORS.white, 0.2),
                   letterSpacing: '-0.04em',
                   transition: 'all 0.3s',
                 }}
@@ -284,7 +288,7 @@ export const Scoring: React.FC = () => {
                 sx={{
                   fontSize: { xs: '1.15rem', md: '1.3rem' },
                   fontWeight: 700,
-                  color: '#ffffff',
+                  color: UI_COLORS.white,
                   letterSpacing: '-0.01em',
                   flex: 1,
                 }}
@@ -295,7 +299,7 @@ export const Scoring: React.FC = () => {
             <Typography
               sx={{
                 fontSize: '0.92rem',
-                color: alpha('#ffffff', 0.65),
+                color: alpha(UI_COLORS.white, 0.65),
                 lineHeight: 1.65,
                 mb: rule.highlight ? 2 : 0,
               }}
@@ -345,7 +349,7 @@ export const Scoring: React.FC = () => {
         sx={{
           p: { xs: 3, md: 4 },
           borderRadius: 2,
-          border: `1px solid ${alpha('#ffffff', 0.08)}`,
+          border: `1px solid ${alpha(UI_COLORS.white, 0.08)}`,
           background: `linear-gradient(135deg, ${alpha(activeCategory.color, 0.08)} 0%, transparent 60%)`,
           display: 'flex',
           flexDirection: { xs: 'column', md: 'row' },
@@ -372,7 +376,7 @@ export const Scoring: React.FC = () => {
             sx={{
               fontSize: { xs: '1.1rem', md: '1.3rem' },
               fontWeight: 600,
-              color: '#ffffff',
+              color: UI_COLORS.white,
               letterSpacing: '-0.01em',
             }}
           >
