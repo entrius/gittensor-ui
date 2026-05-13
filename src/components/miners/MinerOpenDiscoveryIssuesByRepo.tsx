@@ -28,6 +28,7 @@ import {
 import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import TablePagination from '../common/TablePagination';
+import { tooltipSlotProps } from '../../theme';
 
 type IssueStatusFilter = 'all' | 'open' | 'solved' | 'closed';
 type IssueSortField = 'number' | 'repository' | 'date';
