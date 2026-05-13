@@ -20,7 +20,7 @@ import {
   type DataTableColumn,
 } from '../../components/common';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
-import RankBadge from './RankBadge';
+import { RankIcon } from '../leaderboard/RankIcon';
 import EmptyStateMessage from './EmptyStateMessage';
 import TablePagination from './TablePagination';
 import FilterButton from '../FilterButton';
@@ -312,8 +312,8 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       sortKey: 'rank',
       renderCell: (repo) => {
         const indexInPage = pagedRepoRows.indexOf(repo);
-        const rank = page * PAGE_SIZE + indexInPage;
-        return <RankBadge rank={rank} displayNumber={rank + 1} />;
+        const rank = page * PAGE_SIZE + indexInPage + 1;
+        return <RankIcon rank={rank} size="md" />;
       },
     },
     {
@@ -391,8 +391,8 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       sortKey: 'rank',
       renderCell: (repo) => {
         const indexInPage = pagedIssueRows.indexOf(repo);
-        const rank = page * PAGE_SIZE + indexInPage;
-        return <RankBadge rank={rank} displayNumber={rank + 1} />;
+        const rank = page * PAGE_SIZE + indexInPage + 1;
+        return <RankIcon rank={rank} size="md" />;
       },
     },
     {
