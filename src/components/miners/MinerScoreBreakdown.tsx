@@ -1037,7 +1037,19 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
     if (!isMobile) setIsMobileSearchOpen(false);
   }, [isMobile]);
 
-  const statusCounts = useMemo(() => getPrStatusCounts(prs ?? []), [prs]);
+  // Count over the search scope (excluding the active status filter) so each
+  // button reflects what the user would see if they clicked it.
+  const statusCounts = useMemo(
+    () =>
+      getPrStatusCounts(
+        filterPrs(prs ?? [], {
+          searchQuery,
+          includeNumber: true,
+          statusFilter: 'all',
+        }),
+      ),
+    [prs, searchQuery],
+  );
 
   const statusFilterTotal = useMemo(() => {
     switch (statusFilter) {
