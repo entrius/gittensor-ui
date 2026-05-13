@@ -370,6 +370,7 @@ const HomePage: React.FC = () => {
       <Box
         sx={{
           width: '100%',
+          minWidth: 0,
           minHeight: { xs: 'calc(100vh - 88px)', md: 'calc(100vh - 32px)' },
           display: 'flex',
           flexDirection: 'column',
@@ -407,10 +408,11 @@ const HomePage: React.FC = () => {
         <Box
           sx={{
             width: '100%',
+            minWidth: 0,
             display: 'grid',
             gridTemplateColumns: {
               xs: '1fr',
-              xl: 'minmax(760px, 1.05fr) minmax(560px, 0.75fr)',
+              xl: 'minmax(0, 1.05fr) minmax(0, 0.78fr)',
             },
             gap: { xs: 2, md: 3, xl: 4 },
             alignItems: 'center',
@@ -689,12 +691,13 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
   return (
     <Box
       sx={{
+        minWidth: 0,
         minHeight: { xs: 'auto', xl: '100%' },
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'center',
         gap: { xs: 3, md: 3.5 },
-        px: { xs: 1, sm: 2, md: 4, lg: 4, xl: 2 },
+        px: { xs: 0.5, sm: 1.5, md: 3, lg: 3, xl: 2 },
         py: { xs: 4, md: 5, xl: 4 },
         position: 'relative',
         overflow: 'hidden',
@@ -703,12 +706,14 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
       {/* ── Hero copy ── */}
       <Stack
         spacing={{ xs: 3, md: 3.5 }}
-        sx={{ maxWidth: 980, position: 'relative', zIndex: 1 }}
+        sx={{ maxWidth: 980, minWidth: 0, position: 'relative', zIndex: 1 }}
       >
         <Stack
           direction="row"
           spacing={1.5}
           alignItems="center"
+          flexWrap="wrap"
+          useFlexGap
           sx={fadeUp(60)}
         >
           <Box
@@ -723,10 +728,13 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
           />
           <Typography
             sx={(theme) => ({
+              minWidth: 0,
+              flex: '1 1 12rem',
               color: alpha(theme.palette.text.primary, 0.52),
-              fontSize: { xs: '0.68rem', sm: '0.75rem' },
-              letterSpacing: '0.18em',
+              fontSize: { xs: '0.62rem', sm: '0.75rem' },
+              letterSpacing: { xs: '0.12em', sm: '0.18em' },
               textTransform: 'uppercase',
+              lineHeight: 1.35,
             })}
           >
             <Box component="span" sx={{ fontWeight: 900 }}>
@@ -741,9 +749,10 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
             component="h1"
             sx={{
               maxWidth: 980,
+              minWidth: 0,
               fontFamily: 'var(--font-heading)',
               fontSize: {
-                xs: '2.95rem',
+                xs: 'clamp(2.1rem, 9.2vw, 2.95rem)',
                 sm: '4.2rem',
                 md: '5.35rem',
                 xl: '5.55rem',
@@ -751,6 +760,7 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
               fontWeight: 900,
               lineHeight: { xs: 0.98, sm: 0.94 },
               letterSpacing: 0,
+              overflowWrap: 'anywhere',
               ...fadeUp(140),
             }}
           >
@@ -1028,7 +1038,7 @@ const LiveProofPanel: React.FC<{
                   return {
                     display: 'grid',
                     gridTemplateColumns: {
-                      xs: '72px 28px minmax(0, 1fr)',
+                      xs: 'minmax(52px, auto) 28px minmax(0, 1fr)',
                       sm: '84px 32px minmax(0, 1fr) auto',
                     },
                     gap: { xs: 1, sm: 1.4 },
@@ -1061,9 +1071,11 @@ const LiveProofPanel: React.FC<{
                 <Typography
                   sx={(theme) => ({
                     color: getActivityToneColor(theme, row.tone),
-                    fontSize: '0.67rem',
-                    letterSpacing: '0.13em',
+                    fontSize: { xs: '0.6rem', sm: '0.67rem' },
+                    letterSpacing: { xs: '0.08em', sm: '0.13em' },
                     textTransform: 'uppercase',
+                    lineHeight: 1.15,
+                    minWidth: 0,
                   })}
                 >
                   {row.status}
@@ -1481,13 +1493,16 @@ const SectionKicker: React.FC<{
   >
     <Typography
       sx={(theme) => ({
+        minWidth: 0,
+        flex: '1 1 auto',
         color:
           variant === 'light'
             ? alpha(theme.palette.common.black, 0.58)
             : theme.palette.text.secondary,
         fontSize: '0.66rem',
-        letterSpacing: '0.16em',
+        letterSpacing: { xs: '0.1em', sm: '0.16em' },
         textTransform: 'uppercase',
+        lineHeight: 1.35,
       })}
     >
       {label}
@@ -1560,7 +1575,7 @@ const HowItWorksSection: React.FC<{
           fontSize: { xs: '1.7rem', sm: '2rem', md: '2.2rem', lg: '2.3rem' },
           fontWeight: 900,
           lineHeight: 1.1,
-          whiteSpace: { md: 'nowrap' },
+          overflowWrap: 'anywhere',
         }}
       >
         A coordination layer for coding agents.
