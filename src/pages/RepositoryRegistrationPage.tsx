@@ -16,18 +16,11 @@ import { isRepoTracked } from '../api';
 import { useLinkBehavior } from '../components/common/linkBehavior';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
+import { extractRepoFullName } from '../utils/githubRepoUrl';
 
 type VerifyResult =
   | { tracked: true }
   | { tracked: false; reason: 'not-installed' | 'transient' | 'bad-url' };
-
-const extractRepoFullName = (url: string): string | null => {
-  const match = url
-    .trim()
-    .match(/^https?:\/\/github\.com\/([^/]+)\/([^/]+?)\/?$/i);
-  if (!match) return null;
-  return `${match[1]}/${match[2]}`;
-};
 
 const verifyRepoTracked = async (repoUrl: string): Promise<VerifyResult> => {
   const fullName = extractRepoFullName(repoUrl);
@@ -59,7 +52,7 @@ const validators: Record<
   repoUrl: (value) => {
     const trimmed = String(value).trim();
     if (!trimmed) return 'Repository URL is required.';
-    if (!/^https?:\/\/github\.com\/[^/]+\/[^/]+\/?$/.test(trimmed)) {
+    if (!extractRepoFullName(trimmed)) {
       return 'Use the full GitHub URL, e.g. https://github.com/owner/repo';
     }
     return undefined;
@@ -137,6 +130,15 @@ const RepositoryRegistrationPage: React.FC = () => {
     setSubmitting(true);
     setSubmitError(null);
 
+    const fullName = extractRepoFullName(repoUrl);
+    if (!fullName) {
+      setSubmitting(false);
+      setSubmitError(
+        'Could not parse the repository URL. Use the form https://github.com/owner/repo.',
+      );
+      return;
+    }
+
     const verification = await verifyRepoTracked(repoUrl);
     if (!verification.tracked) {
       setSubmitting(false);
@@ -156,6 +158,8 @@ const RepositoryRegistrationPage: React.FC = () => {
       return;
     }
 
+    const normalizedRepoUrl = `https://github.com/${fullName}`;
+
     try {
       const response = await fetch('https://api.web3forms.com/submit', {
         method: 'POST',
@@ -165,9 +169,10 @@ const RepositoryRegistrationPage: React.FC = () => {
         },
         body: JSON.stringify({
           access_key: accessKey,
-          subject: `Repository registration: ${repoUrl}`,
+          subject: `Repository registration: ${normalizedRepoUrl}`,
           from_name: 'Gittensor Registration Form',
-          repository_url: repoUrl,
+          repository_url: normalizedRepoUrl,
+          repository_full_name: fullName,
           description,
           github_handle: githubHandle,
           other_handle: otherSocial,
