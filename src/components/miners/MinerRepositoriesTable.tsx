@@ -12,6 +12,7 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { useMinerPRs, useReposAndWeights, useIssues } from '../../api';
+import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import { LinkBox } from '../common/linkBehavior';
 import {
   DataTable,
@@ -88,7 +89,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
 
   useEffect(() => {
     setPage(0);
-  }, [viewMode, statusFilter]);
+  }, [viewMode, statusFilter, searchQuery]);
 
   const inactiveAtByRepo = useMemo(() => {
     const m = new Map<string, string | null>();
@@ -559,37 +560,39 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
         </Box>
       </Box>
 
-      <TextField
-        size="small"
-        placeholder="Search repositories..."
-        value={searchQuery}
-        onChange={(e) => {
-          setSearchQuery(e.target.value);
-          setPage(0);
-        }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon
-                sx={{
-                  color: (t) => alpha(t.palette.text.primary, 0.3),
-                  fontSize: '1rem',
-                }}
-              />
-            </InputAdornment>
-          ),
-          endAdornment: (
-            <ClearSearchAdornment
-              visible={Boolean(searchQuery)}
-              onClear={() => {
-                setSearchQuery('');
-                setPage(0);
-              }}
-            />
-          ),
-        }}
-        sx={searchFieldSx}
-      />
+      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+        {({ draftValue, setDraftValue }) => (
+          <TextField
+            size="small"
+            placeholder="Search repositories..."
+            value={draftValue}
+            onChange={(e) => {
+              setDraftValue(e.target.value);
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon
+                    sx={{
+                      color: (t) => alpha(t.palette.text.primary, 0.3),
+                      fontSize: '1rem',
+                    }}
+                  />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <ClearSearchAdornment
+                  visible={Boolean(draftValue)}
+                  onClear={() => {
+                    setDraftValue('');
+                  }}
+                />
+              ),
+            }}
+            sx={searchFieldSx}
+          />
+        )}
+      </DebouncedSearchInput>
     </Box>
   );
 

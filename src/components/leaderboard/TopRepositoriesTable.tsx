@@ -56,6 +56,7 @@ import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { ClearSearchAdornment, WatchlistButton } from '../common';
+import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import {
   compareByWatchlist,
   getRepositoryOwnerAvatarSrc,
@@ -259,10 +260,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const { isWatched } = useWatchlist('repos');
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const trimmedSearch = searchQuery.trim();
-  const isMobileSearchVisible =
-    isMobile && (isMobileSearchOpen || !!trimmedSearch);
-  const isDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(trimmedSearch);
+  const debouncedSearchTrim = searchQuery.trim();
+  const debouncedIsDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(
+    debouncedSearchTrim,
+  );
 
   const cardSortSelectOptions = useMemo(() => {
     const opts = [...CARD_SORT_OPTIONS];
@@ -733,12 +734,14 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && isDirectRepoInput) {
-      navigate(getRepositoryHref(trimmedSearch), {
+    const raw = (e.target as HTMLInputElement).value.trim();
+    const direct = /^[^/\s]+\/[^/\s]+$/.test(raw);
+    if (e.key === 'Enter' && direct) {
+      navigate(getRepositoryHref(raw), {
         state: linkState,
       });
     }
-    if (e.key === 'Escape' && !trimmedSearch) {
+    if (e.key === 'Escape' && !raw) {
       setIsMobileSearchOpen(false);
     }
   };
@@ -770,38 +773,100 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   } as const;
 
   const searchInput = (
-    <TextField
-      placeholder="Search or enter owner/repo..."
-      size="small"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      onKeyDown={handleSearchKeyDown}
-      onBlur={() => {
-        if (isMobile && !trimmedSearch) {
-          setIsMobileSearchOpen(false);
-        }
+    <DebouncedSearchInput
+      initialDraft={urlSearch}
+      onDebouncedChange={setSearchQuery}
+    >
+      {({ draftValue, setDraftValue }) => {
+        const localTrim = draftValue.trim();
+        const mobileSearchVisible =
+          isMobile && (isMobileSearchOpen || !!localTrim);
+        return (
+          <>
+            {mobileSearchVisible ? (
+              <TextField
+                placeholder="Search or enter owner/repo..."
+                size="small"
+                value={draftValue}
+                onChange={(e) => setDraftValue(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                onBlur={(e) => {
+                  if (isMobile && !e.target.value.trim()) {
+                    setIsMobileSearchOpen(false);
+                  }
+                }}
+                autoFocus={isMobileSearchOpen}
+                InputProps={{
+                  startAdornment: searchAdornment,
+                  endAdornment: (
+                    <ClearSearchAdornment
+                      visible={Boolean(localTrim)}
+                      onClear={() => setDraftValue('')}
+                    />
+                  ),
+                }}
+                sx={{
+                  width: '300px',
+                  ...(mobileSearchVisible
+                    ? {
+                        flexBasis: { xs: '100%', sm: 'auto' },
+                        order: { xs: 10, sm: 'initial' },
+                      }
+                    : {}),
+                  ...searchFieldBaseSx,
+                }}
+              />
+            ) : isMobile ? (
+              <IconButton
+                size="small"
+                onClick={() => setIsMobileSearchOpen(true)}
+                sx={{
+                  color: 'text.tertiary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
+                  borderRadius: 2,
+                  width: 36,
+                  height: 36,
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
+                    borderColor: 'border.medium',
+                  },
+                }}
+              >
+                <SearchIcon sx={{ fontSize: '1rem' }} />
+              </IconButton>
+            ) : (
+              <TextField
+                placeholder="Search or enter owner/repo..."
+                size="small"
+                value={draftValue}
+                onChange={(e) => setDraftValue(e.target.value)}
+                onKeyDown={handleSearchKeyDown}
+                onBlur={(e) => {
+                  if (isMobile && !e.target.value.trim()) {
+                    setIsMobileSearchOpen(false);
+                  }
+                }}
+                autoFocus={isMobileSearchOpen}
+                InputProps={{
+                  startAdornment: searchAdornment,
+                  endAdornment: (
+                    <ClearSearchAdornment
+                      visible={Boolean(localTrim)}
+                      onClear={() => setDraftValue('')}
+                    />
+                  ),
+                }}
+                sx={{
+                  width: '300px',
+                  ...searchFieldBaseSx,
+                }}
+              />
+            )}
+          </>
+        );
       }}
-      autoFocus={isMobileSearchOpen}
-      InputProps={{
-        startAdornment: searchAdornment,
-        endAdornment: (
-          <ClearSearchAdornment
-            visible={Boolean(trimmedSearch)}
-            onClear={() => setSearchQuery('')}
-          />
-        ),
-      }}
-      sx={{
-        width: '300px',
-        ...(isMobileSearchVisible
-          ? {
-              flexBasis: { xs: '100%', sm: 'auto' },
-              order: { xs: 10, sm: 'initial' },
-            }
-          : {}),
-        ...searchFieldBaseSx,
-      }}
-    />
+    </DebouncedSearchInput>
   );
 
   const compactSortableHeaderSx = {
@@ -1227,30 +1292,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               </Box>
             </FormControl>
 
-            {isMobileSearchVisible ? (
-              searchInput
-            ) : isMobile ? (
-              <IconButton
-                size="small"
-                onClick={() => setIsMobileSearchOpen(true)}
-                sx={{
-                  color: 'text.tertiary',
-                  border: '1px solid',
-                  borderColor: 'border.light',
-                  borderRadius: 2,
-                  width: 36,
-                  height: 36,
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                    borderColor: 'border.medium',
-                  },
-                }}
-              >
-                <SearchIcon sx={{ fontSize: '1rem' }} />
-              </IconButton>
-            ) : (
-              searchInput
-            )}
+            {searchInput}
 
             <Box sx={{ ml: { xs: 0, md: 'auto' } }}>
               <ViewModeToggle
@@ -1422,7 +1464,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 </Grid>
               ))}
             </Grid>
-          ) : trimmedSearch && isDirectRepoInput ? (
+          ) : debouncedSearchTrim && debouncedIsDirectRepoInput ? (
             <Box
               sx={{
                 display: 'flex',
@@ -1438,7 +1480,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   component="span"
                   sx={{ fontFamily: '"JetBrains Mono", monospace' }}
                 >
-                  {trimmedSearch}
+                  {debouncedSearchTrim}
                 </Typography>
                 ?
               </Typography>
@@ -1446,7 +1488,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 size="small"
                 variant="outlined"
                 onClick={() =>
-                  navigate(getRepositoryHref(trimmedSearch), {
+                  navigate(getRepositoryHref(debouncedSearchTrim), {
                     state: linkState,
                   })
                 }
@@ -1494,8 +1536,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             }}
             emptyState={
               !filteredRepositories.length &&
-              trimmedSearch &&
-              isDirectRepoInput ? (
+              debouncedSearchTrim &&
+              debouncedIsDirectRepoInput ? (
                 <Box
                   sx={{
                     display: 'flex',
@@ -1510,13 +1552,15 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 >
                   <Typography sx={{ color: 'text.secondary' }}>
                     Repository not in tracked list. Open details for{' '}
-                    <Typography component="span">{trimmedSearch}</Typography>?
+                    <Typography component="span">
+                      {debouncedSearchTrim}
+                    </Typography>
                   </Typography>
                   <Button
                     size="small"
                     variant="outlined"
                     onClick={() =>
-                      navigate(getRepositoryHref(trimmedSearch), {
+                      navigate(getRepositoryHref(debouncedSearchTrim), {
                         state: linkState,
                       })
                     }
