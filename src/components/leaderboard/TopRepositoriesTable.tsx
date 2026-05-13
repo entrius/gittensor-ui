@@ -17,10 +17,11 @@ import {
   Tooltip,
   IconButton,
   Collapse,
+  Popover,
+  Portal,
   TablePagination,
   Select,
   MenuItem,
-  FormControl,
   Button,
   Switch,
   FormControlLabel,
@@ -32,6 +33,7 @@ import {
 import SearchIcon from '@mui/icons-material/Search';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
+import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
@@ -56,6 +58,7 @@ import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { ClearSearchAdornment, WatchlistButton } from '../common';
+import { TABS_OPTIONS_PORTAL_ID } from '../common/TabsOptionsPortal';
 import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import {
   compareByWatchlist,
@@ -151,7 +154,6 @@ const CARD_SORT_OPTIONS: Array<{ value: SortColumn; label: string }> = [
   { value: 'discoveryScore', label: 'Issue Score' },
   { value: 'discoveryIssues', label: 'Issues' },
   { value: 'discoveryContributors', label: 'Issue Contributors' },
-  { value: 'repository', label: 'Repository' },
 ];
 
 interface TopRepositoriesTableProps {
@@ -263,7 +265,16 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     debouncedSearchTrim,
   );
   const isCompactChart = useMediaQuery(theme.breakpoints.down('sm'));
-  const isMobileControls = useMediaQuery(theme.breakpoints.down('md'));
+  const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  const [optionsAnchorEl, setOptionsAnchorEl] = useState<HTMLElement | null>(
+    null,
+  );
+  const optionsOpen = Boolean(optionsAnchorEl);
+
+  useEffect(() => {
+    setPortalTarget(document.getElementById(TABS_OPTIONS_PORTAL_ID));
+  }, []);
 
   const cardSortSelectOptions = useMemo(() => {
     const opts = [...CARD_SORT_OPTIONS];
@@ -808,9 +819,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               ),
             }}
             sx={{
-              width: { xs: '100%', sm: '200px' },
-              flexBasis: { xs: '100%', sm: 'auto' },
-              order: { xs: -1, sm: 'initial' },
+              width: '100%',
               ...searchFieldBaseSx,
             }}
           />
@@ -881,6 +890,162 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         </IconButton>
       </Tooltip>
     </>
+  );
+
+  const setRepositoryStatusFilter = (
+    nextStatus: 'all' | 'active' | 'inactive',
+  ) => {
+    setStatusFilter(nextStatus);
+    setPage(0);
+    syncToUrl({ status: nextStatus, page: '0' });
+  };
+
+  const rowsSelect = (
+    <Select
+      size="small"
+      value={rowsPerPage}
+      onChange={(e) => {
+        const newRows = e.target.value as number;
+        setRowsPerPage(newRows);
+        setPage(0);
+        syncToUrl({ rows: String(newRows), page: '0' });
+      }}
+      sx={{
+        color: 'text.primary',
+        backgroundColor: 'background.default',
+        fontSize: '0.8rem',
+        height: '36px',
+        borderRadius: 2,
+        width: '100%',
+        '& fieldset': { borderColor: 'border.light' },
+        '&:hover fieldset': {
+          borderColor: 'border.medium',
+        },
+        '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+        '& .MuiSelect-select': { py: 0.75 },
+      }}
+    >
+      {(viewMode === 'cards'
+        ? REPOSITORIES_CARD_ROWS
+        : REPOSITORIES_LIST_ROWS
+      ).map((n) => (
+        <MenuItem key={n} value={n}>
+          {n}
+        </MenuItem>
+      ))}
+    </Select>
+  );
+
+  const sortControls = (viewMode === 'cards' || showChart) && (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <OptionsLabel>Sort by</OptionsLabel>
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
+          gap: 0.75,
+        }}
+      >
+        {cardSortSelectOptions.map((option) => (
+          <FilterButton
+            key={option.value}
+            label={option.label}
+            color={STATUS_COLORS.info}
+            isActive={sortColumn === option.value}
+            fullWidth
+            onClick={() => {
+              if (sortColumn === option.value) return;
+              handleSort(option.value);
+            }}
+          />
+        ))}
+      </Box>
+      <Button
+        size="small"
+        variant="outlined"
+        startIcon={
+          sortDirection === 'asc' ? (
+            <ArrowUpwardIcon fontSize="small" />
+          ) : (
+            <ArrowDownwardIcon fontSize="small" />
+          )
+        }
+        onClick={() => handleSort(sortColumn)}
+        sx={{
+          justifyContent: 'flex-start',
+          textTransform: 'none',
+          borderColor: 'border.light',
+          color: 'text.secondary',
+        }}
+      >
+        {sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+      </Button>
+    </Box>
+  );
+
+  const optionsPanelContent = (
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <OptionsLabel>Search</OptionsLabel>
+        {searchInput}
+      </Box>
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <OptionsLabel>Status</OptionsLabel>
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
+            gap: 0.75,
+          }}
+        >
+          <FilterButton
+            label="All"
+            count={rankedRepositories.length}
+            color={STATUS_COLORS.neutral}
+            isActive={statusFilter === 'all'}
+            fullWidth
+            onClick={() => setRepositoryStatusFilter('all')}
+          />
+          <FilterButton
+            label="Active"
+            count={rankedRepositories.filter((r) => !r.inactiveAt).length}
+            color={STATUS_COLORS.success}
+            isActive={statusFilter === 'active'}
+            fullWidth
+            onClick={() => setRepositoryStatusFilter('active')}
+          />
+          <FilterButton
+            label="Inactive"
+            count={rankedRepositories.filter((r) => !!r.inactiveAt).length}
+            color={STATUS_COLORS.closed}
+            isActive={statusFilter === 'inactive'}
+            fullWidth
+            onClick={() => setRepositoryStatusFilter('inactive')}
+          />
+        </Box>
+      </Box>
+
+      {sortControls}
+
+      <Box sx={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 1.25 }}>
+        <Box sx={{ minWidth: 0 }}>
+          <OptionsLabel>Rows</OptionsLabel>
+          {rowsSelect}
+        </Box>
+        <Box>
+          <OptionsLabel>View</OptionsLabel>
+          <ViewModeToggle viewMode={viewMode} onChange={handleViewModeChange} />
+        </Box>
+      </Box>
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+        <OptionsLabel>Chart</OptionsLabel>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          {chartControls}
+        </Box>
+      </Box>
+    </Box>
   );
 
   const compactSortableHeaderSx = {
@@ -1160,249 +1325,59 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       }}
       elevation={0}
     >
-      <Box
-        sx={{
-          borderBottom: '1px solid',
-          borderColor: 'border.light',
-        }}
-      >
-        {/* Row 1: All Controls */}
+      {isLargeScreen && portalTarget ? (
+        <Portal container={portalTarget}>{optionsPanelContent}</Portal>
+      ) : (
         <Box
           sx={{
+            borderBottom: '1px solid',
+            borderColor: 'border.light',
             p: { xs: 1, sm: 1.5, md: 2 },
             display: 'flex',
-            flexDirection: { xs: 'column', md: 'row' },
-            alignItems: { xs: 'stretch', md: 'center' },
-            gap: { xs: 1, md: 2 },
+            justifyContent: 'flex-end',
           }}
         >
-          <Box
+          <Button
+            size="small"
+            variant="outlined"
+            startIcon={<TuneOutlinedIcon fontSize="small" />}
+            onClick={(event) => setOptionsAnchorEl(event.currentTarget)}
             sx={{
-              display: 'flex',
-              gap: { xs: 0.25, sm: 0.5 },
-              alignItems: 'center',
-              flexWrap: { xs: 'nowrap', sm: 'wrap' },
-              width: { xs: '100%', md: 'auto' },
-              '& > button': {
-                flex: { xs: 1, sm: 'initial' },
-                minWidth: 0,
-                px: { xs: 1, sm: 2 },
+              minHeight: 36,
+              textTransform: 'none',
+              borderColor: 'border.light',
+              color: 'text.primary',
+              '&:hover': {
+                borderColor: 'border.medium',
+                backgroundColor: 'surface.light',
               },
             }}
           >
-            <FilterButton
-              label="All"
-              count={rankedRepositories.length}
-              color={STATUS_COLORS.neutral}
-              isActive={statusFilter === 'all'}
-              onClick={() => {
-                setStatusFilter('all');
-                setPage(0);
-                syncToUrl({ status: 'all', page: '0' });
-              }}
-            />
-            <FilterButton
-              label="Active"
-              count={rankedRepositories.filter((r) => !r.inactiveAt).length}
-              color={STATUS_COLORS.success}
-              isActive={statusFilter === 'active'}
-              onClick={() => {
-                setStatusFilter('active');
-                setPage(0);
-                syncToUrl({ status: 'active', page: '0' });
-              }}
-            />
-            <FilterButton
-              label="Inactive"
-              count={rankedRepositories.filter((r) => !!r.inactiveAt).length}
-              color={STATUS_COLORS.closed}
-              isActive={statusFilter === 'inactive'}
-              onClick={() => {
-                setStatusFilter('inactive');
-                setPage(0);
-                syncToUrl({ status: 'inactive', page: '0' });
-              }}
-            />
-          </Box>
-
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: { xs: 'flex-start', md: 'flex-end' },
-              gap: { xs: 0.75, sm: 1 },
-              flexWrap: 'wrap',
-              width: { xs: '100%', md: 'auto' },
+            Options
+          </Button>
+          <Popover
+            open={optionsOpen}
+            anchorEl={optionsAnchorEl}
+            onClose={() => setOptionsAnchorEl(null)}
+            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+            transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+            slotProps={{
+              paper: {
+                sx: (theme) => ({
+                  mt: 1,
+                  width: 'min(420px, calc(100vw - 24px))',
+                  p: 2,
+                  borderRadius: 3,
+                  border: `1px solid ${theme.palette.border.light}`,
+                  backgroundColor: theme.palette.background.default,
+                }),
+              },
             }}
           >
-            {!isMobileControls && (
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1,
-                }}
-              >
-                {chartControls}
-              </Box>
-            )}
-
-            <FormControl size="small">
-              <Box
-                sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: { xs: 0.75, sm: 1 },
-                }}
-              >
-                <Typography
-                  variant="body2"
-                  sx={{
-                    color: 'text.secondary',
-                    fontSize: '0.8rem',
-                    minWidth: { xs: 36, md: 'auto' },
-                    flexShrink: 0,
-                  }}
-                >
-                  Rows:
-                </Typography>
-                <Select
-                  value={rowsPerPage}
-                  onChange={(e) => {
-                    const newRows = e.target.value as number;
-                    setRowsPerPage(newRows);
-                    setPage(0);
-                    syncToUrl({ rows: String(newRows), page: '0' });
-                  }}
-                  sx={{
-                    color: 'text.primary',
-                    backgroundColor: 'background.default',
-                    fontSize: '0.8rem',
-                    height: '36px',
-                    borderRadius: 2,
-                    minWidth: '140px',
-                    '& fieldset': { borderColor: 'border.light' },
-                    '&:hover fieldset': {
-                      borderColor: 'border.medium',
-                    },
-                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                    '& .MuiSelect-select': { py: 0.75 },
-                  }}
-                >
-                  {(viewMode === 'cards'
-                    ? REPOSITORIES_CARD_ROWS
-                    : REPOSITORIES_LIST_ROWS
-                  ).map((n) => (
-                    <MenuItem key={n} value={n}>
-                      {n}
-                    </MenuItem>
-                  ))}
-                </Select>
-              </Box>
-            </FormControl>
-
-            {searchInput}
-
-            <Box sx={{ ml: 'auto' }}>
-              <ViewModeToggle
-                viewMode={viewMode}
-                onChange={handleViewModeChange}
-              />
-            </Box>
-          </Box>
+            {optionsPanelContent}
+          </Popover>
         </Box>
-
-        {(viewMode === 'cards' || showChart) && (
-          <Box
-            sx={{
-              px: { xs: 1, sm: 1.5, md: 2 },
-              pb: { xs: 1, sm: 1.5, md: 2 },
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: { xs: 'flex-start', md: 'flex-end' },
-              gap: { xs: 0.75, sm: 1 },
-            }}
-          >
-            <Typography
-              variant="body2"
-              sx={{
-                color: 'text.secondary',
-                fontSize: '0.8rem',
-                minWidth: { xs: 36, md: 'auto' },
-                flexShrink: 0,
-              }}
-            >
-              Sort:
-            </Typography>
-            <Select
-              size="small"
-              value={sortColumn}
-              onChange={(e) => handleSort(e.target.value as SortColumn)}
-              sx={{
-                color: 'text.primary',
-                backgroundColor: 'background.default',
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                minWidth: '140px',
-                '& fieldset': { borderColor: 'border.light' },
-                '&:hover fieldset': { borderColor: 'border.medium' },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                '& .MuiSelect-select': { py: 0.75 },
-              }}
-            >
-              {cardSortSelectOptions.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </MenuItem>
-              ))}
-            </Select>
-            <Tooltip
-              title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
-            >
-              <IconButton
-                onClick={() => handleSort(sortColumn)}
-                size="small"
-                aria-label={
-                  sortDirection === 'asc' ? 'Sort descending' : 'Sort ascending'
-                }
-                sx={{
-                  color: 'text.primary',
-                  border: '1px solid',
-                  borderColor: 'border.light',
-                  borderRadius: 2,
-                  padding: '6px',
-                  ml: { xs: 'auto', md: 0 },
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                    borderColor: 'border.medium',
-                  },
-                }}
-              >
-                {sortDirection === 'asc' ? (
-                  <ArrowUpwardIcon fontSize="small" />
-                ) : (
-                  <ArrowDownwardIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-          </Box>
-        )}
-
-        {isMobileControls && (
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1,
-              px: { xs: 1, sm: 1.5 },
-              pb: { xs: 1, sm: 1.5 },
-            }}
-          >
-            {chartControls}
-          </Box>
-        )}
-      </Box>
+      )}
 
       <Collapse in={showChart}>
         <Box
@@ -1605,6 +1580,23 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     </Card>
   );
 };
+
+const OptionsLabel: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => (
+  <Typography
+    sx={{
+      fontFamily: '"JetBrains Mono", monospace',
+      fontSize: '0.7rem',
+      fontWeight: 700,
+      color: 'text.secondary',
+      textTransform: 'uppercase',
+      mb: 0.75,
+    }}
+  >
+    {children}
+  </Typography>
+);
 
 interface ViewModeToggleProps {
   viewMode: ViewMode;
