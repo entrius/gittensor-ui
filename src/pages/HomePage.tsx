@@ -286,11 +286,11 @@ const HomePage: React.FC = () => {
   >('maintainer');
 
   useEffect(() => {
-    const interval = setInterval(() => {
+    const timeout = setTimeout(() => {
       setActivePanel((current) => (current === 'feed' ? 'miners' : 'feed'));
     }, 5000);
-    return () => clearInterval(interval);
-  }, []);
+    return () => clearTimeout(timeout);
+  }, [activePanel]);
 
   const { datasets, isLoading } = useDashboardData('35d');
   const stats = useStats();
