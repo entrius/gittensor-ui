@@ -2258,9 +2258,7 @@ const getBountySortValue = (
       return issue.id;
     case 'funding': {
       const target = parseBountyAmount(issue.targetBounty);
-      return target > 0
-        ? parseBountyAmount(issue.bountyAmount) / target
-        : 0;
+      return target > 0 ? parseBountyAmount(issue.bountyAmount) / target : 0;
     }
     case 'solver':
       return (issue.solverHotkey ?? '').toLowerCase();
@@ -2560,11 +2558,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       }
       setPage(0);
     },
-    [
-      sortField,
-      bountyVisibleSortKeys,
-      getDefaultSortDirection,
-    ],
+    [sortField, bountyVisibleSortKeys, getDefaultSortDirection],
   );
 
   const counts = useMemo(() => getBountyCounts(items), [items]);
@@ -2644,112 +2638,107 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         flexDirection: 'column',
       }}
     >
-      <WatchlistPortal
-        filterContent={
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 0.5,
-              alignItems: 'center',
-              flexWrap: 'wrap',
-            }}
-          >
-            {BOUNTY_STATUS_FILTERS.map((s) => (
-              <FilterButton
-                key={s}
-                label={s[0].toUpperCase() + s.slice(1)}
-                count={counts[s]}
-                color={bountyStatusColor(s)}
-                isActive={statusFilter === s}
-                onClick={() => setStatusFilter(s)}
-              />
-            ))}
-          </Box>
-        }
-        sortContent={
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
-            <Select
-              size="small"
-              value={
-                bountyVisibleSortKeys.includes(sortField) ? sortField : 'id'
-              }
-              onChange={(e) => {
-                const key = e.target.value as BountySortKey;
-                setSortField(key);
-                setSortOrder(getDefaultSortDirection(key));
-                setPage(0);
-              }}
-              sx={{
-                flex: 1,
-                minWidth: 0,
-                borderRadius: 2,
-                backgroundColor: 'background.default',
-                '& .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'border.light',
-                },
-                '&:hover .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'border.medium',
-                },
-                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
-                  borderColor: 'primary.main',
-                },
-                '& .MuiSelect-select': {
-                  py: 0.75,
-                  fontSize: '0.8rem',
-                  color: 'text.primary',
-                },
-              }}
-            >
-              {bountyVisibleSortKeys.map((key) => (
-                <MenuItem key={key} value={key}>
-                  {BOUNTY_SORT_LABELS[key]}
-                </MenuItem>
-              ))}
-            </Select>
-            <Tooltip
-              title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
-              arrow
-            >
-              <IconButton
-                size="small"
-                onClick={() =>
-                  setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
-                }
+      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+        {({ draftValue, setDraftValue }) => (
+          <WatchlistPortal
+            filterContent={
+              <Box
                 sx={{
-                  flexShrink: 0,
-                  color: 'text.primary',
-                  border: '1px solid',
-                  borderColor: 'border.light',
-                  borderRadius: 2,
-                  padding: '6px',
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                    borderColor: 'border.medium',
-                  },
+                  display: 'flex',
+                  gap: 0.5,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
                 }}
               >
-                <ArrowUpwardIcon
-                  fontSize="small"
-                  sx={{
-                    transform:
-                      sortOrder === 'desc' ? 'rotate(180deg)' : 'none',
-                    transition: 'transform 0.2s ease',
+                {BOUNTY_STATUS_FILTERS.map((s) => (
+                  <FilterButton
+                    key={s}
+                    label={s[0].toUpperCase() + s.slice(1)}
+                    count={counts[s]}
+                    color={bountyStatusColor(s)}
+                    isActive={statusFilter === s}
+                    onClick={() => setStatusFilter(s)}
+                  />
+                ))}
+              </Box>
+            }
+            sortContent={
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Select
+                  size="small"
+                  value={
+                    bountyVisibleSortKeys.includes(sortField) ? sortField : 'id'
+                  }
+                  onChange={(e) => {
+                    const key = e.target.value as BountySortKey;
+                    setSortField(key);
+                    setSortOrder(getDefaultSortDirection(key));
+                    setPage(0);
                   }}
-                />
-              </IconButton>
-            </Tooltip>
-          </Box>
-        }
-        searchValue={searchQuery}
-        searchPlaceholder="Search bounties..."
-        onSearchChange={setSearchQuery}
-        viewMode={viewMode}
-        onViewModeChange={(next) => {
-          setViewMode(next);
-          setPage(0);
-        }}
-        viewModeToggle={
-          <PRsViewModeToggle
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    borderRadius: 2,
+                    backgroundColor: 'background.default',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'border.light',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'border.medium',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'primary.main',
+                    },
+                    '& .MuiSelect-select': {
+                      py: 0.75,
+                      fontSize: '0.8rem',
+                      color: 'text.primary',
+                    },
+                  }}
+                >
+                  {bountyVisibleSortKeys.map((key) => (
+                    <MenuItem key={key} value={key}>
+                      {BOUNTY_SORT_LABELS[key]}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <Tooltip
+                  title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                  arrow
+                >
+                  <IconButton
+                    size="small"
+                    onClick={() =>
+                      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+                    }
+                    sx={{
+                      flexShrink: 0,
+                      color: 'text.primary',
+                      border: '1px solid',
+                      borderColor: 'border.light',
+                      borderRadius: 2,
+                      padding: '6px',
+                      '&:hover': {
+                        backgroundColor: 'surface.light',
+                        borderColor: 'border.medium',
+                      },
+                    }}
+                  >
+                    <ArrowUpwardIcon
+                      fontSize="small"
+                      sx={{
+                        transform:
+                          sortOrder === 'desc' ? 'rotate(180deg)' : 'none',
+                        transition: 'transform 0.2s ease',
+                      }}
+                    />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            }
+            searchValue={draftValue}
+            searchPlaceholder="Search bounties..."
+            onSearchChange={setDraftValue}
             viewMode={viewMode}
             onViewModeChange={(next) => {
               setViewMode(next);
