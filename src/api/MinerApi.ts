@@ -1,5 +1,7 @@
 // Miner API hooks - uses /miners endpoints
+import { useQueries } from '@tanstack/react-query';
 import {
+  githubFetch,
   useApiQuery,
   useMirrorApiQueries,
   useMirrorApiQuery,
@@ -117,5 +119,92 @@ export const useMinersIssues = (
     {
       enabled,
       select: (data) => data?.issues ?? [],
+    },
+  );
+
+// Mirror-API view of a miner's pull requests — used to fill in date fields
+// (`created_at`, `closed_at`) that the camelCase /miners/:id/prs endpoint
+// doesn't currently return. Keyed by `${repo_full_name}#${pr_number}`.
+type MirrorPullsResponse = {
+  pull_requests?: Array<{
+    repo_full_name: string;
+    pr_number: number;
+    created_at?: string | null;
+    closed_at?: string | null;
+    merged_at?: string | null;
+  }>;
+};
+
+export type PrDateOverride = {
+  createdAt: string | null;
+  closedAt: string | null;
+};
+
+export const minerPullDatesKey = (repo: string, prNumber: number) =>
+  `${repo}#${prNumber}`;
+
+// Reach back far enough to cover anything the dashboard might display; the
+// mirror defaults to a 35-day window which would miss older rows.
+const MIRROR_PULLS_SINCE = '2024-01-01T00:00:00.000Z';
+
+// Per-PR fallback: when the mirror has no record of a row (e.g. external
+// repos the subnet doesn't track), hit GitHub directly for `created_at` /
+// `closed_at`. Results are cached forever in React Query so pagination and
+// re-renders don't refire, and individual failures (private repos, rate
+// limits) degrade silently to a missing entry — the cell falls back to `—`
+// for that single row instead of breaking the whole column.
+const GITHUB_PR_DATES_STALE = Infinity;
+
+export const useGithubPrDates = (
+  prs: Array<{ repository: string; pullRequestNumber: number }>,
+  enabled?: boolean,
+): Map<string, PrDateOverride> => {
+  const queries = useQueries({
+    queries: prs.map((pr) => ({
+      queryKey: ['githubPrDates', pr.repository, pr.pullRequestNumber] as const,
+      queryFn: async () => {
+        const data = await githubFetch<{
+          created_at?: string | null;
+          closed_at?: string | null;
+        }>(
+          `https://api.github.com/repos/${pr.repository}/pulls/${pr.pullRequestNumber}`,
+        );
+        return {
+          createdAt: data.created_at ?? null,
+          closedAt: data.closed_at ?? null,
+        };
+      },
+      enabled: enabled ?? true,
+      retry: false,
+      staleTime: GITHUB_PR_DATES_STALE,
+      gcTime: GITHUB_PR_DATES_STALE,
+    })),
+  });
+  const map = new Map<string, PrDateOverride>();
+  prs.forEach((pr, i) => {
+    const q = queries[i];
+    if (q?.data) {
+      map.set(minerPullDatesKey(pr.repository, pr.pullRequestNumber), q.data);
+    }
+  });
+  return map;
+};
+
+export const useMinerPullDates = (githubId: string, enabled?: boolean) =>
+  useMirrorApiQuery<MirrorPullsResponse, Map<string, PrDateOverride>>(
+    'useMinerPullDates',
+    `/miners/${githubId}/pulls?since=${encodeURIComponent(MIRROR_PULLS_SINCE)}`,
+    {
+      enabled,
+      select: (data) => {
+        const map = new Map<string, PrDateOverride>();
+        for (const p of data?.pull_requests ?? []) {
+          map.set(minerPullDatesKey(p.repo_full_name, p.pr_number), {
+            createdAt: p.created_at ?? null,
+            closedAt: p.closed_at ?? null,
+          });
+        }
+        return map;
+      },
     },
   );
