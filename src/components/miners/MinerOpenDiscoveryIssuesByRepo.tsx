@@ -12,15 +12,15 @@ import {
   useTheme,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useMinerIssues } from '../../api';
 import type { MinerIssue } from '../../api/models/Dashboard';
 import {
   getRepositoryOwnerAvatarSrc,
+  getScoringWindowStartIso,
   isOutsideScoringWindow,
   paginateItems,
 } from '../../utils';
-import { getScoringWindowStartIso } from '../../utils/ExplorerUtils';
 import {
   DataTable,
   type DataTableColumn,
@@ -100,6 +100,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
   MinerOpenDiscoveryIssuesByRepoProps
 > = ({ githubId }) => {
   const theme = useTheme();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   // Pin the `since` cutoff per mount so React Query's cache key stays stable
   // while the component is open. The 35-day scoring window slides on remount.
@@ -215,7 +216,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
   const columns: DataTableColumn<MinerIssue, IssueSortField>[] = [
     {
       key: 'number',
-      header: 'Issue #',
+      header: 'Issue',
       width: '10%',
       sortKey: 'number',
       headerSx: { whiteSpace: 'nowrap' },
@@ -324,18 +325,21 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         }
         const repoForPr =
           issue.solving_pr?.repo_full_name ?? issue.repo_full_name;
+        const prHref = `/miners/pr?repo=${encodeURIComponent(repoForPr)}&number=${prNumber}`;
         return (
           <a
-            href={`https://github.com/${repoForPr}/pull/${prNumber}`}
-            target="_blank"
-            rel="noopener noreferrer"
+            href={prHref}
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              navigate(prHref);
+            }}
             style={{
               color: theme.palette.status.info,
               textDecoration: 'none',
               fontWeight: 500,
               fontSize: '0.8rem',
             }}
-            onClick={(e) => e.stopPropagation()}
           >
             #{prNumber}
           </a>

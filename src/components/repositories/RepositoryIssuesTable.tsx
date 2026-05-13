@@ -160,7 +160,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   const columns: DataTableColumn<RepositoryIssue, SortKey>[] = [
     {
       key: 'number',
-      header: 'Issue #',
+      header: 'Issue',
       sortKey: 'number',
       renderCell: (issue) => (
         <a
