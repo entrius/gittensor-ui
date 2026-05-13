@@ -12,9 +12,11 @@ import { Outlet, useLocation } from 'react-router-dom';
 import MenuIcon from '@mui/icons-material/Menu';
 import { LoadingPage } from '../../pages';
 import useOnNavigate from '../../hooks/useOnNavigate';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { Sidebar } from '..';
 import ErrorBoundary from '../ErrorBoundary';
 import GlobalSearchBar from './GlobalSearchBar';
+import ShortcutsHelpDialog from './ShortcutsHelpDialog';
 import theme, { scrollbarSx } from '../../theme';
 import { getRouteForPathname } from '../../routes';
 
@@ -30,6 +32,7 @@ const AppLayout: React.FC = () => {
   const isCompactDesktop = useMediaQuery(theme.breakpoints.down('lg'));
   const isDesktopSidebarCollapsed = !isMobile && isCompactDesktop;
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isHelpOpen, closeHelp, shortcuts } = useKeyboardShortcuts();
   const shouldShowGlobalSearch = Boolean(
     getRouteForPathname(location.pathname)?.showGlobalSearch,
   );
@@ -191,6 +194,11 @@ const AppLayout: React.FC = () => {
           </ErrorBoundary>
         </Suspense>
       </Box>
+      <ShortcutsHelpDialog
+        open={isHelpOpen}
+        shortcuts={shortcuts}
+        onClose={closeHelp}
+      />
     </Box>
   );
 };
