@@ -558,6 +558,10 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             onSort={handleSortChange}
             getHref={getMinerHref}
             linkState={linkState}
+            rankContext={{
+              filteredCount: filteredMiners.length,
+              totalCount: rankedMiners.length,
+            }}
             pagination={stackedPaginationControls ?? undefined}
           />
         )}

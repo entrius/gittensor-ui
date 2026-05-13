@@ -1,5 +1,6 @@
 import React from 'react';
 import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
+import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS } from '../../theme';
 import { getGithubAvatarSrc, type SortOrder } from '../../utils/ExplorerUtils';
@@ -50,6 +51,10 @@ interface MinersListProps {
   getHref: (miner: MinerStats) => string;
   linkState?: Record<string, unknown>;
   pagination?: React.ReactNode;
+  rankContext?: {
+    filteredCount: number;
+    totalCount: number;
+  };
 }
 
 export const MinersList: React.FC<MinersListProps> = ({
@@ -61,6 +66,7 @@ export const MinersList: React.FC<MinersListProps> = ({
   getHref,
   linkState,
   pagination,
+  rankContext,
 }) => {
   const isWatchlist = variant === 'watchlist';
   const isDiscoveries = variant === 'discoveries';
@@ -69,6 +75,9 @@ export const MinersList: React.FC<MinersListProps> = ({
   const singleActivitySortKey: SortOption = isDiscoveries
     ? 'totalIssues'
     : 'totalPRs';
+  const showRankContext = Boolean(
+    rankContext && rankContext.filteredCount < rankContext.totalCount,
+  );
 
   const activityColumns: DataTableColumn<MinerStats, SortOption>[] = isWatchlist
     ? [
@@ -117,7 +126,7 @@ export const MinersList: React.FC<MinersListProps> = ({
   const columns: DataTableColumn<MinerStats, SortOption>[] = [
     {
       key: 'rank',
-      header: 'Rank',
+      header: <RankHeader />,
       width: '60px',
       cellSx: { pr: 0 },
       renderCell: (miner) => <RankIcon rank={miner.rank ?? 0} />,
@@ -257,6 +266,14 @@ export const MinersList: React.FC<MinersListProps> = ({
           transition: 'opacity 0.2s, background-color 0.2s',
         })}
         minWidth="1020px"
+        header={
+          showRankContext ? (
+            <RankContextNotice
+              filteredCount={rankContext?.filteredCount ?? miners.length}
+              totalCount={rankContext?.totalCount ?? miners.length}
+            />
+          ) : undefined
+        }
         stickyHeader
         sort={{
           field: sortOption,
@@ -268,6 +285,58 @@ export const MinersList: React.FC<MinersListProps> = ({
     </Card>
   );
 };
+
+const RankHeader: React.FC = () => (
+  <Tooltip
+    title="Rank is global across all miners before filters are applied."
+    arrow
+    placement="top"
+  >
+    <Box
+      component="span"
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.5,
+        verticalAlign: 'middle',
+      }}
+    >
+      Rank
+      <InfoOutlinedIcon sx={{ fontSize: 14, color: 'text.secondary' }} />
+    </Box>
+  </Tooltip>
+);
+
+interface RankContextNoticeProps {
+  filteredCount: number;
+  totalCount: number;
+}
+
+const RankContextNotice: React.FC<RankContextNoticeProps> = ({
+  filteredCount,
+  totalCount,
+}) => (
+  <Box
+    sx={{
+      px: 2,
+      py: 1,
+      borderBottom: '1px solid',
+      borderColor: 'border.light',
+    }}
+  >
+    <Typography
+      sx={{
+        color: 'text.secondary',
+        fontSize: '0.72rem',
+        lineHeight: 1.5,
+      }}
+    >
+      Rank shows global position across all {totalCount.toLocaleString()}{' '}
+      miners. Gaps indicate miners hidden by the current filters;{' '}
+      {filteredCount.toLocaleString()} match.
+    </Typography>
+  </Box>
+);
 
 interface MinerIdentityCellProps {
   miner: MinerStats;
