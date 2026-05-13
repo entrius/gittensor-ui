@@ -27,10 +27,12 @@ export const selectMinerIssueScanRepos = (prs: CommitLog[] | undefined) => {
   if (!prs?.length) return [];
   const latest = new Map<string, number>();
   prs.forEach((pr) => {
+    const repo = typeof pr.repository === 'string' ? pr.repository.trim() : '';
+    if (!repo) return;
     const raw = pr.mergedAt || pr.prCreatedAt;
     const t = raw ? new Date(raw).getTime() : 0;
-    const prev = latest.get(pr.repository) ?? 0;
-    if (t >= prev) latest.set(pr.repository, t);
+    const prev = latest.get(repo) ?? 0;
+    if (t >= prev) latest.set(repo, t);
   });
   return [...latest.entries()]
     .sort((a, b) => b[1] - a[1])
@@ -47,7 +49,13 @@ export const useMinerRepositoriesOpenIssues = (
   enabled: boolean,
 ) => {
   const stableRepos = useMemo(
-    () => [...new Set(repos)].filter(Boolean),
+    () => [
+      ...new Set(
+        repos
+          .map((r) => (typeof r === 'string' ? r.trim() : ''))
+          .filter((r) => r.length > 0),
+      ),
+    ],
     [repos],
   );
 
