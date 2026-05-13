@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import {
   Avatar,
   Box,
@@ -40,13 +41,20 @@ interface RepositoryPRsTableProps {
   state?: 'open' | 'closed' | 'merged' | 'all';
 }
 
+const isPrStatusFilter = (v: unknown): v is PrStatusFilter =>
+  v === 'all' || v === 'open' || v === 'merged' || v === 'closed';
+
 const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   repositoryFullName,
   state = 'all',
 }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [filter, setFilter] = useState<PrStatusFilter>(state);
+  const [filter, setFilter] = useSessionStoredState<PrStatusFilter>(
+    'repository:prs:statusFilter',
+    state,
+    isPrStatusFilter,
+  );
   const [sortField, setSortField] = useState<PrSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const authorFilter = searchParams.get('prAuthor') ?? AUTHOR_FILTER_ALL;
