@@ -986,11 +986,17 @@ const WATCHLIST_REPO_CARD_SORT_OPTIONS: Array<{
   { value: 'discoveryContributors', label: 'Issue contributors' },
 ];
 
-const WatchlistRepoCardSortPills: React.FC<{
-  sortField: RepoSortKey;
+const SortPills = <T extends string>({
+  options,
+  sortField,
+  sortOrder,
+  onSortChange,
+}: {
+  options: Array<{ value: T; label: string }>;
+  sortField: T;
   sortOrder: 'asc' | 'desc';
-  onSortChange: (key: RepoSortKey) => void;
-}> = ({ sortField, sortOrder, onSortChange }) => (
+  onSortChange: (key: T) => void;
+}) => (
   <Box
     sx={{
       display: 'flex',
@@ -999,7 +1005,7 @@ const WatchlistRepoCardSortPills: React.FC<{
       justifyContent: 'flex-start',
     }}
   >
-    {WATCHLIST_REPO_CARD_SORT_OPTIONS.map((opt) => {
+    {options.map((opt) => {
       const isActive = sortField === opt.value;
       return (
         <Box
@@ -1054,6 +1060,14 @@ const WatchlistRepoCardSortPills: React.FC<{
       );
     })}
   </Box>
+);
+
+const WatchlistRepoCardSortPills: React.FC<{
+  sortField: RepoSortKey;
+  sortOrder: 'asc' | 'desc';
+  onSortChange: (key: RepoSortKey) => void;
+}> = (props) => (
+  <SortPills options={WATCHLIST_REPO_CARD_SORT_OPTIONS} {...props} />
 );
 
 const repoCellSx = { py: 1.5 } as const;
@@ -2217,6 +2231,25 @@ const BOUNTY_STATUS_FILTERS: readonly BountyStatusFilter[] = [
   'history',
 ];
 
+const WATCHLIST_BOUNTY_CARD_SORT_OPTIONS: Array<{
+  value: BountySortKey;
+  label: string;
+}> = [
+  { value: 'bounty', label: 'Bounty' },
+  { value: 'date', label: 'Updated' },
+  { value: 'repo', label: 'Repository' },
+  { value: 'issue', label: 'Issue' },
+  { value: 'status', label: 'Status' },
+];
+
+const WatchlistBountyCardSortPills: React.FC<{
+  sortField: BountySortKey;
+  sortOrder: 'asc' | 'desc';
+  onSortChange: (key: BountySortKey) => void;
+}> = (props) => (
+  <SortPills options={WATCHLIST_BOUNTY_CARD_SORT_OPTIONS} {...props} />
+);
+
 const bountyKey = (issue: IssueBounty) => String(issue.id);
 
 const getBountyHref = (issue: IssueBounty) =>
@@ -2558,6 +2591,15 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                   />
                 ))}
               </Box>
+            }
+            sortContent={
+              viewMode === 'cards' ? (
+                <WatchlistBountyCardSortPills
+                  sortField={sortField}
+                  sortOrder={sortOrder}
+                  onSortChange={handleSort}
+                />
+              ) : undefined
             }
             searchValue={draftValue}
             searchPlaceholder="Search bounties..."
