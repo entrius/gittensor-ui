@@ -43,6 +43,9 @@ type DashboardDatasets = {
   minerIssues: DatasetState<MinerIssue>;
 };
 
+const asArray = <T>(value: T[] | unknown): T[] =>
+  Array.isArray(value) ? value : [];
+
 const hasIssueActivity = (miner: MinerEvaluation): boolean =>
   (miner.totalSolvedIssues ?? 0) +
     (miner.totalOpenIssues ?? 0) +
@@ -54,15 +57,31 @@ export const useDashboardData = (range: TrendTimeRange) => {
   const minersQuery = useAllMiners();
   const issuesQuery = useIssues();
   const reposQuery = useReposAndWeights();
+  const prsData = useMemo(
+    () => asArray<CommitLog>(prsQuery.data),
+    [prsQuery.data],
+  );
+  const minersData = useMemo(
+    () => asArray<MinerEvaluation>(minersQuery.data),
+    [minersQuery.data],
+  );
+  const issuesData = useMemo(
+    () => asArray<IssueBounty>(issuesQuery.data),
+    [issuesQuery.data],
+  );
+  const reposData = useMemo(
+    () => asArray<Repository>(reposQuery.data),
+    [reposQuery.data],
+  );
 
   // Fan-out per-miner mirror calls; gate on issue activity to bound parallel requests.
   const activeMinerGithubIds = useMemo(
     () =>
-      (minersQuery.data ?? [])
+      minersData
         .filter(hasIssueActivity)
         .map((m) => m.githubId)
         .filter((id): id is string => Boolean(id)),
-    [minersQuery.data],
+    [minersData],
   );
 
   const minerIssuesSince = getMirrorSinceParam(range);
@@ -83,22 +102,22 @@ export const useDashboardData = (range: TrendTimeRange) => {
 
   const datasets: DashboardDatasets = {
     prs: {
-      data: prsQuery.data ?? [],
+      data: prsData,
       isLoading: prsQuery.isLoading,
       isError: prsQuery.isError,
     },
     miners: {
-      data: minersQuery.data ?? [],
+      data: minersData,
       isLoading: minersQuery.isLoading,
       isError: minersQuery.isError,
     },
     issues: {
-      data: issuesQuery.data ?? [],
+      data: issuesData,
       isLoading: issuesQuery.isLoading,
       isError: issuesQuery.isError,
     },
     repos: {
-      data: reposQuery.data ?? [],
+      data: reposData,
       isLoading: reposQuery.isLoading,
       isError: reposQuery.isError,
     },
