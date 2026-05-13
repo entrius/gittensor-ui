@@ -172,7 +172,7 @@ const StatTile: React.FC<StatTileProps> = ({
     </Box>
     <Typography
       sx={{
-        fontSize: '1.5rem',
+        fontSize: { xs: '1.25rem', sm: '1.5rem', md: '1.5rem', lg: '1.15rem', xl: '1.5rem' },
         fontWeight: 600,
         color: color || 'text.primary',
         lineHeight: 1.2,
@@ -200,7 +200,7 @@ const COPY_FEEDBACK_MS = 1500;
 const HOTKEY_VISIBLE_EDGE_CHARS = 5;
 const STATS_GRID_SX = { mt: { xs: 0, sm: 1.5 } } as const;
 // minWidth: 0 prevents flex children from overflowing the grid row (min-width: auto default)
-const STAT_COL = { xs: 6, sm: 4, lg: 2, sx: { minWidth: 0 } } as const;
+const STAT_COL = { xs: 6, sm: 4, md: 4, lg: 2, sx: { minWidth: 0 } } as const;
 
 const formatHotkeyPreview = (hotkey: string): string => {
   if (!hotkey) return '';
