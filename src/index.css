@@ -11,14 +11,15 @@
 }
 
 html,
-body {
+body,
+#root {
   margin: 0;
   padding: 0;
-  /* AppLayout's <main> is the only scroll container. Locking html/body
-   * prevents the native body scrollbar from showing alongside main's
-   * styled scrollbar. */
-  height: 100%;
-  overflow: hidden;
+  /* AppLayout's <main> is the only scroll container. Locking html/body/#root
+   * prevents the native browser scrollbar from showing alongside main's
+   * styled scrollbar. !important guards against any later CSS-in-JS resets. */
+  height: 100% !important;
+  overflow: hidden !important;
 }
 
 body {
