@@ -56,6 +56,7 @@ import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { ClearSearchAdornment, WatchlistButton } from '../common';
+import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import {
   compareByWatchlist,
   getRepositoryOwnerAvatarSrc,
@@ -257,10 +258,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const isInitialMount = useRef(true);
   const { isWatched } = useWatchlist('repos');
   const theme = useTheme();
+  const debouncedSearchTrim = searchQuery.trim();
+  const debouncedIsDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(
+    debouncedSearchTrim,
+  );
   const isCompactChart = useMediaQuery(theme.breakpoints.down('sm'));
   const isMobileControls = useMediaQuery(theme.breakpoints.down('md'));
-  const trimmedSearch = searchQuery.trim();
-  const isDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(trimmedSearch);
 
   const cardSortSelectOptions = useMemo(() => {
     const opts = [...CARD_SORT_OPTIONS];
@@ -747,8 +750,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && isDirectRepoInput) {
-      navigate(getRepositoryHref(trimmedSearch), {
+    const raw = (e.target as HTMLInputElement).value.trim();
+    const direct = /^[^/\s]+\/[^/\s]+$/.test(raw);
+    if (e.key === 'Enter' && direct) {
+      navigate(getRepositoryHref(raw), {
         state: linkState,
       });
     }
@@ -781,28 +786,37 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   } as const;
 
   const searchInput = (
-    <TextField
-      placeholder="Search or enter owner/repo..."
-      size="small"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      onKeyDown={handleSearchKeyDown}
-      InputProps={{
-        startAdornment: searchAdornment,
-        endAdornment: (
-          <ClearSearchAdornment
-            visible={Boolean(trimmedSearch)}
-            onClear={() => setSearchQuery('')}
+    <DebouncedSearchInput
+      initialDraft={urlSearch}
+      onDebouncedChange={setSearchQuery}
+    >
+      {({ draftValue, setDraftValue }) => {
+        return (
+          <TextField
+            placeholder="Search or enter owner/repo..."
+            size="small"
+            value={draftValue}
+            onChange={(e) => setDraftValue(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            InputProps={{
+              startAdornment: searchAdornment,
+              endAdornment: (
+                <ClearSearchAdornment
+                  visible={Boolean(debouncedSearchTrim)}
+                  onClear={() => setSearchQuery('')}
+                />
+              ),
+            }}
+            sx={{
+              width: { xs: '100%', sm: '200px' },
+              flexBasis: { xs: '100%', sm: 'auto' },
+              order: { xs: -1, sm: 'initial' },
+              ...searchFieldBaseSx,
+            }}
           />
-        ),
+        );
       }}
-      sx={{
-        width: { xs: '100%', sm: '200px' },
-        flexBasis: { xs: '100%', sm: 'auto' },
-        order: { xs: -1, sm: 'initial' },
-        ...searchFieldBaseSx,
-      }}
-    />
+    </DebouncedSearchInput>
   );
 
   const chartControls = (
@@ -1444,7 +1458,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 </Grid>
               ))}
             </Grid>
-          ) : trimmedSearch && isDirectRepoInput ? (
+          ) : debouncedSearchTrim && debouncedIsDirectRepoInput ? (
             <Box
               sx={{
                 display: 'flex',
@@ -1460,7 +1474,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   component="span"
                   sx={{ fontFamily: '"JetBrains Mono", monospace' }}
                 >
-                  {trimmedSearch}
+                  {debouncedSearchTrim}
                 </Typography>
                 ?
               </Typography>
@@ -1468,7 +1482,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 size="small"
                 variant="outlined"
                 onClick={() =>
-                  navigate(getRepositoryHref(trimmedSearch), {
+                  navigate(getRepositoryHref(debouncedSearchTrim), {
                     state: linkState,
                   })
                 }
@@ -1516,8 +1530,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             }}
             emptyState={
               !filteredRepositories.length &&
-              trimmedSearch &&
-              isDirectRepoInput ? (
+              debouncedSearchTrim &&
+              debouncedIsDirectRepoInput ? (
                 <Box
                   sx={{
                     display: 'flex',
@@ -1532,13 +1546,15 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 >
                   <Typography sx={{ color: 'text.secondary' }}>
                     Repository not in tracked list. Open details for{' '}
-                    <Typography component="span">{trimmedSearch}</Typography>?
+                    <Typography component="span">
+                      {debouncedSearchTrim}
+                    </Typography>
                   </Typography>
                   <Button
                     size="small"
                     variant="outlined"
                     onClick={() =>
-                      navigate(getRepositoryHref(trimmedSearch), {
+                      navigate(getRepositoryHref(debouncedSearchTrim), {
                         state: linkState,
                       })
                     }

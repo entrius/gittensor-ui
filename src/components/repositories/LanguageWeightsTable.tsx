@@ -21,6 +21,7 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import {
   echartsAxisTooltipChrome,
   echartsBarChartTitle,
@@ -56,6 +57,16 @@ const LanguageWeightsTable: React.FC = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // Scrolls only the table's own scrollport back to the first row. Avoids the
+  // page-level `scrollIntoView` that used to fire from a `[rowsPerPage]` effect
+  // on mount and yanked the Onboard page to the table when Languages was opened.
+  const scrollTableToTop = () => {
+    const scrollport = containerRef.current?.querySelector(
+      '.MuiTableContainer-root',
+    );
+    scrollport?.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   const handleSort = (field: SortField) => {
     if (sortField === field) {
       setSortOrder(sortOrder === 'asc' ? 'desc' : 'asc');
@@ -75,12 +86,12 @@ const LanguageWeightsTable: React.FC = () => {
   ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
+    scrollTableToTop();
   };
 
-  const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setSearchQuery(event.target.value);
+  useEffect(() => {
     setPage(0);
-  };
+  }, [searchQuery]);
 
   const filteredAndSortedLanguages = useMemo<LanguageRow[]>(() => {
     if (!languages) return [];
@@ -202,16 +213,6 @@ const LanguageWeightsTable: React.FC = () => {
       ],
     };
   }, [paginatedLanguages, theme]);
-
-  // Scroll to top when rows per page changes
-  useEffect(() => {
-    if (containerRef.current) {
-      containerRef.current.scrollIntoView({
-        behavior: 'smooth',
-        block: 'start',
-      });
-    }
-  }, [rowsPerPage]);
 
   const sortLabelHeaderSx = {
     '& .MuiTableSortLabel-root:hover': { color: 'secondary.main' },
@@ -359,6 +360,7 @@ const LanguageWeightsTable: React.FC = () => {
                 onChange={(e) => {
                   setRowsPerPage(Number(e.target.value));
                   setPage(0);
+                  scrollTableToTop();
                 }}
                 sx={{
                   color: theme.palette.text.primary,
@@ -384,54 +386,60 @@ const LanguageWeightsTable: React.FC = () => {
               </Select>
             </Box>
           </FormControl>
-          <TextField
-            placeholder="Search..."
-            size="small"
-            value={searchQuery}
-            onChange={handleSearchChange}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Search
-                    sx={{
-                      color: alpha(
-                        theme.palette.common.white,
-                        TEXT_OPACITY.muted,
-                      ),
-                      fontSize: '1rem',
-                    }}
-                  />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <ClearSearchAdornment
-                  visible={Boolean(searchQuery)}
-                  onClear={() => setSearchQuery('')}
-                  sx={{
-                    color: alpha(
-                      theme.palette.common.white,
-                      TEXT_OPACITY.muted,
-                    ),
-                  }}
-                />
-              ),
-            }}
-            sx={{
-              width: { xs: '100%', sm: '200px' },
-              '& .MuiOutlinedInput-root': {
-                color: theme.palette.text.primary,
-                backgroundColor: alpha(theme.palette.common.black, 0.4),
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                '& fieldset': { borderColor: theme.palette.border.light },
-                '&:hover fieldset': {
-                  borderColor: theme.palette.border.medium,
-                },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-              },
-            }}
-          />
+          <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+            {({ draftValue, setDraftValue }) => (
+              <TextField
+                placeholder="Search..."
+                size="small"
+                value={draftValue}
+                onChange={(e) => {
+                  setDraftValue(e.target.value);
+                }}
+                InputProps={{
+                  startAdornment: (
+                    <InputAdornment position="start">
+                      <Search
+                        sx={{
+                          color: alpha(
+                            theme.palette.common.white,
+                            TEXT_OPACITY.muted,
+                          ),
+                          fontSize: '1rem',
+                        }}
+                      />
+                    </InputAdornment>
+                  ),
+                  endAdornment: (
+                    <ClearSearchAdornment
+                      visible={Boolean(draftValue)}
+                      onClear={() => setDraftValue('')}
+                      sx={{
+                        color: alpha(
+                          theme.palette.common.white,
+                          TEXT_OPACITY.muted,
+                        ),
+                      }}
+                    />
+                  ),
+                }}
+                sx={{
+                  width: { xs: '100%', sm: '200px' },
+                  '& .MuiOutlinedInput-root': {
+                    color: theme.palette.text.primary,
+                    backgroundColor: alpha(theme.palette.common.black, 0.4),
+                    fontSize: '0.8rem',
+                    height: '36px',
+                    borderRadius: 2,
+                    '& fieldset': { borderColor: theme.palette.border.light },
+                    '&:hover fieldset': {
+                      borderColor: theme.palette.border.medium,
+                    },
+                    '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                  },
+                }}
+              />
+            )}
+          </DebouncedSearchInput>
         </Box>
       </Box>
 

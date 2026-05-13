@@ -35,6 +35,7 @@ import {
   East as EastIcon,
 } from '@mui/icons-material';
 import { useSearchParams } from 'react-router-dom';
+import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import {
   useMinerStats,
@@ -1096,51 +1097,94 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
 
   const { totalPages, safePage, displayPrs, showPagination } = paging;
 
-  const trimmedSearch = searchQuery.trim();
-
-  const isMobileSearchVisible =
-    isMobile && (isMobileSearchOpen || !!trimmedSearch);
-
   const handleSearchKeyDown = useCallback(
     (e: React.KeyboardEvent<HTMLInputElement>) => {
-      const t = searchQuery.trim();
+      const t = (e.target as HTMLInputElement).value.trim();
       if (e.key === 'Escape' && !t) {
         setIsMobileSearchOpen(false);
       }
     },
-    [searchQuery],
+    [],
   );
 
   const searchInput = (
-    <TextField
-      size="small"
-      placeholder="Search or enter title, repo, or #…"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      onKeyDown={handleSearchKeyDown}
-      onBlur={() => {
-        const t = searchQuery.trim();
-        if (isMobile && !t) setIsMobileSearchOpen(false);
+    <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+      {({ draftValue, setDraftValue }) => {
+        const mobileSearchVisible =
+          isMobile && (isMobileSearchOpen || !!draftValue.trim());
+
+        const textFieldSx = {
+          width: '100%',
+          minWidth: 0,
+          ...SCORE_BREAKDOWN_SEARCH_FIELD_SX,
+          ...(mobileSearchVisible
+            ? {
+                flexBasis: { xs: '100%', sm: 'auto' },
+                order: { xs: 10, sm: 'initial' },
+              }
+            : {}),
+        } as const;
+
+        const field = (
+          <TextField
+            size="small"
+            placeholder="Search or enter title, repo, or #…"
+            value={draftValue}
+            onChange={(e) => setDraftValue(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            onBlur={(e) => {
+              if (isMobile && !e.target.value.trim()) {
+                setIsMobileSearchOpen(false);
+              }
+            }}
+            autoFocus={isMobileSearchOpen}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon
+                    sx={{
+                      color: 'text.tertiary',
+                      fontSize: '1rem',
+                    }}
+                  />
+                </InputAdornment>
+              ),
+            }}
+            sx={textFieldSx}
+          />
+        );
+
+        if (!isMobile) return field;
+        if (!mobileSearchVisible) {
+          return (
+            <>
+              <Box sx={{ flex: 1, minWidth: 0 }} aria-hidden />
+              <IconButton
+                size="small"
+                onClick={() => setIsMobileSearchOpen(true)}
+                aria-label="Search pull requests"
+                sx={{
+                  color: 'text.tertiary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
+                  borderRadius: 2,
+                  width: 36,
+                  height: 36,
+                  flexShrink: 0,
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
+                    borderColor: 'border.medium',
+                  },
+                }}
+              >
+                <SearchIcon sx={{ fontSize: '1rem' }} />
+              </IconButton>
+            </>
+          );
+        }
+        return field;
       }}
-      autoFocus={isMobileSearchOpen}
-      InputProps={{
-        startAdornment: (
-          <InputAdornment position="start">
-            <SearchIcon
-              sx={{
-                color: 'text.tertiary',
-                fontSize: '1rem',
-              }}
-            />
-          </InputAdornment>
-        ),
-      }}
-      sx={{
-        width: '100%',
-        minWidth: 0,
-        ...SCORE_BREAKDOWN_SEARCH_FIELD_SX,
-      }}
-    />
+    </DebouncedSearchInput>
   );
 
   if (isLoading || !prs || prs.length === 0) return null;
@@ -1179,7 +1223,7 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
             >
               Score Breakdown
             </Typography>
-            {trimmedSearch ? (
+            {searchQuery.trim() ? (
               <Typography
                 component="span"
                 sx={{
@@ -1293,41 +1337,18 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
           </Box>
         </FormControl>
 
-        {!isMobile && (
-          <Box sx={{ flex: 1, minWidth: { xs: 0, sm: '200px' } }}>
-            {searchInput}
-          </Box>
-        )}
-
-        {isMobile && !isMobileSearchVisible && (
-          <>
-            <Box sx={{ flex: 1, minWidth: 0 }} aria-hidden />
-            <IconButton
-              size="small"
-              onClick={() => setIsMobileSearchOpen(true)}
-              aria-label="Search pull requests"
-              sx={{
-                color: 'text.tertiary',
-                border: '1px solid',
-                borderColor: 'border.light',
-                borderRadius: 2,
-                width: 36,
-                height: 36,
-                flexShrink: 0,
-                '&:hover': {
-                  backgroundColor: 'surface.light',
-                  borderColor: 'border.medium',
-                },
-              }}
-            >
-              <SearchIcon sx={{ fontSize: '1rem' }} />
-            </IconButton>
-          </>
-        )}
-
-        {isMobile && isMobileSearchVisible && (
-          <Box sx={{ flex: '1 1 100%', minWidth: 0 }}>{searchInput}</Box>
-        )}
+        <Box
+          sx={{
+            flex: isMobile ? '1 1 100%' : 1,
+            minWidth: isMobile ? 0 : { xs: 0, sm: '200px' },
+            display: 'flex',
+            alignItems: 'center',
+            flexWrap: 'wrap',
+            gap: isMobile ? 1 : 0,
+          }}
+        >
+          {searchInput}
+        </Box>
       </Box>
 
       <Box>
