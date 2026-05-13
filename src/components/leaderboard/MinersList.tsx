@@ -13,6 +13,23 @@ import {
 
 type ActivityMode = 'prs' | 'issues';
 
+/** OSS / PR rewards track — mirrors `minerMapper` (`ossIsEligible` ← API eligible). */
+const ossTrackEligible = (m: MinerStats) =>
+  Boolean(m.ossIsEligible ?? m.isEligible);
+
+/** Issue-discovery rewards track — mirrors mapper (`discoveriesIsEligible`). */
+const discoveryTrackEligible = (m: MinerStats) =>
+  Boolean(m.discoveriesIsEligible ?? m.isIssueEligible ?? false);
+
+const watchlistAnyRewardEligible = (m: MinerStats) =>
+  ossTrackEligible(m) || discoveryTrackEligible(m);
+
+const watchlistBothTracksIneligible = (m: MinerStats) =>
+  !ossTrackEligible(m) && !discoveryTrackEligible(m);
+
+/** Mute PR/Issue column counts when that watchlist track is ineligible. */
+const TRACK_INACTIVE_OPACITY = 0.48;
+
 const SEGMENT_COLORS = [
   CHART_COLORS.merged,
   CHART_COLORS.open,
@@ -62,7 +79,11 @@ export const MinersList: React.FC<MinersListProps> = ({
           align: 'right',
           sortKey: 'totalPRs',
           renderCell: (miner) => (
-            <MinerActivitySegments miner={miner} mode="prs" />
+            <MinerActivitySegments
+              miner={miner}
+              mode="prs"
+              trackEligible={ossTrackEligible(miner)}
+            />
           ),
         },
         {
@@ -72,7 +93,11 @@ export const MinersList: React.FC<MinersListProps> = ({
           align: 'right',
           sortKey: 'totalIssues',
           renderCell: (miner) => (
-            <MinerActivitySegments miner={miner} mode="issues" />
+            <MinerActivitySegments
+              miner={miner}
+              mode="issues"
+              trackEligible={discoveryTrackEligible(miner)}
+            />
           ),
         },
       ]
@@ -110,16 +135,21 @@ export const MinersList: React.FC<MinersListProps> = ({
       width: '14%',
       align: 'right',
       sortKey: 'usdPerDay',
-      renderCell: (miner) => (
-        <Typography
-          sx={{
-            ...cellTypographySx,
-            color: miner.isEligible ? 'status.merged' : 'text.secondary',
-          }}
-        >
-          ${Math.round(miner.usdPerDay || 0).toLocaleString()}
-        </Typography>
-      ),
+      renderCell: (miner) => {
+        const earningsHighlighted = isWatchlist
+          ? watchlistAnyRewardEligible(miner)
+          : Boolean(miner.isEligible);
+        return (
+          <Typography
+            sx={{
+              ...cellTypographySx,
+              color: earningsHighlighted ? 'status.merged' : 'text.secondary',
+            }}
+          >
+            ${Math.round(miner.usdPerDay || 0).toLocaleString()}
+          </Typography>
+        );
+      },
     },
     ...activityColumns,
     {
@@ -140,11 +170,20 @@ export const MinersList: React.FC<MinersListProps> = ({
       width: '11%',
       align: 'right',
       sortKey: 'totalScore',
-      renderCell: (miner) => (
-        <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
-          {Number(miner.totalScore).toFixed(2)}
-        </Typography>
-      ),
+      renderCell: (miner) => {
+        const active = !isWatchlist || ossTrackEligible(miner);
+        return (
+          <Typography
+            sx={{
+              ...cellTypographySx,
+              color: active ? 'text.primary' : 'text.secondary',
+              opacity: active ? 1 : TRACK_INACTIVE_OPACITY,
+            }}
+          >
+            {Number(miner.totalScore).toFixed(2)}
+          </Typography>
+        );
+      },
     },
     ...(isWatchlist
       ? ([
@@ -154,11 +193,20 @@ export const MinersList: React.FC<MinersListProps> = ({
             width: '11%',
             align: 'right' as const,
             sortKey: 'issueDiscoveryScore',
-            renderCell: (miner: MinerStats) => (
-              <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
-                {Number(miner.issueDiscoveryScore ?? 0).toFixed(2)}
-              </Typography>
-            ),
+            renderCell: (miner: MinerStats) => {
+              const active = discoveryTrackEligible(miner);
+              return (
+                <Typography
+                  sx={{
+                    ...cellTypographySx,
+                    color: active ? 'text.primary' : 'text.secondary',
+                    opacity: active ? 1 : TRACK_INACTIVE_OPACITY,
+                  }}
+                >
+                  {Number(miner.issueDiscoveryScore ?? 0).toFixed(2)}
+                </Typography>
+              );
+            },
           },
         ] satisfies DataTableColumn<MinerStats, SortOption>[])
       : []),
@@ -199,7 +247,13 @@ export const MinersList: React.FC<MinersListProps> = ({
         getRowHref={getHref}
         linkState={linkState}
         getRowSx={(miner) => ({
-          opacity: (miner.isEligible ?? false) ? 1 : 0.5,
+          opacity: isWatchlist
+            ? watchlistBothTracksIneligible(miner)
+              ? 0.48
+              : 1
+            : miner.isEligible
+              ? 1
+              : 0.5,
           transition: 'opacity 0.2s, background-color 0.2s',
         })}
         minWidth="1020px"
@@ -270,11 +324,14 @@ const MinerIdentityCell: React.FC<MinerIdentityCellProps> = ({ miner }) => {
 interface MinerActivitySegmentsProps {
   miner: MinerStats;
   mode: ActivityMode;
+  /** Watchlist: mute counts when this column's track is ineligible. */
+  trackEligible?: boolean;
 }
 
 const MinerActivitySegments: React.FC<MinerActivitySegmentsProps> = ({
   miner,
   mode,
+  trackEligible = true,
 }) => {
   const segments =
     mode === 'issues'
@@ -296,6 +353,7 @@ const MinerActivitySegments: React.FC<MinerActivitySegmentsProps> = ({
         alignItems: 'center',
         justifyContent: 'flex-end',
         gap: 1.25,
+        opacity: trackEligible ? 1 : TRACK_INACTIVE_OPACITY,
       }}
     >
       {segments.map((segment, i) => (
@@ -316,7 +374,12 @@ const MinerActivitySegments: React.FC<MinerActivitySegmentsProps> = ({
               }}
             />
             <Typography
-              sx={{ fontSize: '0.75rem', fontWeight: 600, lineHeight: 1 }}
+              sx={{
+                fontSize: '0.75rem',
+                fontWeight: 600,
+                lineHeight: 1,
+                color: trackEligible ? 'text.primary' : 'text.secondary',
+              }}
             >
               {segment.value}
             </Typography>

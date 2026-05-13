@@ -149,7 +149,9 @@ const AppLayout: React.FC = () => {
           flexDirection: 'column',
           px: { xs: 1, sm: 2, md: 3 },
           ...scrollbarSx,
-          alignItems: { xs: 'stretch', md: 'center' },
+          // Stretch cross-axis so routed pages keep width (`center` collapses `width:100%` children on md+).
+          alignItems: 'stretch',
+          minHeight: 0,
         }}
       >
         <Suspense fallback={<LoadingPage />}>
@@ -173,7 +175,19 @@ const AppLayout: React.FC = () => {
             </Box>
           )}
           <ErrorBoundary variant="inline" resetKey={location.pathname}>
-            <Outlet />
+            <Box
+              sx={{
+                width: '100%',
+                maxWidth: '100%',
+                minWidth: 0,
+                minHeight: 0,
+                flex: '1 1 auto',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Outlet />
+            </Box>
           </ErrorBoundary>
         </Suspense>
       </Box>
