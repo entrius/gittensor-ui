@@ -67,6 +67,7 @@ import {
   useAllPrs,
   useMinersIssues,
 } from '../api';
+import { useFiltersPanelOpenInUrl } from '../hooks/useFiltersPanelUrlState';
 import type {
   CommitLog,
   MinerIssue,
@@ -604,14 +605,14 @@ const WatchlistOptionsSidebarPanel: React.FC<
     hasActiveFilter: boolean;
   }
 > = (props) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useFiltersPanelOpenInUrl();
 
   return (
     <Box>
       <Box
         component="button"
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(!open)}
         sx={(t) => ({
           display: 'flex',
           alignItems: 'center',

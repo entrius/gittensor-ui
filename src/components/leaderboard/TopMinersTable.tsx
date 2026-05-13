@@ -26,6 +26,11 @@ import { MinerCard } from './MinerCard';
 import { MinersList } from './MinersList';
 import theme, { STATUS_COLORS } from '../../theme';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
+import {
+  FILTERS_PANEL_QUERY_PARAM,
+  parseFiltersPanelOpen,
+  serializeFiltersPanelOpen,
+} from '../../hooks/useFiltersPanelUrlState';
 import { useWatchlist } from '../../hooks/useWatchlist';
 import { type SortOrder } from '../../utils/ExplorerUtils';
 import { compareByWatchlist } from '../../utils/watchlistSort';
@@ -49,7 +54,6 @@ const DISC_ELIGIBLE_QUERY_PARAM = 'discElig';
 const VIEW_QUERY_PARAM = 'view';
 const SEARCH_QUERY_PARAM = 'search';
 const VISIBLE_QUERY_PARAM = 'visible';
-const FILTERS_PANEL_QUERY_PARAM = 'filters';
 const VIEW_STORAGE_KEY_LEADERBOARD = 'leaderboard:viewMode';
 const VIEW_STORAGE_KEY_WATCHLIST = 'watchlist:viewMode';
 
@@ -245,9 +249,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       },
       filtersOpen: {
         paramKey: FILTERS_PANEL_QUERY_PARAM,
-        parse: (raw: string | null): boolean =>
-          raw === 'open' || raw === 'true',
-        serialize: (value: boolean): string | null => (value ? 'open' : null),
+        parse: parseFiltersPanelOpen,
+        serialize: serializeFiltersPanelOpen,
         resetPageOnChange: false,
       },
       eligible:
