@@ -3,6 +3,21 @@ import { isClosedUnmergedPr, isMergedPr, isOpenPr } from './prStatus';
 
 export type PrStatusFilter = 'all' | 'open' | 'merged' | 'closed';
 
+export const getPrLifecycleDate = (
+  pr: Pick<CommitLog, 'mergedAt' | 'closedAt' | 'prCreatedAt' | 'prState'>,
+) => {
+  if (isMergedPr(pr)) return pr.mergedAt;
+  if (isClosedUnmergedPr(pr)) return pr.closedAt;
+  return pr.prCreatedAt;
+};
+
+export const formatPrLifecycleDate = (
+  pr: Pick<CommitLog, 'mergedAt' | 'closedAt' | 'prCreatedAt' | 'prState'>,
+) => {
+  const date = getPrLifecycleDate(pr);
+  return date ? new Date(date).toLocaleDateString() : '-';
+};
+
 interface FilterPrsOptions {
   author?: string | null;
   includeNumber?: boolean;

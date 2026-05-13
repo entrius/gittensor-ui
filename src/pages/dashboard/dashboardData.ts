@@ -370,8 +370,6 @@ const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
     const normalizedState = getPrStatusLabel(pr);
     const createdInWindow = isWithinWindow(toTimestamp(pr.prCreatedAt), window);
     const mergedInWindow = isWithinWindow(toTimestamp(pr.mergedAt), window);
-    // API does not currently return closedAt for PRs — fall back to
-    // prCreatedAt so closed PRs are still tracked within the window.
     const closedInWindow = isWithinWindow(
       toTimestamp(pr.closedAt ?? pr.prCreatedAt),
       window,
