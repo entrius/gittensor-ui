@@ -10,9 +10,9 @@
 import {
   type CommitLog,
   type MinerEvaluation,
+  type MinerIssue,
   type Repository,
 } from '../../api';
-import { type IssueBounty } from '../../api/models/Issues';
 import {
   getPrStatusLabel,
   isIssueDiscoveryContributionPr,
@@ -170,6 +170,40 @@ export const getPreviousWindowBounds = (
   };
 };
 
+// Omitting `since` uses the mirror's default 35-day window and keeps the
+// cache key stable across 1d/7d/35d ranges.
+export const getMirrorSinceParam = (
+  range: TrendTimeRange,
+): string | undefined =>
+  range === 'all' ? new Date(GITTENSOR_START_MS).toISOString() : undefined;
+
+// Dedupe by (repo, number) so an issue surfaced under multiple miners is counted once.
+export const flattenMinerIssues = (
+  responses: ReadonlyArray<ReadonlyArray<MinerIssue>>,
+): MinerIssue[] => {
+  const seen = new Set<string>();
+  const flattened: MinerIssue[] = [];
+  responses.forEach((batch) => {
+    batch.forEach((issue) => {
+      const key = `${issue.repo_full_name}#${issue.issue_number}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      flattened.push(issue);
+    });
+  });
+  return flattened;
+};
+
+export const isResolvedMinerIssue = (issue: MinerIssue): boolean =>
+  issue.state === 'CLOSED' && issue.state_reason === 'COMPLETED';
+
+export const isResolvedInWindow = (
+  issue: MinerIssue,
+  window: WindowBounds,
+): boolean =>
+  isResolvedMinerIssue(issue) &&
+  isWithinWindow(toTimestamp(issue.closed_at), window);
+
 const getUtcWeekStart = (timestamp: number) => {
   const date = new Date(timestamp);
   const dayOfWeek = date.getUTCDay();
@@ -278,18 +312,18 @@ const formatDelta = (
 
 export const buildDashboardTrendData = (
   prs: CommitLog[],
-  issues: IssueBounty[],
+  issues: MinerIssue[],
   range: TrendTimeRange,
   now = new Date(),
 ): { labels: string[]; series: DashboardTrendSeries[] } => {
   const mergedPrTimestamps = prs.map((pr) => toTimestamp(pr.mergedAt));
   const openedPrTimestamps = prs.map((pr) => toTimestamp(pr.prCreatedAt));
   const openedIssueTimestamps = issues.map((issue) =>
-    toTimestamp(issue.createdAt),
+    toTimestamp(issue.created_at),
   );
   const resolvedIssueTimestamps = issues
-    .filter((issue) => issue.status === 'completed')
-    .map((issue) => toTimestamp(issue.completedAt));
+    .filter(isResolvedMinerIssue)
+    .map((issue) => toTimestamp(issue.closed_at));
   const buckets = buildTrendBuckets(
     [
       ...mergedPrTimestamps,
@@ -618,7 +652,7 @@ export const buildDashboardOverview = (
 
 export const buildDashboardKpis = (
   prs: CommitLog[],
-  issues: IssueBounty[],
+  issues: MinerIssue[],
   range: TrendTimeRange,
   now = new Date(),
 ): DashboardKpi[] => {
@@ -626,10 +660,8 @@ export const buildDashboardKpis = (
   const mergedWindowPrs = prs.filter((pr) =>
     isWithinWindow(toTimestamp(pr.mergedAt), window),
   );
-  const solvedIssues = issues.filter(
-    (issue) =>
-      issue.status === 'completed' &&
-      isWithinWindow(toTimestamp(issue.completedAt), window),
+  const solvedIssues = issues.filter((issue) =>
+    isResolvedInWindow(issue, window),
   );
 
   const totalCommits = mergedWindowPrs.reduce(

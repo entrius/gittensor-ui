@@ -62,7 +62,7 @@ const OnboardPage: React.FC = () => {
           sx={(theme) => ({
             position: 'sticky',
             top: 0,
-            zIndex: 2,
+            zIndex: 10,
             maxWidth: 1200,
             width: '100%',
             px: { xs: 2, sm: 3, md: 0 },

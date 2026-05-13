@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Card, Typography, Avatar } from '@mui/material';
-import { alpha, useTheme } from '@mui/material/styles';
+import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
@@ -49,6 +49,17 @@ const getSegments = (
 ): Segment[] =>
   variant === 'discoveries' ? getIssueSegments(miner) : getPrSegments(miner);
 
+const buildStatPalette = (eligible: boolean, theme: Theme): string[] => {
+  const inactiveColor = alpha(theme.palette.text.tertiary, INACTIVE_OPACITY);
+  return eligible
+    ? [
+        STATUS_COLORS.merged,
+        alpha(theme.palette.text.primary, 0.84),
+        theme.palette.status.closed,
+      ]
+    : [inactiveColor, inactiveColor, inactiveColor];
+};
+
 export const MinerCard: React.FC<MinerCardProps> = ({
   miner,
   href,
@@ -85,6 +96,10 @@ export const MinerCard: React.FC<MinerCardProps> = ({
     : showDualEligibilityBadges
       ? ossEligible || discoveriesEligible
       : baseEligible;
+
+  const earningsHighlighted = isWatchlist
+    ? ossEligible || discoveriesEligible
+    : isEligible;
 
   const segments = getSegments(miner, variant);
 
@@ -321,10 +336,10 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                 fontFamily: FONTS.mono,
                 fontSize: '1.6rem',
                 fontWeight: 800,
-                color: isEligible
+                color: earningsHighlighted
                   ? theme.palette.status.merged
                   : theme.palette.text.tertiary,
-                opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                opacity: earningsHighlighted ? 1 : INACTIVE_OPACITY,
                 lineHeight: 1,
               })}
             >
@@ -334,10 +349,10 @@ export const MinerCard: React.FC<MinerCardProps> = ({
               sx={(theme) => ({
                 fontFamily: FONTS.mono,
                 fontSize: '0.75rem',
-                color: isEligible
+                color: earningsHighlighted
                   ? theme.palette.status.open
                   : theme.palette.text.tertiary,
-                opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                opacity: earningsHighlighted ? 1 : INACTIVE_OPACITY,
               })}
             >
               /day
@@ -347,10 +362,10 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             sx={(theme) => ({
               fontFamily: FONTS.mono,
               fontSize: '0.7rem',
-              color: isEligible
+              color: earningsHighlighted
                 ? theme.palette.status.merged
                 : theme.palette.text.tertiary,
-              opacity: isEligible ? 0.7 : INACTIVE_OPACITY,
+              opacity: earningsHighlighted ? 0.7 : INACTIVE_OPACITY,
               mt: 0.2,
             })}
           >
@@ -389,6 +404,8 @@ export const MinerCard: React.FC<MinerCardProps> = ({
         segments={segments}
         isEligible={isEligible}
         variant={variant}
+        primaryRowEligible={isWatchlist ? ossEligible : undefined}
+        secondaryRowEligible={isWatchlist ? discoveriesEligible : undefined}
       />
     </Card>
   );
@@ -400,6 +417,10 @@ interface MinerCardFooterProps {
   segments: Segment[];
   isEligible: boolean;
   variant: LeaderboardVariant;
+  /** Watchlist: OSS / PR stats row eligibility (paired with PR donut). */
+  primaryRowEligible?: boolean;
+  /** Watchlist: issue stats row eligibility (paired with Issues donut). */
+  secondaryRowEligible?: boolean;
 }
 
 const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
@@ -408,17 +429,24 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
   segments,
   isEligible,
   variant,
+  primaryRowEligible,
+  secondaryRowEligible,
 }) => {
   const muiTheme = useTheme();
   const inactiveColor = alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY);
 
-  const statColors = isEligible
-    ? [
-        STATUS_COLORS.merged,
-        alpha(muiTheme.palette.text.primary, 0.84),
-        muiTheme.palette.status.closed,
-      ]
-    : [inactiveColor, inactiveColor, inactiveColor];
+  const chromeEligible =
+    variant === 'watchlist'
+      ? Boolean(primaryRowEligible || secondaryRowEligible)
+      : isEligible;
+
+  const primaryEligible =
+    variant === 'watchlist' ? Boolean(primaryRowEligible) : isEligible;
+  const secondaryEligible =
+    variant === 'watchlist' ? Boolean(secondaryRowEligible) : isEligible;
+
+  const primaryPalette = buildStatPalette(primaryEligible, muiTheme);
+  const secondaryPalette = buildStatPalette(secondaryEligible, muiTheme);
 
   const issueSegments = getIssueSegments(miner);
   const issueDiscoveryScore = Number(miner.issueDiscoveryScore ?? 0);
@@ -429,10 +457,10 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
         display: 'flex',
         flexDirection: 'column',
         gap: variant === 'discoveries' || variant === 'watchlist' ? 0.75 : 0,
-        backgroundColor: isEligible
+        backgroundColor: chromeEligible
           ? alpha(theme.palette.background.default, 0.2)
           : theme.palette.surface.subtle,
-        opacity: isEligible ? 1 : 0.62,
+        opacity: chromeEligible ? 1 : 0.62,
         borderRadius: 1.5,
         p: 1,
       })}
@@ -450,29 +478,31 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
             key={segment.label}
             label={segment.label}
             value={segment.value}
-            color={statColors[i]}
-            isEligible={isEligible}
+            color={primaryPalette[i]}
+            isEligible={primaryEligible}
           />
         ))}
         <Box
           sx={(theme) => ({
             textAlign: 'right',
             borderLeft: `1px solid ${
-              isEligible
+              primaryEligible
                 ? theme.palette.border.light
                 : theme.palette.border.subtle
             }`,
             pl: 1.5,
           })}
         >
-          <StatLabel isEligible={isEligible}>
+          <StatLabel isEligible={primaryEligible}>
             {variant === 'watchlist' ? 'OSS' : 'Score'}
           </StatLabel>
           <Typography
             sx={{
               fontFamily: FONTS.mono,
               fontSize: '0.9rem',
-              color: isEligible ? muiTheme.palette.text.primary : inactiveColor,
+              color: primaryEligible
+                ? muiTheme.palette.text.primary
+                : inactiveColor,
               fontWeight: 700,
             }}
           >
@@ -501,27 +531,27 @@ const MinerCardFooter: React.FC<MinerCardFooterProps> = ({
                 key={segment.label}
                 label={segment.label}
                 value={segment.value}
-                color={statColors[i]}
-                isEligible={isEligible}
+                color={secondaryPalette[i]}
+                isEligible={secondaryEligible}
               />
             ))}
             <Box
               sx={(theme) => ({
                 textAlign: 'right',
                 borderLeft: `1px solid ${
-                  isEligible
+                  secondaryEligible
                     ? theme.palette.border.light
                     : theme.palette.border.subtle
                 }`,
                 pl: 1.5,
               })}
             >
-              <StatLabel isEligible={isEligible}>Discovery</StatLabel>
+              <StatLabel isEligible={secondaryEligible}>Discovery</StatLabel>
               <Typography
                 sx={{
                   fontFamily: FONTS.mono,
                   fontSize: '0.9rem',
-                  color: isEligible
+                  color: secondaryEligible
                     ? muiTheme.palette.text.primary
                     : inactiveColor,
                   fontWeight: 700,

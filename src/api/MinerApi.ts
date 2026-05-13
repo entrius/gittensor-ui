@@ -96,12 +96,24 @@ export const useMinerIssues = (githubId: string, enabled?: boolean) =>
   );
 
 /**
- * Fan-out variant: one mirror-API call per miner, useful for the watchlist.
+ * Fan-out variant: one mirror-API call per miner, useful for the watchlist
+ * and the dashboard issues-trend aggregation.
+ *
+ * `since` (ISO timestamp) is forwarded to the mirror as a query param. Omit
+ * for the mirror's default 35-day window — this also keeps the cache key
+ * stable across callers that don't need a custom range.
  */
-export const useMinersIssues = (githubIds: string[], enabled?: boolean) =>
+export const useMinersIssues = (
+  githubIds: string[],
+  enabled?: boolean,
+  since?: string,
+) =>
   useMirrorApiQueries<MinerIssuesResponse, MinerIssue[]>(
     'useMinerIssues',
-    githubIds.map((id) => `/miners/${id}/issues`),
+    githubIds.map((id) => {
+      const path = `/miners/${id}/issues`;
+      return since ? `${path}?since=${encodeURIComponent(since)}` : path;
+    }),
     {
       enabled,
       select: (data) => data?.issues ?? [],
