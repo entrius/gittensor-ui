@@ -10,10 +10,18 @@
   color: #ffffff;
 }
 
+html,
 body {
   margin: 0;
   padding: 0;
-  overflow-x: hidden;
+  /* AppLayout's <main> is the only scroll container. Locking html/body
+   * prevents the native body scrollbar from showing alongside main's
+   * styled scrollbar. */
+  height: 100%;
+  overflow: hidden;
+}
+
+body {
   font-family: var(--font-body);
 }
 
