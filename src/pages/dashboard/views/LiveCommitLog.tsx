@@ -61,7 +61,7 @@ interface CommitLogEntry {
   commitCount: number;
   repository: string;
   mergedAt: string | null;
-  prCreatedAt: string;
+  prCreatedAt?: string | null;
   prState?: string;
   author: string;
   score: string;

@@ -303,10 +303,10 @@ const RepositoryPrActivityChart: React.FC<RepositoryPrActivityChartProps> = ({
     const bucket = axis[0]?.bucket ?? bucketDayKey;
     const first = isIssueMode
       ? countByKey(issueRows, axisKeys, (issue) => issue.createdAt, bucket)
-      : countByKey(repoPrs, axisKeys, (pr) => pr.prCreatedAt, bucket);
+      : countByKey(repoPrs, axisKeys, (pr) => pr.prCreatedAt ?? null, bucket);
     const second = isIssueMode
       ? countByKey(issueRows, axisKeys, (issue) => issue.closedAt, bucket)
-      : countByKey(repoPrs, axisKeys, (pr) => pr.mergedAt, bucket);
+      : countByKey(repoPrs, axisKeys, (pr) => pr.mergedAt ?? null, bucket);
     const hasAnyLocal = first.some((n) => n > 0) || second.some((n) => n > 0);
     return {
       labels: labelsLocal,

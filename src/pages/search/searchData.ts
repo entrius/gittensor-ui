@@ -10,7 +10,7 @@ import {
   type Repository,
 } from '../../api/models/Dashboard';
 import { useSearchDatasets } from '../../api/SearchApi';
-import { parseNumber } from '../../utils';
+import { getPrLifecycleDate, parseNumber } from '../../utils';
 
 export const MIN_SEARCH_QUERY_LENGTH = 2;
 
@@ -219,7 +219,10 @@ const getPrSearchResults = (
             pr.prState || '',
             String(pr.pullRequestNumber || ''),
           ],
-    (pr) => new Date(pr.mergedAt ?? pr.prCreatedAt).getTime(),
+    (pr) => {
+      const date = getPrLifecycleDate(pr);
+      return date ? new Date(date).getTime() : 0;
+    },
   );
 
   return limitResults(results, limit);
