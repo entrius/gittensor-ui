@@ -161,6 +161,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'number',
       header: 'Issue #',
+      width: 112,
       sortKey: 'number',
       renderCell: (issue) => (
         <a
@@ -181,6 +182,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'title',
       header: 'Title',
+      width: 360,
       sortKey: 'title',
       renderCell: (issue) => (
         <ScrollAwareTooltip
@@ -191,7 +193,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         >
           <Box
             sx={{
-              maxWidth: '400px',
+              maxWidth: '100%',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -205,6 +207,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'status',
       header: 'Status',
+      width: 128,
       sortKey: 'status',
       renderCell: (issue) => {
         const isOpen = !issue.closedAt;
@@ -225,6 +228,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'linkedPr',
       header: 'Linked PR',
+      width: 128,
       sortKey: 'linkedPr',
       renderCell: (issue) =>
         issue.prNumber ? (
@@ -254,6 +258,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'created',
       header: 'Created',
+      width: 128,
       align: 'right',
       sortKey: 'created',
       renderCell: (issue) =>
@@ -262,6 +267,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'closed',
       header: 'Closed',
+      width: 128,
       align: 'right',
       sortKey: 'closed',
       renderCell: (issue) =>
@@ -287,7 +293,13 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       >
         Issues ({sortedIssues.length})
       </Typography>
-      <Stack direction="row" spacing={1}>
+      <Stack
+        direction="row"
+        spacing={1}
+        flexWrap="wrap"
+        useFlexGap
+        sx={{ rowGap: 1 }}
+      >
         <FilterButton
           label="All"
           isActive={filter === 'all'}
@@ -468,37 +480,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          // Restructure so only the body scrolls — the header sits above the
-          // scroll area, so the scrollbar never appears next to the header row.
-          '& .MuiTableContainer-root': {
-            overflow: 'visible',
-          },
-          '& .MuiTable-root': {
-            display: 'block',
-          },
-          '& .MuiTableHead-root': {
-            display: 'block',
-            // Reserve space matching the body's scrollbar gutter so columns line up.
-            paddingRight: '8px',
-            backgroundColor: theme.palette.surface.tooltip,
-          },
-          '& .MuiTableHead-root .MuiTableRow-root': {
-            display: 'table',
-            tableLayout: 'fixed',
-            width: '100%',
-          },
-          '& .MuiTableBody-root': {
-            display: 'block',
-            maxHeight: '500px',
-            overflowY: 'auto',
-            scrollbarGutter: 'stable',
-            ...scrollbarSx,
-          },
-          '& .MuiTableBody-root .MuiTableRow-root': {
-            display: 'table',
-            tableLayout: 'fixed',
-            width: '100%',
-          },
         }}
         elevation={0}
       >
@@ -508,7 +489,14 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           getRowKey={(issue) =>
             `${issue.number}-${issue.prNumber}-${issue.repositoryFullName}`
           }
+          minWidth="984px"
           stickyHeader
+          tableContainerSx={{
+            maxHeight: 500,
+            overflow: 'auto',
+            scrollbarGutter: 'stable',
+            ...scrollbarSx,
+          }}
           size="medium"
           header={headerToolbar}
           emptyState={
