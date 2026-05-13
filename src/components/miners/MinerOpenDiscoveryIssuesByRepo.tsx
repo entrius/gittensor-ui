@@ -28,11 +28,6 @@ import {
 import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import TablePagination from '../common/TablePagination';
-import {
-  selectMinerIssueScanRepos,
-  useMinerRepositoriesOpenIssues,
-} from '../../hooks/useMinerRepositoriesOpenIssues';
-import { type RepositoryIssue } from '../../api/models/Miner';
 
 type IssueStatusFilter = 'all' | 'open' | 'solved' | 'closed';
 type IssueSortField = 'number' | 'repository' | 'date';
