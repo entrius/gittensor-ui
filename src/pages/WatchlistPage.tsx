@@ -32,6 +32,7 @@ import {
   Badge,
   useMediaQuery,
   Portal,
+  TablePagination,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
@@ -258,15 +259,33 @@ export const WatchlistContent: React.FC = () => {
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
-          variant="fullWidth"
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           sx={(t) => ({
+            maxWidth: '100%',
+            minWidth: 0,
             minHeight: 52,
+            '& .MuiTabs-scroller': {
+              overscrollBehaviorX: 'contain',
+            },
+            '& .MuiTabs-flexContainer': {
+              minWidth: '100%',
+            },
+            '& .MuiTabs-scrollButtons': {
+              color: t.palette.text.primary,
+              width: 32,
+              '&.Mui-disabled': {
+                opacity: 0.25,
+              },
+            },
             '& .MuiTab-root': {
               minHeight: 52,
               fontSize: '0.95rem',
               fontWeight: 700,
               textTransform: 'none',
               letterSpacing: '0.01em',
+              flex: '1 0 auto',
               color: alpha(t.palette.text.primary, 0.45),
               transition: 'color 0.2s, background-color 0.2s',
               '&:hover': {
@@ -1580,12 +1599,43 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
   );
 };
 
-const ROWS_PER_PAGE = 50;
+const ROWS_PER_PAGE = 60; // If we set this to 50, tile mode displays 2 cards with an empty slot in the last row.
+
+const WatchlistStackedPagination: React.FC<{
+  count: number;
+  page: number;
+  onPageChange: (nextPage: number) => void;
+}> = ({ count, page, onPageChange }) => (
+  <TablePagination
+    rowsPerPageOptions={[]}
+    component="div"
+    count={count}
+    rowsPerPage={ROWS_PER_PAGE}
+    page={page}
+    onPageChange={(_event, newPage) => onPageChange(newPage)}
+    onRowsPerPageChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+      void e;
+    }}
+    showFirstButton
+    showLastButton
+    sx={{
+      borderTop: '1px solid',
+      borderColor: 'border.light',
+      color: 'text.secondary',
+      '.MuiTablePagination-displayedRows': {},
+    }}
+  />
+);
+
+/** Sidebar is beside main content only at `xl+`; below that, paginate tables so stacked sidebars stay reachable. */
+const useWatchlistSidebarFixedRight = () =>
+  useMediaQuery(theme.breakpoints.up('xl'));
 
 const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: repos } = useReposAndWeights();
   const { data: allPrs } = useAllPrs();
   const { data: allMiners } = useAllMiners();
+  const sidebarFixedRight = useWatchlistSidebarFixedRight();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
@@ -1597,6 +1647,10 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   const [sortField, setSortField] = useState<RepoSortKey>('weight');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    setPage(0);
+  }, [sidebarFixedRight]);
 
   useEffect(() => {
     setPage(0);
@@ -1718,12 +1772,25 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     });
   }, [filtered, sortField, sortOrder]);
 
-  const paged = useMemo(
-    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
-    [sorted, page],
+  const totalRepoPages = Math.max(
+    1,
+    Math.ceil(filtered.length / ROWS_PER_PAGE),
   );
 
   useEffect(() => {
+    setPage((p) => Math.min(p, totalRepoPages - 1));
+  }, [totalRepoPages]);
+
+  const paged = useMemo(() => {
+    if (sidebarFixedRight) {
+      return sorted.slice(0, (page + 1) * ROWS_PER_PAGE);
+    }
+    const start = page * ROWS_PER_PAGE;
+    return sorted.slice(start, start + ROWS_PER_PAGE);
+  }, [sorted, page, sidebarFixedRight]);
+
+  useEffect(() => {
+    if (!sidebarFixedRight) return;
     const target = observerTarget.current;
     if (!target) return;
     const observer = new IntersectionObserver(
@@ -1740,7 +1807,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [page, filtered.length]);
+  }, [sidebarFixedRight, page, filtered.length]);
 
   const maxWeight = useMemo(
     () =>
@@ -2046,6 +2113,15 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             order: sortOrder,
             onChange: handleSort,
           }}
+          pagination={
+            !sidebarFixedRight ? (
+              <WatchlistStackedPagination
+                count={filtered.length}
+                page={page}
+                onPageChange={setPage}
+              />
+            ) : undefined
+          }
         />
       ) : (
         <Box
@@ -2086,7 +2162,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
-      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+      {sidebarFixedRight && filtered.length > (page + 1) * ROWS_PER_PAGE && (
         <Box
           ref={observerTarget}
           sx={{
@@ -2114,6 +2190,13 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
+      {!sidebarFixedRight && viewMode !== 'list' ? (
+        <WatchlistStackedPagination
+          count={filtered.length}
+          page={page}
+          onPageChange={setPage}
+        />
+      ) : null}
     </Card>
   );
 };
@@ -2332,6 +2415,7 @@ const buildBountyColumns = (): DataTableColumn<
 const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allIssues, isLoading } = useIssues();
   const { taoPrice, alphaPrice } = usePrices();
+  const sidebarFixedRight = useWatchlistSidebarFixedRight();
   const bountyColumns = useMemo(() => buildBountyColumns(), []);
 
   const items = useMemo<IssueBounty[]>(() => {
@@ -2351,6 +2435,10 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   const [sortField, setSortField] = useState<BountySortKey>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    setPage(0);
+  }, [sidebarFixedRight]);
 
   useEffect(() => {
     setPage(0);
@@ -2398,12 +2486,25 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     });
   }, [filtered, sortField, sortOrder]);
 
-  const paged = useMemo(
-    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
-    [sorted, page],
+  const totalBountyPages = Math.max(
+    1,
+    Math.ceil(filtered.length / ROWS_PER_PAGE),
   );
 
   useEffect(() => {
+    setPage((p) => Math.min(p, totalBountyPages - 1));
+  }, [totalBountyPages]);
+
+  const paged = useMemo(() => {
+    if (sidebarFixedRight) {
+      return sorted.slice(0, (page + 1) * ROWS_PER_PAGE);
+    }
+    const start = page * ROWS_PER_PAGE;
+    return sorted.slice(start, start + ROWS_PER_PAGE);
+  }, [sorted, page, sidebarFixedRight]);
+
+  useEffect(() => {
+    if (!sidebarFixedRight) return;
     const target = observerTarget.current;
     if (!target) return;
     const observer = new IntersectionObserver(
@@ -2420,7 +2521,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [page, filtered.length]);
+  }, [sidebarFixedRight, page, filtered.length]);
 
   return (
     <Card
@@ -2496,6 +2597,15 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             order: sortOrder,
             onChange: handleSort,
           }}
+          pagination={
+            !sidebarFixedRight ? (
+              <WatchlistStackedPagination
+                count={filtered.length}
+                page={page}
+                onPageChange={setPage}
+              />
+            ) : undefined
+          }
         />
       ) : (
         <Box
@@ -2549,7 +2659,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
-      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+      {sidebarFixedRight && filtered.length > (page + 1) * ROWS_PER_PAGE && (
         <Box
           ref={observerTarget}
           sx={{
@@ -2577,6 +2687,13 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
+      {!sidebarFixedRight && viewMode !== 'list' ? (
+        <WatchlistStackedPagination
+          count={filtered.length}
+          page={page}
+          onPageChange={setPage}
+        />
+      ) : null}
     </Card>
   );
 };
@@ -3100,6 +3217,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { items, sourcesByKey, isLoading } = useWatchedPRs(itemKeys);
   const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
   const { isWatched } = useWatchlist('prs');
+  const sidebarFixedRight = useWatchlistSidebarFixedRight();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
@@ -3109,6 +3227,10 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   const [sortField, setSortField] = useState<PrSortKey>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    setPage(0);
+  }, [sidebarFixedRight]);
 
   useEffect(() => {
     setPage(0);
@@ -3170,12 +3292,22 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     });
   }, [filtered, sortField, sortOrder, isWatched]);
 
-  const paged = useMemo(
-    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
-    [sorted, page],
-  );
+  const totalPrPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
 
   useEffect(() => {
+    setPage((p) => Math.min(p, totalPrPages - 1));
+  }, [totalPrPages]);
+
+  const paged = useMemo(() => {
+    if (sidebarFixedRight) {
+      return sorted.slice(0, (page + 1) * ROWS_PER_PAGE);
+    }
+    const start = page * ROWS_PER_PAGE;
+    return sorted.slice(start, start + ROWS_PER_PAGE);
+  }, [sorted, page, sidebarFixedRight]);
+
+  useEffect(() => {
+    if (!sidebarFixedRight) return;
     const target = observerTarget.current;
     if (!target) return;
     const observer = new IntersectionObserver(
@@ -3192,7 +3324,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [page, filtered.length]);
+  }, [sidebarFixedRight, page, filtered.length]);
 
   return (
     <Card
@@ -3295,6 +3427,15 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             order: sortOrder,
             onChange: handleSort,
           }}
+          pagination={
+            !sidebarFixedRight ? (
+              <WatchlistStackedPagination
+                count={filtered.length}
+                page={page}
+                onPageChange={setPage}
+              />
+            ) : undefined
+          }
         />
       ) : (
         <Box
@@ -3346,7 +3487,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
-      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+      {sidebarFixedRight && filtered.length > (page + 1) * ROWS_PER_PAGE && (
         <Box
           ref={observerTarget}
           sx={{
@@ -3374,6 +3515,13 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
+      {!sidebarFixedRight && viewMode !== 'list' ? (
+        <WatchlistStackedPagination
+          count={filtered.length}
+          page={page}
+          onPageChange={setPage}
+        />
+      ) : null}
     </Card>
   );
 };
@@ -3855,6 +4003,7 @@ const IssueCard: React.FC<{
 const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   const issueQueries = useMinersIssues(minerIds, minerIds.length > 0);
   const isLoading = issueQueries.some((q) => q.isLoading);
+  const sidebarFixedRight = useWatchlistSidebarFixedRight();
 
   const { ids: starredIssueIds } = useWatchlist('issues');
   const { ids: watchedRepoIds } = useWatchlist('repos');
@@ -3923,6 +4072,10 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
 
   useEffect(() => {
     setPage(0);
+  }, [sidebarFixedRight]);
+
+  useEffect(() => {
+    setPage(0);
   }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
 
   const handleSort = (field: IssueSortKey) => {
@@ -3964,12 +4117,25 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     });
   }, [filtered, sortField, sortOrder]);
 
-  const paged = useMemo(
-    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
-    [sorted, page],
+  const totalIssuePages = Math.max(
+    1,
+    Math.ceil(filtered.length / ROWS_PER_PAGE),
   );
 
   useEffect(() => {
+    setPage((p) => Math.min(p, totalIssuePages - 1));
+  }, [totalIssuePages]);
+
+  const paged = useMemo(() => {
+    if (sidebarFixedRight) {
+      return sorted.slice(0, (page + 1) * ROWS_PER_PAGE);
+    }
+    const start = page * ROWS_PER_PAGE;
+    return sorted.slice(start, start + ROWS_PER_PAGE);
+  }, [sorted, page, sidebarFixedRight]);
+
+  useEffect(() => {
+    if (!sidebarFixedRight) return;
     const target = observerTarget.current;
     if (!target) return;
     const observer = new IntersectionObserver(
@@ -3986,7 +4152,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [page, filtered.length]);
+  }, [sidebarFixedRight, page, filtered.length]);
 
   return (
     <Card
@@ -4058,6 +4224,15 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
             order: sortOrder,
             onChange: handleSort,
           }}
+          pagination={
+            !sidebarFixedRight ? (
+              <WatchlistStackedPagination
+                count={filtered.length}
+                page={page}
+                onPageChange={setPage}
+              />
+            ) : undefined
+          }
         />
       ) : (
         <Box
@@ -4107,7 +4282,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
           )}
         </Box>
       )}
-      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+      {sidebarFixedRight && filtered.length > (page + 1) * ROWS_PER_PAGE && (
         <Box
           ref={observerTarget}
           sx={{
@@ -4135,6 +4310,13 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
           )}
         </Box>
       )}
+      {!sidebarFixedRight && viewMode !== 'list' ? (
+        <WatchlistStackedPagination
+          count={filtered.length}
+          page={page}
+          onPageChange={setPage}
+        />
+      ) : null}
     </Card>
   );
 };

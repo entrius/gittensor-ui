@@ -2,7 +2,10 @@ import React, { useMemo, useState, useEffect } from 'react';
 import { Avatar, Box, Button, Stack, Typography } from '@mui/material';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import RocketLaunchIcon from '@mui/icons-material/RocketLaunch';
 import { Page } from '../components/layout';
+import NetworkCanvas from '../components/landing/NetworkCanvas';
+import useCountUp from '../hooks/useCountUp';
 import { SEO } from '../components';
 import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
 import {
@@ -289,15 +292,6 @@ const HomePage: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-  useEffect(() => {
-    // Coprime cadence vs the top panel (5s) so flips rarely line up.
-    const interval = setInterval(() => {
-      setActiveBottomCard((current) =>
-        current === 'maintainer' ? 'miner' : 'maintainer',
-      );
-    }, 7000);
-    return () => clearInterval(interval);
-  }, []);
   const { datasets, isLoading } = useDashboardData('35d');
   const stats = useStats();
   const onboardLink = useLinkBehavior<HTMLAnchorElement>('/onboard');
@@ -401,6 +395,7 @@ const HomePage: React.FC = () => {
             '0%': { transform: 'scaleX(0)' },
             '100%': { transform: 'scaleX(1)' },
           },
+
           '@media (prefers-reduced-motion: reduce)': {
             '& *, & *::before, & *::after': {
               animation: 'none !important',
@@ -419,12 +414,33 @@ const HomePage: React.FC = () => {
             },
             gap: { xs: 2, md: 3, xl: 4 },
             alignItems: 'center',
+            position: 'relative',
           }}
         >
+          {/* ── Full-width animated particle mesh ── */}
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 0,
+              opacity: 0,
+              animation:
+                'landingFadeUp 1600ms cubic-bezier(0.16, 1, 0.3, 1) 200ms forwards',
+              '@media (prefers-reduced-motion: reduce)': {
+                opacity: 0.35,
+                animation: 'none',
+              },
+            }}
+          >
+            <NetworkCanvas particleCount={55} connectionDistance={130} />
+          </Box>
           <HeroCopy
             rewardPoolLabel={rewardPoolLabel}
             minerCountLabel={minerCountLabel}
             merged35dLabel={merged35dLabel}
+            rewardPoolRaw={monthlyRewards ?? 0}
+            minerCountRaw={minerCount}
+            merged35dRaw={mergedPrs35d}
           />
 
           <Box
@@ -598,43 +614,48 @@ const HomePage: React.FC = () => {
             </Box>
             <Stack
               direction="row"
-              spacing={1}
+              spacing={0}
               sx={{
                 position: 'absolute',
-                bottom: -24,
+                top: -28,
                 left: '50%',
                 transform: 'translateX(-50%)',
                 zIndex: 2,
+                borderRadius: 3,
+                overflow: 'hidden',
+                border: '1px solid',
+                borderColor: 'border.light',
               }}
             >
-              <Box
-                onClick={() => setActiveBottomCard('maintainer')}
-                sx={(theme) => ({
-                  width: 32,
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor:
-                    activeBottomCard === 'maintainer'
-                      ? theme.palette.status.merged
-                      : alpha(theme.palette.text.primary, 0.1),
-                  cursor: 'pointer',
-                  transition: 'background-color 0.3s ease',
-                })}
-              />
-              <Box
-                onClick={() => setActiveBottomCard('miner')}
-                sx={(theme) => ({
-                  width: 32,
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor:
-                    activeBottomCard === 'miner'
-                      ? theme.palette.status.merged
-                      : alpha(theme.palette.text.primary, 0.1),
-                  cursor: 'pointer',
-                  transition: 'background-color 0.3s ease',
-                })}
-              />
+              {(['maintainer', 'miner'] as const).map((tab) => (
+                <Box
+                  key={tab}
+                  onClick={() => setActiveBottomCard(tab)}
+                  sx={(theme) => ({
+                    px: 1.8,
+                    py: 0.5,
+                    cursor: 'pointer',
+                    fontSize: '0.62rem',
+                    fontWeight: 700,
+                    letterSpacing: '0.08em',
+                    textTransform: 'uppercase',
+                    transition: 'all 0.25s ease',
+                    backgroundColor:
+                      activeBottomCard === tab
+                        ? alpha(theme.palette.status.merged, 0.15)
+                        : 'transparent',
+                    color:
+                      activeBottomCard === tab
+                        ? theme.palette.status.merged
+                        : alpha(theme.palette.text.primary, 0.35),
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.text.primary, 0.06),
+                    },
+                  })}
+                >
+                  {tab === 'maintainer' ? 'Maintainers' : 'Miners'}
+                </Box>
+              ))}
             </Stack>
           </Box>
         </Box>
@@ -647,186 +668,306 @@ interface HeroCopyProps {
   rewardPoolLabel: string;
   minerCountLabel: string;
   merged35dLabel: string;
+  rewardPoolRaw: number;
+  minerCountRaw: number;
+  merged35dRaw: number;
 }
 
 const HeroCopy: React.FC<HeroCopyProps> = ({
   rewardPoolLabel,
   minerCountLabel,
   merged35dLabel,
-}) => (
-  <Box
-    sx={{
-      minHeight: { xs: 'auto', xl: '100%' },
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'center',
-      gap: { xs: 3, md: 3.5 },
-      px: { xs: 1, sm: 2, md: 4, lg: 4, xl: 2 },
-      py: { xs: 4, md: 5, xl: 4 },
-      position: 'relative',
-    }}
-  >
-    <Box
-      sx={(theme) => ({
-        position: 'absolute',
-        top: '50%',
-        left: '20%',
-        width: '60%',
-        height: '60%',
-        background: `radial-gradient(ellipse at center, ${alpha(theme.palette.status.merged, 0.12)} 0%, transparent 70%)`,
-        filter: 'blur(60px)',
-        transform: 'translate(-50%, -50%)',
-        pointerEvents: 'none',
-        zIndex: 0,
-      })}
-    />
-    <Stack
-      spacing={{ xs: 3, md: 3.5 }}
-      sx={{ maxWidth: 980, position: 'relative', zIndex: 1 }}
-    >
-      <Stack direction="row" spacing={1.5} alignItems="center" sx={fadeUp(60)}>
-        <Typography
-          sx={(theme) => ({
-            color: alpha(theme.palette.text.primary, 0.52),
-            fontSize: { xs: '0.68rem', sm: '0.75rem' },
-            letterSpacing: '0.18em',
-            textTransform: 'uppercase',
-          })}
-        >
-          <Box component="span" sx={{ fontWeight: 900 }}>
-            Gittensor
-          </Box>{' '}
-          - Bittensor Subnet 74
-        </Typography>
-      </Stack>
+  rewardPoolRaw,
+  minerCountRaw,
+  merged35dRaw,
+}) => {
+  const dashboardLink = useLinkBehavior<HTMLAnchorElement>('/dashboard');
+  const registerLink = useLinkBehavior<HTMLAnchorElement>(
+    '/repository-registration',
+  );
 
-      <Box>
-        <Typography
-          component="h1"
-          sx={{
-            maxWidth: 980,
-            fontFamily: 'var(--font-heading)',
-            fontSize: {
-              xs: '2.95rem',
-              sm: '4.2rem',
-              md: '5.35rem',
-              xl: '5.55rem',
-            },
-            fontWeight: 900,
-            lineHeight: { xs: 0.98, sm: 0.94 },
-            letterSpacing: 0,
-            ...fadeUp(140),
-          }}
+  return (
+    <Box
+      sx={{
+        minHeight: { xs: 'auto', xl: '100%' },
+        display: 'flex',
+        flexDirection: 'column',
+        justifyContent: 'center',
+        gap: { xs: 3, md: 3.5 },
+        px: { xs: 1, sm: 2, md: 4, lg: 4, xl: 2 },
+        py: { xs: 4, md: 5, xl: 4 },
+        position: 'relative',
+        overflow: 'hidden',
+      }}
+    >
+      {/* ── Hero copy ── */}
+      <Stack
+        spacing={{ xs: 3, md: 3.5 }}
+        sx={{ maxWidth: 980, position: 'relative', zIndex: 1 }}
+      >
+        <Stack
+          direction="row"
+          spacing={1.5}
+          alignItems="center"
+          sx={fadeUp(60)}
         >
-          Autonomous software{' '}
           <Box
-            component="span"
             sx={(theme) => ({
-              color: theme.palette.status.merged,
-              fontStyle: 'italic',
-              display: 'inline-block',
-              position: 'relative',
-              '&::after': {
-                content: '""',
-                position: 'absolute',
-                left: '0.05em',
-                right: '0.05em',
-                bottom: '0.03em',
-                height: '0.05em',
-                backgroundColor: alpha(theme.palette.status.merged, 0.48),
-                transformOrigin: 'left',
-                animation:
-                  'landingUnderline 900ms cubic-bezier(0.16, 1, 0.3, 1) 620ms both',
+              width: 6,
+              height: 6,
+              borderRadius: '50%',
+              backgroundColor: theme.palette.status.merged,
+              animation: 'landingPulse 2.2s ease-in-out infinite',
+              flexShrink: 0,
+            })}
+          />
+          <Typography
+            sx={(theme) => ({
+              color: alpha(theme.palette.text.primary, 0.52),
+              fontSize: { xs: '0.68rem', sm: '0.75rem' },
+              letterSpacing: '0.18em',
+              textTransform: 'uppercase',
+            })}
+          >
+            <Box component="span" sx={{ fontWeight: 900 }}>
+              Gittensor
+            </Box>{' '}
+            – Bittensor Subnet 74
+          </Typography>
+        </Stack>
+
+        <Box>
+          <Typography
+            component="h1"
+            sx={{
+              maxWidth: 980,
+              fontFamily: 'var(--font-heading)',
+              fontSize: {
+                xs: '2.95rem',
+                sm: '4.2rem',
+                md: '5.35rem',
+                xl: '5.55rem',
+              },
+              fontWeight: 900,
+              lineHeight: { xs: 0.98, sm: 0.94 },
+              letterSpacing: 0,
+              ...fadeUp(140),
+            }}
+          >
+            Autonomous software{' '}
+            <Box
+              component="span"
+              sx={(theme) => ({
+                color: theme.palette.status.merged,
+                fontStyle: 'italic',
+                display: 'inline-block',
+                position: 'relative',
+                '&::after': {
+                  content: '""',
+                  position: 'absolute',
+                  left: '0.05em',
+                  right: '0.05em',
+                  bottom: '0.03em',
+                  height: '0.05em',
+                  backgroundColor: alpha(theme.palette.status.merged, 0.48),
+                  transformOrigin: 'left',
+                  animation:
+                    'landingUnderline 900ms cubic-bezier(0.16, 1, 0.3, 1) 620ms both',
+                },
+              })}
+            >
+              development.
+            </Box>
+          </Typography>
+          <Typography
+            sx={(theme) => ({
+              mt: { xs: 2.5, md: 3 },
+              maxWidth: 640,
+              color: alpha(theme.palette.text.primary, 0.68),
+              fontSize: { xs: '0.95rem', sm: '1.08rem' },
+              lineHeight: 1.7,
+              ...fadeUp(240),
+            })}
+          >
+            A permissionless market of coding agents on Bittensor.
+            <Box component="span" sx={{ display: 'block', mt: 0.5 }}>
+              Direct them at any feature, any optimization, any repo.
+            </Box>
+          </Typography>
+        </Box>
+
+        {/* ── CTA buttons ── */}
+        <Stack
+          direction={{ xs: 'column', sm: 'row' }}
+          spacing={1.5}
+          sx={{ ...fadeUp(340) }}
+        >
+          <Button
+            component="a"
+            {...dashboardLink}
+            variant="contained"
+            endIcon={<ArrowForwardIcon />}
+            sx={(theme) => ({
+              minHeight: 48,
+              px: 3.5,
+              borderRadius: 1.75,
+              backgroundColor: theme.palette.status.merged,
+              color: theme.palette.common.black,
+              textTransform: 'none',
+              fontWeight: 900,
+              fontSize: '0.92rem',
+              boxShadow: `0 0 24px ${alpha(theme.palette.status.merged, 0.25)}, 0 4px 12px ${alpha(theme.palette.common.black, 0.4)}`,
+              transition: 'all 0.22s ease',
+              '&:hover': {
+                backgroundColor: alpha(theme.palette.status.merged, 0.88),
+                transform: 'translateY(-2px)',
+                boxShadow: `0 0 36px ${alpha(theme.palette.status.merged, 0.35)}, 0 8px 24px ${alpha(theme.palette.common.black, 0.5)}`,
               },
             })}
           >
-            development.
-          </Box>
-        </Typography>
-        <Typography
-          sx={(theme) => ({
-            mt: { xs: 2.5, md: 3 },
-            maxWidth: 720,
-            color: alpha(theme.palette.text.primary, 0.68),
-            fontSize: { xs: '0.95rem', sm: '1.05rem' },
-            lineHeight: 1.7,
-            ...fadeUp(240),
-          })}
-        >
-          A permissionless market of coding agents.
-          <Box component="span" sx={{ display: 'block', mt: 1 }}>
-            Direct them at any feature, any optimization, any repo.
-          </Box>
-        </Typography>
-      </Box>
-    </Stack>
+            Explore dashboard
+          </Button>
+          <Button
+            component="a"
+            {...registerLink}
+            variant="outlined"
+            endIcon={<RocketLaunchIcon sx={{ fontSize: '1rem !important' }} />}
+            sx={(theme) => ({
+              minHeight: 48,
+              px: 3,
+              borderRadius: 1.75,
+              borderColor: alpha(theme.palette.text.primary, 0.18),
+              color: theme.palette.text.primary,
+              textTransform: 'none',
+              fontWeight: 800,
+              fontSize: '0.88rem',
+              backdropFilter: 'blur(8px)',
+              backgroundColor: alpha(theme.palette.text.primary, 0.03),
+              transition: 'all 0.22s ease',
+              '&:hover': {
+                borderColor: theme.palette.status.merged,
+                backgroundColor: alpha(theme.palette.status.merged, 0.06),
+                color: theme.palette.status.merged,
+                transform: 'translateY(-2px)',
+              },
+            })}
+          >
+            Register a repo
+          </Button>
+        </Stack>
+      </Stack>
 
-    <Box
-      sx={{
-        width: '100%',
-        display: 'grid',
-        gridTemplateColumns: {
-          xs: '1fr',
-          sm: 'repeat(3, minmax(0, 1fr))',
-        },
-        gap: 1,
-        maxWidth: 920,
-        alignSelf: 'stretch',
-      }}
-    >
-      <HeroStat
-        value={rewardPoolLabel}
-        label="est. rewards / month"
-        delayMs={420}
-      />
-      <HeroStat
-        value={minerCountLabel}
-        label="competing miners"
-        delayMs={500}
-      />
-      <HeroStat value={merged35dLabel} label="merged PRs - 35d" delayMs={580} />
+      {/* ── Animated stats row ── */}
+      <Box
+        sx={{
+          width: '100%',
+          display: 'grid',
+          gridTemplateColumns: {
+            xs: '1fr',
+            sm: 'auto 1px auto 1px auto',
+          },
+          gap: { xs: 0, sm: 0 },
+          maxWidth: 780,
+          alignSelf: 'stretch',
+          position: 'relative',
+          zIndex: 1,
+          mt: { xs: 0.5, md: 0 },
+        }}
+      >
+        <HeroStat
+          rawValue={rewardPoolRaw}
+          displayValue={rewardPoolLabel}
+          label="est. rewards / month"
+          prefix="$"
+          delayMs={420}
+        />
+        <Box
+          sx={(theme) => ({
+            display: { xs: 'none', sm: 'block' },
+            alignSelf: 'stretch',
+            my: 0.5,
+            backgroundColor: alpha(theme.palette.text.primary, 0.1),
+          })}
+        />
+        <HeroStat
+          rawValue={minerCountRaw}
+          displayValue={minerCountLabel}
+          label="competing miners"
+          delayMs={500}
+        />
+        <Box
+          sx={(theme) => ({
+            display: { xs: 'none', sm: 'block' },
+            alignSelf: 'stretch',
+            my: 0.5,
+            backgroundColor: alpha(theme.palette.text.primary, 0.1),
+          })}
+        />
+        <HeroStat
+          rawValue={merged35dRaw}
+          displayValue={merged35dLabel}
+          label="merged PRs – 35 days"
+          delayMs={580}
+        />
+      </Box>
     </Box>
-  </Box>
-);
+  );
+};
 
 // Removed PlainEnglishPanel
 
-const HeroStat: React.FC<{ value: string; label: string; delayMs: number }> = ({
-  value,
-  label,
-  delayMs,
-}) => (
-  <Box
-    sx={{
-      py: 1.4,
-      minWidth: 0,
-      ...fadeUp(delayMs),
-    }}
-  >
-    <Typography
-      sx={(theme) => ({
-        color: theme.palette.status.merged,
-        fontFamily: 'var(--font-heading)',
-        fontSize: { xs: '1.55rem', sm: '1.8rem' },
-        fontWeight: 900,
-        lineHeight: 1,
-      })}
+const HeroStat: React.FC<{
+  rawValue: number;
+  displayValue: string;
+  label: string;
+  prefix?: string;
+  delayMs: number;
+}> = ({ rawValue, displayValue, label, prefix, delayMs }) => {
+  const animatedNum = useCountUp(rawValue, 2200, delayMs);
+
+  // Show the animated number while counting, then switch to the formatted display value
+  const shown =
+    rawValue > 0
+      ? animatedNum >= rawValue
+        ? displayValue
+        : `${prefix ?? ''}${animatedNum.toLocaleString('en-US')}`
+      : displayValue;
+
+  return (
+    <Box
+      sx={{
+        py: { xs: 1.4, sm: 1.8 },
+        px: { xs: 0, sm: 2.5 },
+        minWidth: 0,
+        ...fadeUp(delayMs),
+      }}
     >
-      {value}
-    </Typography>
-    <Typography
-      sx={(theme) => ({
-        mt: 0.75,
-        color: alpha(theme.palette.text.primary, 0.46),
-        fontSize: '0.62rem',
-        letterSpacing: '0.16em',
-        textTransform: 'uppercase',
-      })}
-    >
-      {label}
-    </Typography>
-  </Box>
-);
+      <Typography
+        sx={(theme) => ({
+          color: theme.palette.status.merged,
+          fontFamily: 'var(--font-heading)',
+          fontSize: { xs: '1.65rem', sm: '2rem' },
+          fontWeight: 900,
+          lineHeight: 1,
+          textShadow: `0 0 20px ${alpha(theme.palette.status.merged, 0.3)}`,
+        })}
+      >
+        {shown}
+      </Typography>
+      <Typography
+        sx={(theme) => ({
+          mt: 0.75,
+          color: alpha(theme.palette.text.primary, 0.42),
+          fontSize: '0.62rem',
+          letterSpacing: '0.16em',
+          textTransform: 'uppercase',
+        })}
+      >
+        {label}
+      </Typography>
+    </Box>
+  );
+};
 
 const LiveProofPanel: React.FC<{
   rows: LandingActivityRow[];

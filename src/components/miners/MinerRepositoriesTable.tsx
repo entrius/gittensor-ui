@@ -16,13 +16,14 @@ import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import { LinkBox } from '../common/linkBehavior';
 import {
   DataTable,
+  WatchlistButton,
   type DataTableColumn,
-} from '../../components/common/DataTable';
+} from '../../components/common';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import RankBadge from './RankBadge';
 import EmptyStateMessage from './EmptyStateMessage';
 import TablePagination from './TablePagination';
-import ExplorerFilterButton from './ExplorerFilterButton';
+import FilterButton from '../FilterButton';
 import { searchFieldSx } from './MinerRepositoriesTable.styles';
 import {
   type RepoSortField,
@@ -365,6 +366,21 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       sortKey: 'weight',
       renderCell: (repo) => repo.weight.toFixed(4),
     },
+    {
+      key: 'watch',
+      header: '★',
+      width: '52px',
+      align: 'center',
+      cellSx: { p: 0 },
+      renderCell: (repo) =>
+        repo.repository ? (
+          <WatchlistButton
+            category="repos"
+            itemKey={repo.repository}
+            size="small"
+          />
+        ) : null,
+    },
   ];
 
   const issueColumns: DataTableColumn<IssueRepoStats, IssueRepoSortField>[] = [
@@ -438,6 +454,21 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       align: 'right',
       sortKey: 'weight',
       renderCell: (repo) => repo.weight.toFixed(4),
+    },
+    {
+      key: 'watch',
+      header: '★',
+      width: '52px',
+      align: 'center',
+      cellSx: { p: 0 },
+      renderCell: (repo) =>
+        repo.repository ? (
+          <WatchlistButton
+            category="repos"
+            itemKey={repo.repository}
+            size="small"
+          />
+        ) : null,
     },
   ];
 
@@ -521,39 +552,39 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               '& > *': { flexShrink: 0 },
             }}
           >
-            <ExplorerFilterButton
+            <FilterButton
               label="All"
               count={statusCounts.all}
               color={theme.palette.status.neutral}
-              selected={statusFilter === 'all'}
+              isActive={statusFilter === 'all'}
               onClick={() => setStatusFilter('all')}
             />
-            <ExplorerFilterButton
+            <FilterButton
               label="Active"
               count={statusCounts.active}
               color={theme.palette.status.success}
-              selected={statusFilter === 'active'}
+              isActive={statusFilter === 'active'}
               onClick={() => setStatusFilter('active')}
             />
-            <ExplorerFilterButton
+            <FilterButton
               label="Inactive"
               count={statusCounts.inactive}
               color={theme.palette.status.closed}
-              selected={statusFilter === 'inactive'}
+              isActive={statusFilter === 'inactive'}
               onClick={() => setStatusFilter('inactive')}
             />
-            <ExplorerFilterButton
+            <FilterButton
               label="Recent"
               count={statusCounts.recent}
               color={theme.palette.status.merged}
-              selected={statusFilter === 'recent'}
+              isActive={statusFilter === 'recent'}
               onClick={() => setStatusFilter('recent')}
             />
-            <ExplorerFilterButton
+            <FilterButton
               label="Stale"
               count={statusCounts.stale}
               color={theme.palette.status.warning}
-              selected={statusFilter === 'stale'}
+              isActive={statusFilter === 'stale'}
               onClick={() => setStatusFilter('stale')}
             />
           </Box>
