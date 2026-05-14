@@ -27,6 +27,7 @@ import { getRepositoryOwnerAvatarSrc, paginateItems } from '../../utils';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import { WatchlistButton } from '../common';
 import TablePagination from '../common/TablePagination';
 import {
   selectMinerIssueScanRepos,
@@ -58,6 +59,9 @@ const isClosedIssue = (i: RepositoryIssue) =>
 const githubIssueUrl = (issue: RepositoryIssue) =>
   issue.url ??
   `https://github.com/${issue.repositoryFullName}/issues/${issue.number}`;
+
+const discoveryIssueWatchlistKey = (issue: RepositoryIssue): string =>
+  `${issue.repositoryFullName}#${issue.number}`;
 
 const githubSearchIssuesByAuthor = (login: string) =>
   `https://github.com/search?q=${encodeURIComponent(`is:issue author:${login}`)}&type=issues`;
@@ -452,7 +456,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         {
           key: 'title',
           header: 'Title',
-          width: '38%',
+          width: '35%',
           headerSx: { verticalAlign: 'middle' },
           cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
           renderCell: (issue) => (
@@ -564,7 +568,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         {
           key: 'opened',
           header: 'Opened',
-          width: '19%',
+          width: '13%',
           align: 'right',
           sortKey: 'opened',
           headerSx: { verticalAlign: 'middle' },
@@ -586,6 +590,21 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                 </span>
               </Tooltip>
             ) : null,
+        },
+        {
+          key: 'action',
+          header: 'Action',
+          width: '9%',
+          align: 'center',
+          headerSx: { verticalAlign: 'middle' },
+          cellSx: { py: 0.5 },
+          renderCell: (issue) => (
+            <WatchlistButton
+              category="issues"
+              itemKey={discoveryIssueWatchlistKey(issue)}
+              size="small"
+            />
+          ),
         },
       ],
       [],
@@ -630,7 +649,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         {
           key: 'title',
           header: 'Title',
-          width: '38%',
+          width: '35%',
           headerSx: { verticalAlign: 'middle' },
           cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
           renderCell: (issue) => (
@@ -742,7 +761,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         {
           key: 'opened',
           header: 'Opened',
-          width: '19%',
+          width: '13%',
           align: 'right',
           sortKey: 'opened' as IssueSortField,
           headerSx: { verticalAlign: 'middle' },
@@ -764,6 +783,21 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                 </span>
               </Tooltip>
             ) : null,
+        },
+        {
+          key: 'action',
+          header: 'Action',
+          width: '9%',
+          align: 'center',
+          headerSx: { verticalAlign: 'middle' },
+          cellSx: { py: 0.5 },
+          renderCell: (issue) => (
+            <WatchlistButton
+              category="issues"
+              itemKey={discoveryIssueWatchlistKey(issue)}
+              size="small"
+            />
+          ),
         },
       ],
       [],
