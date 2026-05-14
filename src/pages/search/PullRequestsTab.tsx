@@ -17,9 +17,8 @@ const formatPrScore = (pr: CommitLog) => {
 };
 
 const formatPrDateOrStatus = (pr: CommitLog) => {
-  if (pr.mergedAt) return new Date(pr.mergedAt).toLocaleDateString();
-  if (pr.prState === 'CLOSED') return 'Closed';
-  return 'Open';
+  const dateStr = pr.mergedAt || pr.closedAt || pr.prCreatedAt;
+  return dateStr ? new Date(dateStr).toLocaleDateString() : '';
 };
 
 const prColumns: DataTableColumn<CommitLog>[] = [

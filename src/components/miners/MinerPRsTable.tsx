@@ -414,12 +414,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         fontSize: { xs: '0.75rem', sm: '0.85rem' },
         color: (theme) => alpha(theme.palette.text.primary, 0.7),
       },
-      renderCell: (pr) =>
-        pr.mergedAt
-          ? new Date(pr.mergedAt).toLocaleDateString()
-          : pr.prState === 'CLOSED'
-            ? 'Closed'
-            : 'Open',
+      renderCell: (pr) => {
+        const dateStr = pr.mergedAt || pr.closedAt || pr.prCreatedAt;
+        return dateStr ? new Date(dateStr).toLocaleDateString() : null;
+      },
     },
     {
       key: 'watch',
