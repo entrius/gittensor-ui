@@ -56,10 +56,10 @@ export type DataTableProps<T, SortKey extends string = never> = {
   emptyState?: React.ReactNode;
   minWidth?: number | string;
   /**
-   * When set, each row renders as an `<a href>` (native new-tab / middle-click
-   * support). NOTE: because the row becomes `<a>`, cells must not contain
-   * nested `<a>` elements (invalid HTML). For tables with nested anchors,
-   * use `onRowClick` instead.
+   * When set, each row stays a valid `<tr>` and each cell gets a stretched
+   * `<a href>` so the browser status URL, middle-click, and link context menu
+   * behave like a normal anchor. Cells must not contain nested `<a>` elements.
+   * For tables with nested anchors, use `onRowClick` instead.
    */
   getRowHref?: (item: T) => string;
   linkState?: Record<string, unknown>;

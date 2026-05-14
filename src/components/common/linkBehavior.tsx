@@ -1,9 +1,18 @@
-import { forwardRef, useCallback } from 'react';
+import {
+  Children,
+  cloneElement,
+  forwardRef,
+  isValidElement,
+  useCallback,
+  type ReactElement,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
+  TableCell,
   TableRow,
   type BoxProps,
+  type TableCellProps,
   type TableRowProps,
 } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
@@ -93,25 +102,78 @@ export const LinkBox = forwardRef<HTMLAnchorElement, BoxProps & LinkProps>(
 );
 LinkBox.displayName = 'LinkBox';
 
+const cellLinkOverlaySx: SxProps<Theme> = {
+  position: 'absolute',
+  inset: 0,
+  zIndex: 1,
+  ...linkResetSx,
+};
+
+/** Content above the stretch `<a>`; pointer hits pass through to the anchor except on controls. */
+const cellLinkContentSx: SxProps<Theme> = {
+  position: 'relative',
+  zIndex: 2,
+  display: 'block',
+  height: '100%',
+  pointerEvents: 'none',
+  '& a, & button, & input, & select, & textarea, & [role="button"]': {
+    pointerEvents: 'auto',
+  },
+};
+
 /**
- * A `TableRow` that renders as `<a href>`. Drop-in replacement for any
- * `<TableRow onClick={() => navigate(...)}>` row.
+ * A normal `<tr>` with a real `<a href>` stretched over each cell. That keeps
+ * the table DOM valid, restores the browser status URL on hover, and keeps
+ * native middle-click / context-menu link behavior. Cells must not nest
+ * another `<a>` when this row is used.
  */
 export const LinkTableRow = forwardRef<
-  HTMLAnchorElement,
+  HTMLTableRowElement,
   TableRowProps & LinkProps
->(({ href, linkState, sx, ...rest }, ref) => {
+>(({ href, linkState, replace, sx, children, ...rest }, ref) => {
   const linkProps = useLinkBehavior<HTMLAnchorElement>(href, {
     state: linkState,
+    replace,
   });
+
+  const enhancedCells = Children.map(children, (child, index) => {
+    if (!isValidElement(child) || child.type !== TableCell) {
+      return child;
+    }
+    const cell = child as ReactElement<TableCellProps>;
+    const prevSx = cell.props.sx;
+    const mergedCellSx: SxProps<Theme> = [
+      { position: 'relative' },
+      ...(prevSx === undefined
+        ? []
+        : Array.isArray(prevSx)
+          ? prevSx
+          : [prevSx]),
+    ];
+
+    return cloneElement(cell, {
+      sx: mergedCellSx,
+      children: (
+        <>
+          <Box
+            component="a"
+            {...linkProps}
+            tabIndex={index === 0 ? 0 : -1}
+            aria-hidden={index === 0 ? undefined : true}
+            sx={cellLinkOverlaySx}
+          />
+          <Box component="span" sx={cellLinkContentSx}>
+            {cell.props.children}
+          </Box>
+        </>
+      ),
+    });
+  });
+
   return (
-    <TableRow
-      component="a"
-      ref={ref}
-      {...linkProps}
-      sx={mergeSx(linkResetSx, sx)}
-      {...rest}
-    />
+    <TableRow ref={ref} {...rest} sx={sx}>
+      {enhancedCells}
+    </TableRow>
   );
 });
 LinkTableRow.displayName = 'LinkTableRow';
