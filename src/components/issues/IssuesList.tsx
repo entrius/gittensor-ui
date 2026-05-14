@@ -39,6 +39,7 @@ import ReactECharts from 'echarts-for-react';
 import { format } from 'date-fns';
 import { IssueBounty } from '../../api/models/Issues';
 import { usePrices } from '../../hooks/usePrices';
+import { parseBountyAmount } from '../../utils/bountyAmount';
 import {
   formatAlphaToUsd,
   formatDate,
@@ -103,11 +104,6 @@ const SORT_LABELS: Record<SortKey, string> = {
   funding: 'Funding',
   solver: 'Solver',
   date: 'Date',
-};
-
-const parseBountyAmount = (value: string | null | undefined): number => {
-  const parsed = Number.parseFloat(value ?? '0');
-  return Number.isFinite(parsed) ? parsed : 0;
 };
 
 interface IssuesListProps {

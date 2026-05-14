@@ -1,15 +1,11 @@
 import type { IssueBounty } from '../api/models/Issues';
+import { parseBountyAmount } from './bountyAmount';
 
 export interface BountyPoolByRepositoryRow {
   repository: string;
   label: string;
   value: number;
 }
-
-const parseBountyAmount = (value: string | null | undefined): number => {
-  const parsed = Number.parseFloat(value ?? '0');
-  return Number.isFinite(parsed) ? parsed : 0;
-};
 
 export const buildBountyPoolByRepositoryRows = (
   issues: IssueBounty[],

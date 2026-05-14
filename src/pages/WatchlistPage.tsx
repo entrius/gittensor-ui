@@ -101,6 +101,7 @@ import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatDate, formatTokenAmount } from '../utils/format';
 import { compareByWatchlist } from '../utils/watchlistSort';
+import { parseBountyAmount } from '../utils/bountyAmount';
 import { buildBountyPoolByRepositoryRows } from '../utils/bountyPoolByRepository';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import theme, {
@@ -2257,11 +2258,6 @@ const bountyVisibleSortKeysForFilter = (
   return [...common, 'bounty', 'status'];
 };
 
-const parseBountyAmount = (value: string | null | undefined): number => {
-  const parsed = Number.parseFloat(value ?? '0');
-  return Number.isFinite(parsed) ? parsed : 0;
-};
-
 const getBountySortValue = (
   issue: IssueBounty,
   key: BountySortKey,
@@ -2888,36 +2884,40 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       </DebouncedSearchInput>
 
       <Collapse in={showChart}>
-        <Box
-          sx={{
-            p: 2,
-            borderBottom: '1px solid',
-            borderColor: 'border.light',
-            height: '500px',
-            backgroundColor: 'surface.subtle',
-          }}
-        >
-          {showChart && filtered.length > 0 ? (
-            <ReactECharts
-              option={chartOption}
-              style={{ height: '100%', width: '100%' }}
-              notMerge
-            />
-          ) : (
-            <Box
-              sx={{
-                height: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
-                No watched bounties found.
-              </Typography>
-            </Box>
-          )}
-        </Box>
+        {showChart ? (
+          <Box
+            sx={{
+              p: 2,
+              borderBottom: '1px solid',
+              borderColor: 'border.light',
+              height: '500px',
+              backgroundColor: 'surface.subtle',
+            }}
+          >
+            {filtered.length > 0 ? (
+              <ReactECharts
+                option={chartOption}
+                style={{ height: '100%', width: '100%' }}
+                notMerge
+              />
+            ) : (
+              <Box
+                sx={{
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                }}
+              >
+                <Typography
+                  sx={{ color: 'text.secondary', fontSize: '0.85rem' }}
+                >
+                  No watched bounties found.
+                </Typography>
+              </Box>
+            )}
+          </Box>
+        ) : null}
       </Collapse>
 
       {viewMode === 'list' ? (
