@@ -36,6 +36,7 @@ import {
 } from '@mui/icons-material';
 import { useSearchParams } from 'react-router-dom';
 import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import {
   useMinerStats,
@@ -1148,6 +1149,12 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
                     }}
                   />
                 </InputAdornment>
+              ),
+              endAdornment: (
+                <ClearSearchAdornment
+                  visible={Boolean(draftValue)}
+                  onClear={() => setDraftValue('')}
+                />
               ),
             }}
             sx={textFieldSx}
