@@ -1,9 +1,10 @@
 import React, { useMemo, useState } from 'react';
-import { Box, Stack, Typography, Avatar } from '@mui/material';
+import { Box, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { SectionCard } from './SectionCard';
 import { STATUS_COLORS, scrollbarSx } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
+import MinerAvatarWithPreview from '../miners/MinerAvatarWithPreview';
 import { LinkBox } from '../common/linkBehavior';
 import { type MinerStats, FONTS } from './types';
 import { ActivitySidebarCards } from './ActivitySidebarCards';
@@ -273,7 +274,9 @@ const LeaderboardRow: React.FC<LeaderboardRowProps> = ({
           minWidth: 0,
         }}
       >
-        <Avatar
+        <MinerAvatarWithPreview
+          githubId={miner.githubId}
+          username={miner.author}
           src={getGithubAvatarSrc(miner.author || miner.githubId)}
           alt={miner.author || miner.githubId}
           sx={{ width: 20, height: 20 }}
