@@ -1,4 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
+import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import {
   Box,
   Card,
@@ -43,13 +44,22 @@ type SortKey =
   | 'created'
   | 'closed';
 
+type RepoIssuesFilter = 'all' | 'open' | 'closed';
+
+const isRepoIssuesFilter = (v: unknown): v is RepoIssuesFilter =>
+  v === 'all' || v === 'open' || v === 'closed';
+
 const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   repositoryFullName,
 }) => {
   const theme = useTheme();
   const { data: issues, isLoading } = useRepositoryIssues(repositoryFullName);
   const { data: bounties } = useRepoIssues(repositoryFullName);
-  const [filter, setFilter] = useState<'all' | 'open' | 'closed'>('all');
+  const [filter, setFilter] = useSessionStoredState<RepoIssuesFilter>(
+    'repository:issues:filter',
+    'all',
+    isRepoIssuesFilter,
+  );
   const [sortKey, setSortKey] = useState<SortKey>('number');
   const [sortDirection, setSortDirection] = useState<SortOrder>('desc');
 

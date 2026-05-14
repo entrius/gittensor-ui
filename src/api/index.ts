@@ -4,6 +4,7 @@ export * from './DashboardApi';
 export * from './IssuesApi';
 export * from './MinerApi';
 export * from './MirrorApi';
+export * from './MirrorDashboardApi';
 export * from './PrsApi';
 export * from './ReposApi';
 export * from './SearchApi';
