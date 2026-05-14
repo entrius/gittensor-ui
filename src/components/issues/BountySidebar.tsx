@@ -306,8 +306,7 @@ const ActivityLegendRow: React.FC<{ segment: DonutSegment }> = ({
 );
 
 /* ------------------------------------------------------------------
- * Bounty Pool & Total Payouts — replaces the old top-of-page IssueStats.
- * Two tile values, matching `MinerStatusTile` density.
+ * Bounty Pool & Total Payouts — two tile values, matching `MinerStatusTile` density.
  * ------------------------------------------------------------------ */
 
 const PoolPayoutsCard: React.FC<{ stats?: IssuesStats }> = ({ stats }) => {

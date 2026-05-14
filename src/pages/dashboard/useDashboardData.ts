@@ -12,7 +12,7 @@ import {
   useAllMiners,
   useAllPrs,
   useIssues,
-  useMinersIssues,
+  useMirrorDashboardIssues,
   useReposAndWeights,
 } from '../../api';
 import {
@@ -20,7 +20,7 @@ import {
   type DatasetState,
   type IssueBounty,
   type MinerEvaluation,
-  type MinerIssue,
+  type MirrorDashboardIssue,
   type Repository,
 } from '../../api/models';
 import {
@@ -30,8 +30,7 @@ import {
   buildFeaturedContributors,
   buildFeaturedWork,
   buildFeaturedDiscoveryContributors,
-  flattenMinerIssues,
-  getMirrorSinceParam,
+  GITTENSOR_START_MS,
   type TrendTimeRange,
 } from './dashboardData';
 
@@ -40,14 +39,12 @@ type DashboardDatasets = {
   miners: DatasetState<MinerEvaluation>;
   issues: DatasetState<IssueBounty>;
   repos: DatasetState<Repository>;
-  minerIssues: DatasetState<MinerIssue>;
+  minerIssues: DatasetState<MirrorDashboardIssue>;
 };
 
-const hasIssueActivity = (miner: MinerEvaluation): boolean =>
-  (miner.totalSolvedIssues ?? 0) +
-    (miner.totalOpenIssues ?? 0) +
-    (miner.totalClosedIssues ?? 0) >
-  0;
+// Pinned once per module load — same `since` for every dashboard mount keeps
+// the React Query cache key stable across renders and route remounts.
+const DASHBOARD_ISSUES_SINCE_ISO = new Date(GITTENSOR_START_MS).toISOString();
 
 export const useDashboardData = (range: TrendTimeRange) => {
   const prsQuery = useAllPrs();
@@ -55,31 +52,32 @@ export const useDashboardData = (range: TrendTimeRange) => {
   const issuesQuery = useIssues();
   const reposQuery = useReposAndWeights();
 
-  // Fan-out per-miner mirror calls; gate on issue activity to bound parallel requests.
-  const activeMinerGithubIds = useMemo(
+  // Single bulk mirror call replaces the previous per-miner fan-out.
+  // The mirror is roster-blind; we filter to subnet authors below using the
+  // gittensor miner roster.
+  const dashboardIssuesQuery = useMirrorDashboardIssues(
+    DASHBOARD_ISSUES_SINCE_ISO,
+  );
+
+  const minerGithubIdSet = useMemo(() => {
+    const set = new Set<string>();
+    (minersQuery.data ?? []).forEach((m) => {
+      if (m.githubId) set.add(m.githubId);
+    });
+    return set;
+  }, [minersQuery.data]);
+
+  const minerIssuesData = useMemo<MirrorDashboardIssue[]>(
     () =>
-      (minersQuery.data ?? [])
-        .filter(hasIssueActivity)
-        .map((m) => m.githubId)
-        .filter((id): id is string => Boolean(id)),
-    [minersQuery.data],
+      (dashboardIssuesQuery.data ?? []).filter(
+        (issue) =>
+          !!issue.author_github_id &&
+          minerGithubIdSet.has(issue.author_github_id),
+      ),
+    [dashboardIssuesQuery.data, minerGithubIdSet],
   );
-
-  const minerIssuesSince = getMirrorSinceParam(range);
-  const minerIssuesQueries = useMinersIssues(
-    activeMinerGithubIds,
-    activeMinerGithubIds.length > 0,
-    minerIssuesSince,
-  );
-
-  const minerIssuesData = useMemo<MinerIssue[]>(
-    () => flattenMinerIssues(minerIssuesQueries.map((q) => q.data ?? [])),
-    [minerIssuesQueries],
-  );
-  const isMinerIssuesLoading =
-    activeMinerGithubIds.length > 0 &&
-    minerIssuesQueries.some((q) => q.isLoading);
-  const isMinerIssuesError = minerIssuesQueries.some((q) => q.isError);
+  const isMinerIssuesLoading = dashboardIssuesQuery.isLoading;
+  const isMinerIssuesError = dashboardIssuesQuery.isError;
 
   const datasets: DashboardDatasets = {
     prs: {
