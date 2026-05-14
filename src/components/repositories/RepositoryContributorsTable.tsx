@@ -2,7 +2,6 @@ import React, { useEffect, useMemo, useState } from 'react';
 import {
   Box,
   Typography,
-  Avatar,
   CircularProgress,
   alpha,
   useTheme,
@@ -17,6 +16,7 @@ import { isMergedPr } from '../../utils/prStatus';
 import { parseNumber } from '../../utils/ExplorerUtils';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import MinerAvatarWithPreview from '../miners/MinerAvatarWithPreview';
 
 interface RepositoryContributorsTableProps {
   repositoryFullName: string;
@@ -252,7 +252,9 @@ const RepositoryContributorsTable: React.FC<
                 },
               }}
             >
-              <Avatar
+              <MinerAvatarWithPreview
+                githubId={c.githubId}
+                username={c.author}
                 src={getRepositoryOwnerAvatarSrc(c.author)}
                 alt={c.author}
                 sx={{

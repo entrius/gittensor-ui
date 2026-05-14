@@ -1,4 +1,6 @@
 export { default as MinerActivity } from './MinerActivity';
+export { default as MinerAvatarWithPreview } from './MinerAvatarWithPreview';
+export { default as MinerHoverCard } from './MinerHoverCard';
 export { default as MinerInsightsCard } from './MinerInsightsCard';
 export { default as MinerOpenDiscoveryIssuesByRepo } from './MinerOpenDiscoveryIssuesByRepo';
 export { default as MinerPRsTable } from './MinerPRsTable';
