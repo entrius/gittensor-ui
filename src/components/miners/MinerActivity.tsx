@@ -5,6 +5,9 @@ import {
   Typography,
   Grid,
   CircularProgress,
+  FormControl,
+  MenuItem,
+  Select,
   alpha,
   useTheme,
 } from '@mui/material';
@@ -36,6 +39,14 @@ import CredibilityChart from './CredibilityChart';
 import PerformanceRadar from './PerformanceRadar';
 
 type ViewMode = 'prs' | 'issues';
+
+type ActivityRange = '7d' | '35d' | 'all';
+
+const RANGE_OPTIONS: { value: ActivityRange; label: string }[] = [
+  { value: '7d', label: '7D' },
+  { value: '35d', label: '35D' },
+  { value: 'all', label: 'All' },
+];
 
 interface MinerActivityProps {
   githubId: string;
@@ -305,6 +316,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
   githubId,
   viewMode = 'prs',
 }) => {
+  const theme = useTheme();
   const isIssueMode = viewMode === 'issues';
   const { data: minerStats } = useMinerStats(githubId);
   const { data: prs, isLoading: isLoadingPRs } = useMinerPRs(githubId);
@@ -313,6 +325,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
   const { data: allMinerStats } = useAllMiners();
   const todayStr = format(new Date(), 'yyyy-MM-dd');
   const [selectedDate, setSelectedDate] = useState<string>(todayStr);
+  const [activityRange, setActivityRange] = useState<ActivityRange>('35d');
 
   useEffect(() => {
     setSelectedDate(todayStr);
@@ -323,19 +336,20 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
   };
 
   // Calculate contribution heatmap data
-  const { contributionData, contributionsLast30Days, totalDaysShown } =
+  const { contributionData, contributionsCount, totalDaysShown, rangeLabel } =
     useMemo(() => {
+      const today = new Date();
+
       if (!prs || prs.length === 0) {
         return {
           contributionData: [],
-          contributionsLast30Days: 0,
+          contributionsCount: 0,
           totalDaysShown: 0,
+          rangeLabel: 'all time',
         };
       }
 
-      const today = new Date();
       let earliestDate = today;
-
       prs.forEach((pr) => {
         if (pr.mergedAt) {
           const d = new Date(pr.mergedAt);
@@ -343,18 +357,27 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
         }
       });
 
-      const diffTime = Math.abs(today.getTime() - earliestDate.getTime());
-      const daysDiff = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      const daysToShow = Math.max(daysDiff, 1);
+      let windowDays: number;
+      let label: string;
+      if (activityRange === '7d') {
+        windowDays = 7;
+        label = 'last 7 days';
+      } else if (activityRange === '35d') {
+        windowDays = 35;
+        label = 'last 35 days';
+      } else {
+        const diffMs = Math.abs(today.getTime() - earliestDate.getTime());
+        const span = Math.ceil(diffMs / (1000 * 60 * 60 * 24)) + 1;
+        windowDays = Math.max(span, 1);
+        label = 'all time';
+      }
 
       const dataMap = new Map<string, number>();
-      for (let i = daysToShow; i >= 0; i--) {
+      for (let i = windowDays - 1; i >= 0; i--) {
         dataMap.set(format(subDays(today, i), 'yyyy-MM-dd'), 0);
       }
 
-      let last30Count = 0;
-      const thirtyDaysAgo = subDays(today, 30);
-
+      let count = 0;
       prs.forEach((pr) => {
         if (!pr.mergedAt) return;
         const date = new Date(pr.mergedAt);
@@ -363,27 +386,28 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
         const dateStr = format(date, 'yyyy-MM-dd');
         if (dataMap.has(dateStr)) {
           dataMap.set(dateStr, (dataMap.get(dateStr) || 0) + 1);
+          count++;
         }
-        if (date >= thirtyDaysAgo) last30Count++;
       });
 
       const data = Array.from(dataMap.entries())
-        .map(([date, count]) => {
+        .map(([date, c]) => {
           let level: 0 | 1 | 2 | 3 | 4 = 0;
-          if (count > 0) level = 1;
-          if (count >= 2) level = 2;
-          if (count >= 3) level = 3;
-          if (count >= 5) level = 4;
-          return { date, count, level };
+          if (c > 0) level = 1;
+          if (c >= 2) level = 2;
+          if (c >= 3) level = 3;
+          if (c >= 5) level = 4;
+          return { date, count: c, level };
         })
         .sort((a, b) => a.date.localeCompare(b.date));
 
       return {
         contributionData: data,
-        contributionsLast30Days: last30Count,
-        totalDaysShown: daysToShow,
+        contributionsCount: count,
+        totalDaysShown: windowDays,
+        rangeLabel: label,
       };
-    }, [prs]);
+    }, [prs, activityRange]);
 
   // PR-mode radar chart values (normalized to 100)
   const prRadarValues = useMemo(() => {
@@ -617,13 +641,39 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
             >
               <ContributionHeatmap
                 data={contributionData}
-                contributionsLast30Days={contributionsLast30Days}
+                contributionsCount={contributionsCount}
                 totalDaysShown={totalDaysShown}
-                subtitle="contribution(s) in the last 30 days"
+                subtitle={`contribution(s) in the ${rangeLabel}`}
                 footerText="* Activity based on merged PRs in Gittensor-tracked repositories"
                 bare
                 selectedDate={selectedDate}
                 onDayClick={handleDayClick}
+                headerRight={
+                  <FormControl
+                    size="small"
+                    sx={{ minWidth: 78, flexShrink: 0 }}
+                  >
+                    <Select
+                      value={activityRange}
+                      onChange={(e) =>
+                        setActivityRange(e.target.value as ActivityRange)
+                      }
+                      sx={{
+                        height: 28,
+                        fontSize: '0.75rem',
+                        '& .MuiOutlinedInput-notchedOutline': {
+                          borderColor: alpha(theme.palette.text.primary, 0.2),
+                        },
+                      }}
+                    >
+                      {RANGE_OPTIONS.map((opt) => (
+                        <MenuItem key={opt.value} value={opt.value} dense>
+                          {opt.label}
+                        </MenuItem>
+                      ))}
+                    </Select>
+                  </FormControl>
+                }
               />
             </Grid>
 

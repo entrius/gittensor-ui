@@ -15,7 +15,7 @@ interface ContributionData {
 
 interface ContributionHeatmapProps {
   data: ContributionData[];
-  contributionsLast30Days: number;
+  contributionsCount: number;
   totalDaysShown: number;
   subtitle?: string;
   footerText?: string;
@@ -24,11 +24,12 @@ interface ContributionHeatmapProps {
   bare?: boolean;
   selectedDate?: string;
   onDayClick?: (date: string) => void;
+  headerRight?: React.ReactNode;
 }
 
 const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
   data,
-  contributionsLast30Days,
+  contributionsCount,
   totalDaysShown,
   subtitle = 'network contribution(s) in the last 30 days',
   footerText,
@@ -37,6 +38,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
   bare = false,
   selectedDate,
   onDayClick,
+  headerRight,
 }) => {
   const theme = useTheme();
   const heatmapLevels = [...CONTRIBUTION_HEATMAP_SCALE];
@@ -46,27 +48,38 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
 
   const content = (
     <>
-      <Box sx={{ mb: 2.5 }}>
-        <Typography
-          sx={{
-            color: 'text.primary',
-            fontWeight: 700,
-            fontSize: '2.5rem',
-            lineHeight: 1,
-          }}
-        >
-          {contributionsLast30Days.toLocaleString()}
-        </Typography>
-        <Typography
-          variant="body2"
-          sx={{
-            color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
-            fontSize: '0.85rem',
-            mt: 0.5,
-          }}
-        >
-          {subtitle}
-        </Typography>
+      <Box
+        sx={{
+          mb: 2.5,
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'flex-start',
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography
+            sx={{
+              color: 'text.primary',
+              fontWeight: 700,
+              fontSize: '2.5rem',
+              lineHeight: 1,
+            }}
+          >
+            {contributionsCount.toLocaleString()}
+          </Typography>
+          <Typography
+            variant="body2"
+            sx={{
+              color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
+              fontSize: '0.85rem',
+              mt: 0.5,
+            }}
+          >
+            {subtitle}
+          </Typography>
+        </Box>
+        {headerRight}
       </Box>
 
       <Box sx={{ width: '100%', overflowX: 'auto', mb: 1, ...scrollbarSx }}>
