@@ -145,15 +145,23 @@ const IssueDetailsPage: React.FC = () => {
                 value={tabValue}
                 onChange={handleTabChange}
                 aria-label="issue details tabs"
+                variant="scrollable"
+                scrollButtons="auto"
+                allowScrollButtonsMobile
                 sx={(theme) => ({
+                  maxWidth: '100%',
+                  minHeight: { xs: 44, sm: 48 },
                   '& .MuiTab-root': {
                     color: STATUS_COLORS.open,
                     fontFamily:
                       '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
                     textTransform: 'none',
                     fontWeight: 500,
-                    minHeight: '48px',
-                    fontSize: '14px',
+                    minWidth: { xs: 'auto', sm: 90 },
+                    minHeight: { xs: 44, sm: 48 },
+                    px: { xs: 1.25, sm: 2 },
+                    fontSize: { xs: '0.78rem', sm: '14px' },
+                    whiteSpace: 'nowrap',
                     '&.Mui-selected': {
                       color: theme.palette.text.primary,
                       fontWeight: 600,
