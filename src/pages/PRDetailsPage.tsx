@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useSessionStoredState } from '../hooks/useSessionStoredState';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { Box, Tabs, Tab, CircularProgress, Typography } from '@mui/material';
 import { Page } from '../components/layout';
@@ -18,12 +19,19 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import CodeIcon from '@mui/icons-material/Code';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 
+const isPrDetailsTabIndex = (v: unknown): v is number =>
+  typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 2;
+
 const PRDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const repository = searchParams.get('repo');
   const pullRequestNumber = searchParams.get('number');
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useSessionStoredState(
+    'pr:detailsTab',
+    0,
+    isPrDetailsTabIndex,
+  );
 
   // Call hook unconditionally (React rules of hooks)
   const { data: prDetails, isLoading } = usePullRequestDetails(

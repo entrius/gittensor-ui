@@ -45,6 +45,7 @@ import {
   RepositoryCodeBrowser,
   ReadmeViewer,
   RepositoryStats,
+  RepositoryPrActivityChart,
   ContributingViewer,
   RepositoryMaintainers,
   RepositoryCheckTab,
@@ -636,6 +637,13 @@ const RepositoryDetailsPage: React.FC = () => {
               <Box sx={{ pt: 0 }}>
                 {/* Repository Stats */}
                 <RepositoryStats repositoryFullName={repo} />
+
+                {tabValue === 2 || tabValue === 3 ? (
+                  <RepositoryPrActivityChart
+                    repositoryFullName={repo}
+                    viewMode={tabValue === 2 ? 'issues' : 'prs'}
+                  />
+                ) : null}
 
                 {/* Maintainers */}
                 <RepositoryMaintainers repositoryFullName={repo} />

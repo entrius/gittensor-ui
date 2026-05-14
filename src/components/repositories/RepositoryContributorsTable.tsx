@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from 'react';
+import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import {
   Box,
   Typography,
@@ -23,6 +24,9 @@ interface RepositoryContributorsTableProps {
 }
 
 type ContributorsProgramTab = 'oss' | 'issues';
+
+const isContributorsProgramTab = (v: unknown): v is ContributorsProgramTab =>
+  v === 'oss' || v === 'issues';
 
 interface ContributorRow {
   rank: number;
@@ -62,7 +66,12 @@ const RepositoryContributorsTable: React.FC<
   const { data: allMinersStats, isLoading: isMinersLoading } = useAllMiners();
 
   const [visibleCount, setVisibleCount] = useState(7);
-  const [programTab, setProgramTab] = useState<ContributorsProgramTab>('oss');
+  const [programTab, setProgramTab] =
+    useSessionStoredState<ContributorsProgramTab>(
+      'repository:contributors:programTab',
+      'oss',
+      isContributorsProgramTab,
+    );
 
   useEffect(() => {
     setVisibleCount(7);
