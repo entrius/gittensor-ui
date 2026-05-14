@@ -40,18 +40,18 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
       sx={{
         backgroundColor: 'background.default',
         border: `1px solid ${theme.palette.border.light}`,
-        borderRadius: 3,
-        p: { xs: 2, sm: 3 },
+        borderRadius: { xs: 2, sm: 3 },
+        p: { xs: 1.5, sm: 3 },
       }}
       elevation={0}
     >
-      <Stack spacing={2}>
+      <Stack spacing={{ xs: 1.5, sm: 2 }}>
         {/* Repository and Issue Number */}
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 2,
+            gap: { xs: 1, sm: 2 },
             flexWrap: 'wrap',
           }}
         >
@@ -64,7 +64,10 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               alignItems: 'center',
               flexWrap: 'wrap',
               gap: 0.5,
-              fontSize: { xs: '0.95rem', sm: '1rem' },
+              minWidth: 0,
+              maxWidth: '100%',
+              overflowWrap: 'anywhere',
+              fontSize: { xs: '0.86rem', sm: '1rem' },
               color: STATUS_COLORS.info,
               textDecoration: 'none',
               '&:hover': {
@@ -94,8 +97,10 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             sx={{
               fontFamily:
                 '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-              fontSize: '1.5rem',
+              fontSize: { xs: '1.15rem', sm: '1.5rem' },
               fontWeight: 600,
+              lineHeight: 1.25,
+              overflowWrap: 'anywhere',
               color: 'text.primary',
             }}
           >
@@ -106,16 +111,16 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
         {/* Bounty and metadata row */}
         <Box
           sx={{
-            display: 'flex',
+            display: { xs: 'grid', sm: 'flex' },
             alignItems: 'flex-start',
-            flexDirection: { xs: 'column', sm: 'row' },
-            columnGap: { sm: 4 },
-            rowGap: { xs: 1.75, sm: 2 },
-            flexWrap: { xs: 'nowrap', sm: 'wrap' },
+            gridTemplateColumns: { xs: 'repeat(2, minmax(0, 1fr))', sm: 'none' },
+            columnGap: { xs: 1.5, sm: 4 },
+            rowGap: { xs: 1.5, sm: 2 },
+            flexWrap: { sm: 'wrap' },
           }}
         >
           <Box
-            sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { sm: 170 } }}
+            sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: 0, sm: 170 } }}
           >
             <Typography
               sx={{
@@ -196,7 +201,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
 
           {issue.authorLogin && (
             <Box
-              sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { sm: 140 } }}
+              sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: 0, sm: 140 } }}
             >
               <Typography
                 sx={{
@@ -227,6 +232,9 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
                     fontSize: '0.9rem',
                     color: 'text.primary',
                     lineHeight: 1.2,
+                    minWidth: 0,
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
                   }}
                 >
                   {issue.authorLogin}
@@ -236,7 +244,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
           )}
 
           <Box
-            sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { sm: 160 } }}
+            sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { xs: 0, sm: 160 } }}
           >
             <Typography
               sx={{
