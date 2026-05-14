@@ -35,7 +35,7 @@ import {
   serializePRKey,
   useWatchlist,
 } from '../../hooks/useWatchlist';
-import TablePagination from './TablePagination';
+import TablePagination from '../common/TablePagination';
 import { tooltipSlotProps } from '../../theme';
 
 type PrSortField =
