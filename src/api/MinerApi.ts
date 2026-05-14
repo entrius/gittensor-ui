@@ -8,6 +8,7 @@ import {
   type GithubMinerData,
   type MinerEvaluation,
   type CommitLog,
+  type MinerHotkeyBinding,
   type MinerIssue,
   type MinerIssuesResponse,
 } from './models/Dashboard';
@@ -72,6 +73,22 @@ export const useMinerGithubData = (githubId: string, enabled?: boolean) =>
   useMinersQuery<GithubMinerData>(
     'useMinerGithubData',
     `/${githubId}/github`,
+    undefined,
+    undefined,
+    enabled,
+  );
+
+/**
+ * Resolve a Bittensor hotkey to its GitHub binding. Returns `{ uid, hotkey,
+ * githubId }`. Use when the app has a hotkey from on-chain data or user input
+ * and needs to navigate to the corresponding miner profile.
+ *
+ * The hotkey field is case-sensitive (SS58). Pass it through as-is.
+ */
+export const useMinerGithubByHotkey = (hotkey: string, enabled?: boolean) =>
+  useApiQuery<MinerHotkeyBinding>(
+    'useMinerGithubByHotkey',
+    `/miners/by-hotkey/${encodeURIComponent(hotkey)}/github`,
     undefined,
     undefined,
     enabled,

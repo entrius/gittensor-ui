@@ -116,7 +116,7 @@ const getMinerSearchResults = (
   const results = sortByMatchThenTiebreaker(
     miners,
     query,
-    (miner) => [miner.githubId, miner.githubUsername],
+    (miner) => [miner.githubId, miner.githubUsername, miner.hotkey],
     (miner) => miner.totalScore,
   );
 

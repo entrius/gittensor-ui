@@ -247,6 +247,13 @@ export type MinerEvaluation = {
   lifetimeUsd?: number;
 };
 
+/** Minimal hotkey ↔ GitHub binding, returned by `/miners/by-hotkey/{hotkey}/github`. */
+export type MinerHotkeyBinding = {
+  uid: number;
+  hotkey: string;
+  githubId: string;
+};
+
 export type GithubMinerData = {
   // Core Identity
   githubId: string;
