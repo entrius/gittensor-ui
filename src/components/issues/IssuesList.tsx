@@ -62,7 +62,7 @@ import {
   readStoredIssuesViewMode,
   writeStoredIssuesViewMode,
 } from './issuesViewMode';
-import TablePagination from '../miners/TablePagination';
+import TablePagination from '../common/TablePagination';
 
 export type FilterType = 'all' | 'available' | 'pending' | 'history';
 
