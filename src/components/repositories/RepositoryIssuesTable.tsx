@@ -55,6 +55,25 @@ type RepoIssuesFilter = 'all' | 'open' | 'closed';
 const isRepoIssuesFilter = (v: unknown): v is RepoIssuesFilter =>
   v === 'all' || v === 'open' || v === 'closed';
 
+function issueMatchesSearch(
+  issue: RepositoryIssue,
+  searchQuery: string,
+): boolean {
+  const q = searchQuery.trim().toLowerCase();
+  if (!q) return true;
+  const title = getLowerText(issue.title);
+  if (title.includes(q)) return true;
+  const author = (issue.authorLogin || issue.author || '').toLowerCase();
+  if (author.includes(q)) return true;
+  const numStr = String(issue.number);
+  if (numStr.includes(q)) return true;
+  if (q.startsWith('#')) {
+    const rest = q.slice(1).trim();
+    if (rest && numStr.includes(rest)) return true;
+  }
+  return false;
+}
+
 const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   repositoryFullName,
 }) => {
@@ -79,12 +98,14 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
 
   const counts = useMemo(() => {
     if (!issues) return { total: 0, open: 0, closed: 0 };
+    const match = (issue: RepositoryIssue) =>
+      issueMatchesSearch(issue, searchQuery);
     return {
-      total: issues.length,
-      open: issues.filter((issue) => !issue.closedAt).length,
-      closed: issues.filter((issue) => issue.closedAt).length,
+      total: issues.filter(match).length,
+      open: issues.filter((issue) => !issue.closedAt).filter(match).length,
+      closed: issues.filter((issue) => issue.closedAt).filter(match).length,
     };
-  }, [issues]);
+  }, [issues, searchQuery]);
 
   const filteredIssues = useMemo(() => {
     if (!issues) return [];
@@ -94,21 +115,9 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   }, [issues, filter]);
 
   const searchFilteredIssues = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return filteredIssues;
-    return filteredIssues.filter((issue) => {
-      const title = getLowerText(issue.title);
-      if (title.includes(q)) return true;
-      const author = (issue.authorLogin || issue.author || '').toLowerCase();
-      if (author.includes(q)) return true;
-      const numStr = String(issue.number);
-      if (numStr.includes(q)) return true;
-      if (q.startsWith('#')) {
-        const rest = q.slice(1).trim();
-        if (rest && numStr.includes(rest)) return true;
-      }
-      return false;
-    });
+    return filteredIssues.filter((issue) =>
+      issueMatchesSearch(issue, searchQuery),
+    );
   }, [filteredIssues, searchQuery]);
 
   const sortedIssues = useMemo(() => {
@@ -667,10 +676,9 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                   fontSize: '0.9rem',
                 }}
               >
-                {issues &&
-                issues.length > 0 &&
-                searchQuery.trim() &&
-                sortedIssues.length === 0
+                {searchQuery.trim() &&
+                sortedIssues.length === 0 &&
+                filteredIssues.length > 0
                   ? 'No issues match your search.'
                   : 'No issues found'}
               </Typography>
