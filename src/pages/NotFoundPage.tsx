@@ -9,6 +9,15 @@ import { useNavigate, useLocation } from 'react-router-dom';
 const NotFoundPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const canGoBack = typeof window !== 'undefined' && window.history.length > 1;
+
+  const handleGoBack = () => {
+    if (canGoBack) {
+      navigate(-1);
+    } else {
+      navigate('/dashboard');
+    }
+  };
 
   return (
     <Box
@@ -83,7 +92,7 @@ const NotFoundPage: React.FC = () => {
           <Button
             variant="outlined"
             startIcon={<ArrowBackIcon />}
-            onClick={() => navigate(-1)}
+            onClick={handleGoBack}
             sx={{
               textTransform: 'none',
               color: 'text.secondary',
