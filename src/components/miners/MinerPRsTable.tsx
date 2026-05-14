@@ -32,6 +32,7 @@ import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { WatchlistButton } from '../../components/common';
 import { serializePRKey } from '../../hooks/useWatchlist';
 import TablePagination from '../common/TablePagination';
+import { formatDate } from '../../utils/format';
 import { tooltipSlotProps } from '../../theme';
 
 type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
@@ -416,7 +417,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       },
       renderCell: (pr) =>
         pr.mergedAt
-          ? new Date(pr.mergedAt).toLocaleDateString()
+          ? formatDate(pr.mergedAt)
           : pr.prState === 'CLOSED'
             ? 'Closed'
             : 'Open',
