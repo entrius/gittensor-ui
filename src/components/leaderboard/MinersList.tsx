@@ -160,7 +160,7 @@ export const MinersList: React.FC<MinersListProps> = ({
       sortKey: 'credibility',
       renderCell: (miner) => (
         <Typography sx={{ ...cellTypographySx, color: 'text.primary' }}>
-          {((miner.credibility ?? 0) * 100).toFixed(0)}%
+          {Math.floor((miner.credibility ?? 0) * 100)}%
         </Typography>
       ),
     },
