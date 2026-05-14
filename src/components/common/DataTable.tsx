@@ -205,6 +205,7 @@ export const DataTable = <T, SortKey extends string = never>({
                             ? [{ width: column.width }]
                             : []),
                           ...(column.headerSx ? [column.headerSx] : []),
+                          { whiteSpace: 'nowrap' },
                         ]}
                       >
                         {sortKey && sort ? (
@@ -212,6 +213,12 @@ export const DataTable = <T, SortKey extends string = never>({
                             active={isActive}
                             direction={isActive ? sort.order : 'desc'}
                             onClick={() => sort.onChange(sortKey)}
+                            sx={{
+                              '& .MuiTableSortLabel-icon': {
+                                opacity: isActive ? 1 : 0,
+                                width: 18,
+                              },
+                            }}
                           >
                             {column.header}
                           </TableSortLabel>
