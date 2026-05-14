@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Paper,
@@ -12,12 +12,17 @@ import {
   Link,
   Breadcrumbs,
   Avatar,
+  Tooltip,
+  IconButton,
+  Collapse,
   useTheme,
 } from '@mui/material';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import { formatDistanceToNow } from 'date-fns';
+import { alpha } from '@mui/material/styles';
 import FolderIcon from '@mui/icons-material/Folder';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import MoreHorizIcon from '@mui/icons-material/MoreHoriz';
 import CodeViewer from './CodeViewer';
 import { buildFileTree, type FileNode } from './fileTree';
 import { useQuery } from '@tanstack/react-query';
@@ -33,7 +38,10 @@ interface CommitInfo {
   committerLogin: string;
   avatarUrl: string;
   date: string;
+  /** Short SHA for display (7 chars). */
   sha: string;
+  /** Full commit SHA for external links. */
+  shaFull: string;
 }
 
 /** GitHub user on a commit (`login` matches the profile URL path). */
@@ -137,11 +145,19 @@ function resolveGithubCommitAttribution(
   };
 }
 
+/** Text after the first line (commit body); excludes the subject already shown in the bar. */
+function commitBodyAfterSubject(fullMessage: string): string {
+  const i = fullMessage.indexOf('\n');
+  if (i === -1) return '';
+  return fullMessage.slice(i + 1).replace(/^\n+/, '');
+}
+
 const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
   repositoryFullName,
 }) => {
   const theme = useTheme();
   const [currentPath, setCurrentPath] = useState<string | null>(null);
+  const [commitMetaExpanded, setCommitMetaExpanded] = useState(false);
 
   const repoQuery = useQuery<GhRepoData, Error>({
     queryKey: ['github', 'repo', repositoryFullName],
@@ -218,6 +234,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
         avatarUrl,
         date,
         sha: resolved.sha.substring(0, 7),
+        shaFull: resolved.sha,
       };
     },
     enabled: !!repoQuery.data,
@@ -248,6 +265,15 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
     setCurrentPath(path);
   };
 
+  useEffect(() => {
+    setCommitMetaExpanded(false);
+  }, [
+    currentPath,
+    repositoryFullName,
+    defaultBranch,
+    commitQuery.data?.shaFull,
+  ]);
+
   const loading =
     repoQuery.isLoading || (!!repoQuery.data && treeQuery.isLoading);
 
@@ -272,6 +298,13 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
 
   const breadcrumbs = currentPath ? currentPath.split('/') : [];
   const currentCommit = commitQuery.data;
+  const commitSubject = currentCommit
+    ? currentCommit.message.split('\n')[0] || currentCommit.message
+    : '';
+  const commitBodyTooltip = currentCommit
+    ? commitBodyAfterSubject(currentCommit.message).trimEnd()
+    : '';
+  const hasCommitMetaBody = commitBodyTooltip.length > 0;
 
   const isFile = currentNode && currentNode.type === 'blob';
   const directoryChildren =
@@ -350,15 +383,13 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
             borderBottom: 'none',
             borderRadius: '6px 6px 0 0',
             backgroundColor: theme.palette.surface.elevated,
-            p: 2,
             display: 'flex',
-            alignItems: 'center',
-            gap: 2,
-            justifyContent: 'space-between',
+            flexDirection: 'column',
+            overflow: 'hidden',
           }}
         >
           {commitQuery.isLoading ? (
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ p: 2, display: 'flex', alignItems: 'center', gap: 1 }}>
               <CircularProgress size={16} />
               <Typography sx={{ fontSize: '13px', color: STATUS_COLORS.open }}>
                 Loading commit info...
@@ -368,71 +399,162 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
             <>
               <Box
                 sx={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1.5,
-                  overflow: 'hidden',
-                }}
-              >
-                <Avatar
-                  src={currentCommit.avatarUrl}
-                  alt={currentCommit.committerLogin}
-                  sx={{ width: 20, height: 20 }}
-                />
-                <Typography
-                  sx={{
-                    fontSize: '13px',
-                    fontWeight: 600,
-                    color: theme.palette.text.tertiary,
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {currentCommit.committerLogin}
-                </Typography>
-                <Typography
-                  sx={{
-                    fontSize: '13px',
-                    color: STATUS_COLORS.open,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    maxWidth: '600px',
-                  }}
-                >
-                  {currentCommit.message}
-                </Typography>
-              </Box>
-              <Box
-                sx={{
+                  p: 2,
                   display: 'flex',
                   alignItems: 'center',
                   gap: 2,
-                  flexShrink: 0,
+                  justifyContent: 'space-between',
                 }}
               >
-                <Typography
+                <Box
                   sx={{
-                    fontSize: '13px',
-                    color: STATUS_COLORS.open,
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 1.5,
+                    minWidth: 0,
+                    flex: 1,
                   }}
                 >
-                  {currentCommit.sha}
-                </Typography>
-                <Typography
-                  sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
+                  <Avatar
+                    src={currentCommit.avatarUrl}
+                    alt={currentCommit.committerLogin}
+                    sx={{ width: 20, height: 20, flexShrink: 0 }}
+                  />
+                  <Typography
+                    sx={{
+                      fontSize: '13px',
+                      fontWeight: 600,
+                      color: theme.palette.text.tertiary,
+                      whiteSpace: 'nowrap',
+                      flexShrink: 0,
+                      maxWidth: 'min(200px, 28vw)',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                    }}
+                    title={currentCommit.committerLogin}
+                  >
+                    {currentCommit.committerLogin}
+                  </Typography>
+                  <Box
+                    sx={{
+                      flex: 1,
+                      minWidth: 0,
+                      lineHeight: 1.45,
+                    }}
+                  >
+                    <Typography
+                      component="span"
+                      sx={{
+                        display: 'inline',
+                        fontSize: '13px',
+                        color: STATUS_COLORS.open,
+                        whiteSpace: 'normal',
+                        overflowWrap: 'anywhere',
+                        wordBreak: 'break-word',
+                      }}
+                    >
+                      {commitSubject}
+                    </Typography>
+                    {hasCommitMetaBody ? (
+                      <Tooltip
+                        title="Open commit details"
+                        placement="top"
+                        slotProps={tooltipSlotProps}
+                      >
+                        <IconButton
+                          size="small"
+                          onClick={() => setCommitMetaExpanded((prev) => !prev)}
+                          aria-expanded={commitMetaExpanded}
+                          aria-label="Open commit details"
+                          sx={{
+                            display: 'inline-flex',
+                            verticalAlign: 'middle',
+                            ml: 1,
+                            flexShrink: 0,
+                            width: 28,
+                            height: 26,
+                            minWidth: 28,
+                            p: 0,
+                            borderRadius: '6px',
+                            border: '1px solid',
+                            borderColor: 'border.medium',
+                            backgroundColor: alpha(
+                              theme.palette.common.black,
+                              0.35,
+                            ),
+                            color: theme.palette.text.secondary,
+                            '&:hover': {
+                              backgroundColor: alpha(
+                                theme.palette.common.black,
+                                0.55,
+                              ),
+                              borderColor: 'border.medium',
+                            },
+                          }}
+                        >
+                          <MoreHorizIcon sx={{ fontSize: 18 }} />
+                        </IconButton>
+                      </Tooltip>
+                    ) : null}
+                  </Box>
+                </Box>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 2,
+                    flexShrink: 0,
+                  }}
                 >
-                  {formatDistanceToNow(new Date(currentCommit.date), {
-                    addSuffix: true,
-                  })}
-                </Typography>
+                  <Typography
+                    sx={{
+                      fontSize: '13px',
+                      color: STATUS_COLORS.open,
+                    }}
+                  >
+                    {currentCommit.sha}
+                  </Typography>
+                  <Typography
+                    sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
+                  >
+                    {formatDistanceToNow(new Date(currentCommit.date), {
+                      addSuffix: true,
+                    })}
+                  </Typography>
+                </Box>
               </Box>
+              <Collapse in={commitMetaExpanded && hasCommitMetaBody}>
+                <Box
+                  sx={{
+                    px: 2,
+                    py: 1.5,
+                    display: 'flex',
+                    alignItems: 'center',
+                    borderTop: `1px solid ${theme.palette.border.subtle}`,
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      width: '100%',
+                      fontSize: '0.8125rem',
+                      lineHeight: 1.5,
+                      whiteSpace: 'pre-wrap',
+                      color: alpha(theme.palette.text.primary, 0.55),
+                    }}
+                  >
+                    {commitBodyTooltip}
+                  </Typography>
+                </Box>
+              </Collapse>
             </>
           ) : (
-            <Typography sx={{ fontSize: '13px', color: STATUS_COLORS.open }}>
-              {commitQuery.error instanceof RateLimitError
-                ? commitQuery.error.message
-                : 'Latest commit info unavailable'}
-            </Typography>
+            <Box sx={{ p: 2 }}>
+              <Typography sx={{ fontSize: '13px', color: STATUS_COLORS.open }}>
+                {commitQuery.error instanceof RateLimitError
+                  ? commitQuery.error.message
+                  : 'Latest commit info unavailable'}
+              </Typography>
+            </Box>
           )}
         </Paper>
       )}
