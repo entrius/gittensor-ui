@@ -84,7 +84,7 @@ const PRDetailsPage: React.FC = () => {
           <Typography variant="h6" color="error">
             PR not found
           </Typography>
-          <BackButton to="/repositories" label="Back to Repositories" />
+          <BackButton to="/repositories" />
         </Box>
       ) : (
         <Box
@@ -107,7 +107,7 @@ const PRDetailsPage: React.FC = () => {
               px: { xs: 2, sm: 2, md: 0 },
             }}
           >
-            <BackButton to="/repositories" label="Back to Repositories" />
+            <BackButton to="/repositories" />
 
             {/* Header always visible */}
             <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
