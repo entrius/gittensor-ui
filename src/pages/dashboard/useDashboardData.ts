@@ -12,6 +12,7 @@ import {
   useAllMiners,
   useAllPrs,
   useIssues,
+  useLinesHistTrend,
   useMirrorDashboardIssues,
   useReposAndWeights,
 } from '../../api';
@@ -51,6 +52,7 @@ export const useDashboardData = (range: TrendTimeRange) => {
   const minersQuery = useAllMiners();
   const issuesQuery = useIssues();
   const reposQuery = useReposAndWeights();
+  const linesHistTrendQuery = useLinesHistTrend();
 
   // Single bulk mirror call replaces the previous per-miner fan-out.
   // The mirror is roster-blind; we filter to subnet authors below using the
@@ -142,10 +144,20 @@ export const useDashboardData = (range: TrendTimeRange) => {
     [datasets.prs.data, datasets.repos.data],
   );
 
+  const linesHistTrendData = useMemo(
+    () => linesHistTrendQuery.data ?? [],
+    [linesHistTrendQuery.data],
+  );
+
   const kpis = useMemo(
     () =>
-      buildDashboardKpis(datasets.prs.data, datasets.minerIssues.data, range),
-    [datasets.minerIssues.data, datasets.prs.data, range],
+      buildDashboardKpis(
+        datasets.prs.data,
+        datasets.minerIssues.data,
+        linesHistTrendData,
+        range,
+      ),
+    [datasets.minerIssues.data, datasets.prs.data, linesHistTrendData, range],
   );
 
   const isFeaturedWorkLoading =

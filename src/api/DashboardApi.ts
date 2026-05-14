@@ -6,6 +6,7 @@ import {
   type Repository,
   type LanguageWeight,
   type CommitLog,
+  type CommitsTrend,
 } from './models/Dashboard';
 
 const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
@@ -34,6 +35,9 @@ export const useReposAndWeights = () =>
 
 export const useLanguagesAndWeights = () =>
   useDashboardQuery<LanguageWeight[]>('useLanguagesAndWeights', '/languages');
+
+export const useLinesHistTrend = () =>
+  useDashboardQuery<CommitsTrend[]>('useLinesHistTrend', '/lines/hist-trend');
 
 export const useInfiniteCommitLog = (options?: {
   refetchInterval?: number;
