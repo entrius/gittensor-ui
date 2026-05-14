@@ -170,12 +170,13 @@ export const getPreviousWindowBounds = (
   };
 };
 
-// Omitting `since` uses the mirror's default 35-day window and keeps the
-// cache key stable across 1d/7d/35d ranges.
-export const getMirrorSinceParam = (
-  range: TrendTimeRange,
-): string | undefined =>
-  range === 'all' ? new Date(GITTENSOR_START_MS).toISOString() : undefined;
+// Always send `since` — the mirror's `/issues` endpoint returns only currently
+// OPEN issues when `since` is omitted, which silently zeroes the resolved-issues
+// trend. Fetch the full subnet history once (back to GITTENSOR_START_MS) so the
+// cache key is stable across every range button: switching 1D/7D/35D/All
+// re-buckets the already-fetched data instead of re-firing the N mirror calls.
+export const getMirrorSinceParam = (): string =>
+  new Date(GITTENSOR_START_MS).toISOString();
 
 // Dedupe by (repo, number) so an issue surfaced under multiple miners is counted once.
 export const flattenMinerIssues = (

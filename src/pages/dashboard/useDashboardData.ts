@@ -65,7 +65,10 @@ export const useDashboardData = (range: TrendTimeRange) => {
     [minersQuery.data],
   );
 
-  const minerIssuesSince = getMirrorSinceParam(range);
+  // Pin the `since` cutoff once per component lifetime so the cache key never
+  // changes — range button clicks (1D/7D/35D/All) re-bucket the already-fetched
+  // data instead of re-firing the N mirror calls.
+  const minerIssuesSince = useMemo(() => getMirrorSinceParam(), []);
   const minerIssuesQueries = useMinersIssues(
     activeMinerGithubIds,
     activeMinerGithubIds.length > 0,
