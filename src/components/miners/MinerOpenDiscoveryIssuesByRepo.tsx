@@ -28,7 +28,7 @@ import { DataTable, type DataTableColumn } from '../common/DataTable';
 import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { WatchlistButton } from '../common';
-import TablePagination from './TablePagination';
+import TablePagination from '../common/TablePagination';
 import {
   selectMinerIssueScanRepos,
   useMinerRepositoriesOpenIssues,
