@@ -363,6 +363,16 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       return passesSingleProgramEligibility(m, eligibleOssFilter);
     });
 
+    // Tag each miner with its position in the filtered subset so the UI
+    // can show a "· N in view" indicator when filters are active.
+    const hasActiveFilter =
+      searchQuery !== '' ||
+      eligibleOssFilter !== 'all' ||
+      eligibleDiscoveryFilter !== 'all';
+    if (hasActiveFilter) {
+      result = result.map((miner, index) => ({ ...miner, viewRank: index + 1 }));
+    }
+
     return result;
   }, [
     rankedMiners,

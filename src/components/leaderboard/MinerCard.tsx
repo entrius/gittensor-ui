@@ -219,11 +219,26 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                   opacity: isEligible ? 1 : INACTIVE_OPACITY,
                   lineHeight: 1,
                   flexShrink: 0,
-                })}
-              >
-                #{miner.rank}
-              </Typography>
-            </Box>
+                 })}
+               >
+                 #{miner.rank}
+               </Typography>
+               {miner.viewRank != null && miner.viewRank !== miner.rank && (
+                 <Typography
+                   component="span"
+                   sx={(theme) => ({
+                     fontFamily: FONTS.mono,
+                     fontSize: '0.58rem',
+                     fontWeight: 500,
+                     color: theme.palette.text.tertiary,
+                     lineHeight: 1,
+                     flexShrink: 0,
+                   })}
+                 >
+                   ·{miner.viewRank} in view
+                 </Typography>
+               )}
+             </Box>
             {/* Badges under the name */}
             <Box
               sx={{

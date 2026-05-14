@@ -120,7 +120,24 @@ export const MinersList: React.FC<MinersListProps> = ({
       header: 'Rank',
       width: '60px',
       cellSx: { pr: 0 },
-      renderCell: (miner) => <RankIcon rank={miner.rank ?? 0} />,
+      renderCell: (miner) => (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          <RankIcon rank={miner.rank ?? 0} />
+          {miner.viewRank != null && miner.viewRank !== miner.rank && (
+            <Typography
+              component="span"
+              sx={{
+                fontSize: '0.6rem',
+                color: 'text.tertiary',
+                fontWeight: 500,
+                lineHeight: 1,
+              }}
+            >
+              ·{miner.viewRank}
+            </Typography>
+          )}
+        </Box>
+      ),
     },
     {
       key: 'miner',
