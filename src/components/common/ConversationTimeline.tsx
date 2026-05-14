@@ -98,8 +98,8 @@ const ConversationTimeline: React.FC<ConversationTimelineProps> = ({
       sx={{
         display: 'flex',
         flexDirection: 'column',
-        gap: 3,
-        pt: 2,
+        gap: { xs: 2, sm: 3 },
+        pt: { xs: 1.5, sm: 2 },
         maxWidth: '960px',
         mx: 'auto',
         position: 'relative',
