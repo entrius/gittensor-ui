@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Card, Typography, Avatar, Tooltip } from '@mui/material';
-import { alpha, useTheme, type Theme } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, STATUS_COLORS } from '../../theme';
