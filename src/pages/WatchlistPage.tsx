@@ -5,8 +5,6 @@ import React, {
   useState,
   useRef,
 } from 'react';
-import axios from 'axios';
-import { useQueries } from '@tanstack/react-query';
 import {
   Avatar,
   Box,
@@ -86,7 +84,6 @@ import {
 import {
   useWatchlist,
   useWatchlistCounts,
-  getWatchlistIssueMeta,
   serializePRKey,
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
@@ -1608,19 +1605,12 @@ const WatchlistStackedPagination: React.FC<{
   count: number;
   page: number;
   onPageChange: (nextPage: number) => void;
-  /** Defaults to {@link ROWS_PER_PAGE} when omitted. */
-  rowsPerPage?: number;
-}> = ({
-  count,
-  page,
-  onPageChange,
-  rowsPerPage: rowsPerPageProp = ROWS_PER_PAGE,
-}) => (
+}> = ({ count, page, onPageChange }) => (
   <TablePagination
     rowsPerPageOptions={[]}
     component="div"
     count={count}
-    rowsPerPage={rowsPerPageProp}
+    rowsPerPage={ROWS_PER_PAGE}
     page={page}
     onPageChange={(_event, newPage) => onPageChange(newPage)}
     onRowsPerPageChange={(e: React.ChangeEvent<HTMLInputElement>) => {
@@ -3561,6 +3551,10 @@ const ISSUE_FILTER_LABELS: Record<IssueStatusFilter, string> = {
 
 const issueCellSx = { py: 1.5 } as const;
 
+/** Synthetic starred rows (mirror missing) carry this marker on `state_reason`. */
+const WATCHLIST_ISSUE_PENDING_MIRROR_MARKER =
+  '__gittensor_watchlist_pending_mirror__';
+
 // Same buckets as MinerOpenDiscoveryIssuesByRepo (`isOpenIssue` / `isSolvedIssue` /
 // `isClosedIssue`): open = not closed; solved = closed + linked PR; else closed.
 const minerWatchlistIssueClosed = (issue: MinerIssue): boolean => {
@@ -3575,12 +3569,17 @@ const minerWatchlistIssueLinkedPr = (issue: MinerIssue): number | null => {
 };
 
 const issueState = (issue: MinerIssue): Exclude<IssueStatusFilter, 'all'> => {
+  if (issue.state_reason === WATCHLIST_ISSUE_PENDING_MIRROR_MARKER)
+    return 'open';
   if (!minerWatchlistIssueClosed(issue)) return 'open';
   if (minerWatchlistIssueLinkedPr(issue) != null) return 'resolved';
   return 'closed';
 };
 
 const issueStatusMeta = (issue: MinerIssue) => {
+  if (issue.state_reason === WATCHLIST_ISSUE_PENDING_MIRROR_MARKER) {
+    return { label: '—', color: STATUS_COLORS.neutral };
+  }
   const s = issueState(issue);
   if (s === 'resolved') return { label: 'SOLVED', color: STATUS_COLORS.merged };
   if (s === 'closed') return { label: 'CLOSED', color: STATUS_COLORS.closed };
@@ -4053,108 +4052,6 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     [watchedRepoIds],
   );
   const watchedMinerSet = useMemo(() => new Set(minerIds), [minerIds]);
-  const apiBaseUrl = import.meta.env.VITE_REACT_APP_BASE_URL;
-  const storedIssueMetaByKey = useMemo(() => {
-    const map = new Map<
-      string,
-      {
-        state: 'OPEN' | 'CLOSED';
-        stateReason: string | null;
-        solvedByPr: number | null;
-      }
-    >();
-    starredIssueIds.forEach((key) => {
-      const meta = getWatchlistIssueMeta(key);
-      if (!meta) return;
-      const isSolved = meta.status === 'solved';
-      const isClosed = meta.status === 'closed' || isSolved;
-      map.set(key, {
-        state: isClosed ? 'CLOSED' : 'OPEN',
-        stateReason: null,
-        solvedByPr: isSolved ? (meta.prNumber ?? null) : null,
-      });
-    });
-    return map;
-  }, [starredIssueIds]);
-
-  const starredParsedKeys = useMemo(
-    () =>
-      starredIssueIds
-        .map((key) => ({ key, parsed: parseIssueKey(key) }))
-        .filter(
-          (
-            entry,
-          ): entry is {
-            key: string;
-            parsed: { repoFullName: string; issueNumber: number };
-          } => entry.parsed !== null,
-        ),
-    [starredIssueIds],
-  );
-  const starredRepos = useMemo(
-    () =>
-      Array.from(
-        new Set(starredParsedKeys.map((entry) => entry.parsed.repoFullName)),
-      ),
-    [starredParsedKeys],
-  );
-  const starredRepoIssueQueries = useQueries({
-    queries: starredRepos.map((repoFullName) => ({
-      queryKey: ['watchlistRepoIssuesFallback', repoFullName],
-      queryFn: async () => {
-        const requestUrl = apiBaseUrl
-          ? `${apiBaseUrl}/repos/${encodeURIComponent(repoFullName)}/issues`
-          : `/repos/${encodeURIComponent(repoFullName)}/issues`;
-        const { data } = await axios.get(requestUrl);
-        return Array.isArray(data) ? data : [];
-      },
-      retry: false,
-      staleTime: 5 * 60 * 1000,
-      enabled: true,
-    })),
-  });
-  const starredIssueMetaByKey = useMemo(() => {
-    const map = new Map<
-      string,
-      {
-        state: 'OPEN' | 'CLOSED';
-        stateReason: string | null;
-        solvedByPr: number | null;
-      }
-    >();
-    starredRepoIssueQueries.forEach((q) => {
-      (q.data ?? []).forEach((issue: unknown) => {
-        if (!issue || typeof issue !== 'object') return;
-        const entry = issue as {
-          repositoryFullName?: string;
-          number?: number;
-          closedAt?: string | null;
-          prNumber?: number | null;
-          state_reason?: string | null;
-          stateReason?: string | null;
-        };
-        if (
-          typeof entry.repositoryFullName !== 'string' ||
-          typeof entry.number !== 'number'
-        ) {
-          return;
-        }
-        const isClosed = Boolean(entry.closedAt);
-        const rawReason = entry.state_reason ?? entry.stateReason ?? null;
-        const stateReason =
-          typeof rawReason === 'string' && rawReason.trim() !== ''
-            ? rawReason.trim()
-            : null;
-        const hasLinkedPr = typeof entry.prNumber === 'number';
-        map.set(`${entry.repositoryFullName}#${entry.number}`, {
-          state: isClosed ? 'CLOSED' : 'OPEN',
-          stateReason,
-          solvedByPr: hasLinkedPr ? (entry.prNumber ?? null) : null,
-        });
-      });
-    });
-    return map;
-  }, [starredRepoIssueQueries]);
 
   // Flatten + dedupe issues across all watched miners.
   const mirroredItems = useMemo<MinerIssue[]>(() => {
@@ -4189,30 +4086,23 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
         .map((key) => {
           const parsed = parseIssueKey(key);
           if (!parsed) return null;
-          const meta =
-            storedIssueMetaByKey.get(key) ?? starredIssueMetaByKey.get(key);
           return {
             repo_full_name: parsed.repoFullName,
             issue_number: parsed.issueNumber,
             title: `${parsed.repoFullName} #${parsed.issueNumber}`,
-            state: meta?.state ?? 'OPEN',
-            state_reason: meta?.stateReason ?? null,
+            state: 'OPEN',
+            state_reason: WATCHLIST_ISSUE_PENDING_MIRROR_MARKER,
             author_github_id: null,
             author_login: null,
             created_at: null,
-            closed_at: meta?.state === 'CLOSED' ? '' : null,
+            closed_at: null,
             updated_at: null,
-            solved_by_pr: meta?.solvedByPr ?? null,
+            solved_by_pr: null,
             labels: [],
           } as MinerIssue;
         })
         .filter((issue): issue is MinerIssue => issue !== null),
-    [
-      starredIssueIds,
-      mirroredIssueKeys,
-      starredIssueMetaByKey,
-      storedIssueMetaByKey,
-    ],
+    [starredIssueIds, mirroredIssueKeys],
   );
 
   const items = useMemo<MinerIssue[]>(() => {
@@ -4252,9 +4142,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     [sourcesByKey],
   );
 
-  const isLoading =
-    issueQueries.some((q) => q.isLoading) ||
-    starredRepoIssueQueries.some((q) => q.isLoading);
+  const isLoading = issueQueries.some((q) => q.isLoading);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatusFilter>('all');

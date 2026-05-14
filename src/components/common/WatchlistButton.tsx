@@ -9,7 +9,6 @@ interface WatchlistButtonProps {
   itemKey: string;
   size?: 'small' | 'medium';
   sx?: SxProps<Theme>;
-  onToggle?: (nextWatched: boolean) => void;
 }
 
 export const WatchlistButton: React.FC<WatchlistButtonProps> = ({
@@ -17,7 +16,6 @@ export const WatchlistButton: React.FC<WatchlistButtonProps> = ({
   itemKey,
   size = 'small',
   sx,
-  onToggle,
 }) => {
   const { isWatched, toggle } = useWatchlist(category);
   const watched = itemKey ? isWatched(itemKey) : false;
@@ -27,9 +25,7 @@ export const WatchlistButton: React.FC<WatchlistButtonProps> = ({
     e.stopPropagation();
     e.preventDefault();
     if (!itemKey) return;
-    const nextWatched = !watched;
     toggle(itemKey);
-    onToggle?.(nextWatched);
   };
 
   return (

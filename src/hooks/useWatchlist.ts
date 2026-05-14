@@ -3,7 +3,6 @@ import { useCallback, useSyncExternalStore } from 'react';
 // TODO(2026-Q3): drop V1_KEY read path once the rollback window closes.
 const V1_KEY = 'gittensor.watchlist.v1';
 const V2_KEY = 'gittensor.watchlist.v2';
-const ISSUE_META_KEY = 'gittensor.watchlist.issue-meta.v1';
 
 export type WatchlistCategory =
   | 'miners'
@@ -11,12 +10,6 @@ export type WatchlistCategory =
   | 'bounties'
   | 'prs'
   | 'issues';
-
-export type WatchlistIssueStatus = 'open' | 'solved' | 'closed';
-export interface WatchlistIssueMeta {
-  status: WatchlistIssueStatus;
-  prNumber: number | null;
-}
 
 const CATEGORIES: readonly WatchlistCategory[] = [
   'miners',
@@ -43,34 +36,6 @@ const toStringArray = (value: unknown): string[] =>
   Array.isArray(value)
     ? value.filter((x): x is string => typeof x === 'string')
     : [];
-
-const readIssueMetaMap = (): Record<string, WatchlistIssueMeta> => {
-  try {
-    const raw = window.localStorage.getItem(ISSUE_META_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object') return {};
-    const out: Record<string, WatchlistIssueMeta> = {};
-    Object.entries(parsed as Record<string, unknown>).forEach(([k, v]) => {
-      if (!v || typeof v !== 'object') return;
-      const meta = v as { status?: unknown; prNumber?: unknown };
-      if (
-        meta.status !== 'open' &&
-        meta.status !== 'solved' &&
-        meta.status !== 'closed'
-      ) {
-        return;
-      }
-      out[k] = {
-        status: meta.status,
-        prNumber: typeof meta.prNumber === 'number' ? meta.prNumber : null,
-      };
-    });
-    return out;
-  } catch {
-    return {};
-  }
-};
 
 // Read v2 if present, otherwise migrate v1 (legacy miner-only string[]) into
 // the new shape. The v1 key is left intact so a downgrade can still recover.
@@ -287,25 +252,3 @@ export const useWatchlistCounts = (): CountsMap =>
 // should always use this helper to avoid drift in key format.
 export const serializePRKey = (repo: string, number: number): string =>
   `${repo}#${number}`;
-
-export const getWatchlistIssueMeta = (
-  issueKey: string,
-): WatchlistIssueMeta | null => {
-  const map = readIssueMetaMap();
-  return map[issueKey] ?? null;
-};
-
-export const setWatchlistIssueMeta = (
-  issueKey: string,
-  meta: WatchlistIssueMeta | null,
-): void => {
-  if (!issueKey) return;
-  const map = readIssueMetaMap();
-  if (meta === null) delete map[issueKey];
-  else map[issueKey] = meta;
-  try {
-    window.localStorage.setItem(ISSUE_META_KEY, JSON.stringify(map));
-  } catch {
-    // Ignore storage write failures; watchlist itself still works.
-  }
-};

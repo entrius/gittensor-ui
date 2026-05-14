@@ -34,10 +34,6 @@ import {
   useMinerRepositoriesOpenIssues,
 } from '../../hooks/useMinerRepositoriesOpenIssues';
 import { type RepositoryIssue } from '../../api/models/Miner';
-import {
-  setWatchlistIssueMeta,
-  type WatchlistIssueStatus,
-} from '../../hooks/useWatchlist';
 
 type IssueFilter = 'all' | 'open' | 'solved' | 'closed';
 type IssueSortField = 'number' | 'repository' | 'opened';
@@ -66,12 +62,6 @@ const githubIssueUrl = (issue: RepositoryIssue) =>
 
 const discoveryIssueWatchlistKey = (issue: RepositoryIssue): string =>
   `${issue.repositoryFullName}#${issue.number}`;
-
-const issueWatchlistStatus = (issue: RepositoryIssue): WatchlistIssueStatus => {
-  if (isSolvedIssue(issue)) return 'solved';
-  if (isClosedIssue(issue)) return 'closed';
-  return 'open';
-};
 
 const githubSearchIssuesByAuthor = (login: string) =>
   `https://github.com/search?q=${encodeURIComponent(`is:issue author:${login}`)}&type=issues`;
@@ -613,17 +603,6 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
               category="issues"
               itemKey={discoveryIssueWatchlistKey(issue)}
               size="small"
-              onToggle={(nextWatched) =>
-                setWatchlistIssueMeta(
-                  discoveryIssueWatchlistKey(issue),
-                  nextWatched
-                    ? {
-                        status: issueWatchlistStatus(issue),
-                        prNumber: issue.prNumber ?? null,
-                      }
-                    : null,
-                )
-              }
             />
           ),
         },
@@ -817,17 +796,6 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
               category="issues"
               itemKey={discoveryIssueWatchlistKey(issue)}
               size="small"
-              onToggle={(nextWatched) =>
-                setWatchlistIssueMeta(
-                  discoveryIssueWatchlistKey(issue),
-                  nextWatched
-                    ? {
-                        status: issueWatchlistStatus(issue),
-                        prNumber: issue.prNumber ?? null,
-                      }
-                    : null,
-                )
-              }
             />
           ),
         },
