@@ -1,9 +1,17 @@
-import { forwardRef, useCallback } from 'react';
+import {
+  Children,
+  cloneElement,
+  forwardRef,
+  isValidElement,
+  useCallback,
+} from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Box,
+  TableCell,
   TableRow,
   type BoxProps,
+  type TableCellProps,
   type TableRowProps,
 } from '@mui/material';
 import type { SxProps, Theme } from '@mui/material/styles';
@@ -94,37 +102,82 @@ export const LinkBox = forwardRef<HTMLAnchorElement, BoxProps & LinkProps>(
 LinkBox.displayName = 'LinkBox';
 
 /**
- * A `TableRow` that navigates via React Router on click. Renders as a native
- * `<tr>` (valid HTML inside `<tbody>`), with ``role="link"`` and keyboard
- * support for accessibility. Drop-in replacement for any
- * `<TableRow onClick={() => navigate(...)}>` row.
+ * A `TableCell` that renders as a stretched `<a>` fill the cell area.
+ * Used inside a `LinkTableRow` so the row stays a valid `<tr>` while
+ * each cell provides native `<a>` behavior (middle-click, status bar).
+ */
+export const LinkTd = forwardRef<HTMLAnchorElement, TableCellProps & LinkProps>(
+  ({ href, sx, children, ...rest }, ref) => {
+    const linkProps = useLinkBehavior<HTMLAnchorElement>(href, {});
+    return (
+      <TableCell
+        sx={[{ position: 'relative' }, ...(Array.isArray(sx) ? sx : [sx])]}
+        {...rest}
+      >
+        <Box
+          component="a"
+          ref={ref}
+          {...linkProps}
+          sx={mergeSx(linkResetSx, {
+            position: 'absolute',
+            inset: 0,
+            display: 'flex',
+            alignItems: 'center',
+            px: 2,
+          })}
+        />
+        {children}
+      </TableCell>
+    );
+  },
+);
+LinkTd.displayName = 'LinkTd';
+
+/**
+ * A `TableRow` that renders as a native `<tr>` (valid inside `<tbody>`).
+ * Each `TableCell` child is replaced with a `LinkTd` so the row stays
+ * valid HTML while cells retain native `<a>` behavior (middle-click,
+ * open in new tab, status bar URL preview).
  */
 export const LinkTableRow = forwardRef<
   HTMLTableRowElement,
   TableRowProps & LinkProps
->(({ href, linkState, sx, ...rest }, ref) => {
-  const navigate = useNavigate();
-  const handleClick = useCallback(
-    (e: React.MouseEvent<HTMLTableRowElement>) => {
-      if (isModifiedEvent(e)) return;
-      e.preventDefault();
-      navigate(href, { state: linkState });
-    },
-    [href, linkState, navigate],
-  );
-
+>(({ href, linkState, children, sx, ...rest }, ref) => {
+  const linkProps = useLinkBehavior<HTMLAnchorElement>(href, {
+    state: linkState,
+  });
   return (
-    <TableRow
-      ref={ref}
-      onClick={handleClick}
-      sx={mergeSx(
-        { cursor: 'pointer', textDecoration: 'none', color: 'inherit' },
-        sx,
+    <TableRow ref={ref} sx={mergeSx({ cursor: 'pointer' }, sx)} {...rest}>
+      {Children.map(children, (child) =>
+        isValidElement(child) && child.type === TableCell
+          ? cloneElement(child, {
+              ...linkProps,
+              sx: [
+                { position: 'relative' },
+                ...(Array.isArray((child.props as TableCellProps).sx)
+                  ? (child.props as TableCellProps).sx
+                  : [(child.props as TableCellProps).sx].filter(Boolean)),
+              ] as SxProps<Theme>,
+              children: (
+                <>
+                  <Box
+                    component="a"
+                    {...linkProps}
+                    sx={mergeSx(linkResetSx, {
+                      position: 'absolute',
+                      inset: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                      px: 2,
+                    })}
+                  />
+                  {(child.props as { children?: React.ReactNode }).children}
+                </>
+              ),
+            } as TableCellProps)
+          : child,
       )}
-      tabIndex={0}
-      role="link"
-      {...rest}
-    />
+    </TableRow>
   );
 });
 LinkTableRow.displayName = 'LinkTableRow';
