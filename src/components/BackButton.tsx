@@ -21,7 +21,21 @@ const BackButton: React.FC<BackButtonProps> = ({
   const location = useLocation();
   const state =
     (location.state as { backLabel?: string; backTo?: string }) || {};
-  const canGoBack = typeof window !== 'undefined' && window.history.length > 1;
+  // `history.length > 1` alone isn't a reliable signal that the previous
+  // entry is an in-app page — opening a deep link in a fresh tab counts
+  // the browser's own previous entry, so `navigate(-1)` would leave the
+  // app. Also require the referrer to be same-origin before stepping back.
+  const canGoBack = (() => {
+    if (typeof window === 'undefined') return false;
+    if (window.history.length <= 1) return false;
+    const ref = document.referrer;
+    if (!ref) return false;
+    try {
+      return new URL(ref).origin === window.location.origin;
+    } catch {
+      return false;
+    }
+  })();
   const displayLabel = state.backLabel ?? label;
 
   const handleClick = () => {
