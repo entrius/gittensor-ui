@@ -182,8 +182,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           cmp = a.additions + a.deletions - (b.additions + b.deletions);
           break;
         case 'date': {
-          const da = a.mergedAt || a.prCreatedAt || '';
-          const db = b.mergedAt || b.prCreatedAt || '';
+          const da = a.mergedAt || a.closedAt || a.prCreatedAt || '';
+          const db = b.mergedAt || b.closedAt || b.prCreatedAt || '';
           cmp = da.localeCompare(db);
           break;
         }
