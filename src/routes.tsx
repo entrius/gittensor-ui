@@ -21,7 +21,6 @@ const CHUNK_RELOAD_SESSION_KEY = 'gt:chunk-reloaded';
  * A sessionStorage flag prevents an infinite reload loop if the chunk is
  * genuinely missing (real 404, not a stale-hash 404).
  */
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const lazyWithReload = <T extends React.ComponentType<any>>(
   factory: () => Promise<{ default: T }>,
 ): React.LazyExoticComponent<T> =>
