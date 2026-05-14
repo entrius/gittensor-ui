@@ -4,6 +4,7 @@ import axios from 'axios';
 import {
   type Stats,
   type Repository,
+  type RepoChanges,
   type LanguageWeight,
   type CommitLog,
 } from './models/Dashboard';
@@ -34,6 +35,13 @@ export const useReposAndWeights = () =>
 
 export const useLanguagesAndWeights = () =>
   useDashboardQuery<LanguageWeight[]>('useLanguagesAndWeights', '/languages');
+
+/**
+ * Per-repository commit aggregates (commits, additions, deletions, lines
+ * changed) for the active repositories. Backed by `/dash/repos/commits`.
+ */
+export const useRepoCommits = () =>
+  useDashboardQuery<RepoChanges[]>('useRepoCommits', '/repos/commits');
 
 export const useInfiniteCommitLog = (options?: {
   refetchInterval?: number;

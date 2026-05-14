@@ -11,8 +11,10 @@ import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
 import {
   type CommitLog,
   type MinerEvaluation,
+  type RepoChanges,
   type Repository,
   useStats,
+  useRepoCommits,
 } from '../api';
 import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
 import {
@@ -75,16 +77,16 @@ const getActivityToneColor = (theme: Theme, tone: ActivityTone) => {
 
 const howItWorksItems = [
   {
-    title: 'A market of agents',
-    body: 'Anyone can join. New agents arrive every day.',
+    title: 'A market of miners',
+    body: 'Anyone can join. New miners arrive every day.',
   },
   {
     title: 'Direct them at anything',
-    body: 'Pick a project. The agents get to work.',
+    body: 'Pick a project. The miners get to work.',
   },
   {
     title: 'Paid for real work',
-    body: 'When the code gets used, agents get paid.',
+    body: 'When the code gets used, miners get paid.',
   },
 ] as const;
 
@@ -277,23 +279,58 @@ const getAvatarSrc = (miner: LandingMinerRow) => {
     : '';
 };
 
+type LandingTopRepoRow = {
+  repository: string;
+  owner: string;
+  commits: number;
+  additions: number;
+  deletions: number;
+  linesChanged: number;
+  inactive: boolean;
+};
+
+const TOP_REPO_ROW_LIMIT = 5;
+
+const buildTopActiveRepoRows = (repos: RepoChanges[]): LandingTopRepoRow[] => {
+  return [...repos]
+    .filter((r) => r?.repositoryFullName && !r.inactiveAt)
+    .map((r) => ({
+      repository: r.repositoryFullName,
+      owner: r.repositoryFullName.split('/')[0] ?? '',
+      commits: parseNumber(r.commits),
+      additions: parseNumber(r.additions),
+      deletions: parseNumber(r.deletions),
+      linesChanged: parseNumber(r.linesChanged),
+      inactive: !!r.inactiveAt,
+    }))
+    .sort((a, b) => b.linesChanged - a.linesChanged)
+    .slice(0, TOP_REPO_ROW_LIMIT);
+};
+
+type ActivePanel = 'feed' | 'miners' | 'repos';
+const PANEL_CYCLE: readonly ActivePanel[] = ['feed', 'miners', 'repos'];
+
 const HomePage: React.FC = () => {
   const theme = useTheme();
   const monthlyRewards = useMonthlyRewards();
-  const [activePanel, setActivePanel] = useState<'feed' | 'miners'>('feed');
+  const [activePanel, setActivePanel] = useState<ActivePanel>('feed');
   const [activeBottomCard, setActiveBottomCard] = useState<
     'maintainer' | 'miner'
   >('maintainer');
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setActivePanel((current) => (current === 'feed' ? 'miners' : 'feed'));
+      setActivePanel((current) => {
+        const idx = PANEL_CYCLE.indexOf(current);
+        return PANEL_CYCLE[(idx + 1) % PANEL_CYCLE.length];
+      });
     }, 5000);
     return () => clearInterval(interval);
   }, []);
 
   const { datasets, isLoading } = useDashboardData('35d');
   const stats = useStats();
+  const repoCommitsQuery = useRepoCommits();
   const onboardLink = useLinkBehavior<HTMLAnchorElement>('/onboard');
   const docsLink = useLinkBehavior<HTMLAnchorElement>(
     'https://docs.gittensor.io',
@@ -309,6 +346,10 @@ const HomePage: React.FC = () => {
   const activityRows = useMemo(
     () => buildActivityRows(datasets.prs.data, datasets.repos.data),
     [datasets.prs.data, datasets.repos.data],
+  );
+  const topActiveRepoRows = useMemo(
+    () => buildTopActiveRepoRows(repoCommitsQuery.data ?? []),
+    [repoCommitsQuery.data],
   );
 
   const mergedPrs35d = useMemo(
@@ -364,7 +405,7 @@ const HomePage: React.FC = () => {
     <Page title="Home">
       <SEO
         title="Autonomous software development"
-        description="A permissionless market of coding agents on Bittensor Subnet 74. We direct the pool; it ships the software."
+        description="A permissionless market of miners on Bittensor Subnet 74. We direct the pool; it ships the software."
         type="website"
       />
       <Box
@@ -499,6 +540,27 @@ const HomePage: React.FC = () => {
                 isError={datasets.miners.isError}
               />
             </Box>
+            <Box
+              sx={{
+                gridArea: '1 / 1',
+                opacity: activePanel === 'repos' ? 1 : 0,
+                pointerEvents: activePanel === 'repos' ? 'auto' : 'none',
+                transform:
+                  activePanel === 'repos'
+                    ? 'translateZ(0)'
+                    : 'translateZ(-20px)',
+                transition: 'opacity 0.6s ease, transform 0.6s ease',
+                zIndex: activePanel === 'repos' ? 1 : 0,
+                width: '100%',
+              }}
+            >
+              <TopActiveReposPanel
+                rows={topActiveRepoRows}
+                hasLiveData={topActiveRepoRows.length > 0}
+                isLoading={repoCommitsQuery.isLoading}
+                isError={repoCommitsQuery.isError}
+              />
+            </Box>
             <Stack
               direction="row"
               spacing={1}
@@ -510,34 +572,23 @@ const HomePage: React.FC = () => {
                 zIndex: 2,
               }}
             >
-              <Box
-                onClick={() => setActivePanel('feed')}
-                sx={(theme) => ({
-                  width: 32,
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor:
-                    activePanel === 'feed'
-                      ? theme.palette.status.merged
-                      : alpha(theme.palette.text.primary, 0.1),
-                  cursor: 'pointer',
-                  transition: 'background-color 0.3s ease',
-                })}
-              />
-              <Box
-                onClick={() => setActivePanel('miners')}
-                sx={(theme) => ({
-                  width: 32,
-                  height: 4,
-                  borderRadius: 2,
-                  backgroundColor:
-                    activePanel === 'miners'
-                      ? theme.palette.status.merged
-                      : alpha(theme.palette.text.primary, 0.1),
-                  cursor: 'pointer',
-                  transition: 'background-color 0.3s ease',
-                })}
-              />
+              {PANEL_CYCLE.map((panel) => (
+                <Box
+                  key={panel}
+                  onClick={() => setActivePanel(panel)}
+                  sx={(theme) => ({
+                    width: 32,
+                    height: 4,
+                    borderRadius: 2,
+                    backgroundColor:
+                      activePanel === panel
+                        ? theme.palette.status.merged
+                        : alpha(theme.palette.text.primary, 0.1),
+                    cursor: 'pointer',
+                    transition: 'background-color 0.3s ease',
+                  })}
+                />
+              ))}
             </Stack>
           </Box>
         </Box>
@@ -799,7 +850,7 @@ const HeroCopy: React.FC<HeroCopyProps> = ({
               ...fadeUp(240),
             })}
           >
-            A permissionless market of coding agents on Bittensor.
+            A permissionless market of miners on Bittensor.
             <Box component="span" sx={{ display: 'block', mt: 0.5 }}>
               Direct them at any feature, any optimization, any repo.
             </Box>
@@ -1018,10 +1069,10 @@ const LiveProofPanel: React.FC<{
         <SectionKicker
           label={
             hasLiveData
-              ? 'Live work from the agents'
+              ? 'Live work from the miners'
               : isLoading
-                ? 'Loading agent feed'
-                : 'Agent feed unavailable'
+                ? 'Loading miner feed'
+                : 'Miner feed unavailable'
           }
           right={hasLiveData ? 'streaming' : isLoading ? 'syncing' : undefined}
         />
@@ -1229,10 +1280,10 @@ const TopMinersPanel: React.FC<{
       <SectionKicker
         label={
           hasLiveData
-            ? 'Top agents by earnings'
+            ? 'Top miners by earnings'
             : isLoading
-              ? 'Loading top agents'
-              : 'Agent rankings unavailable'
+              ? 'Loading top miners'
+              : 'Miner rankings unavailable'
         }
         right={
           hasLiveData ? 'reward estimates' : isLoading ? 'syncing' : undefined
@@ -1470,6 +1521,207 @@ const PanelEmptyState: React.FC<{
   </Box>
 );
 
+const TopActiveReposPanel: React.FC<{
+  rows: LandingTopRepoRow[];
+  hasLiveData: boolean;
+  isLoading: boolean;
+  isError: boolean;
+}> = ({ rows, hasLiveData, isLoading, isError }) => {
+  const topLines = Math.max(...rows.map((r) => r.linesChanged), 1);
+
+  return (
+    <Box
+      sx={(theme) => ({
+        backgroundColor: theme.palette.surface.subtle,
+        color: theme.palette.text.primary,
+        border: `1px solid ${theme.palette.border.medium}`,
+        borderRadius: 2,
+        p: { xs: 1.4, sm: 1.6 },
+        minWidth: 0,
+        boxShadow: `0 18px 60px ${alpha(theme.palette.common.black, 0.4)}`,
+        position: 'relative',
+        overflow: 'hidden',
+        ...slideIn(180),
+      })}
+    >
+      <Box
+        sx={(theme) => ({
+          position: 'absolute',
+          top: -100,
+          left: -100,
+          width: 250,
+          height: 250,
+          background: `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.12)} 0%, transparent 70%)`,
+          filter: 'blur(40px)',
+          pointerEvents: 'none',
+        })}
+      />
+      <Box sx={{ position: 'relative', zIndex: 1 }}>
+        <SectionKicker
+          label={
+            hasLiveData
+              ? 'Most active repositories'
+              : isLoading
+                ? 'Loading repository activity'
+                : isError
+                  ? 'Repository activity unavailable'
+                  : 'No repository activity yet'
+          }
+          right={
+            hasLiveData ? 'lines changed' : isLoading ? 'syncing' : undefined
+          }
+        />
+        {rows.length > 0 ? (
+          <Stack spacing={0.85}>
+            {rows.map((row, index) => {
+              const barWidth = Math.max(
+                14,
+                Math.min(100, (row.linesChanged / topLines) * 100),
+              );
+              return (
+                <LinkBox
+                  key={`${row.repository}-${index}`}
+                  href={`/repositories/details?repo=${encodeURIComponent(row.repository)}`}
+                  linkState={{ backLabel: 'Back to Home' }}
+                  sx={(theme) => ({
+                    display: 'grid',
+                    gridTemplateColumns: {
+                      xs: '24px 28px minmax(0, 1fr)',
+                      sm: '28px 32px minmax(0, 1fr) auto',
+                    },
+                    alignItems: 'center',
+                    gap: { xs: 1, sm: 1.25 },
+                    minHeight: 56,
+                    px: 1,
+                    py: 0.9,
+                    position: 'relative',
+                    isolation: 'isolate',
+                    overflow: 'hidden',
+                    borderRadius: 1.25,
+                    border: `1px solid ${theme.palette.border.subtle}`,
+                    backgroundColor: alpha(theme.palette.text.primary, 0.02),
+                    transition:
+                      'background-color 0.16s ease, border-color 0.16s ease, transform 0.16s ease',
+                    ...slideIn(250 + index * 55),
+                    '&::before': {
+                      content: '""',
+                      position: 'absolute',
+                      inset: 0,
+                      right: 'auto',
+                      width: `${barWidth}%`,
+                      backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                      zIndex: 0,
+                      pointerEvents: 'none',
+                    },
+                    '& > *': { position: 'relative', zIndex: 1 },
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.text.primary, 0.045),
+                      borderColor: theme.palette.border.light,
+                      transform: 'translateX(3px)',
+                    },
+                    '&:focus-visible': {
+                      outline: `2px solid ${alpha(theme.palette.primary.main, 0.65)}`,
+                      outlineOffset: 2,
+                    },
+                  })}
+                >
+                  <Typography
+                    sx={(theme) => ({
+                      color: theme.palette.text.secondary,
+                      fontFamily: 'var(--font-heading)',
+                      fontSize: '1.1rem',
+                      fontWeight: 900,
+                      lineHeight: 1,
+                      textAlign: 'center',
+                    })}
+                  >
+                    {index + 1}
+                  </Typography>
+                  <Avatar
+                    src={getGithubAvatarSrc(row.owner)}
+                    alt={row.repository}
+                    sx={{
+                      width: { xs: 26, sm: 30 },
+                      height: { xs: 26, sm: 30 },
+                      border: '1px solid',
+                      borderColor: 'border.medium',
+                    }}
+                  />
+                  <Box sx={{ minWidth: 0, overflow: 'hidden' }}>
+                    <Typography
+                      sx={(theme) => ({
+                        color: theme.palette.text.primary,
+                        fontSize: { xs: '0.78rem', sm: '0.84rem' },
+                        whiteSpace: 'nowrap',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                      })}
+                    >
+                      {row.repository}
+                    </Typography>
+                    <Typography
+                      sx={(theme) => ({
+                        color: theme.palette.text.secondary,
+                        fontFamily: 'var(--font-accent)',
+                        fontSize: { xs: '0.6rem', sm: '0.65rem' },
+                        lineHeight: 1.2,
+                      })}
+                    >
+                      {row.commits.toLocaleString()} commits ·{' '}
+                      <Box
+                        component="span"
+                        sx={(theme) => ({
+                          color: theme.palette.status.merged,
+                        })}
+                      >
+                        +{formatCompactNumber(row.additions)}
+                      </Box>{' '}
+                      <Box
+                        component="span"
+                        sx={(theme) => ({
+                          color: theme.palette.status.closed,
+                        })}
+                      >
+                        −{formatCompactNumber(row.deletions)}
+                      </Box>
+                    </Typography>
+                  </Box>
+                  <Typography
+                    sx={(theme) => ({
+                      display: { xs: 'none', sm: 'block' },
+                      color: theme.palette.text.primary,
+                      fontFamily: 'var(--font-accent)',
+                      fontSize: '0.78rem',
+                      fontWeight: 700,
+                      whiteSpace: 'nowrap',
+                    })}
+                  >
+                    {formatCompactNumber(row.linesChanged)}
+                  </Typography>
+                </LinkBox>
+              );
+            })}
+          </Stack>
+        ) : (
+          <Typography
+            sx={(theme) => ({
+              color: theme.palette.text.secondary,
+              fontSize: '0.78rem',
+              py: 1,
+            })}
+          >
+            {isLoading
+              ? 'Loading…'
+              : isError
+                ? 'Could not load repository activity.'
+                : 'No repository activity yet.'}
+          </Typography>
+        )}
+      </Box>
+    </Box>
+  );
+};
+
 const SectionKicker: React.FC<{
   label: string;
   right?: string;
@@ -1578,7 +1830,7 @@ const HowItWorksSection: React.FC<{
           overflowWrap: 'anywhere',
         }}
       >
-        A coordination layer for coding agents.
+        A coordination layer for miners.
       </Typography>
     </Stack>
     <Box
