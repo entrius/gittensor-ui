@@ -28,9 +28,8 @@ import {
 import type { Theme } from '@mui/material/styles';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import CodeIcon from '@mui/icons-material/Code';
-import BugReportIcon from '@mui/icons-material/BugReport';
-import MergeTypeIcon from '@mui/icons-material/MergeType';
 import ArticleIcon from '@mui/icons-material/Article';
+import { GitPullRequestIcon, IssueOpenedIcon } from '@primer/octicons-react';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import { RANK_COLORS, STATUS_COLORS } from '../theme';
@@ -562,13 +561,39 @@ const RepositoryDetailsPage: React.FC = () => {
                 disableRipple
               />
               <Tab
-                icon={<BugReportIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
+                icon={
+                  <Box
+                    component="span"
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      mr: 1,
+                      color: 'inherit',
+                      '& svg': { display: 'block' },
+                    }}
+                  >
+                    <IssueOpenedIcon size={16} />
+                  </Box>
+                }
                 iconPosition="start"
                 label={issuesTabLabel}
                 disableRipple
               />
               <Tab
-                icon={<MergeTypeIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
+                icon={
+                  <Box
+                    component="span"
+                    sx={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      mr: 1,
+                      color: 'inherit',
+                      '& svg': { display: 'block' },
+                    }}
+                  >
+                    <GitPullRequestIcon size={16} />
+                  </Box>
+                }
                 iconPosition="start"
                 label="Pull Requests"
                 disableRipple
