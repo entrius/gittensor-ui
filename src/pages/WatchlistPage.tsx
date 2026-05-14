@@ -101,6 +101,7 @@ import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatDate, formatTokenAmount } from '../utils/format';
 import { compareByWatchlist } from '../utils/watchlistSort';
+import { buildBountyPoolByRepositoryRows } from '../utils/bountyPoolByRepository';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import theme, {
   CHART_COLORS,
@@ -2532,6 +2533,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   const [sortField, setSortField] = useState<BountySortKey>('id');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [showChart, setShowChart] = useState(false);
 
   const bountyVisibleSortKeys = useMemo(
     () => bountyVisibleSortKeysForFilter(statusFilter),
@@ -2600,6 +2602,93 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     });
     return decorated.map((d) => d.row);
   }, [filtered, sortField, sortOrder]);
+
+  const chartOption = useMemo(() => {
+    const rows = buildBountyPoolByRepositoryRows(filtered);
+    const textColor = alpha(theme.palette.common.white, 0.85);
+    const gridColor = theme.palette.border.subtle;
+
+    return {
+      backgroundColor: 'transparent',
+      title: {
+        text: 'Bounty Pool by Repository',
+        subtext: `${filtered.length} watched issues`,
+        left: 'center',
+        top: 20,
+        textStyle: {
+          color: theme.palette.text.primary,
+          fontFamily: 'JetBrains Mono',
+          fontSize: 16,
+          fontWeight: 600,
+        },
+        subtextStyle: {
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+          fontFamily: 'JetBrains Mono',
+          fontSize: 12,
+        },
+      },
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: { type: 'shadow' },
+        backgroundColor: alpha(theme.palette.background.default, 0.95),
+        borderColor: alpha(theme.palette.common.white, 0.15),
+        borderWidth: 1,
+        textStyle: {
+          color: theme.palette.text.primary,
+          fontFamily: 'JetBrains Mono',
+        },
+        formatter: (params: { name: string; value: number }[]) => {
+          const p = params[0];
+          return `${p.name}: ${p.value.toFixed(4)} ل`;
+        },
+      },
+      grid: {
+        left: '3%',
+        right: '3%',
+        bottom: '15%',
+        top: '20%',
+        containLabel: true,
+      },
+      xAxis: {
+        type: 'category',
+        data: rows.map((row) => row.label),
+        axisLabel: {
+          color: textColor,
+          fontFamily: 'JetBrains Mono',
+          rotate: 45,
+          interval: 0,
+        },
+        axisLine: { lineStyle: { color: gridColor } },
+      },
+      yAxis: {
+        type: 'value',
+        name: 'Bounty (ل)',
+        nameTextStyle: { color: textColor, fontFamily: 'JetBrains Mono' },
+        axisLabel: { color: textColor, fontFamily: 'JetBrains Mono' },
+        splitLine: { lineStyle: { color: gridColor, type: 'dashed' } },
+      },
+      series: [
+        {
+          data: rows.map((row) => row.value),
+          type: 'bar',
+          itemStyle: {
+            color: {
+              type: 'linear',
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [
+                { offset: 0, color: theme.palette.primary.main },
+                { offset: 1, color: theme.palette.status.info },
+              ],
+            },
+            borderRadius: [4, 4, 0, 0],
+          },
+        },
+      ],
+    };
+  }, [filtered]);
 
   const totalBountyPages = Math.max(
     1,
@@ -2748,6 +2837,34 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 </Tooltip>
               </Box>
             }
+            extraContent={
+              <Box>
+                <OptionsLabel>Chart</OptionsLabel>
+                <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'} arrow>
+                  <IconButton
+                    onClick={() => setShowChart((v) => !v)}
+                    size="small"
+                    sx={{
+                      color: showChart ? 'text.primary' : 'text.tertiary',
+                      border: '1px solid',
+                      borderColor: 'border.light',
+                      borderRadius: 2,
+                      padding: '6px',
+                      '&:hover': {
+                        backgroundColor: 'surface.light',
+                        borderColor: 'border.medium',
+                      },
+                    }}
+                  >
+                    {showChart ? (
+                      <TableChartIcon fontSize="small" />
+                    ) : (
+                      <BarChartIcon fontSize="small" />
+                    )}
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            }
             searchValue={draftValue}
             searchPlaceholder="Search bounties..."
             onSearchChange={setDraftValue}
@@ -2769,6 +2886,39 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           />
         )}
       </DebouncedSearchInput>
+
+      <Collapse in={showChart}>
+        <Box
+          sx={{
+            p: 2,
+            borderBottom: '1px solid',
+            borderColor: 'border.light',
+            height: '500px',
+            backgroundColor: 'surface.subtle',
+          }}
+        >
+          {showChart && filtered.length > 0 ? (
+            <ReactECharts
+              option={chartOption}
+              style={{ height: '100%', width: '100%' }}
+              notMerge
+            />
+          ) : (
+            <Box
+              sx={{
+                height: '100%',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <Typography sx={{ color: 'text.secondary', fontSize: '0.85rem' }}>
+                No watched bounties found.
+              </Typography>
+            </Box>
+          )}
+        </Box>
+      </Collapse>
 
       {viewMode === 'list' ? (
         <DataTable<IssueBounty, BountySortKey>
