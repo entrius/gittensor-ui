@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
   DebouncedSearchInput,
   useDebouncedSearchDraft,
@@ -427,7 +433,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
     }
   }, [page, safePage]);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setPage(0);
   }, [filterType, searchQuery, sortKey, sortDirection, viewMode]);
 
