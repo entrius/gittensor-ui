@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import {
   Box,
@@ -9,10 +9,15 @@ import {
   Typography,
   alpha,
   useTheme,
+  TextField,
+  InputAdornment,
+  IconButton,
+  useMediaQuery,
 } from '@mui/material';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import RadioButtonUncheckedIcon from '@mui/icons-material/RadioButtonUnchecked';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import SearchIcon from '@mui/icons-material/Search';
 import {
   useRepositoryIssues,
   useRepoIssues,
@@ -31,6 +36,7 @@ import {
 } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 
 interface RepositoryIssuesTableProps {
   repositoryFullName: string;
@@ -62,6 +68,14 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   );
   const [sortKey, setSortKey] = useState<SortKey>('number');
   const [sortDirection, setSortDirection] = useState<SortOrder>('desc');
+  const [searchQuery, setSearchQuery] = useState('');
+  const [mobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const isSmDown = useMediaQuery(theme.breakpoints.down('sm'));
+
+  useEffect(() => {
+    setSearchQuery('');
+    setMobileSearchOpen(false);
+  }, [repositoryFullName]);
 
   const counts = useMemo(() => {
     if (!issues) return { total: 0, open: 0, closed: 0 };
@@ -79,13 +93,31 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     return issues;
   }, [issues, filter]);
 
+  const searchFilteredIssues = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return filteredIssues;
+    return filteredIssues.filter((issue) => {
+      const title = getLowerText(issue.title);
+      if (title.includes(q)) return true;
+      const author = (issue.authorLogin || issue.author || '').toLowerCase();
+      if (author.includes(q)) return true;
+      const numStr = String(issue.number);
+      if (numStr.includes(q)) return true;
+      if (q.startsWith('#')) {
+        const rest = q.slice(1).trim();
+        if (rest && numStr.includes(rest)) return true;
+      }
+      return false;
+    });
+  }, [filteredIssues, searchQuery]);
+
   const sortedIssues = useMemo(() => {
     const directionFactor = sortDirection === 'asc' ? 1 : -1;
     const collator = new Intl.Collator(undefined, {
       sensitivity: 'base',
       numeric: true,
     });
-    const decorated = filteredIssues.map((issue) => {
+    const decorated = searchFilteredIssues.map((issue) => {
       let value: number | string;
       switch (sortKey) {
         case 'number':
@@ -121,7 +153,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       );
     });
     return decorated.map((item) => item.issue);
-  }, [filteredIssues, sortKey, sortDirection]);
+  }, [searchFilteredIssues, sortKey, sortDirection]);
 
   const handleSort = useCallback(
     (key: SortKey) => {
@@ -282,22 +314,125 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   const headerToolbar = (
     <Box
       sx={{
-        p: 3,
+        p: { xs: 2, sm: 3 },
         borderBottom: `1px solid ${theme.palette.border.light}`,
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
-        gap: 2,
+        flexDirection: 'column',
+        gap: { xs: 1.5, sm: 2 },
       }}
     >
-      <Typography
-        variant="h6"
-        sx={{ color: 'text.primary', fontSize: '1.1rem', fontWeight: 500 }}
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
+          justifyContent: 'space-between',
+          gap: { xs: 1.5, sm: 2 },
+          width: '100%',
+        }}
       >
-        Issues ({sortedIssues.length})
-      </Typography>
-      <Stack direction="row" spacing={1}>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1,
+            minWidth: 0,
+            flex: { sm: '1 1 auto' },
+          }}
+        >
+          <Typography
+            variant="h6"
+            sx={{
+              color: 'text.primary',
+              fontSize: { xs: '1rem', sm: '1.1rem' },
+              fontWeight: 500,
+              minWidth: 0,
+            }}
+          >
+            Issues ({sortedIssues.length})
+          </Typography>
+          {isSmDown && !mobileSearchOpen ? (
+            <IconButton
+              size="small"
+              aria-label="Search issues"
+              onClick={() => setMobileSearchOpen(true)}
+              sx={{
+                flexShrink: 0,
+                border: '1px solid',
+                borderColor: 'border.light',
+                borderRadius: 2,
+                color: 'text.secondary',
+              }}
+            >
+              <SearchIcon fontSize="small" />
+            </IconButton>
+          ) : null}
+        </Box>
+        {(!isSmDown || mobileSearchOpen) && (
+          <TextField
+            size="small"
+            placeholder="Search (#, title, author)…"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (
+                e.key === 'Escape' &&
+                !searchQuery.trim() &&
+                isSmDown &&
+                mobileSearchOpen
+              ) {
+                setMobileSearchOpen(false);
+              }
+            }}
+            onBlur={() => {
+              if (isSmDown && !searchQuery.trim()) {
+                setMobileSearchOpen(false);
+              }
+            }}
+            autoFocus={Boolean(isSmDown && mobileSearchOpen)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon
+                    sx={{
+                      color: 'text.secondary',
+                      fontSize: '1rem',
+                    }}
+                  />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <ClearSearchAdornment
+                  visible={Boolean(searchQuery)}
+                  onClear={() => setSearchQuery('')}
+                />
+              ),
+            }}
+            sx={{
+              width: { xs: '100%', sm: 280 },
+              maxWidth: { xs: '100%', sm: 360 },
+              flexShrink: 0,
+              alignSelf: { xs: 'stretch', sm: 'auto' },
+              '& .MuiOutlinedInput-root': {
+                fontSize: '0.8rem',
+                backgroundColor: 'surface.subtle',
+                borderRadius: 2,
+                '& fieldset': { borderColor: 'border.light' },
+                '&:hover fieldset': { borderColor: 'border.medium' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+              },
+            }}
+          />
+        )}
+      </Box>
+      <Stack
+        direction="row"
+        flexWrap="wrap"
+        useFlexGap
+        spacing={1}
+        sx={{ columnGap: 1, rowGap: 1 }}
+      >
         <FilterButton
           label="All"
           isActive={filter === 'all'}
@@ -532,7 +667,12 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                   fontSize: '0.9rem',
                 }}
               >
-                No issues found
+                {issues &&
+                issues.length > 0 &&
+                searchQuery.trim() &&
+                sortedIssues.length === 0
+                  ? 'No issues match your search.'
+                  : 'No issues found'}
               </Typography>
             </Box>
           }
