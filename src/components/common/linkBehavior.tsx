@@ -94,22 +94,35 @@ export const LinkBox = forwardRef<HTMLAnchorElement, BoxProps & LinkProps>(
 LinkBox.displayName = 'LinkBox';
 
 /**
- * A `TableRow` that renders as `<a href>`. Drop-in replacement for any
+ * A `TableRow` that navigates via React Router on click. Renders as a native
+ * `<tr>` (valid HTML inside `<tbody>`), with ``role="link"`` and keyboard
+ * support for accessibility. Drop-in replacement for any
  * `<TableRow onClick={() => navigate(...)}>` row.
  */
 export const LinkTableRow = forwardRef<
-  HTMLAnchorElement,
+  HTMLTableRowElement,
   TableRowProps & LinkProps
 >(({ href, linkState, sx, ...rest }, ref) => {
-  const linkProps = useLinkBehavior<HTMLAnchorElement>(href, {
-    state: linkState,
-  });
+  const navigate = useNavigate();
+  const handleClick = useCallback(
+    (e: React.MouseEvent<HTMLTableRowElement>) => {
+      if (isModifiedEvent(e)) return;
+      e.preventDefault();
+      navigate(href, { state: linkState });
+    },
+    [href, linkState, navigate],
+  );
+
   return (
     <TableRow
-      component="a"
       ref={ref}
-      {...linkProps}
-      sx={mergeSx(linkResetSx, sx)}
+      onClick={handleClick}
+      sx={mergeSx(
+        { cursor: 'pointer', textDecoration: 'none', color: 'inherit' },
+        sx,
+      )}
+      tabIndex={0}
+      role="link"
       {...rest}
     />
   );
