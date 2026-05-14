@@ -1153,7 +1153,10 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
               endAdornment: (
                 <ClearSearchAdornment
                   visible={Boolean(searchQuery)}
-                  onClear={() => setSearchQuery('')}
+                  onClear={() => {
+                    setSearchQuery('');
+                    setDraftValue('');
+                  }}
                 />
               ),
             }}
