@@ -7,7 +7,6 @@ import React, {
   useState,
 } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
-import { formatDate } from '../utils/format';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import {
   Alert,
@@ -45,6 +44,7 @@ import {
   RepositoryCodeBrowser,
   ReadmeViewer,
   RepositoryStats,
+  RepositoryPrActivityChart,
   ContributingViewer,
   RepositoryMaintainers,
   RepositoryCheckTab,
@@ -239,13 +239,8 @@ const RepositoryDetailsPage: React.FC = () => {
     [repo, setSearchParams],
   );
 
-  const statusChips = useMemo(() => {
-    const inactiveAt = trackedRepo?.config?.inactiveAt ?? null;
-    const inactiveLabel = inactiveAt
-      ? `Inactive since ${formatDate(inactiveAt)}`
-      : null;
-
-    return (
+  const statusChips = useMemo(
+    () => (
       <>
         <Chip variant="info" label="Public" />
         <Chip
@@ -259,22 +254,10 @@ const RepositoryDetailsPage: React.FC = () => {
             fontWeight: 600,
           }}
         />
-        {inactiveLabel ? (
-          <Chip
-            label={inactiveLabel}
-            sx={{
-              backgroundColor: alpha(STATUS_COLORS.error, 0.1),
-              color: 'status.error',
-              border: `1px solid ${alpha(STATUS_COLORS.error, 0.3)}`,
-              fontSize: '0.75rem',
-              height: '24px',
-              fontWeight: 600,
-            }}
-          />
-        ) : null}
       </>
-    );
-  }, [trackedRepo?.config?.inactiveAt]);
+    ),
+    [],
+  );
 
   const issuesTabLabel = useMemo(() => {
     const openBounties =
@@ -636,6 +619,13 @@ const RepositoryDetailsPage: React.FC = () => {
               <Box sx={{ pt: 0 }}>
                 {/* Repository Stats */}
                 <RepositoryStats repositoryFullName={repo} />
+
+                {tabValue === 2 || tabValue === 3 ? (
+                  <RepositoryPrActivityChart
+                    repositoryFullName={repo}
+                    viewMode={tabValue === 2 ? 'issues' : 'prs'}
+                  />
+                ) : null}
 
                 {/* Maintainers */}
                 <RepositoryMaintainers repositoryFullName={repo} />
