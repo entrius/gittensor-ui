@@ -8,12 +8,7 @@ import NetworkCanvas from '../components/landing/NetworkCanvas';
 import useCountUp from '../hooks/useCountUp';
 import { SEO } from '../components';
 import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
-import {
-  type CommitLog,
-  type MinerEvaluation,
-  type Repository,
-  useStats,
-} from '../api';
+import { type CommitLog, type MinerEvaluation, useStats } from '../api';
 import { useMonthlyRewards } from '../hooks/useMonthlyRewards';
 import {
   getGithubAvatarSrc,
@@ -175,9 +170,9 @@ const buildTopMinerRows = (miners: MinerEvaluation[]): LandingMinerRow[] => {
 const getActivityRowId = (pr: CommitLog) =>
   `${pr.repository}-${pr.pullRequestNumber}`;
 
-const pickLandingActivityPrs = (prs: CommitLog[], repos: Repository[]) => {
+const pickLandingActivityPrs = (prs: CommitLog[]) => {
   const validPrs = prs.filter((pr) => pr.repository && pr.pullRequestNumber);
-  const featuredRepos = buildFeaturedWork(validPrs, repos);
+  const featuredRepos = buildFeaturedWork(validPrs);
 
   const selected: CommitLog[] = [];
   const selectedIds = new Set<string>();
@@ -236,11 +231,8 @@ const pickLandingActivityPrs = (prs: CommitLog[], repos: Repository[]) => {
   return selected.slice(0, 4);
 };
 
-const buildActivityRows = (
-  prs: CommitLog[],
-  repos: Repository[],
-): LandingActivityRow[] =>
-  pickLandingActivityPrs(prs, repos).map((pr) => {
+const buildActivityRows = (prs: CommitLog[]): LandingActivityRow[] =>
+  pickLandingActivityPrs(prs).map((pr) => {
     const status = getPrStatusLabel(pr);
     const statusLabel =
       status === 'Merged'
@@ -307,8 +299,8 @@ const HomePage: React.FC = () => {
     [datasets.miners.data],
   );
   const activityRows = useMemo(
-    () => buildActivityRows(datasets.prs.data, datasets.repos.data),
-    [datasets.prs.data, datasets.repos.data],
+    () => buildActivityRows(datasets.prs.data),
+    [datasets.prs.data],
   );
 
   const mergedPrs35d = useMemo(
