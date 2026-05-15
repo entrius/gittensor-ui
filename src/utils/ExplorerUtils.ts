@@ -123,8 +123,6 @@ export interface RepoStats {
   tokenScore: number;
   weight: number;
   latestPrDate?: string | null;
-  /** Set when subnet repo list marks the repository inactive (miners / enrich layer). */
-  inactiveAt?: string | null;
 }
 
 /** Per-repository stats for Issue Discovery (miner solved bounties via winning PRs). */
@@ -136,7 +134,6 @@ export interface IssueRepoStats {
   bountyEarned: number;
   weight: number;
   latestActivityDate: string | null;
-  inactiveAt?: string | null;
 }
 
 export type RepoSortField =

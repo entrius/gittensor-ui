@@ -19,8 +19,6 @@ interface RepositoryCardProps {
   linkState?: Record<string, unknown>;
 }
 
-const INACTIVE_OPACITY = 0.5;
-
 interface ConfigBarProps {
   label: string;
   value: number;
@@ -100,47 +98,26 @@ interface LabelChipProps {
 
 const LabelChip: React.FC<LabelChipProps> = ({ label, multiplier }) => (
   <Box
-    sx={(theme) => {
-      const direction =
-        multiplier > 1 ? 'boost' : multiplier < 1 ? 'penalty' : 'neutral';
-      const color =
-        direction === 'boost'
-          ? theme.palette.status.success
-          : direction === 'penalty'
-            ? theme.palette.status.closed
-            : theme.palette.text.secondary;
-      return {
-        display: 'inline-flex',
-        alignItems: 'baseline',
-        gap: 0.5,
-        px: 0.75,
-        py: 0.25,
-        borderRadius: '4px',
-        border: '1px solid',
-        borderColor: alpha(color, 0.35),
-        backgroundColor: alpha(color, 0.08),
-        fontFamily: FONTS.mono,
-        fontSize: '0.7rem',
-        lineHeight: 1.2,
-        whiteSpace: 'nowrap',
-      };
-    }}
+    sx={(theme) => ({
+      display: 'inline-flex',
+      alignItems: 'baseline',
+      gap: 0.5,
+      px: 0.75,
+      py: 0.25,
+      borderRadius: '4px',
+      border: '1px solid',
+      borderColor: theme.palette.border.light,
+      backgroundColor: alpha(theme.palette.text.primary, 0.04),
+      fontFamily: FONTS.mono,
+      fontSize: '0.7rem',
+      lineHeight: 1.2,
+      whiteSpace: 'nowrap',
+    })}
   >
-    <Box component="span" sx={{ color: 'text.primary', fontWeight: 500 }}>
+    <Box component="span" sx={{ color: 'text.secondary', fontWeight: 500 }}>
       {label}
     </Box>
-    <Box
-      component="span"
-      sx={(theme) => ({
-        color:
-          multiplier > 1
-            ? theme.palette.status.success
-            : multiplier < 1
-              ? theme.palette.status.closed
-              : theme.palette.text.tertiary,
-        fontWeight: 600,
-      })}
-    >
+    <Box component="span" sx={{ color: 'text.tertiary', fontWeight: 600 }}>
       ×{multiplier.toFixed(2)}
     </Box>
   </Box>
@@ -153,7 +130,6 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
   linkState,
 }) => {
   const owner = (repo.repository || '').split('/')[0] || '';
-  const isInactive = !!repo.inactiveAt;
   const weightPct =
     maxWeight > 0
       ? Math.max(0, Math.min(100, (repo.weight / maxWeight) * 100))
@@ -180,7 +156,6 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         gap: { xs: 1.25, sm: 1.5 },
         cursor: 'pointer',
         transition: 'all 0.2s',
-        opacity: isInactive ? INACTIVE_OPACITY : 1,
         '&:hover': {
           backgroundColor: theme.palette.surface.light,
           borderColor: theme.palette.border.medium,
@@ -233,29 +208,6 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
             {repo.repository}
           </Typography>
         </Tooltip>
-        <Typography
-          component="span"
-          sx={(theme) => ({
-            fontFamily: FONTS.mono,
-            fontSize: { xs: '0.6rem', sm: '0.65rem' },
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-            px: { xs: 0.5, sm: 0.75 },
-            py: 0.25,
-            borderRadius: '4px',
-            flexShrink: 0,
-            whiteSpace: 'nowrap',
-            color: isInactive
-              ? theme.palette.status.closed
-              : theme.palette.status.success,
-            backgroundColor: isInactive
-              ? alpha(theme.palette.status.closed, 0.12)
-              : alpha(theme.palette.status.success, 0.12),
-          })}
-        >
-          {isInactive ? 'Inactive' : 'Active'}
-        </Typography>
         {repo.repository && (
           <WatchlistButton
             category="repos"

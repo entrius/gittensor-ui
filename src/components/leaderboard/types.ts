@@ -48,7 +48,6 @@ export interface RepoStats {
   uniqueMiners: Set<string>;
   weight: number;
   rank?: number;
-  inactiveAt?: string | null;
   mirrorEnabled?: boolean;
   /** Issue discovery track score (UI: "Issue score"; miner stats + merged multiplier PRs). */
   discoveryScore: number;

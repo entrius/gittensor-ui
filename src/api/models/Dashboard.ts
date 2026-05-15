@@ -5,7 +5,6 @@ export type RepoChanges = {
   deletions: number;
   linesChanged: number;
   emissionShare: string; // bc float
-  inactiveAt: string | null;
 };
 
 // Raw config blob from das-gittensor /dash/repos and /repos/:repo. Mirrors
@@ -15,7 +14,6 @@ export type RepositoryConfig = {
   emissionShare?: number | string;
   issueDiscoveryShare?: number | string;
   additionalAcceptableBranches?: string[] | null;
-  inactiveAt?: string | null;
   mirrorEnabled?: boolean;
   trustedLabelPipeline?: boolean;
   labelMultipliers?: Record<string, number>;
