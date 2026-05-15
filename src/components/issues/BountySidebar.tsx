@@ -156,7 +156,15 @@ const useTopBountyHunters = (
 
 const FilterSection: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() =>
+    sessionStorage.getItem('bounties-filter-panel-open') === 'true',
+  );
+  const toggleOpen = () =>
+    setOpen((v) => {
+      const next = !v;
+      sessionStorage.setItem('bounties-filter-panel-open', String(next));
+      return next;
+    });
 
   const filterType = useMemo<FilterType>(() => {
     const f = searchParams.get('filter');
@@ -181,7 +189,7 @@ const FilterSection: React.FC = () => {
       <Box
         component="button"
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => toggleOpen()}
         sx={(t) => ({
           display: 'flex',
           alignItems: 'center',

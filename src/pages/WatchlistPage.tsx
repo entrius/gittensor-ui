@@ -609,14 +609,22 @@ const WatchlistOptionsSidebarPanel: React.FC<
     hasActiveFilter: boolean;
   }
 > = (props) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(() =>
+    sessionStorage.getItem('watchlist-filter-panel-open') === 'true',
+  );
+  const toggleOpen = () =>
+    setOpen((v) => {
+      const next = !v;
+      sessionStorage.setItem('watchlist-filter-panel-open', String(next));
+      return next;
+    });
 
   return (
     <Box>
       <Box
         component="button"
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => toggleOpen()}
         sx={(t) => ({
           display: 'flex',
           alignItems: 'center',
