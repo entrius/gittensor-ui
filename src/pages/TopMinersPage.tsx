@@ -232,28 +232,24 @@ const TopMinersPage: React.FC = () => {
           </Box>
 
           {/* ─── Tab content ─── */}
-          {activeTimeline === 'oss' && (
-            <Box sx={{ width: '100%' }}>
-              <TopMinersTable
-                miners={ossMinerStats}
-                isLoading={isLoadingMinerStats}
-                getMinerHref={getOssMinerHref}
-                linkState={OSS_LINK_STATE}
-              />
-            </Box>
-          )}
+          <Box sx={{ width: '100%', display: activeTimeline === 'oss' ? 'block' : 'none' }}>
+            <TopMinersTable
+              miners={ossMinerStats}
+              isLoading={isLoadingMinerStats}
+              getMinerHref={getOssMinerHref}
+              linkState={OSS_LINK_STATE}
+            />
+          </Box>
 
-          {activeTimeline === 'discoveries' && (
-            <Box sx={{ width: '100%' }}>
-              <TopMinersTable
-                miners={sortedDiscMinerStats}
-                isLoading={isLoadingMinerStats}
-                getMinerHref={getDiscMinerHref}
-                linkState={DISC_LINK_STATE}
-                variant="discoveries"
-              />
-            </Box>
-          )}
+          <Box sx={{ width: '100%', display: activeTimeline === 'discoveries' ? 'block' : 'none' }}>
+            <TopMinersTable
+              miners={sortedDiscMinerStats}
+              isLoading={isLoadingMinerStats}
+              getMinerHref={getDiscMinerHref}
+              linkState={DISC_LINK_STATE}
+              variant="discoveries"
+            />
+          </Box>
         </Box>
 
         {/* Right Sidebar — adapts to active timeline */}
