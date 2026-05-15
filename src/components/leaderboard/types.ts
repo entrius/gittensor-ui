@@ -70,7 +70,18 @@ export type SortOption =
   | 'totalIssues'
   | 'issueDiscoveryScore'
   | 'credibility'
+  | 'username'
   | 'watch';
+
+const NUMERIC_ID = /^\d+$/;
+
+// Resolves the user-visible name used for alphabetical sort & search filters.
+// Mirrors the fallback chain in MinerIdentityCell: prefer a non-numeric
+// `author` (the GitHub login), otherwise fall back to `githubId`.
+export const minerSortName = (m: Pick<MinerStats, 'author' | 'githubId'>) => {
+  if (m.author && !NUMERIC_ID.test(m.author)) return m.author.toLowerCase();
+  return (m.githubId ?? '').toLowerCase();
+};
 
 export const FONTS = {
   mono: '"JetBrains Mono", monospace',
