@@ -371,16 +371,24 @@ export const WatchlistContent: React.FC = () => {
             Go to {discovery.label}
           </Button>
         </Box>
-      ) : activeTab === 'miners' ? (
-        <MinersList itemKeys={ids} />
-      ) : activeTab === 'repos' ? (
-        <ReposList itemKeys={ids} />
-      ) : activeTab === 'bounties' ? (
-        <BountiesList itemKeys={ids} />
-      ) : activeTab === 'issues' ? (
-        <IssuesList minerIds={minerIds} />
       ) : (
-        <PRsList itemKeys={ids} />
+        <>
+          <Box sx={{ display: activeTab === 'miners' ? 'block' : 'none' }}>
+            <MinersList itemKeys={ids} />
+          </Box>
+          <Box sx={{ display: activeTab === 'repos' ? 'block' : 'none' }}>
+            <ReposList itemKeys={ids} />
+          </Box>
+          <Box sx={{ display: activeTab === 'bounties' ? 'block' : 'none' }}>
+            <BountiesList itemKeys={ids} />
+          </Box>
+          <Box sx={{ display: activeTab === 'issues' ? 'block' : 'none' }}>
+            <IssuesList minerIds={minerIds} />
+          </Box>
+          <Box sx={{ display: activeTab === 'prs' ? 'block' : 'none' }}>
+            <PRsList itemKeys={ids} />
+          </Box>
+        </>
       )}
 
       <Dialog
