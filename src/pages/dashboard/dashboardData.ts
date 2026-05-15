@@ -11,7 +11,6 @@ import {
   type CommitLog,
   type MinerEvaluation,
   type MirrorDashboardIssue,
-  type Repository,
 } from '../../api';
 import {
   getPrStatusLabel,
@@ -905,27 +904,13 @@ interface RepoAccumulator {
   totalScore: number;
 }
 
-type InactiveRepoSet = Set<string>;
-
-const buildInactiveRepoSet = (repos: Repository[]): InactiveRepoSet =>
-  new Set(
-    repos
-      .filter((r: Repository): boolean => !!r.config?.inactiveAt)
-      .map((r: Repository): string => r.fullName.toLowerCase()),
-  );
-
-const isMergedInWindow = (
-  pr: CommitLog,
-  cutoff: number,
-  inactiveRepos: InactiveRepoSet,
-): boolean => {
+const isMergedInWindow = (pr: CommitLog, cutoff: number): boolean => {
   const merged: number | null = toTimestamp(pr.mergedAt);
   return (
     merged !== null &&
     merged >= cutoff &&
     getPrStatusLabel(pr) === 'Merged' &&
-    Boolean(pr.repository) &&
-    !inactiveRepos.has(pr.repository.toLowerCase())
+    Boolean(pr.repository)
   );
 };
 
@@ -991,18 +976,13 @@ const buildRepoEntry = (
   };
 };
 
-export const buildFeaturedWork = (
-  prs: CommitLog[],
-  repos: Repository[],
-): FeaturedWorkRepo[] => {
+export const buildFeaturedWork = (prs: CommitLog[]): FeaturedWorkRepo[] => {
   const config: FeaturedWorkConfig = FEATURED_WORK_CONFIG;
   const now: number = Date.now();
   const cutoff: number = now - config.windowHours * HOUR_MS;
 
-  const inactiveRepos: InactiveRepoSet = buildInactiveRepoSet(repos);
-
   const windowPrs: CommitLog[] = prs.filter((pr: CommitLog): boolean =>
-    isMergedInWindow(pr, cutoff, inactiveRepos),
+    isMergedInWindow(pr, cutoff),
   );
 
   const repoMap: Map<string, RepoAccumulator> = groupPrsByRepo(windowPrs);
