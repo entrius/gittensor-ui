@@ -4150,7 +4150,14 @@ const IssueCard: React.FC<{
 };
 
 const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
-  const issueQueries = useMinersIssues(minerIds, minerIds.length > 0);
+  // Include a `since` param so the mirror returns issues across all states
+  // (open, resolved, closed), not just open. See #1176.
+  const since = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() - 35);
+    return d.toISOString();
+  }, []);
+  const issueQueries = useMinersIssues(minerIds, minerIds.length > 0, since);
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
 
   const { ids: starredIssueIds } = useWatchlist('issues');
