@@ -83,6 +83,7 @@ import { BountyCard } from '../components/issues/BountyCard';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import {
   buildRepoDiscoveryRollupFromMiners,
+  getScoringWindowStartIso,
   isOutsideScoringWindow,
 } from '../utils/ExplorerUtils';
 import {
@@ -4150,7 +4151,8 @@ const IssueCard: React.FC<{
 };
 
 const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
-  const issueQueries = useMinersIssues(minerIds, minerIds.length > 0);
+  const since = useMemo(() => getScoringWindowStartIso(), []);
+  const issueQueries = useMinersIssues(minerIds, minerIds.length > 0, since);
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
 
   const { ids: starredIssueIds } = useWatchlist('issues');

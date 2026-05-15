@@ -245,6 +245,13 @@ export const isOutsideScoringWindow = (
   return new Date(date) < cutoff;
 };
 
+/** Return an ISO-8601 timestamp for the start of the scoring window (now - SCORING_WINDOW_DAYS). */
+export const getScoringWindowStartIso = (): string => {
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - SCORING_WINDOW_DAYS);
+  return cutoff.toISOString();
+};
+
 // ---------------------------------------------------------------------------
 // Map builders – extract lookup maps from API data
 // ---------------------------------------------------------------------------
