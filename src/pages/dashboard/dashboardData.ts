@@ -358,18 +358,16 @@ const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
       window,
     );
 
-    if (createdInWindow) {
-      statusCounts.open += 1;
-      statusCounts.total += 1;
-    }
-
+    // Classify by terminal state to avoid double-counting.
+    // A PR should contribute to exactly ONE bucket.
     if (mergedInWindow) {
       statusCounts.merged += 1;
       statusCounts.total += 1;
-    }
-
-    if (normalizedState === 'Closed' && closedInWindow) {
+    } else if (normalizedState === 'Closed' && closedInWindow) {
       statusCounts.closed += 1;
+      statusCounts.total += 1;
+    } else if (createdInWindow) {
+      statusCounts.open += 1;
       statusCounts.total += 1;
     }
   });
