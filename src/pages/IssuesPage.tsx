@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useMemo } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   Badge,
@@ -19,9 +26,24 @@ import {
 } from '../components/issues/IssuesList';
 import { useIssuesStats, useIssues } from '../api';
 import { useTwitterStickySidebar } from '../hooks/useTwitterStickySidebar';
+import { TEXT_OPACITY } from '../theme';
 
 const ISSUE_LINK_STATE = { backLabel: 'Back to Bounties' } as const;
 const getIssueHref = (id: number) => `/bounties/details?id=${id}`;
+
+/** Ignore subpixel noise when comparing scroll vs client widths. */
+const LAYOUT_OVERFLOW_TOLERANCE_PX = 1;
+/** Skip measurement until the tab bar has a usable width. */
+const ISSUE_TABS_MIN_MEASURE_WIDTH_PX = 32;
+/** Muted hover wash on tab rows (not in TEXT_OPACITY — tuned for dark tabs). */
+const ISSUE_TAB_HOVER_BG_ALPHA = 0.04;
+
+function elementHasHorizontalOverflow(
+  el: HTMLElement,
+  tolerancePx: number,
+): boolean {
+  return el.scrollWidth > el.clientWidth + tolerancePx;
+}
 
 const IssuesPage: React.FC = () => {
   const navigate = useNavigate();
@@ -79,6 +101,43 @@ const IssuesPage: React.FC = () => {
     [allIssues],
   );
 
+  const issueTabsRef = useRef<HTMLDivElement>(null);
+  /** When true, tabs share the row evenly (full-width look). When false, row scrolls horizontally. */
+  const [issueTabsFillRow, setIssueTabsFillRow] = useState(false);
+
+  const measureIssueTabsLayout = useCallback(() => {
+    const root = issueTabsRef.current;
+    if (!root) return;
+    const scroller = root.querySelector(
+      '.MuiTabs-scroller',
+    ) as HTMLElement | null;
+    if (!scroller || scroller.clientWidth < ISSUE_TABS_MIN_MEASURE_WIDTH_PX)
+      return;
+
+    const scrollerOverflow = elementHasHorizontalOverflow(
+      scroller,
+      LAYOUT_OVERFLOW_TOLERANCE_PX,
+    );
+    let anyTabTruncated = false;
+    root.querySelectorAll('.MuiTab-root').forEach((node) => {
+      const el = node as HTMLElement;
+      if (elementHasHorizontalOverflow(el, LAYOUT_OVERFLOW_TOLERANCE_PX)) {
+        anyTabTruncated = true;
+      }
+    });
+
+    setIssueTabsFillRow(!scrollerOverflow && !anyTabTruncated);
+  }, []);
+
+  useLayoutEffect(() => {
+    measureIssueTabsLayout();
+    const root = issueTabsRef.current;
+    if (!root) return;
+    const ro = new ResizeObserver(() => measureIssueTabsLayout());
+    ro.observe(root);
+    return () => ro.disconnect();
+  }, [measureIssueTabsLayout, filterType, counts]);
+
   return (
     <Page title="Issue Bounties">
       <SEO
@@ -120,22 +179,49 @@ const IssuesPage: React.FC = () => {
             }}
           >
             <Tabs
+              ref={issueTabsRef}
               value={filterType}
               onChange={handleTabChange}
-              variant="fullWidth"
+              variant="scrollable"
+              scrollButtons={false}
               sx={(t) => ({
                 minHeight: 52,
+                '& .MuiTabs-scroller': {
+                  WebkitOverflowScrolling: 'touch',
+                },
+                ...(issueTabsFillRow && {
+                  '& .MuiTabs-flexContainer': {
+                    width: '100%',
+                  },
+                }),
                 '& .MuiTab-root': {
                   minHeight: 52,
                   fontSize: '0.95rem',
                   fontWeight: 700,
                   textTransform: 'none',
                   letterSpacing: '0.01em',
-                  color: alpha(t.palette.text.primary, 0.45),
+                  color: alpha(t.palette.text.primary, TEXT_OPACITY.tertiary),
                   transition: 'color 0.2s, background-color 0.2s',
+                  ...(issueTabsFillRow
+                    ? {
+                        flex: '1 1 0',
+                        minWidth: 0,
+                        maxWidth: 'none',
+                      }
+                    : {
+                        flexShrink: 0,
+                        minWidth: 'auto',
+                        px: 1.5,
+                      }),
                   '&:hover': {
-                    backgroundColor: alpha(t.palette.text.primary, 0.04),
-                    color: alpha(t.palette.text.primary, 0.7),
+                    backgroundColor: alpha(
+                      t.palette.text.primary,
+                      ISSUE_TAB_HOVER_BG_ALPHA,
+                    ),
+                    color: alpha(
+                      t.palette.text.primary,
+                      TEXT_OPACITY.secondary,
+                    ),
                   },
                   '&.Mui-selected': {
                     color: t.palette.text.primary,
