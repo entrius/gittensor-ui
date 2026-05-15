@@ -115,8 +115,8 @@ const IssuesPage: React.FC = () => {
               position: 'sticky',
               top: 64,
               zIndex: 50,
-              backgroundColor: (t) => alpha(t.palette.background.default, 0.85),
-              backdropFilter: 'blur(12px)',
+              backgroundColor: 'background.default',
+              mt: '-1px',
             }}
           >
             <Tabs
