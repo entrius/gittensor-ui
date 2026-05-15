@@ -27,14 +27,20 @@ import { getRepositoryOwnerAvatarSrc, paginateItems } from '../../utils';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
-import TablePagination from './TablePagination';
+import { WatchlistButton } from '../common';
+import TablePagination from '../common/TablePagination';
 import {
   selectMinerIssueScanRepos,
   useMinerRepositoriesOpenIssues,
 } from '../../hooks/useMinerRepositoriesOpenIssues';
+import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import { type RepositoryIssue } from '../../api/models/Miner';
 
 type IssueFilter = 'all' | 'open' | 'solved' | 'closed';
+
+const isIssueFilter = (v: unknown): v is IssueFilter =>
+  v === 'all' || v === 'open' || v === 'solved' || v === 'closed';
+
 type IssueSortField = 'number' | 'repository' | 'opened';
 type SortDir = 'asc' | 'desc';
 
@@ -58,6 +64,9 @@ const isClosedIssue = (i: RepositoryIssue) =>
 const githubIssueUrl = (issue: RepositoryIssue) =>
   issue.url ??
   `https://github.com/${issue.repositoryFullName}/issues/${issue.number}`;
+
+const discoveryIssueWatchlistKey = (issue: RepositoryIssue): string =>
+  `${issue.repositoryFullName}#${issue.number}`;
 
 const githubSearchIssuesByAuthor = (login: string) =>
   `https://github.com/search?q=${encodeURIComponent(`is:issue author:${login}`)}&type=issues`;
@@ -228,14 +237,22 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
     useMinerGithubData(githubId);
 
   // Mine section state
-  const [mineFilter, setMineFilter] = useState<IssueFilter>('all');
+  const [mineFilter, setMineFilter] = useSessionStoredState<IssueFilter>(
+    'miner:openIssues:mineFilter',
+    'all',
+    isIssueFilter,
+  );
   const [mineSearch, setMineSearch] = useState('');
   const [mineSortField, setMineSortField] = useState<IssueSortField>('opened');
   const [mineSortDir, setMineSortDir] = useState<SortDir>('desc');
   const [minePage, setMinePage] = useState(0);
 
   // Other section state
-  const [otherFilter, setOtherFilter] = useState<IssueFilter>('all');
+  const [otherFilter, setOtherFilter] = useSessionStoredState<IssueFilter>(
+    'miner:openIssues:otherFilter',
+    'all',
+    isIssueFilter,
+  );
   const [otherSearch, setOtherSearch] = useState('');
   const [otherSortField, setOtherSortField] =
     useState<IssueSortField>('opened');
@@ -452,7 +469,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         {
           key: 'title',
           header: 'Title',
-          width: '38%',
+          width: '35%',
           headerSx: { verticalAlign: 'middle' },
           cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
           renderCell: (issue) => (
@@ -564,7 +581,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         {
           key: 'opened',
           header: 'Opened',
-          width: '19%',
+          width: '13%',
           align: 'right',
           sortKey: 'opened',
           headerSx: { verticalAlign: 'middle' },
@@ -586,6 +603,21 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                 </span>
               </Tooltip>
             ) : null,
+        },
+        {
+          key: 'action',
+          header: 'Action',
+          width: '9%',
+          align: 'center',
+          headerSx: { verticalAlign: 'middle' },
+          cellSx: { py: 0.5 },
+          renderCell: (issue) => (
+            <WatchlistButton
+              category="issues"
+              itemKey={discoveryIssueWatchlistKey(issue)}
+              size="small"
+            />
+          ),
         },
       ],
       [],
@@ -630,7 +662,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         {
           key: 'title',
           header: 'Title',
-          width: '38%',
+          width: '35%',
           headerSx: { verticalAlign: 'middle' },
           cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
           renderCell: (issue) => (
@@ -742,7 +774,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         {
           key: 'opened',
           header: 'Opened',
-          width: '19%',
+          width: '13%',
           align: 'right',
           sortKey: 'opened' as IssueSortField,
           headerSx: { verticalAlign: 'middle' },
@@ -764,6 +796,21 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
                 </span>
               </Tooltip>
             ) : null,
+        },
+        {
+          key: 'action',
+          header: 'Action',
+          width: '9%',
+          align: 'center',
+          headerSx: { verticalAlign: 'middle' },
+          cellSx: { py: 0.5 },
+          renderCell: (issue) => (
+            <WatchlistButton
+              category="issues"
+              itemKey={discoveryIssueWatchlistKey(issue)}
+              size="small"
+            />
+          ),
         },
       ],
       [],

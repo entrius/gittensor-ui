@@ -37,6 +37,7 @@ import {
 import { useSearchParams } from 'react-router-dom';
 import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import {
   useMinerStats,
   useMinerPRs,
@@ -1148,6 +1149,15 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
                     }}
                   />
                 </InputAdornment>
+              ),
+              endAdornment: (
+                <ClearSearchAdornment
+                  visible={Boolean(searchQuery)}
+                  onClear={() => {
+                    setSearchQuery('');
+                    setDraftValue('');
+                  }}
+                />
               ),
             }}
             sx={textFieldSx}

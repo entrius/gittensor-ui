@@ -10,8 +10,7 @@
 import {
   type CommitLog,
   type MinerEvaluation,
-  type MinerIssue,
-  type Repository,
+  type MirrorDashboardIssue,
 } from '../../api';
 import {
   getPrStatusLabel,
@@ -106,7 +105,7 @@ interface FeaturedWorkConfig {
 const HOUR_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * HOUR_MS;
 const WEEK_MS = 7 * DAY_MS;
-const GITTENSOR_START_MS = Date.UTC(2025, 11, 1, 0, 0, 0);
+export const GITTENSOR_START_MS = Date.UTC(2025, 11, 1, 0, 0, 0);
 
 const RANGE_CONFIG: Record<
   PresetTimeRange,
@@ -170,39 +169,21 @@ export const getPreviousWindowBounds = (
   };
 };
 
-// Omitting `since` uses the mirror's default 35-day window and keeps the
-// cache key stable across 1d/7d/35d ranges.
-export const getMirrorSinceParam = (
-  range: TrendTimeRange,
-): string | undefined =>
-  range === 'all' ? new Date(GITTENSOR_START_MS).toISOString() : undefined;
-
-// Dedupe by (repo, number) so an issue surfaced under multiple miners is counted once.
-export const flattenMinerIssues = (
-  responses: ReadonlyArray<ReadonlyArray<MinerIssue>>,
-): MinerIssue[] => {
-  const seen = new Set<string>();
-  const flattened: MinerIssue[] = [];
-  responses.forEach((batch) => {
-    batch.forEach((issue) => {
-      const key = `${issue.repo_full_name}#${issue.issue_number}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      flattened.push(issue);
-    });
-  });
-  return flattened;
-};
-
-export const isResolvedMinerIssue = (issue: MinerIssue): boolean =>
-  issue.state === 'CLOSED' && issue.state_reason === 'COMPLETED';
+// A "truly resolved" issue: closed as completed AND the linked PR is merged.
+// The conjunction matters — state_reason alone misses cases where GitHub
+// doesn't set 'completed', and solving_pr.merged_at alone counts not-planned
+// closures with stray PR links.
+export const isResolvedMinerIssue = (issue: MirrorDashboardIssue): boolean =>
+  issue.state === 'CLOSED' &&
+  issue.state_reason === 'COMPLETED' &&
+  !!issue.solving_pr?.merged_at;
 
 export const isResolvedInWindow = (
-  issue: MinerIssue,
+  issue: MirrorDashboardIssue,
   window: WindowBounds,
 ): boolean =>
   isResolvedMinerIssue(issue) &&
-  isWithinWindow(toTimestamp(issue.closed_at), window);
+  isWithinWindow(toTimestamp(issue.solving_pr?.merged_at), window);
 
 const getUtcWeekStart = (timestamp: number) => {
   const date = new Date(timestamp);
@@ -312,7 +293,7 @@ const formatDelta = (
 
 export const buildDashboardTrendData = (
   prs: CommitLog[],
-  issues: MinerIssue[],
+  issues: MirrorDashboardIssue[],
   range: TrendTimeRange,
   now = new Date(),
 ): { labels: string[]; series: DashboardTrendSeries[] } => {
@@ -323,7 +304,7 @@ export const buildDashboardTrendData = (
   );
   const resolvedIssueTimestamps = issues
     .filter(isResolvedMinerIssue)
-    .map((issue) => toTimestamp(issue.closed_at));
+    .map((issue) => toTimestamp(issue.solving_pr?.merged_at));
   const buckets = buildTrendBuckets(
     [
       ...mergedPrTimestamps,
@@ -652,7 +633,7 @@ export const buildDashboardOverview = (
 
 export const buildDashboardKpis = (
   prs: CommitLog[],
-  issues: MinerIssue[],
+  issues: MirrorDashboardIssue[],
   range: TrendTimeRange,
   now = new Date(),
 ): DashboardKpi[] => {
@@ -923,27 +904,13 @@ interface RepoAccumulator {
   totalScore: number;
 }
 
-type InactiveRepoSet = Set<string>;
-
-const buildInactiveRepoSet = (repos: Repository[]): InactiveRepoSet =>
-  new Set(
-    repos
-      .filter((r: Repository): boolean => !!r.config?.inactiveAt)
-      .map((r: Repository): string => r.fullName.toLowerCase()),
-  );
-
-const isMergedInWindow = (
-  pr: CommitLog,
-  cutoff: number,
-  inactiveRepos: InactiveRepoSet,
-): boolean => {
+const isMergedInWindow = (pr: CommitLog, cutoff: number): boolean => {
   const merged: number | null = toTimestamp(pr.mergedAt);
   return (
     merged !== null &&
     merged >= cutoff &&
     getPrStatusLabel(pr) === 'Merged' &&
-    Boolean(pr.repository) &&
-    !inactiveRepos.has(pr.repository.toLowerCase())
+    Boolean(pr.repository)
   );
 };
 
@@ -1009,18 +976,13 @@ const buildRepoEntry = (
   };
 };
 
-export const buildFeaturedWork = (
-  prs: CommitLog[],
-  repos: Repository[],
-): FeaturedWorkRepo[] => {
+export const buildFeaturedWork = (prs: CommitLog[]): FeaturedWorkRepo[] => {
   const config: FeaturedWorkConfig = FEATURED_WORK_CONFIG;
   const now: number = Date.now();
   const cutoff: number = now - config.windowHours * HOUR_MS;
 
-  const inactiveRepos: InactiveRepoSet = buildInactiveRepoSet(repos);
-
   const windowPrs: CommitLog[] = prs.filter((pr: CommitLog): boolean =>
-    isMergedInWindow(pr, cutoff, inactiveRepos),
+    isMergedInWindow(pr, cutoff),
   );
 
   const repoMap: Map<string, RepoAccumulator> = groupPrsByRepo(windowPrs);

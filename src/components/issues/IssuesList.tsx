@@ -47,16 +47,22 @@ import {
 import { getIssueStatusMeta } from '../../utils/issueStatus';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { isOutsideScoringWindow } from '../../utils/ExplorerUtils';
+import { paginateItems } from '../../utils/prTable';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { WatchlistButton } from '../common/WatchlistButton';
+import TablePagination from '../common/TablePagination';
 import BountyProgress from './BountyProgress';
 import { BountyCard } from './BountyCard';
 import {
   type IssuesViewMode,
   ISSUES_VIEW_QUERY_PARAM,
+  ISSUES_CARD_ROWS,
+  ISSUES_LIST_ROWS,
   ISSUES_DEFAULT_CARD_ROWS,
+  ISSUES_DEFAULT_LIST_ROWS,
+  clampRowsForIssuesView,
   getIssuesViewModeFromQuery,
   readStoredIssuesViewMode,
   writeStoredIssuesViewMode,
@@ -260,6 +266,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [searchQuery, setSearchQuery] = useState('');
   const [showChart, setShowChart] = useState(false);
+  const [page, setPage] = useState(0);
+  const [rowsPerPage, setRowsPerPage] = useState<number>(() =>
+    viewMode === 'cards' ? ISSUES_DEFAULT_CARD_ROWS : ISSUES_DEFAULT_LIST_ROWS,
+  );
 
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
@@ -409,6 +419,28 @@ const IssuesList: React.FC<IssuesListProps> = ({
     return decorated.map((d) => d.row);
   }, [filteredIssues, getSortValue, sortKey, sortDirection]);
 
+  const rowOptions = viewMode === 'cards' ? ISSUES_CARD_ROWS : ISSUES_LIST_ROWS;
+  const pageSize = clampRowsForIssuesView(rowsPerPage, viewMode);
+  const totalPages = Math.max(1, Math.ceil(sortedIssues.length / pageSize));
+
+  // Reset to page 0 when filter/search/sort/view/rowsPerPage changes.
+  // set-state-during-render (not useEffect) so React discards the stale render
+  // before commit, avoiding a one-frame flash of the clamped old page.
+  const paginationResetKey = `${filterType}|${searchQuery}|${sortKey}|${sortDirection}|${viewMode}|${pageSize}`;
+  const [prevPaginationResetKey, setPrevPaginationResetKey] =
+    useState(paginationResetKey);
+  if (paginationResetKey !== prevPaginationResetKey) {
+    setPrevPaginationResetKey(paginationResetKey);
+    setPage(0);
+  }
+
+  const safePage = Math.min(page, totalPages - 1);
+
+  const pagedIssues = useMemo(
+    () => paginateItems(sortedIssues, safePage, pageSize),
+    [sortedIssues, safePage, pageSize],
+  );
+
   const chartOption = useMemo(() => {
     const repoTotals = new Map<string, number>();
     filteredIssues.forEach((issue) => {
@@ -428,7 +460,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       backgroundColor: 'transparent',
       title: {
         text: 'Bounty Pool by Repository',
-        subtext: `${filteredIssues.length} issues`,
+        subtext: `${filteredIssues.length} issue(s)`,
         left: 'center',
         top: 20,
         textStyle: {
@@ -908,6 +940,28 @@ const IssuesList: React.FC<IssuesListProps> = ({
     <ViewModeToggle viewMode={viewMode} onChange={handleViewModeChange} />
   );
 
+  const rowsSection = (
+    <Box>
+      <Typography sx={sidebarLabelSx}>Rows</Typography>
+      <Select
+        value={pageSize}
+        onChange={(e) => setRowsPerPage(Number(e.target.value))}
+        size="small"
+        sx={{
+          ...inputFieldSx,
+          minWidth: 76,
+          '& .MuiSelect-select': { py: 0.75 },
+        }}
+      >
+        {rowOptions.map((value) => (
+          <MenuItem key={value} value={value}>
+            {value}
+          </MenuItem>
+        ))}
+      </Select>
+    </Box>
+  );
+
   const sortSection = (
     <Box>
       <Typography sx={sidebarLabelSx}>Sort</Typography>
@@ -968,6 +1022,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
         <Typography sx={sidebarLabelSx}>View</Typography>
         {viewToggle}
       </Box>
+      {rowsSection}
       <Box>
         <Typography sx={sidebarLabelSx}>Search</Typography>
         <IssuesListSearchTextField fullWidth />
@@ -1081,10 +1136,10 @@ const IssuesList: React.FC<IssuesListProps> = ({
   );
 
   /* Inline toolbar at the top of the table.
-     - Above xl (usePortal=true): only Rows; the Filters panel in the right
-       sidebar holds Status / View / Search / Chart via Portal.
-     - Below xl: Rows + a single "Options" button that opens a popover with
-       Status / View / Search / Chart sections. */
+     - Above xl (usePortal=true): the Filters panel in the right sidebar holds
+       Sort / View / Rows / Search / Chart via Portal, so this is empty.
+     - Below xl: a single "Options" button that opens a popover with
+       Sort / View / Rows / Search / Chart sections. */
   const inlineToolbar = (
     <Box
       sx={{
@@ -1135,6 +1190,14 @@ const IssuesList: React.FC<IssuesListProps> = ({
     </Box>
   );
 
+  const paginationControl = (
+    <TablePagination
+      page={safePage}
+      totalPages={totalPages}
+      onPageChange={setPage}
+    />
+  );
+
   return (
     <>
       <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
@@ -1154,27 +1217,30 @@ const IssuesList: React.FC<IssuesListProps> = ({
         {chartCollapse}
 
         {viewMode === 'cards' ? (
-          sortedIssues.length > 0 ? (
-            <Grid container spacing={2}>
-              {sortedIssues.map((issue) => (
-                <Grid item xs={12} sm={6} md={4} key={issue.id}>
-                  <BountyCard
-                    issue={issue}
-                    href={getIssueHref ? getIssueHref(issue.id) : undefined}
-                    linkState={linkState}
-                    taoPrice={taoPrice}
-                    alphaPrice={alphaPrice}
-                  />
-                </Grid>
-              ))}
-            </Grid>
+          pagedIssues.length > 0 ? (
+            <>
+              <Grid container spacing={2}>
+                {pagedIssues.map((issue) => (
+                  <Grid item xs={12} sm={6} md={4} key={issue.id}>
+                    <BountyCard
+                      issue={issue}
+                      href={getIssueHref ? getIssueHref(issue.id) : undefined}
+                      linkState={linkState}
+                      taoPrice={taoPrice}
+                      alphaPrice={alphaPrice}
+                    />
+                  </Grid>
+                ))}
+              </Grid>
+              {paginationControl}
+            </>
           ) : (
             emptyState
           )
         ) : (
           <DataTable<IssueBounty, SortKey>
             columns={columns}
-            rows={sortedIssues}
+            rows={pagedIssues}
             getRowKey={(issue) => issue.id}
             getRowHref={
               getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
@@ -1198,6 +1264,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
               order: sortDirection,
               onChange: handleSort,
             }}
+            pagination={paginationControl}
           />
         )}
       </Card>

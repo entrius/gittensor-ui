@@ -16,7 +16,9 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  MenuItem,
   Popover,
+  Select,
   Switch,
   TextField,
   Tooltip,
@@ -34,6 +36,7 @@ import {
   Portal,
   TablePagination,
 } from '@mui/material';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
@@ -48,6 +51,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { useTwitterStickySidebar } from '../hooks/useTwitterStickySidebar';
+import { useSessionStoredState } from '../hooks/useSessionStoredState';
 import {
   TopMinersTable,
   ActivitySidebarCards,
@@ -82,9 +86,10 @@ import {
   isOutsideScoringWindow,
 } from '../utils/ExplorerUtils';
 import {
+  comparePRsByWatchlist,
+  serializePRKey,
   useWatchlist,
   useWatchlistCounts,
-  serializePRKey,
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
 import { useWatchedPRs, type WatchedPRSource } from '../hooks/useWatchedPRs';
@@ -96,7 +101,6 @@ import {
 import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatDate, formatTokenAmount } from '../utils/format';
-import { compareByWatchlist } from '../utils/watchlistSort';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import theme, {
   CHART_COLORS,
@@ -949,7 +953,6 @@ type WatchedRepoStats = Repository & {
   // Hoisted from `config` for downstream sort/render code; populated when
   // constructing each row from the API Repository.
   weight: number | string;
-  inactiveAt: string | null | undefined;
   totalScore: number;
   totalPRs: number;
   uniqueMiners: Set<string>;
@@ -958,9 +961,8 @@ type WatchedRepoStats = Repository & {
   discoveryContributors: Set<string>;
 };
 
-const isRepoActive = (repo: Repository): boolean => !repo.config?.inactiveAt;
-
-type RepoStatusFilter = 'all' | 'active' | 'inactive';
+const isPrStatusFilterStored = (v: unknown): v is PrStatusFilter =>
+  v === 'all' || v === 'open' || v === 'merged' || v === 'closed';
 
 type RepoSortKey =
   | 'name'
@@ -1079,14 +1081,6 @@ const repoHeaderStack = (
   </Box>
 );
 
-const repoStatusMeta = (repo: Repository) => {
-  const active = isRepoActive(repo);
-  return {
-    label: active ? 'ACTIVE' : 'INACTIVE',
-    color: active ? STATUS_COLORS.success : STATUS_COLORS.closed,
-  };
-};
-
 const getRepoHref = (repo: Repository) =>
   `/miners/repository?name=${encodeURIComponent(repo.fullName)}`;
 
@@ -1134,7 +1128,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
     cellSx: repoCellSx,
     renderCell: (repo) => (
       <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
-        {parseFloat(String(repo.config?.weight ?? 0)).toFixed(2)}
+        {parseFloat(String(repo.config?.emissionShare ?? 0)).toFixed(2)}
       </Typography>
     ),
   },
@@ -1402,10 +1396,8 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
   repo,
   maxWeight,
 }) => {
-  const { label, color } = repoStatusMeta(repo);
   const owner = repo.fullName.split('/')[0] || '';
-  const weight = parseFloat(String(repo.config?.weight ?? 0));
-  const isInactive = !!repo.config?.inactiveAt;
+  const weight = parseFloat(String(repo.config?.emissionShare ?? 0));
   const weightPct =
     maxWeight > 0 ? Math.max(0, Math.min(100, (weight / maxWeight) * 100)) : 0;
 
@@ -1424,7 +1416,6 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
         gap: 1.5,
         cursor: 'pointer',
         transition: 'all 0.2s',
-        opacity: isInactive ? 0.5 : 1,
         '&:hover': {
           backgroundColor: theme.palette.surface.light,
           borderColor: theme.palette.border.medium,
@@ -1466,29 +1457,6 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
             </Typography>
           </Tooltip>
         </LinkBox>
-        <Typography
-          component="span"
-          sx={(theme) => ({
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '0.65rem',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-            px: 0.75,
-            py: 0.25,
-            borderRadius: '4px',
-            flexShrink: 0,
-            color,
-            backgroundColor: alpha(
-              isInactive
-                ? theme.palette.status.closed
-                : theme.palette.status.success,
-              0.12,
-            ),
-          })}
-        >
-          {label === 'ACTIVE' ? 'Active' : 'Inactive'}
-        </Typography>
         <WatchlistButton
           category="repos"
           itemKey={repo.fullName}
@@ -1637,7 +1605,6 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allMiners } = useAllMiners();
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(false);
@@ -1654,7 +1621,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
+  }, [searchQuery, sortField, sortOrder, viewMode]);
 
   const handleSort = (field: RepoSortKey) => {
     if (sortField === field) {
@@ -1703,8 +1670,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         const d = discoveryByRepo.get(key);
         return {
           ...r,
-          weight: r.config?.weight ?? 0,
-          inactiveAt: r.config?.inactiveAt ?? null,
+          weight: r.config?.emissionShare ?? 0,
           totalScore: s?.totalScore || 0,
           totalPRs: s?.totalPRs || 0,
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
@@ -1715,28 +1681,14 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       });
   }, [repos, allPrs, allMiners, itemKeys]);
 
-  const counts = useMemo(() => {
-    let active = 0;
-    let inactive = 0;
-    for (const r of items) {
-      if (isRepoActive(r)) active++;
-      else inactive++;
-    }
-    return { all: items.length, active, inactive };
-  }, [items]);
+  const counts = useMemo(() => ({ all: items.length }), [items]);
 
   const filtered = useMemo(() => {
     let result = items;
-    if (statusFilter === 'active')
-      result = result.filter((r) => isRepoActive(r));
-    else if (statusFilter === 'inactive')
-      result = result.filter((r) => !isRepoActive(r));
-
     const q = searchQuery.trim().toLowerCase();
     if (q) result = result.filter((r) => r.fullName.toLowerCase().includes(q));
-
     return result;
-  }, [items, statusFilter, searchQuery]);
+  }, [items, searchQuery]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -1748,8 +1700,8 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           return cmpStr(a.fullName, b.fullName);
         case 'weight':
           return cmpNum(
-            parseFloat(String(a.config?.weight ?? 0)),
-            parseFloat(String(b.config?.weight ?? 0)),
+            parseFloat(String(a.config?.emissionShare ?? 0)),
+            parseFloat(String(b.config?.emissionShare ?? 0)),
           );
         case 'totalScore':
           return cmpNum(a.totalScore, b.totalScore);
@@ -1812,7 +1764,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const maxWeight = useMemo(
     () =>
       items.reduce(
-        (m, r) => Math.max(m, parseFloat(String(r.config?.weight ?? 0))),
+        (m, r) => Math.max(m, parseFloat(String(r.config?.emissionShare ?? 0))),
         0,
       ),
     [items],
@@ -1829,7 +1781,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     const chartData = paged.map((repo) => ({
       name: repo.fullName.split('/')[1] || repo.fullName,
       repository: repo.fullName,
-      value: parseFloat(String(repo.config?.weight ?? 0)),
+      value: parseFloat(String(repo.config?.emissionShare ?? 0)),
     }));
 
     const barGradient = {
@@ -1970,22 +1922,8 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                   label="All"
                   count={counts.all}
                   color={STATUS_COLORS.neutral}
-                  isActive={statusFilter === 'all'}
-                  onClick={() => setStatusFilter('all')}
-                />
-                <FilterButton
-                  label="Active"
-                  count={counts.active}
-                  color={STATUS_COLORS.success}
-                  isActive={statusFilter === 'active'}
-                  onClick={() => setStatusFilter('active')}
-                />
-                <FilterButton
-                  label="Inactive"
-                  count={counts.inactive}
-                  color={STATUS_COLORS.closed}
-                  isActive={statusFilter === 'inactive'}
-                  onClick={() => setStatusFilter('inactive')}
+                  isActive
+                  onClick={() => {}}
                 />
               </Box>
             }
@@ -2065,7 +2003,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             viewModeToggle={
               <ReposViewModeToggle viewMode={viewMode} onChange={setViewMode} />
             }
-            hasActiveFilter={statusFilter !== 'all'}
+            hasActiveFilter={false}
           />
         )}
       </DebouncedSearchInput>
@@ -2098,13 +2036,6 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           getRowKey={(repo) => repo.fullName}
           getRowHref={getRepoHref}
           linkState={{ backLabel: 'Back to Watchlist' }}
-          getRowSx={(repo) =>
-            isRepoActive(repo)
-              ? {}
-              : {
-                  opacity: 0.5,
-                }
-          }
           minWidth="1180px"
           stickyHeader
           emptyLabel="No watched repositories found."
@@ -2208,7 +2139,71 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 // ---------------------------------------------------------------------------
 
 type BountyStatusFilter = 'all' | 'available' | 'pending' | 'history';
-type BountySortKey = 'issue' | 'repo' | 'bounty' | 'status' | 'date';
+/** Aligns with `IssuesList` / `/bounties` sort dropdown keys per filter tab. */
+type BountySortKey =
+  | 'id'
+  | 'repository'
+  | 'issue'
+  | 'bounty'
+  | 'funding'
+  | 'status'
+  | 'solver'
+  | 'date';
+
+const BOUNTY_SORT_LABELS: Record<BountySortKey, string> = {
+  id: 'ID',
+  repository: 'Repository',
+  issue: 'Issue',
+  bounty: 'Bounty',
+  funding: 'Funding',
+  status: 'Status',
+  solver: 'Solver',
+  date: 'Date',
+};
+
+const bountyVisibleSortKeysForFilter = (
+  statusFilter: BountyStatusFilter,
+): BountySortKey[] => {
+  const common: BountySortKey[] = ['id', 'repository', 'issue'];
+  if (statusFilter === 'pending')
+    return [...common, 'bounty', 'funding', 'status'];
+  if (statusFilter === 'history')
+    return [...common, 'bounty', 'solver', 'status', 'date'];
+  return [...common, 'bounty', 'status'];
+};
+
+const parseBountyAmount = (value: string | null | undefined): number => {
+  const parsed = Number.parseFloat(value ?? '0');
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getBountySortValue = (
+  issue: IssueBounty,
+  key: BountySortKey,
+): number | string => {
+  switch (key) {
+    case 'id':
+      return issue.id;
+    case 'funding': {
+      const target = parseBountyAmount(issue.targetBounty);
+      return target > 0 ? parseBountyAmount(issue.bountyAmount) / target : 0;
+    }
+    case 'solver':
+      return (issue.solverHotkey ?? '').toLowerCase();
+    case 'date':
+      return new Date(
+        issue.completedAt || issue.updatedAt || issue.createdAt || 0,
+      ).getTime();
+    case 'repository':
+      return (issue.repositoryFullName || '').toLowerCase();
+    case 'issue':
+      return `${(issue.title || '').toLowerCase()}::${String(issue.issueNumber).padStart(10, '0')}`;
+    case 'bounty':
+      return parseBountyAmount(issue.targetBounty);
+    case 'status':
+      return getIssueStatusMeta(issue.status).text;
+  }
+};
 
 const BOUNTY_STATUS_FILTERS: readonly BountyStatusFilter[] = [
   'all',
@@ -2290,6 +2285,24 @@ const buildBountyColumns = (): DataTableColumn<
   BountySortKey
 >[] => [
   {
+    key: 'id',
+    header: 'ID',
+    width: '56px',
+    sortKey: 'id',
+    cellSx: bountyCellSx,
+    renderCell: (i) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          color: (t) => alpha(t.palette.text.primary, 0.65),
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        #{i.id}
+      </Typography>
+    ),
+  },
+  {
     key: 'issue',
     header: 'Issue',
     width: '90px',
@@ -2324,7 +2337,7 @@ const buildBountyColumns = (): DataTableColumn<
     key: 'repo',
     header: 'Repository',
     width: '24%',
-    sortKey: 'repo',
+    sortKey: 'repository',
     cellSx: bountyCellSx,
     renderCell: (i) => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
@@ -2433,8 +2446,26 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const observerTarget = useRef<HTMLDivElement>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
-  const [sortField, setSortField] = useState<BountySortKey>('date');
+  const [sortField, setSortField] = useState<BountySortKey>('id');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  const bountyVisibleSortKeys = useMemo(
+    () => bountyVisibleSortKeysForFilter(statusFilter),
+    [statusFilter],
+  );
+
+  const getDefaultSortDirection = useCallback(
+    (key: BountySortKey): 'asc' | 'desc' =>
+      key === 'id' || key === 'bounty' || key === 'date' ? 'desc' : 'asc',
+    [],
+  );
+
+  useEffect(() => {
+    if (!bountyVisibleSortKeys.includes(sortField)) {
+      setSortField('id');
+      setSortOrder('desc');
+    }
+  }, [sortField, bountyVisibleSortKeys]);
 
   useEffect(() => {
     setPage(0);
@@ -2444,15 +2475,19 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     setPage(0);
   }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
 
-  const handleSort = (field: BountySortKey) => {
-    if (sortField === field) {
-      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortOrder(field === 'repo' ? 'asc' : 'desc');
-    }
-    setPage(0);
-  };
+  const handleSort = useCallback(
+    (field: BountySortKey) => {
+      if (!bountyVisibleSortKeys.includes(field)) return;
+      if (sortField === field) {
+        setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortField(field);
+        setSortOrder(getDefaultSortDirection(field));
+      }
+      setPage(0);
+    },
+    [sortField, bountyVisibleSortKeys, getDefaultSortDirection],
+  );
 
   const counts = useMemo(() => getBountyCounts(items), [items]);
 
@@ -2462,28 +2497,24 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   );
 
   const sorted = useMemo(() => {
-    const dir = sortOrder === 'asc' ? 1 : -1;
-    const cmpStr = (a = '', b = '') => a.localeCompare(b) * dir;
-    const cmpNum = (a = 0, b = 0) => (a - b) * dir;
-    return [...filtered].sort((a, b) => {
-      switch (sortField) {
-        case 'issue':
-          return cmpNum(a.issueNumber, b.issueNumber);
-        case 'repo':
-          return cmpStr(a.repositoryFullName, b.repositoryFullName);
-        case 'bounty':
-          return cmpNum(
-            parseFloat(a.targetBounty || a.bountyAmount || '0'),
-            parseFloat(b.targetBounty || b.bountyAmount || '0'),
-          );
-        case 'status':
-          return cmpStr(a.status, b.status);
-        case 'date':
-          return cmpStr(bountyDate(a), bountyDate(b));
-        default:
-          return 0;
-      }
+    const directionFactor = sortOrder === 'asc' ? 1 : -1;
+    const collator = new Intl.Collator(undefined, {
+      sensitivity: 'base',
+      numeric: true,
     });
+    const decorated = filtered.map((row) => ({
+      row,
+      value: getBountySortValue(row, sortField),
+    }));
+    decorated.sort((a, b) => {
+      if (typeof a.value === 'number' && typeof b.value === 'number') {
+        return (a.value - b.value) * directionFactor;
+      }
+      return (
+        collator.compare(String(a.value), String(b.value)) * directionFactor
+      );
+    });
+    return decorated.map((d) => d.row);
   }, [filtered, sortField, sortOrder]);
 
   const totalBountyPages = Math.max(
@@ -2559,6 +2590,80 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 ))}
               </Box>
             }
+            sortContent={
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Select
+                  size="small"
+                  value={
+                    bountyVisibleSortKeys.includes(sortField) ? sortField : 'id'
+                  }
+                  onChange={(e) => {
+                    const key = e.target.value as BountySortKey;
+                    setSortField(key);
+                    setSortOrder(getDefaultSortDirection(key));
+                    setPage(0);
+                  }}
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
+                    borderRadius: 2,
+                    backgroundColor: 'background.default',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'border.light',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'border.medium',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'primary.main',
+                    },
+                    '& .MuiSelect-select': {
+                      py: 0.75,
+                      fontSize: '0.8rem',
+                      color: 'text.primary',
+                    },
+                  }}
+                >
+                  {bountyVisibleSortKeys.map((key) => (
+                    <MenuItem key={key} value={key}>
+                      {BOUNTY_SORT_LABELS[key]}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <Tooltip
+                  title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                  arrow
+                >
+                  <IconButton
+                    size="small"
+                    onClick={() =>
+                      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+                    }
+                    sx={{
+                      flexShrink: 0,
+                      color: 'text.primary',
+                      border: '1px solid',
+                      borderColor: 'border.light',
+                      borderRadius: 2,
+                      padding: '6px',
+                      '&:hover': {
+                        backgroundColor: 'surface.light',
+                        borderColor: 'border.medium',
+                      },
+                    }}
+                  >
+                    <ArrowUpwardIcon
+                      fontSize="small"
+                      sx={{
+                        transform:
+                          sortOrder === 'desc' ? 'rotate(180deg)' : 'none',
+                        transition: 'transform 0.2s ease',
+                      }}
+                    />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            }
             searchValue={draftValue}
             searchPlaceholder="Search bounties..."
             onSearchChange={setDraftValue}
@@ -2588,7 +2693,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           getRowKey={bountyKey}
           getRowHref={getBountyHref}
           linkState={{ backLabel: 'Back to Watchlist' }}
-          minWidth="900px"
+          minWidth="980px"
           stickyHeader
           isLoading={isLoading && items.length === 0}
           emptyLabel="No watched bounties found."
@@ -2731,7 +2836,7 @@ const SOURCE_META: Record<
 > = {
   starred: {
     label: 'Starred',
-    tooltip: 'You starred this pull request',
+    tooltip: 'You starred this issue',
     Icon: StarIcon,
     color: '#facc15',
   },
@@ -3219,7 +3324,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { isWatched } = useWatchlist('prs');
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useSessionStoredState<PrStatusFilter>(
+    'watchlist:prs:statusFilter',
+    'all',
+    isPrStatusFilterStored,
+  );
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -3281,11 +3390,8 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         }
         case 'score':
           return cmpNum(parseFloat(a.score || '0'), parseFloat(b.score || '0'));
-        case 'watch': {
-          const key = (pr: CommitLog) =>
-            serializePRKey(pr.repository, pr.pullRequestNumber);
-          return compareByWatchlist(a, b, key, isWatched) * dir;
-        }
+        case 'watch':
+          return comparePRsByWatchlist(a, b, isWatched) * dir;
         default:
           return 0;
       }
@@ -3541,18 +3647,47 @@ const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
   'resolved',
   'closed',
 ];
+/** UI labels — `resolved` is "Solved" to match MinerOpenDiscoveryIssuesByRepo. */
+const ISSUE_FILTER_LABELS: Record<IssueStatusFilter, string> = {
+  all: 'All',
+  open: 'Open',
+  resolved: 'Solved',
+  closed: 'Closed',
+};
+
 const issueCellSx = { py: 1.5 } as const;
 
+/** Synthetic starred rows (mirror missing) carry this marker on `state_reason`. */
+const WATCHLIST_ISSUE_PENDING_MIRROR_MARKER =
+  '__gittensor_watchlist_pending_mirror__';
+
+// Same buckets as MinerOpenDiscoveryIssuesByRepo (`isOpenIssue` / `isSolvedIssue` /
+// `isClosedIssue`): open = not closed; solved = closed + linked PR; else closed.
+const minerWatchlistIssueClosed = (issue: MinerIssue): boolean => {
+  if ((issue.state ?? '').toUpperCase() === 'CLOSED') return true;
+  const ca = issue.closed_at;
+  return ca != null && String(ca).trim() !== '';
+};
+
+const minerWatchlistIssueLinkedPr = (issue: MinerIssue): number | null => {
+  const n = issue.solving_pr?.pr_number ?? issue.solved_by_pr;
+  return typeof n === 'number' && Number.isFinite(n) ? n : null;
+};
+
 const issueState = (issue: MinerIssue): Exclude<IssueStatusFilter, 'all'> => {
-  if ((issue.state_reason ?? '').toLowerCase() === 'completed')
-    return 'resolved';
-  return issue.state === 'CLOSED' ? 'closed' : 'open';
+  if (issue.state_reason === WATCHLIST_ISSUE_PENDING_MIRROR_MARKER)
+    return 'open';
+  if (!minerWatchlistIssueClosed(issue)) return 'open';
+  if (minerWatchlistIssueLinkedPr(issue) != null) return 'resolved';
+  return 'closed';
 };
 
 const issueStatusMeta = (issue: MinerIssue) => {
+  if (issue.state_reason === WATCHLIST_ISSUE_PENDING_MIRROR_MARKER) {
+    return { label: '—', color: STATUS_COLORS.neutral };
+  }
   const s = issueState(issue);
-  if (s === 'resolved')
-    return { label: 'RESOLVED', color: STATUS_COLORS.merged };
+  if (s === 'resolved') return { label: 'SOLVED', color: STATUS_COLORS.merged };
   if (s === 'closed') return { label: 'CLOSED', color: STATUS_COLORS.closed };
   return { label: 'OPEN', color: STATUS_COLORS.open };
 };
@@ -3562,6 +3697,17 @@ const issueDate = (issue: MinerIssue): string =>
 
 const issueKey = (issue: MinerIssue) =>
   `${issue.repo_full_name}#${issue.issue_number}`;
+
+const parseIssueKey = (
+  key: string,
+): { repoFullName: string; issueNumber: number } | null => {
+  const idx = key.lastIndexOf('#');
+  if (idx <= 0 || idx >= key.length - 1) return null;
+  const repoFullName = key.slice(0, idx);
+  const issueNumber = Number(key.slice(idx + 1));
+  if (!Number.isFinite(issueNumber)) return null;
+  return { repoFullName, issueNumber };
+};
 
 const issueStatusColor = (s: IssueStatusFilter): string => {
   switch (s) {
@@ -4002,7 +4148,6 @@ const IssueCard: React.FC<{
 
 const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   const issueQueries = useMinersIssues(minerIds, minerIds.length > 0);
-  const isLoading = issueQueries.some((q) => q.isLoading);
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
 
   const { ids: starredIssueIds } = useWatchlist('issues');
@@ -4014,36 +4159,8 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   );
   const watchedMinerSet = useMemo(() => new Set(minerIds), [minerIds]);
 
-  const sourcesByKey = useMemo(() => {
-    const map = new Map<string, WatchedPRSource[]>();
-    issueQueries.forEach((q) => {
-      (q.data ?? []).forEach((issue) => {
-        const key = issueKey(issue);
-        if (map.has(key)) return;
-        const sources: WatchedPRSource[] = [];
-        if (starredSet.has(key)) sources.push('starred');
-        if (
-          issue.author_github_id &&
-          watchedMinerSet.has(issue.author_github_id)
-        ) {
-          sources.push('miner');
-        }
-        if (watchedRepoSet.has(issue.repo_full_name.toLowerCase())) {
-          sources.push('repo');
-        }
-        map.set(key, sources);
-      });
-    });
-    return map;
-  }, [issueQueries, starredSet, watchedMinerSet, watchedRepoSet]);
-
-  const issueColumns = useMemo(
-    () => buildIssueColumns(sourcesByKey),
-    [sourcesByKey],
-  );
-
   // Flatten + dedupe issues across all watched miners.
-  const items = useMemo<MinerIssue[]>(() => {
+  const mirroredItems = useMemo<MinerIssue[]>(() => {
     const map = new Map<string, MinerIssue>();
     issueQueries.forEach((q) => {
       (q.data ?? []).forEach((issue) => {
@@ -4059,6 +4176,79 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     });
     return Array.from(map.values());
   }, [issueQueries]);
+
+  const mirroredIssueKeys = useMemo(() => {
+    const keys = new Set<string>();
+    mirroredItems.forEach((issue) => keys.add(issueKey(issue)));
+    return keys;
+  }, [mirroredItems]);
+
+  // Starred issues should always render, even when miner mirror feeds
+  // do not contain them. Build a minimal row from the serialized key.
+  const starredFallbackItems = useMemo<MinerIssue[]>(
+    () =>
+      starredIssueIds
+        .filter((key) => !mirroredIssueKeys.has(key))
+        .map((key) => {
+          const parsed = parseIssueKey(key);
+          if (!parsed) return null;
+          return {
+            repo_full_name: parsed.repoFullName,
+            issue_number: parsed.issueNumber,
+            title: `${parsed.repoFullName} #${parsed.issueNumber}`,
+            state: 'OPEN',
+            state_reason: WATCHLIST_ISSUE_PENDING_MIRROR_MARKER,
+            author_github_id: null,
+            author_login: null,
+            created_at: null,
+            closed_at: null,
+            updated_at: null,
+            solved_by_pr: null,
+            labels: [],
+          } as MinerIssue;
+        })
+        .filter((issue): issue is MinerIssue => issue !== null),
+    [starredIssueIds, mirroredIssueKeys],
+  );
+
+  const items = useMemo<MinerIssue[]>(() => {
+    const map = new Map<string, MinerIssue>();
+    [...mirroredItems, ...starredFallbackItems].forEach((issue) => {
+      const key = issueKey(issue);
+      const existing = map.get(key);
+      if (!existing || issueDate(issue) > issueDate(existing)) {
+        map.set(key, issue);
+      }
+    });
+    return Array.from(map.values());
+  }, [mirroredItems, starredFallbackItems]);
+
+  const sourcesByKey = useMemo(() => {
+    const map = new Map<string, WatchedPRSource[]>();
+    items.forEach((issue) => {
+      const key = issueKey(issue);
+      const sources: WatchedPRSource[] = [];
+      if (starredSet.has(key)) sources.push('starred');
+      if (
+        issue.author_github_id &&
+        watchedMinerSet.has(issue.author_github_id)
+      ) {
+        sources.push('miner');
+      }
+      if (watchedRepoSet.has(issue.repo_full_name.toLowerCase())) {
+        sources.push('repo');
+      }
+      map.set(key, sources);
+    });
+    return map;
+  }, [items, starredSet, watchedMinerSet, watchedRepoSet]);
+
+  const issueColumns = useMemo(
+    () => buildIssueColumns(sourcesByKey),
+    [sourcesByKey],
+  );
+
+  const isLoading = issueQueries.some((q) => q.isLoading);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatusFilter>('all');
@@ -4182,7 +4372,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
                 {ISSUE_STATUS_FILTERS.map((s) => (
                   <FilterButton
                     key={s}
-                    label={s[0].toUpperCase() + s.slice(1)}
+                    label={ISSUE_FILTER_LABELS[s]}
                     count={counts[s]}
                     color={issueStatusColor(s)}
                     isActive={statusFilter === s}
@@ -4195,9 +4385,18 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
             searchPlaceholder="Search issues..."
             onSearchChange={setDraftValue}
             viewMode={viewMode}
-            onViewModeChange={setViewMode}
+            onViewModeChange={(next) => {
+              setViewMode(next);
+              setPage(0);
+            }}
             viewModeToggle={
-              <PRsViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+              <PRsViewModeToggle
+                viewMode={viewMode}
+                onChange={(next) => {
+                  setViewMode(next);
+                  setPage(0);
+                }}
+              />
             }
             hasActiveFilter={statusFilter !== 'all'}
           />
