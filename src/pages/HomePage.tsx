@@ -1353,8 +1353,8 @@ const TopMinersPanel: React.FC<{
                     }}
                   >
                     {shortIdentity(miner.githubId)} -{' '}
-                    {miner.totalMergedPrs || 0} PRs,{' '}
-                    {miner.totalSolvedIssues || 0} issues
+                    {miner.totalMergedPrs || 0} PR(s),{' '}
+                    {miner.totalSolvedIssues || 0} issue(s)
                   </Typography>
                 </Box>
                 <Stack
