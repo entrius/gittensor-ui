@@ -36,7 +36,6 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import FilterButton from '../FilterButton';
 import { RepositoryCard } from './RepositoryCard';
 import {
   REPOSITORIES_CARD_ROWS,
@@ -205,20 +204,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const urlSort = searchParams.get('sort') as SortColumn;
   const urlDir = searchParams.get('dir') as SortDirection;
   const urlSearch = searchParams.get('search') || '';
-  const urlStatusFilter = searchParams.get('status') as
-    | 'all'
-    | 'active'
-    | 'inactive'
-    | null;
 
   const [searchQuery, setSearchQuery] = useState(urlSearch);
-  const [statusFilter, setStatusFilter] = useState<
-    'all' | 'active' | 'inactive'
-  >(
-    urlStatusFilter === 'active' || urlStatusFilter === 'inactive'
-      ? urlStatusFilter
-      : 'all',
-  );
   const [showChart, setShowChart] = useState(false);
   const [page, setPage] = useState(urlPage >= 0 ? urlPage : 0);
   const [rowsPerPage, setRowsPerPage] = useState(() => {
@@ -294,7 +281,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       const sort = overrides?.sort ?? sortColumn;
       const dir = overrides?.dir ?? sortDirection;
       const search = overrides?.search ?? searchQuery;
-      const active = overrides?.status ?? statusFilter;
       const view = overrides?.view ?? viewMode;
 
       if (rows !== '10') params.rows = rows;
@@ -302,7 +288,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       if (sort !== 'weight') params.sort = sort;
       if (dir !== 'desc') params.dir = dir;
       if (search) params.search = search;
-      if (active !== 'all') params.status = active;
       if (view === 'cards') params.view = view;
 
       setSearchParams(params, { replace: true });
@@ -313,7 +298,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       sortColumn,
       sortDirection,
       searchQuery,
-      statusFilter,
       viewMode,
       setSearchParams,
     ],
@@ -388,12 +372,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const filteredRepositories = useMemo(() => {
     let filtered = rankedRepositories;
 
-    if (statusFilter === 'active') {
-      filtered = filtered.filter((repo) => !repo.inactiveAt);
-    } else if (statusFilter === 'inactive') {
-      filtered = filtered.filter((repo) => !!repo.inactiveAt);
-    }
-
     // Apply search filter
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
@@ -403,7 +381,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     }
 
     return filtered;
-  }, [rankedRepositories, statusFilter, searchQuery]);
+  }, [rankedRepositories, searchQuery]);
 
   const maxWeight = useMemo(
     () => rankedRepositories.reduce((m, r) => (r.weight > m ? r.weight : m), 0),
@@ -1118,6 +1096,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       header: '★',
       width: '52px',
       align: 'center',
+      sortKey: 'watch',
       cellSx: { p: 0 },
       renderCell: (repo) =>
         repo.repository ? (
@@ -1176,55 +1155,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             gap: { xs: 1, md: 2 },
           }}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              gap: { xs: 0.25, sm: 0.5 },
-              alignItems: 'center',
-              flexWrap: { xs: 'nowrap', sm: 'wrap' },
-              width: { xs: '100%', md: 'auto' },
-              '& > button': {
-                flex: { xs: 1, sm: 'initial' },
-                minWidth: 0,
-                px: { xs: 1, sm: 2 },
-              },
-            }}
-          >
-            <FilterButton
-              label="All"
-              count={rankedRepositories.length}
-              color={STATUS_COLORS.neutral}
-              isActive={statusFilter === 'all'}
-              onClick={() => {
-                setStatusFilter('all');
-                setPage(0);
-                syncToUrl({ status: 'all', page: '0' });
-              }}
-            />
-            <FilterButton
-              label="Active"
-              count={rankedRepositories.filter((r) => !r.inactiveAt).length}
-              color={STATUS_COLORS.success}
-              isActive={statusFilter === 'active'}
-              onClick={() => {
-                setStatusFilter('active');
-                setPage(0);
-                syncToUrl({ status: 'active', page: '0' });
-              }}
-            />
-            <FilterButton
-              label="Inactive"
-              count={rankedRepositories.filter((r) => !!r.inactiveAt).length}
-              color={STATUS_COLORS.closed}
-              isActive={statusFilter === 'inactive'}
-              onClick={() => {
-                setStatusFilter('inactive');
-                setPage(0);
-                syncToUrl({ status: 'inactive', page: '0' });
-              }}
-            />
-          </Box>
-
           <Box
             sx={{
               display: 'flex',
@@ -1514,8 +1444,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             getRowKey={(repo) => repo.repository || ''}
             getRowHref={(repo) => getRepositoryHref(repo.repository || '')}
             linkState={linkState}
-            getRowSx={(repo) => ({
-              opacity: repo.inactiveAt ? 0.5 : 1,
+            getRowSx={() => ({
               '&:hover': { backgroundColor: 'border.subtle' },
               transition: 'all 0.2s',
               borderBottom: '1px solid',

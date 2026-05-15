@@ -12,7 +12,6 @@ import {
   type CommitLog,
   type MinerEvaluation,
   type RepoChanges,
-  type Repository,
   useStats,
   useRepoCommits,
 } from '../api';
@@ -177,9 +176,9 @@ const buildTopMinerRows = (miners: MinerEvaluation[]): LandingMinerRow[] => {
 const getActivityRowId = (pr: CommitLog) =>
   `${pr.repository}-${pr.pullRequestNumber}`;
 
-const pickLandingActivityPrs = (prs: CommitLog[], repos: Repository[]) => {
+const pickLandingActivityPrs = (prs: CommitLog[]) => {
   const validPrs = prs.filter((pr) => pr.repository && pr.pullRequestNumber);
-  const featuredRepos = buildFeaturedWork(validPrs, repos);
+  const featuredRepos = buildFeaturedWork(validPrs);
 
   const selected: CommitLog[] = [];
   const selectedIds = new Set<string>();
@@ -238,11 +237,8 @@ const pickLandingActivityPrs = (prs: CommitLog[], repos: Repository[]) => {
   return selected.slice(0, 4);
 };
 
-const buildActivityRows = (
-  prs: CommitLog[],
-  repos: Repository[],
-): LandingActivityRow[] =>
-  pickLandingActivityPrs(prs, repos).map((pr) => {
+const buildActivityRows = (prs: CommitLog[]): LandingActivityRow[] =>
+  pickLandingActivityPrs(prs).map((pr) => {
     const status = getPrStatusLabel(pr);
     const statusLabel =
       status === 'Merged'
@@ -286,14 +282,13 @@ type LandingTopRepoRow = {
   additions: number;
   deletions: number;
   linesChanged: number;
-  inactive: boolean;
 };
 
 const TOP_REPO_ROW_LIMIT = 5;
 
 const buildTopActiveRepoRows = (repos: RepoChanges[]): LandingTopRepoRow[] => {
   return [...repos]
-    .filter((r) => r?.repositoryFullName && !r.inactiveAt)
+    .filter((r) => !!r?.repositoryFullName)
     .map((r) => ({
       repository: r.repositoryFullName,
       owner: r.repositoryFullName.split('/')[0] ?? '',
@@ -301,7 +296,6 @@ const buildTopActiveRepoRows = (repos: RepoChanges[]): LandingTopRepoRow[] => {
       additions: parseNumber(r.additions),
       deletions: parseNumber(r.deletions),
       linesChanged: parseNumber(r.linesChanged),
-      inactive: !!r.inactiveAt,
     }))
     .sort((a, b) => b.linesChanged - a.linesChanged)
     .slice(0, TOP_REPO_ROW_LIMIT);
@@ -344,8 +338,8 @@ const HomePage: React.FC = () => {
     [datasets.miners.data],
   );
   const activityRows = useMemo(
-    () => buildActivityRows(datasets.prs.data, datasets.repos.data),
-    [datasets.prs.data, datasets.repos.data],
+    () => buildActivityRows(datasets.prs.data),
+    [datasets.prs.data],
   );
   const topActiveRepoRows = useMemo(
     () => buildTopActiveRepoRows(repoCommitsQuery.data ?? []),

@@ -86,9 +86,10 @@ import {
   isOutsideScoringWindow,
 } from '../utils/ExplorerUtils';
 import {
+  comparePRsByWatchlist,
+  serializePRKey,
   useWatchlist,
   useWatchlistCounts,
-  serializePRKey,
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
 import { useWatchedPRs, type WatchedPRSource } from '../hooks/useWatchedPRs';
@@ -100,7 +101,6 @@ import {
 import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatDate, formatTokenAmount } from '../utils/format';
-import { compareByWatchlist } from '../utils/watchlistSort';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import theme, {
   CHART_COLORS,
@@ -953,7 +953,6 @@ type WatchedRepoStats = Repository & {
   // Hoisted from `config` for downstream sort/render code; populated when
   // constructing each row from the API Repository.
   weight: number | string;
-  inactiveAt: string | null | undefined;
   totalScore: number;
   totalPRs: number;
   uniqueMiners: Set<string>;
@@ -961,13 +960,6 @@ type WatchedRepoStats = Repository & {
   discoveryIssues: number;
   discoveryContributors: Set<string>;
 };
-
-const isRepoActive = (repo: Repository): boolean => !repo.config?.inactiveAt;
-
-type RepoStatusFilter = 'all' | 'active' | 'inactive';
-
-const isRepoStatusFilter = (v: unknown): v is RepoStatusFilter =>
-  v === 'all' || v === 'active' || v === 'inactive';
 
 const isPrStatusFilterStored = (v: unknown): v is PrStatusFilter =>
   v === 'all' || v === 'open' || v === 'merged' || v === 'closed';
@@ -1089,14 +1081,6 @@ const repoHeaderStack = (
   </Box>
 );
 
-const repoStatusMeta = (repo: Repository) => {
-  const active = isRepoActive(repo);
-  return {
-    label: active ? 'ACTIVE' : 'INACTIVE',
-    color: active ? STATUS_COLORS.success : STATUS_COLORS.closed,
-  };
-};
-
 const getRepoHref = (repo: Repository) =>
   `/miners/repository?name=${encodeURIComponent(repo.fullName)}`;
 
@@ -1144,7 +1128,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
     cellSx: repoCellSx,
     renderCell: (repo) => (
       <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
-        {parseFloat(String(repo.config?.weight ?? 0)).toFixed(2)}
+        {parseFloat(String(repo.config?.emissionShare ?? 0)).toFixed(2)}
       </Typography>
     ),
   },
@@ -1412,10 +1396,8 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
   repo,
   maxWeight,
 }) => {
-  const { label, color } = repoStatusMeta(repo);
   const owner = repo.fullName.split('/')[0] || '';
-  const weight = parseFloat(String(repo.config?.weight ?? 0));
-  const isInactive = !!repo.config?.inactiveAt;
+  const weight = parseFloat(String(repo.config?.emissionShare ?? 0));
   const weightPct =
     maxWeight > 0 ? Math.max(0, Math.min(100, (weight / maxWeight) * 100)) : 0;
 
@@ -1434,7 +1416,6 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
         gap: 1.5,
         cursor: 'pointer',
         transition: 'all 0.2s',
-        opacity: isInactive ? 0.5 : 1,
         '&:hover': {
           backgroundColor: theme.palette.surface.light,
           borderColor: theme.palette.border.medium,
@@ -1476,29 +1457,6 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
             </Typography>
           </Tooltip>
         </LinkBox>
-        <Typography
-          component="span"
-          sx={(theme) => ({
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '0.65rem',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-            px: 0.75,
-            py: 0.25,
-            borderRadius: '4px',
-            flexShrink: 0,
-            color,
-            backgroundColor: alpha(
-              isInactive
-                ? theme.palette.status.closed
-                : theme.palette.status.success,
-              0.12,
-            ),
-          })}
-        >
-          {label === 'ACTIVE' ? 'Active' : 'Inactive'}
-        </Typography>
         <WatchlistButton
           category="repos"
           itemKey={repo.fullName}
@@ -1647,12 +1605,6 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allMiners } = useAllMiners();
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] =
-    useSessionStoredState<RepoStatusFilter>(
-      'watchlist:repos:statusFilter',
-      'all',
-      isRepoStatusFilter,
-    );
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(false);
@@ -1669,7 +1621,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
+  }, [searchQuery, sortField, sortOrder, viewMode]);
 
   const handleSort = (field: RepoSortKey) => {
     if (sortField === field) {
@@ -1718,8 +1670,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         const d = discoveryByRepo.get(key);
         return {
           ...r,
-          weight: r.config?.weight ?? 0,
-          inactiveAt: r.config?.inactiveAt ?? null,
+          weight: r.config?.emissionShare ?? 0,
           totalScore: s?.totalScore || 0,
           totalPRs: s?.totalPRs || 0,
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
@@ -1730,28 +1681,14 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       });
   }, [repos, allPrs, allMiners, itemKeys]);
 
-  const counts = useMemo(() => {
-    let active = 0;
-    let inactive = 0;
-    for (const r of items) {
-      if (isRepoActive(r)) active++;
-      else inactive++;
-    }
-    return { all: items.length, active, inactive };
-  }, [items]);
+  const counts = useMemo(() => ({ all: items.length }), [items]);
 
   const filtered = useMemo(() => {
     let result = items;
-    if (statusFilter === 'active')
-      result = result.filter((r) => isRepoActive(r));
-    else if (statusFilter === 'inactive')
-      result = result.filter((r) => !isRepoActive(r));
-
     const q = searchQuery.trim().toLowerCase();
     if (q) result = result.filter((r) => r.fullName.toLowerCase().includes(q));
-
     return result;
-  }, [items, statusFilter, searchQuery]);
+  }, [items, searchQuery]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -1763,8 +1700,8 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           return cmpStr(a.fullName, b.fullName);
         case 'weight':
           return cmpNum(
-            parseFloat(String(a.config?.weight ?? 0)),
-            parseFloat(String(b.config?.weight ?? 0)),
+            parseFloat(String(a.config?.emissionShare ?? 0)),
+            parseFloat(String(b.config?.emissionShare ?? 0)),
           );
         case 'totalScore':
           return cmpNum(a.totalScore, b.totalScore);
@@ -1827,7 +1764,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const maxWeight = useMemo(
     () =>
       items.reduce(
-        (m, r) => Math.max(m, parseFloat(String(r.config?.weight ?? 0))),
+        (m, r) => Math.max(m, parseFloat(String(r.config?.emissionShare ?? 0))),
         0,
       ),
     [items],
@@ -1844,7 +1781,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     const chartData = paged.map((repo) => ({
       name: repo.fullName.split('/')[1] || repo.fullName,
       repository: repo.fullName,
-      value: parseFloat(String(repo.config?.weight ?? 0)),
+      value: parseFloat(String(repo.config?.emissionShare ?? 0)),
     }));
 
     const barGradient = {
@@ -1985,22 +1922,8 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                   label="All"
                   count={counts.all}
                   color={STATUS_COLORS.neutral}
-                  isActive={statusFilter === 'all'}
-                  onClick={() => setStatusFilter('all')}
-                />
-                <FilterButton
-                  label="Active"
-                  count={counts.active}
-                  color={STATUS_COLORS.success}
-                  isActive={statusFilter === 'active'}
-                  onClick={() => setStatusFilter('active')}
-                />
-                <FilterButton
-                  label="Inactive"
-                  count={counts.inactive}
-                  color={STATUS_COLORS.closed}
-                  isActive={statusFilter === 'inactive'}
-                  onClick={() => setStatusFilter('inactive')}
+                  isActive
+                  onClick={() => {}}
                 />
               </Box>
             }
@@ -2080,7 +2003,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             viewModeToggle={
               <ReposViewModeToggle viewMode={viewMode} onChange={setViewMode} />
             }
-            hasActiveFilter={statusFilter !== 'all'}
+            hasActiveFilter={false}
           />
         )}
       </DebouncedSearchInput>
@@ -2113,13 +2036,6 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           getRowKey={(repo) => repo.fullName}
           getRowHref={getRepoHref}
           linkState={{ backLabel: 'Back to Watchlist' }}
-          getRowSx={(repo) =>
-            isRepoActive(repo)
-              ? {}
-              : {
-                  opacity: 0.5,
-                }
-          }
           minWidth="1180px"
           stickyHeader
           emptyLabel="No watched repositories found."
@@ -3474,11 +3390,8 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         }
         case 'score':
           return cmpNum(parseFloat(a.score || '0'), parseFloat(b.score || '0'));
-        case 'watch': {
-          const key = (pr: CommitLog) =>
-            serializePRKey(pr.repository, pr.pullRequestNumber);
-          return compareByWatchlist(a, b, key, isWatched) * dir;
-        }
+        case 'watch':
+          return comparePRsByWatchlist(a, b, isWatched) * dir;
         default:
           return 0;
       }

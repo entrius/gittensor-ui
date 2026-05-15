@@ -18,7 +18,11 @@ import {
 } from '../../components/common/DataTable';
 import { WatchlistButton } from '../../components/common';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
-import { serializePRKey } from '../../hooks/useWatchlist';
+import {
+  comparePRsByWatchlist,
+  serializePRKey,
+  useWatchlist,
+} from '../../hooks/useWatchlist';
 import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
@@ -33,7 +37,8 @@ type PrSortField =
   | 'lines'
   | 'score'
   | 'status'
-  | 'mergedAt';
+  | 'mergedAt'
+  | 'watch';
 type SortOrder = 'asc' | 'desc';
 
 interface RepositoryPRsTableProps {
@@ -50,6 +55,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isWatched } = useWatchlist('prs');
   const [filter, setFilter] = useSessionStoredState<PrStatusFilter>(
     'repository:prs:statusFilter',
     state,
@@ -139,12 +145,14 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
             a.mergedAt ? new Date(a.mergedAt).getTime() : 0,
             b.mergedAt ? new Date(b.mergedAt).getTime() : 0,
           );
+        case 'watch':
+          return comparePRsByWatchlist(a, b, isWatched) * dir;
         case 'score':
         default:
           return cmpNum(parseFloat(a.score || '0'), parseFloat(b.score || '0'));
       }
     });
-  }, [filteredPRs, sortField, sortOrder]);
+  }, [filteredPRs, sortField, sortOrder, isWatched]);
 
   const handleRowClick = useCallback(
     (pr: CommitLog) => {
@@ -360,6 +368,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       key: 'watch',
       header: '★',
       align: 'center',
+      sortKey: 'watch',
       renderCell: (pr) => (
         <WatchlistButton
           category="prs"

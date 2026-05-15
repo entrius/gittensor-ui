@@ -138,8 +138,8 @@ export const useDashboardData = (range: TrendTimeRange) => {
   );
 
   const featuredWork = useMemo(
-    () => buildFeaturedWork(datasets.prs.data, datasets.repos.data),
-    [datasets.prs.data, datasets.repos.data],
+    () => buildFeaturedWork(datasets.prs.data),
+    [datasets.prs.data],
   );
 
   const kpis = useMemo(
