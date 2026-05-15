@@ -166,8 +166,6 @@ export type CommitLog = {
   repoWeightMultiplier?: string;
   issueMultiplier?: string;
   openPrSpamMultiplier?: string;
-  pioneerDividend?: number;
-  pioneerRank?: number;
   timeDecayMultiplier?: string;
   credibilityMultiplier?: string;
 
@@ -291,8 +289,6 @@ export type PullRequestDetails = {
   baseScore: string; // float returned as string
   issueMultiplier: string; // float returned as string
   openPrSpamMultiplier: string; // float returned as string
-  pioneerDividend: number;
-  pioneerRank: number;
   timeDecayMultiplier: string; // float returned as string
   credibilityMultiplier: string; // float returned as string
   reviewQualityMultiplier?: string; // float returned as string
