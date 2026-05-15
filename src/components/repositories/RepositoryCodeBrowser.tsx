@@ -371,7 +371,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   display: 'flex',
                   alignItems: 'center',
                   gap: 1.5,
-                  overflow: 'hidden',
+                  minWidth: 0,
                 }}
               >
                 <Avatar
@@ -393,10 +393,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                   sx={{
                     fontSize: '13px',
                     color: STATUS_COLORS.open,
-                    whiteSpace: 'nowrap',
-                    overflow: 'hidden',
-                    textOverflow: 'ellipsis',
-                    maxWidth: '600px',
+                    wordBreak: 'break-word',
                   }}
                 >
                   {currentCommit.message}
