@@ -53,6 +53,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { useTwitterStickySidebar } from '../hooks/useTwitterStickySidebar';
+import { useSessionStoredState } from '../hooks/useSessionStoredState';
 import {
   TopMinersTable,
   ActivitySidebarCards,
@@ -971,6 +972,12 @@ const isRepoActive = (repo: Repository): boolean => !repo.config?.inactiveAt;
 
 type RepoStatusFilter = 'all' | 'active' | 'inactive';
 
+const isRepoStatusFilter = (v: unknown): v is RepoStatusFilter =>
+  v === 'all' || v === 'active' || v === 'inactive';
+
+const isPrStatusFilterStored = (v: unknown): v is PrStatusFilter =>
+  v === 'all' || v === 'open' || v === 'merged' || v === 'closed';
+
 type RepoSortKey =
   | 'name'
   | 'weight'
@@ -1647,7 +1654,12 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allMiners } = useAllMiners();
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
+  const [statusFilter, setStatusFilter] =
+    useSessionStoredState<RepoStatusFilter>(
+      'watchlist:repos:statusFilter',
+      'all',
+      isRepoStatusFilter,
+    );
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(false);
@@ -2955,7 +2967,7 @@ const SOURCE_META: Record<
 > = {
   starred: {
     label: 'Starred',
-    tooltip: 'You starred this pull request',
+    tooltip: 'You starred this issue',
     Icon: StarIcon,
     color: '#facc15',
   },
@@ -3443,7 +3455,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { isWatched } = useWatchlist('prs');
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useSessionStoredState<PrStatusFilter>(
+    'watchlist:prs:statusFilter',
+    'all',
+    isPrStatusFilterStored,
+  );
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -3765,18 +3781,47 @@ const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
   'resolved',
   'closed',
 ];
+/** UI labels — `resolved` is "Solved" to match MinerOpenDiscoveryIssuesByRepo. */
+const ISSUE_FILTER_LABELS: Record<IssueStatusFilter, string> = {
+  all: 'All',
+  open: 'Open',
+  resolved: 'Solved',
+  closed: 'Closed',
+};
+
 const issueCellSx = { py: 1.5 } as const;
 
+/** Synthetic starred rows (mirror missing) carry this marker on `state_reason`. */
+const WATCHLIST_ISSUE_PENDING_MIRROR_MARKER =
+  '__gittensor_watchlist_pending_mirror__';
+
+// Same buckets as MinerOpenDiscoveryIssuesByRepo (`isOpenIssue` / `isSolvedIssue` /
+// `isClosedIssue`): open = not closed; solved = closed + linked PR; else closed.
+const minerWatchlistIssueClosed = (issue: MinerIssue): boolean => {
+  if ((issue.state ?? '').toUpperCase() === 'CLOSED') return true;
+  const ca = issue.closed_at;
+  return ca != null && String(ca).trim() !== '';
+};
+
+const minerWatchlistIssueLinkedPr = (issue: MinerIssue): number | null => {
+  const n = issue.solving_pr?.pr_number ?? issue.solved_by_pr;
+  return typeof n === 'number' && Number.isFinite(n) ? n : null;
+};
+
 const issueState = (issue: MinerIssue): Exclude<IssueStatusFilter, 'all'> => {
-  if ((issue.state_reason ?? '').toLowerCase() === 'completed')
-    return 'resolved';
-  return issue.state === 'CLOSED' ? 'closed' : 'open';
+  if (issue.state_reason === WATCHLIST_ISSUE_PENDING_MIRROR_MARKER)
+    return 'open';
+  if (!minerWatchlistIssueClosed(issue)) return 'open';
+  if (minerWatchlistIssueLinkedPr(issue) != null) return 'resolved';
+  return 'closed';
 };
 
 const issueStatusMeta = (issue: MinerIssue) => {
+  if (issue.state_reason === WATCHLIST_ISSUE_PENDING_MIRROR_MARKER) {
+    return { label: '—', color: STATUS_COLORS.neutral };
+  }
   const s = issueState(issue);
-  if (s === 'resolved')
-    return { label: 'RESOLVED', color: STATUS_COLORS.merged };
+  if (s === 'resolved') return { label: 'SOLVED', color: STATUS_COLORS.merged };
   if (s === 'closed') return { label: 'CLOSED', color: STATUS_COLORS.closed };
   return { label: 'OPEN', color: STATUS_COLORS.open };
 };
@@ -3786,6 +3831,17 @@ const issueDate = (issue: MinerIssue): string =>
 
 const issueKey = (issue: MinerIssue) =>
   `${issue.repo_full_name}#${issue.issue_number}`;
+
+const parseIssueKey = (
+  key: string,
+): { repoFullName: string; issueNumber: number } | null => {
+  const idx = key.lastIndexOf('#');
+  if (idx <= 0 || idx >= key.length - 1) return null;
+  const repoFullName = key.slice(0, idx);
+  const issueNumber = Number(key.slice(idx + 1));
+  if (!Number.isFinite(issueNumber)) return null;
+  return { repoFullName, issueNumber };
+};
 
 const issueStatusColor = (s: IssueStatusFilter): string => {
   switch (s) {
@@ -4226,7 +4282,6 @@ const IssueCard: React.FC<{
 
 const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   const issueQueries = useMinersIssues(minerIds, minerIds.length > 0);
-  const isLoading = issueQueries.some((q) => q.isLoading);
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
 
   const { ids: starredIssueIds } = useWatchlist('issues');
@@ -4238,36 +4293,8 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   );
   const watchedMinerSet = useMemo(() => new Set(minerIds), [minerIds]);
 
-  const sourcesByKey = useMemo(() => {
-    const map = new Map<string, WatchedPRSource[]>();
-    issueQueries.forEach((q) => {
-      (q.data ?? []).forEach((issue) => {
-        const key = issueKey(issue);
-        if (map.has(key)) return;
-        const sources: WatchedPRSource[] = [];
-        if (starredSet.has(key)) sources.push('starred');
-        if (
-          issue.author_github_id &&
-          watchedMinerSet.has(issue.author_github_id)
-        ) {
-          sources.push('miner');
-        }
-        if (watchedRepoSet.has(issue.repo_full_name.toLowerCase())) {
-          sources.push('repo');
-        }
-        map.set(key, sources);
-      });
-    });
-    return map;
-  }, [issueQueries, starredSet, watchedMinerSet, watchedRepoSet]);
-
-  const issueColumns = useMemo(
-    () => buildIssueColumns(sourcesByKey),
-    [sourcesByKey],
-  );
-
   // Flatten + dedupe issues across all watched miners.
-  const items = useMemo<MinerIssue[]>(() => {
+  const mirroredItems = useMemo<MinerIssue[]>(() => {
     const map = new Map<string, MinerIssue>();
     issueQueries.forEach((q) => {
       (q.data ?? []).forEach((issue) => {
@@ -4283,6 +4310,79 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     });
     return Array.from(map.values());
   }, [issueQueries]);
+
+  const mirroredIssueKeys = useMemo(() => {
+    const keys = new Set<string>();
+    mirroredItems.forEach((issue) => keys.add(issueKey(issue)));
+    return keys;
+  }, [mirroredItems]);
+
+  // Starred issues should always render, even when miner mirror feeds
+  // do not contain them. Build a minimal row from the serialized key.
+  const starredFallbackItems = useMemo<MinerIssue[]>(
+    () =>
+      starredIssueIds
+        .filter((key) => !mirroredIssueKeys.has(key))
+        .map((key) => {
+          const parsed = parseIssueKey(key);
+          if (!parsed) return null;
+          return {
+            repo_full_name: parsed.repoFullName,
+            issue_number: parsed.issueNumber,
+            title: `${parsed.repoFullName} #${parsed.issueNumber}`,
+            state: 'OPEN',
+            state_reason: WATCHLIST_ISSUE_PENDING_MIRROR_MARKER,
+            author_github_id: null,
+            author_login: null,
+            created_at: null,
+            closed_at: null,
+            updated_at: null,
+            solved_by_pr: null,
+            labels: [],
+          } as MinerIssue;
+        })
+        .filter((issue): issue is MinerIssue => issue !== null),
+    [starredIssueIds, mirroredIssueKeys],
+  );
+
+  const items = useMemo<MinerIssue[]>(() => {
+    const map = new Map<string, MinerIssue>();
+    [...mirroredItems, ...starredFallbackItems].forEach((issue) => {
+      const key = issueKey(issue);
+      const existing = map.get(key);
+      if (!existing || issueDate(issue) > issueDate(existing)) {
+        map.set(key, issue);
+      }
+    });
+    return Array.from(map.values());
+  }, [mirroredItems, starredFallbackItems]);
+
+  const sourcesByKey = useMemo(() => {
+    const map = new Map<string, WatchedPRSource[]>();
+    items.forEach((issue) => {
+      const key = issueKey(issue);
+      const sources: WatchedPRSource[] = [];
+      if (starredSet.has(key)) sources.push('starred');
+      if (
+        issue.author_github_id &&
+        watchedMinerSet.has(issue.author_github_id)
+      ) {
+        sources.push('miner');
+      }
+      if (watchedRepoSet.has(issue.repo_full_name.toLowerCase())) {
+        sources.push('repo');
+      }
+      map.set(key, sources);
+    });
+    return map;
+  }, [items, starredSet, watchedMinerSet, watchedRepoSet]);
+
+  const issueColumns = useMemo(
+    () => buildIssueColumns(sourcesByKey),
+    [sourcesByKey],
+  );
+
+  const isLoading = issueQueries.some((q) => q.isLoading);
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatusFilter>('all');
@@ -4406,7 +4506,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
                 {ISSUE_STATUS_FILTERS.map((s) => (
                   <FilterButton
                     key={s}
-                    label={s[0].toUpperCase() + s.slice(1)}
+                    label={ISSUE_FILTER_LABELS[s]}
                     count={counts[s]}
                     color={issueStatusColor(s)}
                     isActive={statusFilter === s}
@@ -4419,9 +4519,18 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
             searchPlaceholder="Search issues..."
             onSearchChange={setDraftValue}
             viewMode={viewMode}
-            onViewModeChange={setViewMode}
+            onViewModeChange={(next) => {
+              setViewMode(next);
+              setPage(0);
+            }}
             viewModeToggle={
-              <PRsViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+              <PRsViewModeToggle
+                viewMode={viewMode}
+                onChange={(next) => {
+                  setViewMode(next);
+                  setPage(0);
+                }}
+              />
             }
             hasActiveFilter={statusFilter !== 'all'}
           />
