@@ -7,31 +7,55 @@ export type AppRoute = Omit<PathRouteProps, 'path'> & {
   showGlobalSearch?: boolean;
 };
 
+/**
+ * Wrap React.lazy so that a failed dynamic import (e.g. stale chunk hash
+ * after a production deploy) triggers a single page reload instead of an
+ * unrecoverable error boundary screen. After reload the browser fetches
+ * the latest index.html which references the current chunk hashes.
+ */
+const lazyWithReload = <T extends React.ComponentType<any>>(
+  factory: () => Promise<{ default: T }>,
+): React.LazyExoticComponent<T> =>
+  React.lazy(() =>
+    factory().catch(() => {
+      window.location.reload();
+      // Return a never-resolving promise so React Suspense stays mounted
+      // while the reload happens.
+      return new Promise<{ default: T }>(() => {});
+    }),
+  );
+
 // main menu pages
-const HomePage = React.lazy(() => import('./pages/HomePage'));
+const HomePage = lazyWithReload(() => import('./pages/HomePage'));
 // AboutPage and FAQPage deleted — redirects inline below
-const DashboardPage = React.lazy(
+const DashboardPage = lazyWithReload(
   () => import('./pages/dashboard/DashboardPage'),
 );
-const IssuesPage = React.lazy(() => import('./pages/IssuesPage'));
-const SearchPage = React.lazy(() => import('./pages/search/SearchPage'));
-const IssueDetailsPage = React.lazy(() => import('./pages/IssueDetailsPage'));
-const TopMinersPage = React.lazy(() => import('./pages/TopMinersPage'));
-const RepositoriesPage = React.lazy(() => import('./pages/RepositoriesPage'));
-const MinerDetailsPage = React.lazy(() => import('./pages/MinerDetailsPage'));
-const RepositoryDetailsPage = React.lazy(
+const IssuesPage = lazyWithReload(() => import('./pages/IssuesPage'));
+const SearchPage = lazyWithReload(() => import('./pages/search/SearchPage'));
+const IssueDetailsPage = lazyWithReload(
+  () => import('./pages/IssueDetailsPage'),
+);
+const TopMinersPage = lazyWithReload(() => import('./pages/TopMinersPage'));
+const RepositoriesPage = lazyWithReload(
+  () => import('./pages/RepositoriesPage'),
+);
+const MinerDetailsPage = lazyWithReload(
+  () => import('./pages/MinerDetailsPage'),
+);
+const RepositoryDetailsPage = lazyWithReload(
   () => import('./pages/RepositoryDetailsPage'),
 );
-const PRDetailsPage = React.lazy(() => import('./pages/PRDetailsPage'));
+const PRDetailsPage = lazyWithReload(() => import('./pages/PRDetailsPage'));
 
-const OnboardPage = React.lazy(() => import('./pages/OnboardPage'));
-const WatchlistPage = React.lazy(() => import('./pages/WatchlistPage'));
-const RepositoryRegistrationPage = React.lazy(
+const OnboardPage = lazyWithReload(() => import('./pages/OnboardPage'));
+const WatchlistPage = lazyWithReload(() => import('./pages/WatchlistPage'));
+const RepositoryRegistrationPage = lazyWithReload(
   () => import('./pages/RepositoryRegistrationPage'),
 );
 
 // 404 page
-const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
+const NotFoundPage = lazyWithReload(() => import('./pages/NotFoundPage'));
 
 const routesArray: AppRoute[] = [
   { name: 'home', path: '/', element: <HomePage /> },
