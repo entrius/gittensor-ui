@@ -110,6 +110,9 @@ const parseBountyAmount = (value: string | null | undefined): number => {
   return Number.isFinite(parsed) ? parsed : 0;
 };
 
+const formatIssueCount = (count: number): string =>
+  `${count} ${count === 1 ? 'issue' : 'issues'}`;
+
 interface IssuesListProps {
   issues: IssueBounty[];
   isLoading?: boolean;
@@ -460,7 +463,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       backgroundColor: 'transparent',
       title: {
         text: 'Bounty Pool by Repository',
-        subtext: `${filteredIssues.length} issues`,
+        subtext: formatIssueCount(filteredIssues.length),
         left: 'center',
         top: 20,
         textStyle: {
