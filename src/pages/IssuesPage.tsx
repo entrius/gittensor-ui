@@ -122,7 +122,9 @@ const IssuesPage: React.FC = () => {
             <Tabs
               value={filterType}
               onChange={handleTabChange}
-              variant="fullWidth"
+              variant="scrollable"
+              scrollButtons="auto"
+              allowScrollButtonsMobile
               sx={(t) => ({
                 minHeight: 52,
                 '& .MuiTab-root': {

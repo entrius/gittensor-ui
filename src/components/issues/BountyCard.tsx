@@ -14,6 +14,46 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import GitHubIcon from '@mui/icons-material/GitHub';
 import { IssueBounty } from '../../api/models/Issues';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
+
+const TruncatedTooltipTypography: React.FC<{
+  text: string;
+  sx?: any;
+  placement?: 'bottom' | 'top';
+}> = ({ text, sx, placement = 'bottom' }) => {
+  const [isTruncated, setIsTruncated] = React.useState(false);
+  const textRef = React.useRef<HTMLElement>(null);
+
+  React.useEffect(() => {
+    const el = textRef.current;
+    if (el) {
+      setIsTruncated(
+        el.scrollHeight > el.clientHeight || el.scrollWidth > el.clientWidth,
+      );
+    }
+  }, [text]);
+
+  const typography = (
+    <Typography
+      ref={textRef}
+      sx={{
+        ...sx,
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      }}
+    >
+      {text}
+    </Typography>
+  );
+
+  return isTruncated ? (
+    <Tooltip title={text} placement={placement} arrow>
+      {typography}
+    </Tooltip>
+  ) : (
+    typography
+  );
+};
+
 import { WatchlistButton } from '../common';
 import BountyProgress from './BountyProgress';
 import { getIssueStatusMeta } from '../../utils/issueStatus';
@@ -48,6 +88,7 @@ export const BountyCard: React.FC<BountyCardProps> = ({
   compact = false,
 }) => {
   const owner = issue.repositoryFullName.split('/')[0] || '';
+  const [copied, setCopied] = React.useState(false);
   const statusMeta = getIssueStatusMeta(issue.status);
   const usdDisplay = formatAlphaToUsd(
     issue.targetBounty,
@@ -118,22 +159,20 @@ export const BountyCard: React.FC<BountyCardProps> = ({
             borderColor: theme.palette.border.medium,
           })}
         />
-        <Tooltip title={issue.repositoryFullName} placement="top" arrow>
-          <Typography
-            sx={{
-              fontSize: '0.88rem',
-              fontWeight: 500,
-              color: STATUS_COLORS.info,
-              flex: 1,
-              minWidth: 0,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            {issue.repositoryFullName}
-          </Typography>
-        </Tooltip>
+        <TruncatedTooltipTypography
+          text={issue.repositoryFullName}
+          placement="top"
+          sx={{
+            fontSize: '0.88rem',
+            fontWeight: 500,
+            color: STATUS_COLORS.info,
+            flex: 1,
+            minWidth: 0,
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        />
         <Chip
           label={statusMeta.text}
           size="small"
@@ -279,12 +318,21 @@ export const BountyCard: React.FC<BountyCardProps> = ({
           }}
         >
           {issue.solverHotkey ? (
-            <Tooltip title={issue.solverHotkey} arrow>
+            <Tooltip title={copied ? 'Copied' : issue.solverHotkey} arrow>
               <Typography
+                onClick={(e) => {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  if (issue.solverHotkey)
+                    navigator.clipboard.writeText(issue.solverHotkey);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 2000);
+                }}
                 sx={{
                   fontSize: '0.75rem',
                   color: STATUS_COLORS.info,
-                  cursor: 'default',
+                  cursor: 'pointer',
+                  '&:hover': { textDecoration: 'underline' },
                 }}
               >
                 {`${issue.solverHotkey.slice(0, 6)}…${issue.solverHotkey.slice(-4)}`}
