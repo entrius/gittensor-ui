@@ -59,6 +59,12 @@ export interface RepoStats {
   discoveryIssues: number;
   /** Identities with non-zero pro-rated discovery score/issues in this repo. */
   discoveryContributors: Set<string>;
+  /** Fraction of the repo allocation reserved for issue discovery (0-1). */
+  issueDiscoveryShare?: number;
+  /** Labels-as-scoring trust opt-in; surfaced on the card as a badge. */
+  trustedLabelPipeline?: boolean;
+  /** Per-label scoring multipliers, e.g. `{ bug: 1.25, refactor: 0.25 }`. */
+  labelMultipliers?: Record<string, number>;
 }
 
 export type LeaderboardVariant = 'oss' | 'discoveries' | 'watchlist';

@@ -4,7 +4,7 @@ export type RepoChanges = {
   additions: number;
   deletions: number;
   linesChanged: number;
-  weight: string; // bc float
+  emissionShare: string; // bc float
   inactiveAt: string | null;
 };
 
@@ -12,7 +12,8 @@ export type RepoChanges = {
 // gittensor's master_repositories.json with shallow camelCase keys; nested
 // object values (e.g. labelMultipliers) keep their inner keys verbatim.
 export type RepositoryConfig = {
-  weight?: number | string;
+  emissionShare?: number | string;
+  issueDiscoveryShare?: number | string;
   additionalAcceptableBranches?: string[] | null;
   inactiveAt?: string | null;
   mirrorEnabled?: boolean;

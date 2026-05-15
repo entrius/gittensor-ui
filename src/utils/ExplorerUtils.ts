@@ -261,7 +261,7 @@ export const buildRepoWeightsMap = (
     if (repo && repo.fullName) {
       map.set(
         repo.fullName.toLowerCase(),
-        parseFloat(String(repo.config?.weight ?? 0)),
+        parseFloat(String(repo.config?.emissionShare ?? 0)),
       );
     }
   }
