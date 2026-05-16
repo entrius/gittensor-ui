@@ -402,6 +402,15 @@ const LiveCommitLog: React.FC = () => {
     return () => window.clearInterval(id);
   }, []);
 
+  // Clear any pending debounced scroll check on unmount.
+  useEffect(() => {
+    return () => {
+      if (scrollDebounceRef.current !== null) {
+        clearTimeout(scrollDebounceRef.current);
+      }
+    };
+  }, []);
+
   const apiCommits = useMemo<CommitLogEntry[]>(
     () => data?.pages.flat() ?? [],
     [data],
@@ -457,6 +466,21 @@ const LiveCommitLog: React.FC = () => {
   const showInitialLoading = isLoading && !hasAnyEntries;
   const showWaitingForActivity = !showInitialLoading && !hasAnyEntries;
   const showFilteredEmptyState = hasAnyEntries && visibleEntries.length === 0;
+
+  // If the first page doesn't fill the container there is no scroll event to
+  // trigger pagination. Check after each render and fetch the next page when
+  // the container has no overflow yet.
+  useEffect(() => {
+    const el = logContainerRef.current;
+    if (!el || !hasNextPage || isFetchingNextPage || fetchInFlightRef.current)
+      return;
+    if (el.scrollHeight <= el.clientHeight) {
+      fetchInFlightRef.current = true;
+      void fetchNextPage().finally(() => {
+        fetchInFlightRef.current = false;
+      });
+    }
+  }, [visibleEntries, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handleScroll = useCallback(
     (event: React.UIEvent<HTMLDivElement>) => {
