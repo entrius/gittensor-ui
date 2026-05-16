@@ -7,6 +7,7 @@ import {
   echartsTransparentBackground,
 } from '../../utils/echarts/gittensorChartTheme';
 import { useChartColors } from '../../hooks/useChartColors';
+import { ChartEmptyPanel } from '../common/ChartEmptyPanel';
 
 interface PerformanceRadarProps {
   credibility: number;
@@ -15,6 +16,8 @@ interface PerformanceRadarProps {
   uniqueRepos: number;
   totalPRs: number;
   avgRepoWeight: number;
+  /** When true, show empty state instead of radar (e.g. miner has no PRs yet). */
+  isActivityEmpty?: boolean;
 }
 
 const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
@@ -24,6 +27,7 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
   uniqueRepos,
   totalPRs,
   avgRepoWeight,
+  isActivityEmpty = false,
 }) => {
   const theme = useTheme();
   const { merged: radarColor } = useChartColors();
@@ -100,13 +104,20 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
       >
         Performance Profile
       </Typography>
-      <Box sx={{ height: '220px', width: '100%' }}>
-        <ReactECharts
-          option={chartOption}
-          style={{ height: '100%', width: '100%' }}
-          opts={{ renderer: 'svg' }}
-        />
-      </Box>
+      <ChartEmptyPanel
+        empty={isActivityEmpty}
+        minHeight={220}
+        title="No activity yet"
+        hint="Your performance profile appears after your first PRs are recorded on Gittensor."
+      >
+        <Box sx={{ height: '220px', width: '100%' }}>
+          <ReactECharts
+            option={chartOption}
+            style={{ height: '100%', width: '100%' }}
+            opts={{ renderer: 'svg' }}
+          />
+        </Box>
+      </ChartEmptyPanel>
     </Box>
   );
 };

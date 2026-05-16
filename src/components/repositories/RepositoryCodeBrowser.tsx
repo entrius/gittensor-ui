@@ -1,4 +1,11 @@
-import React, { useState, useMemo } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+  useCallback,
+  memo,
+} from 'react';
 import {
   Box,
   Paper,
@@ -13,14 +20,24 @@ import {
   Breadcrumbs,
   Avatar,
   useTheme,
+  TextField,
+  InputAdornment,
+  Popper,
+  ClickAwayListener,
+  List,
+  ListItemButton,
+  alpha,
 } from '@mui/material';
+import { scrollbarSx, TEXT_OPACITY } from '../../theme';
 import { formatDistanceToNow } from 'date-fns';
 import FolderIcon from '@mui/icons-material/Folder';
 import InsertDriveFileIcon from '@mui/icons-material/InsertDriveFile';
+import SearchIcon from '@mui/icons-material/Search';
 import CodeViewer from './CodeViewer';
 import { buildFileTree, type FileNode } from './fileTree';
 import { useQuery } from '@tanstack/react-query';
 import { RateLimitError, githubFetch } from '../../api';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 
 interface RepositoryCodeBrowserProps {
   repositoryFullName: string;
@@ -59,7 +76,436 @@ interface GhRepoData {
 
 interface GhTreeResponse {
   tree?: { path: string; type: 'blob' | 'tree' }[];
+  truncated?: boolean;
 }
+
+type GoToTreeEntry = { path: string; type: 'blob' | 'tree' };
+
+const GO_TO_FILE_MAX_RESULTS = 100;
+/** Weight match position over path length when ranking results. */
+const GO_TO_PATH_SCORE_STRIDE = 10_000;
+
+function filterAndSortGoToEntries(
+  entries: GoToTreeEntry[],
+  query: string,
+): GoToTreeEntry[] {
+  const q = query.trim().toLowerCase();
+  if (!q) return [];
+  const scored = entries
+    .map((e) => {
+      const lower = e.path.toLowerCase();
+      const idx = lower.indexOf(q);
+      if (idx === -1) return null;
+      return { ...e, score: idx * GO_TO_PATH_SCORE_STRIDE + e.path.length };
+    })
+    .filter((x): x is GoToTreeEntry & { score: number } => x != null)
+    .sort((a, b) => a.score - b.score || a.path.localeCompare(b.path));
+  return scored.slice(0, GO_TO_FILE_MAX_RESULTS).map(({ path, type }) => ({
+    path,
+    type,
+  }));
+}
+
+type GoToPathSegmentSx = {
+  fontFamily: string;
+  fontSize: string | number;
+  lineHeight: string | number;
+  display: 'inline';
+};
+
+type HighlightedFilePathProps = {
+  path: string;
+  query: string;
+  dimColor: string;
+  emphColor: string;
+  segmentBaseSx: GoToPathSegmentSx;
+};
+
+const HighlightedFilePath = memo(function HighlightedFilePath({
+  path,
+  query,
+  dimColor,
+  emphColor,
+  segmentBaseSx,
+}: HighlightedFilePathProps) {
+  const q = query.trim();
+  const nodes: React.ReactNode[] = [];
+  if (!q) {
+    return (
+      <Typography
+        component="span"
+        sx={{
+          ...segmentBaseSx,
+          color: dimColor,
+        }}
+      >
+        {path}
+      </Typography>
+    );
+  }
+  const lowerPath = path.toLowerCase();
+  const lowerQ = q.toLowerCase();
+  const qLen = q.length;
+  let i = 0;
+  let key = 0;
+  while (i < path.length) {
+    const found = lowerPath.indexOf(lowerQ, i);
+    if (found === -1) {
+      nodes.push(
+        <Typography
+          component="span"
+          key={key++}
+          sx={{
+            ...segmentBaseSx,
+            color: dimColor,
+          }}
+        >
+          {path.slice(i)}
+        </Typography>,
+      );
+      break;
+    }
+    if (found > i) {
+      nodes.push(
+        <Typography
+          component="span"
+          key={key++}
+          sx={{
+            ...segmentBaseSx,
+            color: dimColor,
+          }}
+        >
+          {path.slice(i, found)}
+        </Typography>,
+      );
+    }
+    nodes.push(
+      <Typography
+        component="span"
+        key={key++}
+        sx={{
+          ...segmentBaseSx,
+          fontWeight: 700,
+          color: emphColor,
+        }}
+      >
+        {path.slice(found, found + qLen)}
+      </Typography>,
+    );
+    i = found + qLen;
+  }
+  return <>{nodes}</>;
+});
+
+const GoToFileSearch = memo(function GoToFileSearch({
+  pathEntries,
+  treeTruncated,
+  onNavigate,
+}: {
+  pathEntries: GoToTreeEntry[];
+  treeTruncated: boolean;
+  onNavigate: (path: string) => void;
+}) {
+  const theme = useTheme();
+  const anchorRef = useRef<HTMLDivElement>(null);
+  const listRef = useRef<HTMLUListElement>(null);
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const [highlightIndex, setHighlightIndex] = useState(0);
+
+  const filtered = useMemo(
+    () => filterAndSortGoToEntries(pathEntries, query),
+    [pathEntries, query],
+  );
+
+  const pathDimColor = theme.palette.text.tertiary;
+  const pathEmphColor = theme.palette.text.primary;
+
+  const goToPathSegmentBaseSx = useMemo<GoToPathSegmentSx>(
+    () => ({
+      fontFamily: 'inherit',
+      fontSize: theme.typography.body2.fontSize ?? '0.875rem',
+      lineHeight: theme.spacing(2.5),
+      display: 'inline',
+    }),
+    [theme],
+  );
+
+  const inputFieldSx = useMemo(
+    () =>
+      ({
+        color: theme.palette.text.primary,
+        backgroundColor: alpha(theme.palette.common.black, 0.4),
+        fontSize: '0.8rem',
+        fontFamily: 'monospace',
+        height: theme.spacing(4.5),
+        borderRadius: 2,
+        '& fieldset': { borderColor: theme.palette.border.light },
+        '&:hover fieldset': { borderColor: theme.palette.border.medium },
+        '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+        '& .MuiOutlinedInput-input::placeholder': {
+          opacity: 1,
+          color: theme.palette.text.tertiary,
+        },
+      }) as const,
+    [theme],
+  );
+
+  const popperModifiers = useMemo(
+    () => [
+      {
+        name: 'offset' as const,
+        options: {
+          offset: [0, Number.parseFloat(theme.spacing(0.5)) || 4] as [
+            number,
+            number,
+          ],
+        },
+      },
+    ],
+    [theme],
+  );
+
+  useEffect(() => {
+    setHighlightIndex(0);
+  }, [query]);
+
+  useEffect(() => {
+    if (filtered.length === 0) return;
+    const row = listRef.current?.querySelector<HTMLElement>(
+      `[data-go-file-index="${highlightIndex}"]`,
+    );
+    row?.scrollIntoView({ block: 'nearest' });
+  }, [highlightIndex, filtered]);
+
+  const close = useCallback(() => {
+    setOpen(false);
+    setQuery('');
+    setHighlightIndex(0);
+  }, []);
+
+  const choose = useCallback(
+    (path: string) => {
+      onNavigate(path);
+      close();
+    },
+    [onNavigate, close],
+  );
+
+  const showPanel = open && (filtered.length > 0 || query.trim().length > 0);
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (!showPanel && e.key !== 'Escape') return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      if (filtered.length === 0) return;
+      setHighlightIndex((i) => Math.min(i + 1, filtered.length - 1));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      if (filtered.length === 0) return;
+      setHighlightIndex((i) => Math.max(i - 1, 0));
+    } else if (e.key === 'Enter' && filtered.length > 0) {
+      e.preventDefault();
+      const hit = filtered[highlightIndex];
+      if (hit) choose(hit.path);
+    } else if (e.key === 'Escape') {
+      e.preventDefault();
+      close();
+    }
+  };
+
+  const minPanelWidth = Number.parseFloat(theme.spacing(40)) || 320;
+  const maxPanelWidth = theme.spacing(70);
+  const viewportGutter = theme.spacing(4);
+  const maxPanelHeight = theme.spacing(45);
+  const pathLineHeight = theme.spacing(2.5);
+  const iconCellWidth = theme.spacing(2.75);
+  const iconCellHeight = theme.spacing(2.5);
+  const iconGlyphSize = theme.spacing(2);
+
+  return (
+    <ClickAwayListener
+      onClickAway={() => {
+        setOpen(false);
+      }}
+    >
+      <Box
+        ref={anchorRef}
+        sx={(t) => ({
+          flexShrink: 0,
+          width: { xs: '100%', sm: t.spacing(35) },
+          maxWidth: '100%',
+        })}
+      >
+        <TextField
+          size="small"
+          placeholder="Search files and folders"
+          value={query}
+          onChange={(e) => {
+            setQuery(e.target.value);
+            setOpen(true);
+          }}
+          onFocus={() => setOpen(true)}
+          onKeyDown={handleKeyDown}
+          autoComplete="off"
+          spellCheck={false}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon
+                  sx={{
+                    color: alpha(
+                      theme.palette.common.white,
+                      TEXT_OPACITY.muted,
+                    ),
+                    fontSize: '1rem',
+                  }}
+                />
+              </InputAdornment>
+            ),
+            endAdornment: (
+              <ClearSearchAdornment
+                visible={Boolean(query)}
+                onClear={() => setQuery('')}
+              />
+            ),
+          }}
+          sx={{
+            width: '100%',
+            '& .MuiOutlinedInput-root': inputFieldSx,
+          }}
+        />
+        <Popper
+          open={showPanel}
+          anchorEl={anchorRef.current}
+          placement="bottom-end"
+          style={{ zIndex: theme.zIndex.modal }}
+          modifiers={popperModifiers}
+        >
+          <Paper
+            elevation={8}
+            sx={{
+              width: Math.max(
+                anchorRef.current?.offsetWidth ?? minPanelWidth,
+                minPanelWidth,
+              ),
+              maxWidth: `min(${maxPanelWidth}, calc(100vw - ${viewportGutter}))`,
+              maxHeight: maxPanelHeight,
+              overflow: 'hidden',
+              display: 'flex',
+              flexDirection: 'column',
+              border: `1px solid ${theme.palette.border.light}`,
+              backgroundColor: theme.palette.background.paper,
+            }}
+          >
+            {treeTruncated && (
+              <Typography
+                variant="caption"
+                sx={{
+                  px: 1.5,
+                  py: 1,
+                  color: 'warning.main',
+                  borderBottom: `1px solid ${theme.palette.border.subtle}`,
+                }}
+              >
+                File list was truncated by GitHub; some files may be missing.
+              </Typography>
+            )}
+            {filtered.length === 0 ? (
+              <Typography
+                variant="body2"
+                color="text.tertiary"
+                sx={{ px: 2, py: 2 }}
+              >
+                {query.trim()
+                  ? 'No matching files or folders'
+                  : 'Type to filter by path'}
+              </Typography>
+            ) : (
+              <List
+                dense
+                disablePadding
+                ref={listRef}
+                sx={{ overflow: 'auto', py: 0.5, ...scrollbarSx }}
+              >
+                {filtered.map((hit, index) => (
+                  <ListItemButton
+                    key={hit.path}
+                    data-go-file-index={index}
+                    selected={index === highlightIndex}
+                    onMouseDown={(e) => e.preventDefault()}
+                    onMouseEnter={() => setHighlightIndex(index)}
+                    onClick={() => choose(hit.path)}
+                    sx={{
+                      py: 0.75,
+                      px: 1.5,
+                      display: 'flex',
+                      flexDirection: 'row',
+                      alignItems: 'center',
+                      gap: 1,
+                      '&.Mui-selected': {
+                        backgroundColor: 'transparent',
+                        outline: `1px solid ${theme.palette.primary.main}`,
+                        outlineOffset: '-1px',
+                      },
+                      '&.Mui-selected:hover': {
+                        backgroundColor: theme.palette.surface.elevated,
+                      },
+                    }}
+                  >
+                    <Box
+                      aria-hidden
+                      sx={{
+                        width: iconCellWidth,
+                        height: iconCellHeight,
+                        flexShrink: 0,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      }}
+                    >
+                      {hit.type === 'tree' ? (
+                        <FolderIcon
+                          sx={{
+                            fontSize: iconGlyphSize,
+                            color: theme.palette.status.info,
+                          }}
+                        />
+                      ) : (
+                        <InsertDriveFileIcon
+                          sx={{
+                            fontSize: iconGlyphSize,
+                            color: theme.palette.status.open,
+                          }}
+                        />
+                      )}
+                    </Box>
+                    <Box
+                      sx={{
+                        minWidth: 0,
+                        flex: 1,
+                        wordBreak: 'break-all',
+                        lineHeight: pathLineHeight,
+                      }}
+                    >
+                      <HighlightedFilePath
+                        path={hit.path}
+                        query={query}
+                        dimColor={pathDimColor}
+                        emphColor={pathEmphColor}
+                        segmentBaseSx={goToPathSegmentBaseSx}
+                      />
+                    </Box>
+                  </ListItemButton>
+                ))}
+              </List>
+            )}
+          </Paper>
+        </Popper>
+      </Box>
+    </ClickAwayListener>
+  );
+});
 
 /**
  * Commits done via the GitHub UI use @web-flow as committer; the human is on `author`.
@@ -170,6 +616,15 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
     [treeQuery.data],
   );
 
+  const goToPathEntries = useMemo<GoToTreeEntry[]>(() => {
+    const entries = treeQuery.data?.tree;
+    if (!entries) return [];
+    return entries
+      .filter((e) => e.type === 'blob' || e.type === 'tree')
+      .map((e) => ({ path: e.path, type: e.type }))
+      .sort((a, b) => a.path.localeCompare(b.path));
+  }, [treeQuery.data]);
+
   const commitQuery = useQuery<CommitInfo | null, Error>({
     queryKey: [
       'github',
@@ -243,9 +698,9 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
     return foundNode;
   }, [tree, currentPath]);
 
-  const handleNavigate = (path: string | null) => {
+  const handleNavigate = useCallback((path: string | null) => {
     setCurrentPath(path);
-  };
+  }, []);
 
   const loading =
     repoQuery.isLoading || (!!repoQuery.data && treeQuery.isLoading);
@@ -283,61 +738,70 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
 
   return (
     <Box>
-      {/* Breadcrumbs & Header */}
+      {/* Breadcrumbs & Go to file */}
       <Box
         sx={{
           mb: 2,
           display: 'flex',
+          flexWrap: { xs: 'wrap', sm: 'nowrap' },
           alignItems: 'center',
+          gap: 2,
           justifyContent: 'space-between',
         }}
       >
-        <Breadcrumbs
-          aria-label="breadcrumb"
-          sx={{
-            '& .MuiBreadcrumbs-separator': { color: 'status.open' },
-          }}
-        >
-          <Link
-            component="button"
-            underline="hover"
-            color={!currentPath ? 'text.primary' : 'inherit'}
-            onClick={() => handleNavigate(null)}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Breadcrumbs
+            aria-label="breadcrumb"
             sx={{
-              fontWeight: !currentPath ? 600 : 400,
-              color: !currentPath
-                ? theme.palette.text.tertiary
-                : theme.palette.status.info,
-              cursor: !currentPath ? 'default' : 'pointer',
-              fontSize: '14px',
+              '& .MuiBreadcrumbs-separator': { color: 'status.open' },
             }}
           >
-            {repositoryFullName}
-          </Link>
-          {breadcrumbs.map((part, index) => {
-            const path = breadcrumbs.slice(0, index + 1).join('/');
-            const isLast = index === breadcrumbs.length - 1;
-            return (
-              <Link
-                key={path}
-                component="button"
-                underline={isLast ? 'none' : 'hover'}
-                color={isLast ? 'text.primary' : 'inherit'}
-                onClick={() => !isLast && handleNavigate(path)}
-                sx={{
-                  fontWeight: isLast ? 600 : 400,
-                  color: isLast
-                    ? theme.palette.text.tertiary
-                    : theme.palette.status.info,
-                  cursor: isLast ? 'default' : 'pointer',
-                  fontSize: '14px',
-                }}
-              >
-                {part}
-              </Link>
-            );
-          })}
-        </Breadcrumbs>
+            <Link
+              component="button"
+              underline="hover"
+              color={!currentPath ? 'text.primary' : 'inherit'}
+              onClick={() => handleNavigate(null)}
+              sx={{
+                fontWeight: !currentPath ? 600 : 400,
+                color: !currentPath
+                  ? theme.palette.text.tertiary
+                  : theme.palette.status.info,
+                cursor: !currentPath ? 'default' : 'pointer',
+                fontSize: '14px',
+              }}
+            >
+              {repositoryFullName}
+            </Link>
+            {breadcrumbs.map((part, index) => {
+              const path = breadcrumbs.slice(0, index + 1).join('/');
+              const isLast = index === breadcrumbs.length - 1;
+              return (
+                <Link
+                  key={path}
+                  component="button"
+                  underline={isLast ? 'none' : 'hover'}
+                  color={isLast ? 'text.primary' : 'inherit'}
+                  onClick={() => !isLast && handleNavigate(path)}
+                  sx={{
+                    fontWeight: isLast ? 600 : 400,
+                    color: isLast
+                      ? theme.palette.text.tertiary
+                      : theme.palette.status.info,
+                    cursor: isLast ? 'default' : 'pointer',
+                    fontSize: '14px',
+                  }}
+                >
+                  {part}
+                </Link>
+              );
+            })}
+          </Breadcrumbs>
+        </Box>
+        <GoToFileSearch
+          pathEntries={goToPathEntries}
+          treeTruncated={treeQuery.data?.truncated === true}
+          onNavigate={handleNavigate}
+        />
       </Box>
 
       {/* Latest Commit Header (GitHub style blue/gray bar) */}

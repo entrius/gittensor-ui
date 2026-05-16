@@ -35,6 +35,10 @@ import { useChartColors } from '../../hooks/useChartColors';
 import TrustBadge from './TrustBadge';
 import CredibilityChart from './CredibilityChart';
 import PerformanceRadar from './PerformanceRadar';
+import {
+  ChartEmptyPanel,
+  chartNumericSeriesHasPositive,
+} from '../common/ChartEmptyPanel';
 
 type ViewMode = 'prs' | 'issues';
 
@@ -97,6 +101,11 @@ const IssueCredibilityChart: React.FC<{
     open: chartOpen,
     closed: chartClosed,
   } = useChartColors();
+  const hasIssueActivity = chartNumericSeriesHasPositive([
+    solved,
+    open,
+    closed,
+  ]);
 
   const chartOption = useMemo(
     () => ({
@@ -183,26 +192,33 @@ const IssueCredibilityChart: React.FC<{
         Issue Solve Ratio
       </Typography>
 
-      <Box sx={{ height: '190px', width: '100%', mb: 0.75 }}>
-        <ReactECharts
-          option={chartOption}
-          style={{ height: '100%', width: '100%' }}
-          opts={{ renderer: 'svg' }}
-        />
-      </Box>
-
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 1.5,
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-        }}
+      <ChartEmptyPanel
+        empty={!hasIssueActivity}
+        minHeight={190}
+        title="No activity yet"
+        hint="Issue solve metrics appear once you have solved, open, or closed issues on tracked bounties."
       >
-        <LegendItem label="Solved" value={solved} color={chartMerged} />
-        <LegendItem label="Open" value={open} color={chartOpen} />
-        <LegendItem label="Closed" value={closed} color={chartClosed} />
-      </Box>
+        <Box sx={{ height: '190px', width: '100%', mb: 0.75 }}>
+          <ReactECharts
+            option={chartOption}
+            style={{ height: '100%', width: '100%' }}
+            opts={{ renderer: 'svg' }}
+          />
+        </Box>
+
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1.5,
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          <LegendItem label="Solved" value={solved} color={chartMerged} />
+          <LegendItem label="Open" value={open} color={chartOpen} />
+          <LegendItem label="Closed" value={closed} color={chartClosed} />
+        </Box>
+      </ChartEmptyPanel>
     </Box>
   );
 };
@@ -214,6 +230,7 @@ const IssuePerformanceRadar: React.FC<{
   volume: number;
   tokenScore: number;
   avgRepoWeight: number;
+  isEmpty: boolean;
 }> = ({
   credibility,
   solvedRatio,
@@ -221,6 +238,7 @@ const IssuePerformanceRadar: React.FC<{
   volume,
   tokenScore,
   avgRepoWeight,
+  isEmpty,
 }) => {
   const theme = useTheme();
   const { merged: radarColor } = useChartColors();
@@ -298,13 +316,20 @@ const IssuePerformanceRadar: React.FC<{
       >
         Discovery Profile
       </Typography>
-      <Box sx={{ height: '220px', width: '100%' }}>
-        <ReactECharts
-          option={chartOption}
-          style={{ height: '100%', width: '100%' }}
-          opts={{ renderer: 'svg' }}
-        />
-      </Box>
+      <ChartEmptyPanel
+        empty={isEmpty}
+        minHeight={220}
+        title="No activity yet"
+        hint="Your discovery profile appears after you participate in issue bounties."
+      >
+        <Box sx={{ height: '220px', width: '100%' }}>
+          <ReactECharts
+            option={chartOption}
+            style={{ height: '100%', width: '100%' }}
+            opts={{ renderer: 'svg' }}
+          />
+        </Box>
+      </ChartEmptyPanel>
     </Box>
   );
 };
@@ -529,6 +554,13 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
       }
     : null;
 
+  const issueActivityEmpty = Boolean(
+    issueData &&
+    issueData.solved + issueData.openIssues + issueData.closedIssues === 0,
+  );
+
+  const prActivityEmpty = (minerStats.totalPrs || 0) === 0;
+
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
       <Card sx={{ p: 0, overflow: 'hidden' }}>
@@ -601,7 +633,10 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
               }}
             >
               {issueRadarValues && (
-                <IssuePerformanceRadar {...issueRadarValues} />
+                <IssuePerformanceRadar
+                  {...issueRadarValues}
+                  isEmpty={issueActivityEmpty}
+                />
               )}
             </Grid>
           </Grid>
@@ -669,7 +704,12 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
                 justifyContent: 'center',
               }}
             >
-              {prRadarValues && <PerformanceRadar {...prRadarValues} />}
+              {prRadarValues && (
+                <PerformanceRadar
+                  {...prRadarValues}
+                  isActivityEmpty={prActivityEmpty}
+                />
+              )}
             </Grid>
           </Grid>
         )}

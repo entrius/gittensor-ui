@@ -1,4 +1,10 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Card,
   CardContent,
@@ -96,6 +102,11 @@ const COMMIT_STATUS_META: Record<
     color: theme.palette.status.closed,
   },
 };
+
+/** Remaining scroll distance (px) at which the next page starts loading. */
+const SCROLL_BOTTOM_BUFFER_PX = 80;
+/** Debounce delay (ms) for the scroll handler to avoid hammering on fast scroll. */
+const SCROLL_DEBOUNCE_MS = 120;
 
 const COMMIT_STATUS_FILTERS: CommitStatusFilter[] = [
   'all',
@@ -394,7 +405,8 @@ const LiveCommitLog: React.FC = () => {
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const [, setRelativeTimeTick] = useState(0);
   const logContainerRef = useRef<HTMLDivElement>(null);
-  const loadMoreRef = useRef<HTMLAnchorElement>(null);
+  const fetchInFlightRef = useRef(false);
+  const scrollDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const id = window.setInterval(
@@ -402,6 +414,15 @@ const LiveCommitLog: React.FC = () => {
       60_000,
     );
     return () => window.clearInterval(id);
+  }, []);
+
+  // Clear any pending debounced scroll check on unmount.
+  useEffect(() => {
+    return () => {
+      if (scrollDebounceRef.current !== null) {
+        clearTimeout(scrollDebounceRef.current);
+      }
+    };
   }, []);
 
   const apiCommits = useMemo<CommitLogEntry[]>(
@@ -460,28 +481,52 @@ const LiveCommitLog: React.FC = () => {
   const showWaitingForActivity = !showInitialLoading && !hasAnyEntries;
   const showFilteredEmptyState = hasAnyEntries && visibleEntries.length === 0;
 
-  // Intersection observer for infinite scroll
+  // If the first page doesn't fill the container there is no scroll event to
+  // trigger pagination. Check after each render and fetch the next page when
+  // the container has no overflow yet.
   useEffect(() => {
-    const scrollContainer = logContainerRef.current;
-    const loadMoreElement = loadMoreRef.current;
-    if (!scrollContainer || !loadMoreElement) return;
+    const el = logContainerRef.current;
+    if (!el || !hasNextPage || isFetchingNextPage || fetchInFlightRef.current)
+      return;
+    if (el.scrollHeight <= el.clientHeight) {
+      fetchInFlightRef.current = true;
+      void fetchNextPage().finally(() => {
+        fetchInFlightRef.current = false;
+      });
+    }
+  }, [visibleEntries, hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0].isIntersecting && hasNextPage && !isFetchingNextPage) {
-          fetchNextPage();
-        }
-      },
-      {
-        root: scrollContainer,
-        threshold: 0.1,
-      },
-    );
+  const handleScroll = useCallback(
+    (event: React.UIEvent<HTMLDivElement>) => {
+      const el = event.currentTarget;
 
-    observer.observe(loadMoreElement);
+      // Debounce: clear any pending check and reschedule
+      if (scrollDebounceRef.current !== null) {
+        clearTimeout(scrollDebounceRef.current);
+      }
 
-    return () => observer.disconnect();
-  }, [fetchNextPage, hasNextPage, isFetchingNextPage, visibleEntries.length]);
+      scrollDebounceRef.current = setTimeout(() => {
+        scrollDebounceRef.current = null;
+
+        // Only trigger when within the buffer distance of the bottom.
+        // Using a fixed pixel value is intentional: a percentage would shift
+        // upward as new pages load (growing scrollHeight) and could re-fire
+        // before the user scrolls further down.
+        const distanceFromBottom =
+          el.scrollHeight - el.scrollTop - el.clientHeight;
+        if (distanceFromBottom > SCROLL_BOTTOM_BUFFER_PX) return;
+
+        if (!hasNextPage || isFetchingNextPage || fetchInFlightRef.current)
+          return;
+
+        fetchInFlightRef.current = true;
+        void fetchNextPage().finally(() => {
+          fetchInFlightRef.current = false;
+        });
+      }, SCROLL_DEBOUNCE_MS);
+    },
+    [fetchNextPage, hasNextPage, isFetchingNextPage],
+  );
 
   return (
     <Card
@@ -633,6 +678,7 @@ const LiveCommitLog: React.FC = () => {
         ) : (
           <Box
             ref={logContainerRef}
+            onScroll={handleScroll}
             sx={{
               flex: 1,
               overflowY: 'auto',
@@ -681,8 +727,6 @@ const LiveCommitLog: React.FC = () => {
                 })}
               </Stack>
             )}
-
-            <Box ref={loadMoreRef} sx={{ height: 1 }} />
 
             {isFetchingNextPage && (
               <Box sx={{ display: 'flex', justifyContent: 'center', p: 2 }}>

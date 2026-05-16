@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Avatar,
@@ -29,6 +29,7 @@ import { CHART_COLORS, CREDIBILITY_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc, parseNumber } from '../../utils';
 import { formatAlphaToUsd, formatTokenAmount } from '../../utils/format';
 import { usePrices } from '../../hooks/usePrices';
+import { useFiltersPanelOpenInUrl } from '../../hooks/useFiltersPanelUrlState';
 
 type FilterType = 'all' | 'available' | 'pending' | 'history';
 
@@ -156,7 +157,7 @@ const useTopBountyHunters = (
 
 const FilterSection: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useFiltersPanelOpenInUrl();
 
   const filterType = useMemo<FilterType>(() => {
     const f = searchParams.get('filter');
@@ -181,7 +182,7 @@ const FilterSection: React.FC = () => {
       <Box
         component="button"
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(!open)}
         sx={(t) => ({
           display: 'flex',
           alignItems: 'center',

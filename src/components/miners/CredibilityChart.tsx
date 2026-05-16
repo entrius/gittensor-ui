@@ -6,6 +6,10 @@ import {
   echartsItemTooltipChrome,
   echartsTransparentBackground,
 } from '../../utils/echarts/gittensorChartTheme';
+import {
+  ChartEmptyPanel,
+  chartNumericSeriesHasPositive,
+} from '../common/ChartEmptyPanel';
 
 interface CredibilityChartProps {
   merged: number;
@@ -29,6 +33,7 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
   const chartClosed = isDark
     ? CHART_COLORS.closed
     : theme.palette.status.closed;
+  const hasPrActivity = chartNumericSeriesHasPositive([merged, open, closed]);
 
   const chartOption = useMemo(
     () => ({
@@ -115,27 +120,33 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
         Credibility
       </Typography>
 
-      <Box sx={{ height: '190px', width: '100%', mb: 0.75 }}>
-        <ReactECharts
-          option={chartOption}
-          style={{ height: '100%', width: '100%' }}
-          opts={{ renderer: 'svg' }}
-        />
-      </Box>
-
-      {/* Stats Legend */}
-      <Box
-        sx={{
-          display: 'flex',
-          gap: 1.5,
-          justifyContent: 'center',
-          flexWrap: 'wrap',
-        }}
+      <ChartEmptyPanel
+        empty={!hasPrActivity}
+        minHeight={190}
+        title="No activity yet"
+        hint="Credibility appears once you have merged, open, or closed PRs in tracked repositories."
       >
-        <LegendItem label="Merged" value={merged} color={chartMerged} />
-        <LegendItem label="Open" value={open} color={chartOpen} />
-        <LegendItem label="Closed" value={closed} color={chartClosed} />
-      </Box>
+        <Box sx={{ height: '190px', width: '100%', mb: 0.75 }}>
+          <ReactECharts
+            option={chartOption}
+            style={{ height: '100%', width: '100%' }}
+            opts={{ renderer: 'svg' }}
+          />
+        </Box>
+
+        <Box
+          sx={{
+            display: 'flex',
+            gap: 1.5,
+            justifyContent: 'center',
+            flexWrap: 'wrap',
+          }}
+        >
+          <LegendItem label="Merged" value={merged} color={chartMerged} />
+          <LegendItem label="Open" value={open} color={chartOpen} />
+          <LegendItem label="Closed" value={closed} color={chartClosed} />
+        </Box>
+      </ChartEmptyPanel>
     </Box>
   );
 };

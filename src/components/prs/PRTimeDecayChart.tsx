@@ -120,11 +120,20 @@ function formatTooltipBody(
   mutedHex: string,
 ): string {
   const header = `<div style="font-weight:600;margin-bottom:2px">Day ${day.toFixed(1)}</div>`;
-  const multiplierLine = `<div><span style="color:${mutedHex}">Multiplier</span> <b>${multiplier.toFixed(2)}×</b></div>`;
-  if (preDecayScore == null) return header + multiplierLine;
-  const score = preDecayScore * multiplier;
-  const scoreLine = `<div style="margin-top:2px"><span style="color:${mutedHex}">Score</span> <b>${score.toFixed(2)}</b></div>`;
-  return header + multiplierLine + scoreLine;
+  const multVal = `${multiplier.toFixed(2)}×`;
+  const metricRow = (label: string, value: string, topPad: boolean) =>
+    '<tr>' +
+    `<td style="color:${mutedHex};padding:${topPad ? '4px' : '0'} 10px 0 0;vertical-align:baseline;white-space:nowrap">${label}</td>` +
+    `<td style="text-align:right;font-weight:600;padding:${topPad ? '4px' : '0'} 0 0 0;vertical-align:baseline;white-space:nowrap">${value}</td>` +
+    '</tr>';
+  const table =
+    '<table style="border-collapse:collapse;margin-top:2px;width:100%">' +
+    metricRow('Multiplier', multVal, false) +
+    (preDecayScore == null
+      ? ''
+      : metricRow('Score', (preDecayScore * multiplier).toFixed(2), true)) +
+    '</table>';
+  return header + table;
 }
 
 function buildTooltipFormatter(preDecayScore: number | null, mutedHex: string) {
