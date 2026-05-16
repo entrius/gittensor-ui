@@ -60,11 +60,6 @@ const formatTimeAgo = (date: Date): string => {
   return `${diffDays} days ago`;
 };
 
-function formatFollowersCount(count: number): string {
-  const noun = count === 1 ? 'follower' : 'followers';
-  return `${count} ${noun}`;
-}
-
 const openPrColor = (open: number, threshold: number) => {
   if (open >= threshold) return RISK_COLORS.exceeded;
   if (open >= threshold - 1) return RISK_COLORS.critical;
@@ -601,7 +596,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               <Chip
                 variant="info"
                 icon={<FollowersIcon />}
-                label={formatFollowersCount(githubData.followers)}
+                label={`${githubData.followers} followers`}
                 size="small"
                 sx={{ display: { xs: 'none', sm: 'inline-flex' } }}
               />
@@ -620,7 +615,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           color: (t) => alpha(t.palette.text.primary, 0.5),
         }}
       >
-        {formatFollowersCount(githubData?.followers ?? 0)}
+        {githubData?.followers ?? 0} follower(s)
         {minerStats.updatedAt
           ? ` • Updated ${formatTimeAgo(new Date(minerStats.updatedAt))}`
           : ''}
