@@ -405,34 +405,19 @@ uv pip install -e .`}</CodeBlock>
                   `linear-gradient(180deg, ${alpha(t.palette.primary.main, 0.06)} 0%, transparent 100%)`,
               }}
             >
-              <Box
-                sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 1 }}
+              <Typography
+                sx={{
+                  fontFamily: MONO,
+                  fontSize: '0.6rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.18em',
+                  color: 'primary.main',
+                  textTransform: 'uppercase',
+                  mb: 1,
+                }}
               >
-                <Typography
-                  sx={{
-                    fontFamily: MONO,
-                    fontSize: '1.4rem',
-                    fontWeight: 800,
-                    color: 'primary.main',
-                    letterSpacing: '-0.03em',
-                    lineHeight: 1,
-                  }}
-                >
-                  30%
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: MONO,
-                    fontSize: '0.6rem',
-                    fontWeight: 600,
-                    letterSpacing: '0.18em',
-                    color: 'text.secondary',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  emissions
-                </Typography>
-              </Box>
+                OSS Path
+              </Typography>
               <Typography
                 sx={{
                   fontSize: '1rem',
@@ -476,34 +461,19 @@ uv pip install -e .`}</CodeBlock>
                 background: `linear-gradient(180deg, ${alpha(STATUS_COLORS.warning, 0.06)} 0%, transparent 100%)`,
               }}
             >
-              <Box
-                sx={{ display: 'flex', alignItems: 'baseline', gap: 1, mb: 1 }}
+              <Typography
+                sx={{
+                  fontFamily: MONO,
+                  fontSize: '0.6rem',
+                  fontWeight: 600,
+                  letterSpacing: '0.18em',
+                  color: STATUS_COLORS.warning,
+                  textTransform: 'uppercase',
+                  mb: 1,
+                }}
               >
-                <Typography
-                  sx={{
-                    fontFamily: MONO,
-                    fontSize: '1.4rem',
-                    fontWeight: 800,
-                    color: STATUS_COLORS.warning,
-                    letterSpacing: '-0.03em',
-                    lineHeight: 1,
-                  }}
-                >
-                  10%
-                </Typography>
-                <Typography
-                  sx={{
-                    fontFamily: MONO,
-                    fontSize: '0.6rem',
-                    fontWeight: 600,
-                    letterSpacing: '0.18em',
-                    color: 'text.secondary',
-                    textTransform: 'uppercase',
-                  }}
-                >
-                  emissions
-                </Typography>
-              </Box>
+                Discovery Path
+              </Typography>
               <Typography
                 sx={{
                   fontSize: '1rem',
@@ -554,10 +524,6 @@ uv pip install -e .`}</CodeBlock>
             </li>
             <li>
               Find open bounties in the <strong>Bounties</strong> tab
-            </li>
-            <li>
-              See the <strong>Scoring</strong> tab for how rewards are
-              calculated
             </li>
           </Box>
         </Box>

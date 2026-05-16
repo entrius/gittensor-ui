@@ -1,7 +1,7 @@
 import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { useLinkBehavior } from '../common/linkBehavior';
-import { OnboardingCard } from '../onboarding-card';
+import { OnboardingCard } from '..';
 
 export const AboutContent: React.FC = () => {
   const minerGuide = useLinkBehavior<HTMLAnchorElement>(
