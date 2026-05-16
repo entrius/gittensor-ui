@@ -12,9 +12,11 @@ import { Outlet, useLocation } from 'react-router-dom';
 import MenuIcon from '@mui/icons-material/Menu';
 import { LoadingPage } from '../../pages';
 import useOnNavigate from '../../hooks/useOnNavigate';
+import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import { Sidebar } from '..';
 import ErrorBoundary from '../ErrorBoundary';
 import GlobalSearchBar from './GlobalSearchBar';
+import ShortcutsHelpDialog from './ShortcutsHelpDialog';
 import theme, { scrollbarSx } from '../../theme';
 import { getRouteForPathname } from '../../routes';
 
@@ -30,6 +32,7 @@ const AppLayout: React.FC = () => {
   const isCompactDesktop = useMediaQuery(theme.breakpoints.down('lg'));
   const isDesktopSidebarCollapsed = !isMobile && isCompactDesktop;
   const [mobileOpen, setMobileOpen] = useState(false);
+  const { isHelpOpen, closeHelp, shortcuts } = useKeyboardShortcuts();
   const shouldShowGlobalSearch = Boolean(
     getRouteForPathname(location.pathname)?.showGlobalSearch,
   );
@@ -149,7 +152,9 @@ const AppLayout: React.FC = () => {
           flexDirection: 'column',
           px: { xs: 1, sm: 2, md: 3 },
           ...scrollbarSx,
-          alignItems: { xs: 'stretch', md: 'center' },
+          // Stretch cross-axis so routed pages keep width (`center` collapses `width:100%` children on md+).
+          alignItems: 'stretch',
+          minHeight: 0,
         }}
       >
         <Suspense fallback={<LoadingPage />}>
@@ -173,10 +178,27 @@ const AppLayout: React.FC = () => {
             </Box>
           )}
           <ErrorBoundary variant="inline" resetKey={location.pathname}>
-            <Outlet />
+            <Box
+              sx={{
+                width: '100%',
+                maxWidth: '100%',
+                minWidth: 0,
+                minHeight: 0,
+                flex: '1 1 auto',
+                display: 'flex',
+                flexDirection: 'column',
+              }}
+            >
+              <Outlet />
+            </Box>
           </ErrorBoundary>
         </Suspense>
       </Box>
+      <ShortcutsHelpDialog
+        open={isHelpOpen}
+        shortcuts={shortcuts}
+        onClose={closeHelp}
+      />
     </Box>
   );
 };

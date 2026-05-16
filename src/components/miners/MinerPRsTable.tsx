@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 import {
   Avatar,
   Box,
@@ -29,12 +35,23 @@ import {
 } from '../../components/common/DataTable';
 import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import { WatchlistButton } from '../../components/common';
-import { serializePRKey } from '../../hooks/useWatchlist';
-import TablePagination from './TablePagination';
+import {
+  comparePRsByWatchlist,
+  serializePRKey,
+  useWatchlist,
+} from '../../hooks/useWatchlist';
+import TablePagination from '../common/TablePagination';
 import { tooltipSlotProps } from '../../theme';
 
-type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
+type PrSortField =
+  | 'number'
+  | 'repository'
+  | 'score'
+  | 'lines'
+  | 'date'
+  | 'watch';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
@@ -54,6 +71,7 @@ const DEFAULT_SORT_DIR: Record<PrSortField, SortDir> = {
   score: 'desc',
   lines: 'desc',
   date: 'desc',
+  watch: 'desc',
 };
 
 // Mirrors the Score cell's render logic so clicking the Score header
@@ -90,6 +108,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
+  const { isWatched } = useWatchlist('prs');
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
@@ -121,6 +140,24 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       );
     },
     [page, setSearchParams],
+  );
+
+  // Ref lets the callback read the latest searchQuery without closing over
+  // it (which would re-fire the wrapper's debounce effect on every commit).
+  const searchQueryRef = useRef(searchQuery);
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  });
+
+  // Skip when the wrapper fires with the already-committed value (mount + the
+  // [githubId] reset above) so a deep-linked `?prPage=N` survives.
+  const handleDebouncedSearch = useCallback(
+    (next: string) => {
+      if (next === searchQueryRef.current) return;
+      setSearchQuery(next);
+      setPage(0);
+    },
+    [setPage],
   );
 
   const setStatusFilter = useCallback(
@@ -187,11 +224,14 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           cmp = da.localeCompare(db);
           break;
         }
+        case 'watch':
+          cmp = comparePRsByWatchlist(a, b, isWatched);
+          break;
       }
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return sorted;
-  }, [filteredPRs, sortField, sortDir]);
+  }, [filteredPRs, sortField, sortDir, isWatched]);
 
   const pagedPRs = useMemo(
     () => paginateItems(sortedPRs, page, PAGE_SIZE),
@@ -426,6 +466,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       header: '★',
       width: '8%',
       align: 'center',
+      sortKey: 'watch',
       renderCell: (pr) => (
         <WatchlistButton
           category="prs"
@@ -547,51 +588,52 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         </Box>
       </Box>
 
-      <TextField
-        size="small"
-        placeholder="Search by title, repo, or PR number..."
-        value={searchQuery}
-        onChange={(e) => {
-          setSearchQuery(e.target.value);
-          setPage(0);
-        }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon
-                sx={{
-                  color: (t) => alpha(t.palette.text.primary, 0.3),
-                  fontSize: '1rem',
-                }}
-              />
-            </InputAdornment>
-          ),
-          endAdornment: (
-            <ClearSearchAdornment
-              visible={Boolean(searchQuery)}
-              onClear={() => {
-                setSearchQuery('');
-                setPage(0);
-              }}
-            />
-          ),
-        }}
-        sx={{
-          mt: 2,
-          width: { xs: '100%', sm: 'auto' },
-          maxWidth: { xs: '100%', sm: 400 },
-          minWidth: { xs: 0, sm: 350 },
-          '& .MuiOutlinedInput-root': {
-            fontSize: '0.8rem',
-            color: 'text.primary',
-            backgroundColor: 'surface.subtle',
-            borderRadius: 2,
-            '& fieldset': { borderColor: 'border.light' },
-            '&:hover fieldset': { borderColor: 'border.medium' },
-            '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-          },
-        }}
-      />
+      <DebouncedSearchInput
+        initialDraft={searchQuery}
+        onDebouncedChange={handleDebouncedSearch}
+      >
+        {({ draftValue, setDraftValue }) => (
+          <TextField
+            size="small"
+            placeholder="Search by title, repo, or PR number..."
+            value={draftValue}
+            onChange={(e) => setDraftValue(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon
+                    sx={{
+                      color: (t) => alpha(t.palette.text.primary, 0.3),
+                      fontSize: '1rem',
+                    }}
+                  />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <ClearSearchAdornment
+                  visible={Boolean(draftValue)}
+                  onClear={() => setDraftValue('')}
+                />
+              ),
+            }}
+            sx={{
+              mt: 2,
+              width: { xs: '100%', sm: 'auto' },
+              maxWidth: { xs: '100%', sm: 400 },
+              minWidth: { xs: 0, sm: 350 },
+              '& .MuiOutlinedInput-root': {
+                fontSize: '0.8rem',
+                color: 'text.primary',
+                backgroundColor: 'surface.subtle',
+                borderRadius: 2,
+                '& fieldset': { borderColor: 'border.light' },
+                '&:hover fieldset': { borderColor: 'border.medium' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+              },
+            }}
+          />
+        )}
+      </DebouncedSearchInput>
     </Box>
   );
 

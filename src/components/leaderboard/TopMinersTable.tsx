@@ -26,6 +26,11 @@ import { MinerCard } from './MinerCard';
 import { MinersList } from './MinersList';
 import theme, { STATUS_COLORS } from '../../theme';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
+import {
+  FILTERS_PANEL_QUERY_PARAM,
+  parseFiltersPanelOpen,
+  serializeFiltersPanelOpen,
+} from '../../hooks/useFiltersPanelUrlState';
 import { useWatchlist } from '../../hooks/useWatchlist';
 import { type SortOrder } from '../../utils/ExplorerUtils';
 import { compareByWatchlist } from '../../utils/watchlistSort';
@@ -113,6 +118,7 @@ type EligibilityFilter = 'all' | 'eligible' | 'ineligible';
 type TopMinersUrlFilters = {
   view: ViewMode;
   search: string;
+  filtersOpen: boolean;
   /** OSS Contributions / Discoveries: single toggle. Inactive on watchlist (always `all`). */
   eligible: EligibilityFilter;
   /** Watchlist OSS column. Inactive on other variants (always `all`). */
@@ -241,6 +247,12 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
         parse: (raw: string | null): string => raw ?? '',
         serialize: (value: string): string | null => value.trim() || null,
       },
+      filtersOpen: {
+        paramKey: FILTERS_PANEL_QUERY_PARAM,
+        parse: parseFiltersPanelOpen,
+        serialize: serializeFiltersPanelOpen,
+        resetPageOnChange: false,
+      },
       eligible:
         variant === 'watchlist'
           ? inactiveEligibilitySlot('minersEligibleUnusedLegacy')
@@ -276,6 +288,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
   const viewMode = filters.view;
   const searchQuery = filters.search;
+  const filtersOpen = filters.filtersOpen;
   const eligibleOssFilter: EligibilityFilter =
     variant === 'watchlist' ? filters.eligibleOss : filters.eligible;
   const eligibleDiscoveryFilter: EligibilityFilter =
@@ -297,6 +310,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       setFilter('view', nextMode);
     },
     [setFilter, variant],
+  );
+
+  const handleFiltersOpenChange = useCallback(
+    (nextOpen: boolean) => setFilter('filtersOpen', nextOpen),
+    [setFilter],
   );
 
   const handleEligibleOssChange = useCallback(
@@ -486,6 +504,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             eligibleDiscoveryFilter={eligibleDiscoveryFilter}
             onEligibleOssChange={handleEligibleOssChange}
             onEligibleDiscoveryChange={handleEligibleDiscoveryChange}
+            open={filtersOpen}
+            onOpenChange={handleFiltersOpenChange}
           />
         </Portal>
       ) : (
@@ -1031,9 +1051,16 @@ const sidebarLabelSx = {
   mb: 1,
 } as const;
 
-const ToolbarSidebarPanel: React.FC<ToolbarPopoverProps> = (props) => {
-  const [open, setOpen] = useState(false);
+type ToolbarSidebarPanelProps = ToolbarPopoverProps & {
+  open: boolean;
+  onOpenChange: (nextOpen: boolean) => void;
+};
 
+const ToolbarSidebarPanel: React.FC<ToolbarSidebarPanelProps> = ({
+  open,
+  onOpenChange,
+  ...props
+}) => {
   const defaultOssFilter = props.variant === 'watchlist' ? 'all' : 'eligible';
   const hasActiveFilter =
     props.eligibleOssFilter !== defaultOssFilter ||
@@ -1045,7 +1072,7 @@ const ToolbarSidebarPanel: React.FC<ToolbarPopoverProps> = (props) => {
       <Box
         component="button"
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => onOpenChange(!open)}
         sx={(t) => ({
           display: 'flex',
           alignItems: 'center',
