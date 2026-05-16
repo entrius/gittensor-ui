@@ -9,7 +9,6 @@
  */
 import {
   type CommitLog,
-  type CommitsTrend,
   type MinerEvaluation,
   type MirrorDashboardIssue,
   type Repository,
@@ -636,7 +635,7 @@ export const buildDashboardOverview = (
 export const buildDashboardKpis = (
   prs: CommitLog[],
   issues: MirrorDashboardIssue[],
-  linesHistTrend: CommitsTrend[],
+  totalLinesCommitted: number,
   range: TrendTimeRange,
   now = new Date(),
 ): DashboardKpi[] => {
@@ -653,9 +652,6 @@ export const buildDashboardKpis = (
     0,
   );
   const totalIssuesSolved = solvedIssues.length;
-  const totalLinesCommitted = linesHistTrend
-    .filter((entry) => isWithinWindow(toTimestamp(entry.date), window))
-    .reduce((sum, entry) => sum + parseNumber(entry.linesCommitted), 0);
   const totalRepositories = new Set(
     mergedWindowPrs.map((pr) => pr.repository).filter(Boolean),
   ).size;
