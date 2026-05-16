@@ -17,6 +17,10 @@ export interface MinerStats {
   linesDeleted: number;
   hotkey: string;
   rank?: number;
+  /** Position in the current filtered subset (1-indexed). Only populated
+   *  when a search or eligibility filter is active, so the UI layer can
+   *  show a "· N in view" indicator beside the global rank. */
+  viewRank?: number;
   uniqueReposCount?: number;
   credibility?: number;
   isEligible?: boolean;
