@@ -16,7 +16,7 @@ import { isRepoTracked } from '../api';
 import { useLinkBehavior } from '../components/common/linkBehavior';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
-import { extractRepoFullName } from '../utils/githubRepoUrl';
+import { extractRepoFullName } from '../utils';
 
 type VerifyResult =
   | { tracked: true }
