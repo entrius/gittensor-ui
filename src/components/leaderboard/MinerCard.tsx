@@ -3,7 +3,7 @@ import { Box, Card, Typography, Avatar, Tooltip } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
-import { CHART_COLORS, STATUS_COLORS } from '../../theme';
+import { CHART_COLORS, RANK_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import { WatchlistButton } from '../common';
@@ -103,12 +103,14 @@ export const MinerCard: React.FC<MinerCardProps> = ({
 
   const rank = miner.rank;
   const isTopRank = !!rank && rank > 0 && rank <= 3;
-  const RANK_COLORS: Record<number, string> = {
-    1: '#FFD700',
-    2: '#C0C0C0',
-    3: '#CD7F32',
-  };
-  const rankColor = rank ? RANK_COLORS[rank] : undefined;
+  const rankColor =
+    rank === 1
+      ? RANK_COLORS.first
+      : rank === 2
+        ? RANK_COLORS.second
+        : rank === 3
+          ? RANK_COLORS.third
+          : undefined;
   const segments = getSegments(miner, variant);
 
   return (
@@ -126,7 +128,6 @@ export const MinerCard: React.FC<MinerCardProps> = ({
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
-        opacity: isEligible ? 1 : 0.6,
         overflow: 'hidden',
         transition:
           'background-color 0.22s ease, border-color 0.22s ease, transform 0.22s ease, box-shadow 0.22s ease',
@@ -343,7 +344,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
               fontFeatureSettings: TABULAR_NUMS,
             })}
           >
-            ${Math.round((miner.usdPerDay || 0) * 30).toLocaleString()} / month
+            ~${Math.round((miner.usdPerDay || 0) * 30).toLocaleString()}/mo
           </Typography>
         </Box>
 
@@ -395,7 +396,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
           segments={segments}
           scoreLabel={variant === 'watchlist' ? 'OSS' : 'Total Score'}
           scoreValue={Number(miner.totalScore)}
-          isEligible={isEligible}
+          isEligible={isDiscoveries ? discoveriesEligible : ossEligible}
         />
 
         {variant === 'watchlist' && (
@@ -404,7 +405,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             segments={getIssueSegments(miner)}
             scoreLabel="Discovery"
             scoreValue={Number(miner.issueDiscoveryScore ?? 0)}
-            isEligible={isEligible}
+            isEligible={discoveriesEligible}
             divider
           />
         )}
@@ -700,7 +701,7 @@ const CredDonut: React.FC<CredDonutProps> = ({
             </Typography>
           </Box>
         </Tooltip>
-        {label && (
+        {caption && (
           <Typography
             sx={(theme) => ({
               fontFamily: FONTS.mono,
@@ -711,7 +712,7 @@ const CredDonut: React.FC<CredDonutProps> = ({
               letterSpacing: '0.04em',
             })}
           >
-            {label}
+            {caption}
           </Typography>
         )}
       </Box>
