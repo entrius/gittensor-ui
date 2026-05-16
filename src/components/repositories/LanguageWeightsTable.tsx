@@ -21,6 +21,7 @@ import TableChartIcon from '@mui/icons-material/TableChart';
 import { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { useLanguagesAndWeights } from '../../api';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import { ChartEmptyPanel } from '../common/ChartEmptyPanel';
 import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import {
   echartsAxisTooltipChrome,
@@ -452,12 +453,20 @@ const LanguageWeightsTable: React.FC = () => {
             backgroundColor: alpha(theme.palette.common.black, 0.2),
           }}
         >
-          {showChart && paginatedLanguages.length > 0 && (
-            <ReactECharts
-              option={chartOption}
-              style={{ height: '100%', width: '100%' }}
-            />
-          )}
+          {showChart &&
+            (paginatedLanguages.length > 0 ? (
+              <ReactECharts
+                option={chartOption}
+                style={{ height: '100%', width: '100%' }}
+              />
+            ) : (
+              <ChartEmptyPanel
+                empty
+                minHeight="100%"
+                title="No language data to chart"
+                hint="Language weights appear when subnet language statistics are available for this view."
+              />
+            ))}
         </Box>
       </Collapse>
 
