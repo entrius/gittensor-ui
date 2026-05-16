@@ -111,17 +111,10 @@ export const MinerCard: React.FC<MinerCardProps> = ({
   const rankColor = rank ? RANK_COLORS[rank] : undefined;
   const segments = getSegments(miner, variant);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLAnchorElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    e.currentTarget.style.setProperty('--mx', `${e.clientX - rect.left}px`);
-    e.currentTarget.style.setProperty('--my', `${e.clientY - rect.top}px`);
-  };
-
   return (
     <Card
       component="a"
       {...linkProps}
-      onMouseMove={handleMouseMove}
       sx={(theme) => ({
         ...linkResetSx,
         position: 'relative',
@@ -164,20 +157,6 @@ export const MinerCard: React.FC<MinerCardProps> = ({
               zIndex: 2,
             }
           : undefined,
-        /* cursor-tracking green spotlight */
-        '&::after': {
-          content: '""',
-          position: 'absolute',
-          inset: 0,
-          background: `radial-gradient(440px circle at var(--mx, 50%) var(--my, 50%), ${alpha(theme.palette.status.merged, 0.14)} 0%, ${alpha(theme.palette.status.merged, 0.04)} 22%, transparent 55%)`,
-          opacity: 0,
-          transition: 'opacity 0.35s ease',
-          pointerEvents: 'none',
-          zIndex: 0,
-        },
-        '&:hover::after': {
-          opacity: 1,
-        },
         '& > *': {
           position: 'relative',
           zIndex: 1,
