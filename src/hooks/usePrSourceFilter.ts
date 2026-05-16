@@ -12,7 +12,7 @@ const ALL_SOURCES_SET: ReadonlySet<WatchedPRSource> = new Set(ALL_SOURCES);
 const isSource = (v: unknown): v is WatchedPRSource =>
   v === 'starred' || v === 'miner' || v === 'repo';
 
-export const parseSourceFilter = (raw: unknown): Set<WatchedPRSource> => {
+const parseSourceFilter = (raw: unknown): Set<WatchedPRSource> => {
   if (typeof raw !== 'string') return new Set(ALL_SOURCES);
   let parsed: unknown;
   try {
