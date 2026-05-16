@@ -35,6 +35,12 @@ export const useReposAndWeights = () =>
 export const useLanguagesAndWeights = () =>
   useDashboardQuery<LanguageWeight[]>('useLanguagesAndWeights', '/languages');
 
+export const useLinesTotal = (params: { from: string; to: string }) =>
+  useDashboardQuery<number>('useLinesTotal', '/lines/total', undefined, {
+    from: params.from,
+    to: params.to,
+  });
+
 export const useInfiniteCommitLog = (options?: {
   refetchInterval?: number;
 }) => {

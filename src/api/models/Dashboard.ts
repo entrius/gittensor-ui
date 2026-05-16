@@ -34,11 +34,6 @@ export type LanguageWeight = {
   language: string | null; // Canonical language name (e.g., "python" for .py, .pyi)
 };
 
-export type CommitsTrend = {
-  date: string;
-  linesCommitted: number | string; // API returns string, needs conversion
-};
-
 /**
  * Dashboard statistics
  *
