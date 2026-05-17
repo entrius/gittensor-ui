@@ -72,6 +72,7 @@ import {
   useIssues,
   useAllPrs,
   useMinersIssues,
+  MINER_ISSUES_FULL_HISTORY_SINCE_ISO,
 } from '../api';
 import { useFiltersPanelOpenInUrl } from '../hooks/useFiltersPanelUrlState';
 import type {
@@ -4302,7 +4303,11 @@ const IssueCard: React.FC<{
 };
 
 const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
-  const issueQueries = useMinersIssues(minerIds, minerIds.length > 0);
+  const issueQueries = useMinersIssues(
+    minerIds,
+    minerIds.length > 0,
+    MINER_ISSUES_FULL_HISTORY_SINCE_ISO,
+  );
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
 
   const { ids: starredIssueIds } = useWatchlist('issues');

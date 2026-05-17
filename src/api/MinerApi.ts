@@ -95,13 +95,14 @@ export const useMinerIssues = (githubId: string, enabled?: boolean) =>
     },
   );
 
+/** Subnet-launch `since` (2025-12-01 UTC). Module-level keeps the cache key stable. */
+export const MINER_ISSUES_FULL_HISTORY_SINCE_ISO = new Date(
+  Date.UTC(2025, 11, 1, 0, 0, 0),
+).toISOString();
+
 /**
- * Fan-out variant: one mirror-API call per miner, useful for the watchlist
- * and the dashboard issues-trend aggregation.
- *
- * `since` (ISO timestamp) is forwarded to the mirror as a query param. Omit
- * for the mirror's default 35-day window — this also keeps the cache key
- * stable across callers that don't need a custom range.
+ * One mirror call per miner. ⚠️ Omitting `since` returns OPEN-only rows —
+ * pass `MINER_ISSUES_FULL_HISTORY_SINCE_ISO` to include closed/resolved.
  */
 export const useMinersIssues = (
   githubIds: string[],
