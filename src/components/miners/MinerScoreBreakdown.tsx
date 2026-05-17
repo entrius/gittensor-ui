@@ -1198,7 +1198,7 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
     </DebouncedSearchInput>
   );
 
-  if (isLoading || !prs || prs.length === 0) return null;
+  if (isLoading || !prs) return null;
 
   return (
     <Card sx={{ p: 0, overflow: 'hidden' }} elevation={0}>
