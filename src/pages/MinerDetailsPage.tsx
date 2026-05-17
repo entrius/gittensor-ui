@@ -15,6 +15,7 @@ import {
   SEO,
 } from '../components';
 import { WatchlistButton } from '../components/common';
+import { useMinerStats } from '../api';
 
 type ViewMode = 'prs' | 'issues';
 
@@ -84,6 +85,13 @@ const MinerDetailsPage: React.FC = () => {
     setSearchParams(p, { replace: true });
   };
 
+  const { data: minerStats, isLoading: isLoadingMinerStats } = useMinerStats(
+    githubId ?? '',
+  );
+  // Only show the star once we've confirmed the miner exists — otherwise
+  // users can pin phantom entries via /miners/details?githubId=<anything>.
+  const minerExists = !isLoadingMinerStats && !!minerStats;
+
   if (!githubId) {
     return <Navigate to="/top-miners" replace />;
   }
@@ -131,11 +139,13 @@ const MinerDetailsPage: React.FC = () => {
               }}
             >
               <BackButton to="/top-miners" mb={0} />
-              <WatchlistButton
-                category="miners"
-                itemKey={githubId}
-                size="medium"
-              />
+              {minerExists && (
+                <WatchlistButton
+                  category="miners"
+                  itemKey={githubId}
+                  size="medium"
+                />
+              )}
             </Box>
             <Box
               sx={{
