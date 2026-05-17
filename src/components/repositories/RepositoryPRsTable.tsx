@@ -364,10 +364,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'pullRequestNumber',
       header: 'PR #',
-<<<<<<< HEAD
       width: 88,
-=======
->>>>>>> 23aa500 (refactor(pr-table): streamline filtering logic and improve readability in RepositoryPRsTable component)
       sortKey: 'pullRequestNumber',
       renderCell: (pr) => (
         // Native <a> to GitHub — `onRowClick` (no row-as-anchor) keeps this valid HTML.
@@ -389,10 +386,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'pullRequestTitle',
       header: 'Title',
-<<<<<<< HEAD
       width: 320,
-=======
->>>>>>> 23aa500 (refactor(pr-table): streamline filtering logic and improve readability in RepositoryPRsTable component)
       sortKey: 'pullRequestTitle',
       renderCell: (pr) => (
         <ScrollAwareTooltip
@@ -403,11 +397,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         >
           <Box
             sx={{
-<<<<<<< HEAD
               maxWidth: '100%',
-=======
-              maxWidth: 300,
->>>>>>> 23aa500 (refactor(pr-table): streamline filtering logic and improve readability in RepositoryPRsTable component)
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -421,18 +411,12 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'author',
       header: 'Author',
-<<<<<<< HEAD
       width: 180,
       sortKey: 'author',
       renderCell: (pr) => (
         <Box
           sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
         >
-=======
-      sortKey: 'author',
-      renderCell: (pr) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
->>>>>>> 23aa500 (refactor(pr-table): streamline filtering logic and improve readability in RepositoryPRsTable component)
           <Avatar
             src={getRepositoryOwnerAvatarSrc(pr.author)}
             alt={pr.author}
@@ -440,7 +424,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           />
           <Box
             component="span"
-<<<<<<< HEAD
             sx={{
               minWidth: 0,
               overflow: 'hidden',
@@ -448,9 +431,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
               whiteSpace: 'nowrap',
               wordBreak: 'keep-all',
             }}
-=======
-            sx={{ whiteSpace: 'nowrap', wordBreak: 'keep-all' }}
->>>>>>> 23aa500 (refactor(pr-table): streamline filtering logic and improve readability in RepositoryPRsTable component)
           >
             {pr.author}
           </Box>
@@ -460,10 +440,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'commitCount',
       header: 'Commits',
-<<<<<<< HEAD
       width: 104,
-=======
->>>>>>> 23aa500 (refactor(pr-table): streamline filtering logic and improve readability in RepositoryPRsTable component)
       align: 'right',
       sortKey: 'commitCount',
       renderCell: (pr) => pr.commitCount,
@@ -471,18 +448,11 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'lines',
       header: '+/-',
-<<<<<<< HEAD
       width: 120,
       align: 'right',
       sortKey: 'lines',
       renderCell: (pr) => (
         <Box component="span" sx={{ whiteSpace: 'nowrap' }}>
-=======
-      align: 'right',
-      sortKey: 'lines',
-      renderCell: (pr) => (
-        <>
->>>>>>> 23aa500 (refactor(pr-table): streamline filtering logic and improve readability in RepositoryPRsTable component)
           <Box
             component="span"
             sx={{ color: theme.palette.diff.additions, mr: 1 }}
@@ -492,20 +462,13 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           <Box component="span" sx={{ color: theme.palette.diff.deletions }}>
             -{pr.deletions}
           </Box>
-<<<<<<< HEAD
         </Box>
-=======
-        </>
->>>>>>> 23aa500 (refactor(pr-table): streamline filtering logic and improve readability in RepositoryPRsTable component)
       ),
     },
     {
       key: 'score',
       header: 'Score',
-<<<<<<< HEAD
       width: 112,
-=======
->>>>>>> 23aa500 (refactor(pr-table): streamline filtering logic and improve readability in RepositoryPRsTable component)
       align: 'right',
       sortKey: 'score',
       renderCell: (pr) => (
@@ -517,10 +480,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'status',
       header: 'Status',
-<<<<<<< HEAD
       width: 112,
-=======
->>>>>>> 23aa500 (refactor(pr-table): streamline filtering logic and improve readability in RepositoryPRsTable component)
       sortKey: 'status',
       renderCell: (pr) => {
         const state =
@@ -541,25 +501,15 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'mergedAt',
       header: 'Merged',
-<<<<<<< HEAD
       width: 120,
       align: 'right',
       sortKey: 'mergedAt',
       renderCell: (pr) => formatDate(pr.mergedAt),
-=======
-      align: 'right',
-      sortKey: 'mergedAt',
-      renderCell: (pr) =>
-        pr.mergedAt ? new Date(pr.mergedAt).toLocaleDateString() : '-',
->>>>>>> 23aa500 (refactor(pr-table): streamline filtering logic and improve readability in RepositoryPRsTable component)
     },
     {
       key: 'watch',
       header: '★',
-<<<<<<< HEAD
       width: 64,
-=======
->>>>>>> 23aa500 (refactor(pr-table): streamline filtering logic and improve readability in RepositoryPRsTable component)
       align: 'center',
       sortKey: 'watch',
       renderCell: (pr) => (
@@ -771,40 +721,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-<<<<<<< HEAD
-=======
-        // Restructure so only the body scrolls — the header sits above the
-        // scroll area, so the scrollbar never appears next to the header row.
-        '& .MuiTableContainer-root': {
-          overflow: 'visible',
-        },
-        '& .MuiTable-root': {
-          display: 'block',
-        },
-        '& .MuiTableHead-root': {
-          display: 'block',
-          // Reserve space matching the body's scrollbar gutter so columns line up.
-          paddingRight: theme.spacing(1),
-          backgroundColor: theme.palette.surface.tooltip,
-        },
-        '& .MuiTableHead-root .MuiTableRow-root': {
-          display: 'table',
-          tableLayout: 'fixed',
-          width: '100%',
-        },
-        '& .MuiTableBody-root': {
-          display: 'block',
-          maxHeight: 500,
-          overflowY: 'auto',
-          scrollbarGutter: 'stable',
-          ...scrollbarSx,
-        },
-        '& .MuiTableBody-root .MuiTableRow-root': {
-          display: 'table',
-          tableLayout: 'fixed',
-          width: '100%',
-        },
->>>>>>> 23aa500 (refactor(pr-table): streamline filtering logic and improve readability in RepositoryPRsTable component)
       }}
       elevation={0}
     >
