@@ -190,7 +190,7 @@ const IssueDetailsPage: React.FC = () => {
                 <IssueSubmissionsTable
                   submissions={submissions}
                   isLoading={isLoadingSubmissions}
-                  backLabel="Back"
+                  backLabel={`Back to Issue #${issue.issueNumber}`}
                 />
               )}
             </Box>

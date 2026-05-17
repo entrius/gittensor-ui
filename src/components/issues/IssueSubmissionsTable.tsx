@@ -87,7 +87,10 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
       },
       renderCell: (submission) =>
         submission.authorGithubId ? (
-          <span onClick={(e) => e.stopPropagation()}>
+          <span
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
+          >
             <LinkBox
               href={`/miners/details?githubId=${submission.authorGithubId}`}
               linkState={linkState}
@@ -363,11 +366,28 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   />
                   <Box>
                     {winnerSubmission.authorGithubId ? (
-                      <LinkBox
-                        component={Typography}
-                        href={`/miners/details?githubId=${winnerSubmission.authorGithubId}`}
-                        linkState={linkState}
-                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                      <Typography
+                        component="span"
+                        tabIndex={0}
+                        role="link"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          navigate(
+                            `/miners/details?githubId=${winnerSubmission.authorGithubId}`,
+                            { state: linkState },
+                          );
+                        }}
+                        onKeyDown={(e) => {
+                          e.stopPropagation();
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            navigate(
+                              `/miners/details?githubId=${winnerSubmission.authorGithubId}`,
+                              { state: linkState },
+                            );
+                          }
+                        }}
                         sx={{
                           fontSize: '0.92rem',
                           color: STATUS_COLORS.info,
@@ -376,7 +396,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                         }}
                       >
                         {winnerSubmission.authorLogin}
-                      </LinkBox>
+                      </Typography>
                     ) : (
                       <Typography
                         sx={{ fontSize: '0.92rem', color: STATUS_COLORS.info }}
