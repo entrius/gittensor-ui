@@ -188,8 +188,64 @@ export type CommitLog = {
   linkedIssues?: LinkedIssue[];
 };
 
-export type MinerEvaluation = {
+/**
+ * A single `miner_evaluations` row scoped to one repository.
+ *
+ * Eligibility is now per repository: `miner_evaluations` holds one row per
+ * (uid, hotkey, githubId, repositoryFullName). These raw rows are returned
+ * under `MinerEvaluation.repositories` by the single-miner endpoint.
+ */
+export type MinerRepositoryEvaluation = {
   id: number;
+  uid: number;
+  hotkey: string;
+  githubId: string;
+  repositoryFullName: string;
+  failedReason: string | null;
+  baseTotalScore: number;
+  totalScore: number;
+  totalCollateralScore: number;
+  totalNodesScored: number;
+  totalTokenScore: number;
+  totalStructuralCount: number;
+  totalStructuralScore: number;
+  totalLeafCount: number;
+  totalLeafScore: number;
+  totalOpenPrs: number;
+  totalClosedPrs: number;
+  totalMergedPrs: number;
+  totalPrs: number;
+  uniqueReposCount: number;
+  // Eligibility gate (per repository)
+  isEligible: boolean;
+  credibility: number;
+  // Issue discovery scoring (per repository)
+  issueDiscoveryScore: number;
+  issueTokenScore: number;
+  issueCredibility: number;
+  isIssueEligible: boolean;
+  totalSolvedIssues: number;
+  totalValidSolvedIssues: number;
+  totalClosedIssues: number;
+  totalOpenIssues: number;
+  // Timestamps
+  evaluatedAt: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
+/**
+ * Miner-level evaluation summary.
+ *
+ * Since `miner_evaluations` is now one-row-per-repository, both miner
+ * endpoints aggregate the per-repo rows:
+ * - `GET /miners` (leaderboard) SUMs additive score columns, takes BOOL_OR
+ *   for eligibility and MAX for credibility, and exposes per-repo eligible
+ *   counts. It does NOT return `id` or the `repositories` breakdown.
+ * - `GET /miners/:githubId` returns the same rollup PLUS the raw per-repo
+ *   rows under `repositories`.
+ */
+export type MinerEvaluation = {
   uid: number;
   hotkey: string;
   githubId: string;
@@ -204,14 +260,17 @@ export type MinerEvaluation = {
   totalCollateralScore?: number;
   totalClosedPrs?: number;
   totalMergedPrs?: number;
-  // Eligibility gate
+  // Eligibility gate — rolled up across repos: `isEligible` is true when the
+  // miner is eligible in at least one repo; `eligibleRepoCount` is how many.
   isEligible?: boolean;
   credibility?: number;
-  // Issue discovery scoring
+  eligibleRepoCount?: number;
+  // Issue discovery scoring (rolled up across repos, same semantics)
   issueDiscoveryScore?: number;
   issueTokenScore?: number;
   issueCredibility?: number;
   isIssueEligible?: boolean;
+  issueEligibleRepoCount?: number;
   totalSolvedIssues?: number;
   totalValidSolvedIssues?: number;
   totalClosedIssues?: number;
@@ -229,6 +288,9 @@ export type MinerEvaluation = {
   // Additional stats
   totalAdditions?: number;
   totalDeletions?: number;
+  // Per-repository breakdown — only present on the single-miner endpoint
+  // (`GET /miners/:githubId`), absent from the leaderboard (`GET /miners`).
+  repositories?: MinerRepositoryEvaluation[];
 
   alphaPerDay?: number;
   taoPerDay?: number;

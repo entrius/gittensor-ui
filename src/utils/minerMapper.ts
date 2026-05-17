@@ -6,7 +6,9 @@ export function mapIssueDiscoveryMinerStats(
   allMinersStats: MinerEvaluation[],
 ): MinerStats[] {
   return allMinersStats.map((stat) => ({
-    id: String(stat.id),
+    // The leaderboard endpoint aggregates per-repo evaluation rows and no
+    // longer returns a row `id`; `githubId` is unique per active miner.
+    id: stat.githubId || '',
     githubId: stat.githubId || '',
     author: stat.githubUsername || undefined,
     totalScore: parseNumber(stat.issueDiscoveryScore),
@@ -39,10 +41,10 @@ export function mapIssueDiscoveryMinerStats(
 export const mapAllMinersToStats = (
   allMinersStats: MinerEvaluation[],
 ): MinerStats[] => {
-  const rankById = new Map(
+  const rankByGithubId = new Map(
     [...allMinersStats]
       .sort((a, b) => Number(b.totalScore) - Number(a.totalScore))
-      .map((stat, index) => [String(stat.id), index + 1]),
+      .map((stat, index) => [stat.githubId, index + 1]),
   );
 
   return allMinersStats.map((stat) => {
@@ -51,7 +53,9 @@ export const mapAllMinersToStats = (
     const totalClosedIssues = parseNumber(stat.totalClosedIssues);
 
     return {
-      id: String(stat.id),
+      // The leaderboard endpoint aggregates per-repo evaluation rows and no
+      // longer returns a row `id`; `githubId` is unique per active miner.
+      id: stat.githubId || '',
       githubId: stat.githubId || '',
       author: stat.githubUsername || undefined,
       totalScore: parseNumber(stat.totalScore),
@@ -62,7 +66,7 @@ export const mapAllMinersToStats = (
       linesAdded: parseNumber(stat.totalAdditions),
       linesDeleted: parseNumber(stat.totalDeletions),
       hotkey: stat.hotkey || 'N/A',
-      rank: rankById.get(String(stat.id)),
+      rank: rankByGithubId.get(stat.githubId),
       uniqueReposCount: parseNumber(stat.uniqueReposCount),
       credibility: parseNumber(stat.credibility),
       isEligible: stat.isEligible ?? false,

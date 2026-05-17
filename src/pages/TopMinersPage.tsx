@@ -10,8 +10,10 @@ import {
   type MinerStats,
 } from '../components';
 import { useAllMiners } from '../api';
-import { mapAllMinersToStats } from '../utils/minerMapper';
-import { parseNumber } from '../utils/ExplorerUtils';
+import {
+  mapAllMinersToStats,
+  mapIssueDiscoveryMinerStats,
+} from '../utils/minerMapper';
 import theme from '../theme';
 
 /* ─── Timeline tab definitions ────────────────────────────────── */
@@ -59,38 +61,13 @@ const TopMinersPage: React.FC = () => {
   );
 
   /* Discoveries miner stats (issue-discovery scoring) */
-  const discMinerStats = useMemo(() => {
-    if (!Array.isArray(allMinersRaw)) return [];
-    return allMinersRaw.map((stat) => ({
-      id: String(stat.id),
-      githubId: stat.githubId || '',
-      author: stat.githubUsername || undefined,
-      totalScore: parseNumber(stat.issueDiscoveryScore),
-      baseTotalScore: parseNumber(stat.baseTotalScore),
-      totalPRs: parseNumber(stat.totalPrs),
-      totalIssues:
-        parseNumber(stat.totalSolvedIssues) +
-        parseNumber(stat.totalOpenIssues) +
-        parseNumber(stat.totalClosedIssues),
-      linesChanged: parseNumber(stat.totalNodesScored),
-      linesAdded: parseNumber(stat.totalAdditions),
-      linesDeleted: parseNumber(stat.totalDeletions),
-      hotkey: stat.hotkey || 'N/A',
-      uniqueReposCount: parseNumber(stat.uniqueReposCount),
-      issueCredibility: parseNumber(stat.issueCredibility),
-      credibility: parseNumber(stat.issueCredibility),
-      isEligible: stat.isIssueEligible ?? false,
-      ossIsEligible: stat.isEligible ?? false,
-      discoveriesIsEligible: stat.isIssueEligible ?? false,
-      usdPerDay: parseNumber(stat.usdPerDay),
-      totalMergedPrs: parseNumber(stat.totalMergedPrs),
-      totalOpenPrs: parseNumber(stat.totalOpenPrs),
-      totalClosedPrs: parseNumber(stat.totalClosedPrs),
-      totalSolvedIssues: parseNumber(stat.totalSolvedIssues),
-      totalOpenIssues: parseNumber(stat.totalOpenIssues),
-      totalClosedIssues: parseNumber(stat.totalClosedIssues),
-    }));
-  }, [allMinersRaw]);
+  const discMinerStats = useMemo(
+    () =>
+      Array.isArray(allMinersRaw)
+        ? mapIssueDiscoveryMinerStats(allMinersRaw)
+        : [],
+    [allMinersRaw],
+  );
 
   const sortedDiscMinerStats = useMemo(
     () => [...discMinerStats].sort((a, b) => b.totalScore - a.totalScore),

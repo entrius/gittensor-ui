@@ -780,7 +780,7 @@ const pickTopOssContributor = (
       const mergedPrDiff = (b.totalMergedPrs ?? 0) - (a.totalMergedPrs ?? 0);
       if (mergedPrDiff !== 0) return mergedPrDiff;
 
-      return a.id - b.id;
+      return a.githubId.localeCompare(b.githubId);
     })
     .find(
       (miner) =>
@@ -1003,7 +1003,7 @@ const pickTopDiscoveryMiner = (
     .sort((a, b) => {
       const diff =
         parseNumber(b.issueDiscoveryScore) - parseNumber(a.issueDiscoveryScore);
-      return diff !== 0 ? diff : a.id - b.id;
+      return diff !== 0 ? diff : a.githubId.localeCompare(b.githubId);
     })[0];
 
   if (!top) return undefined;
@@ -1094,7 +1094,7 @@ const pickHighestIssueTokenScoreMiner = (
     .sort((a, b) => {
       const diff =
         parseNumber(b.issueTokenScore) - parseNumber(a.issueTokenScore);
-      return diff !== 0 ? diff : a.id - b.id;
+      return diff !== 0 ? diff : a.githubId.localeCompare(b.githubId);
     })[0];
 
   if (!top) return undefined;
