@@ -1,5 +1,5 @@
 import React from 'react';
-import { Box, Card, Typography, Avatar } from '@mui/material';
+import { Box, Card, Typography, Avatar, Tooltip } from '@mui/material';
 import { alpha, useTheme, type Theme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
@@ -630,6 +630,62 @@ const CredDonut: React.FC<CredDonutProps> = ({
   size = 48,
 }) => {
   const muiTheme = useTheme();
+  const segmentTotal = segments.reduce((acc, s) => acc + s.value, 0);
+
+  if (segmentTotal === 0) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          flexShrink: 0,
+        }}
+      >
+        <Tooltip title="No activity data yet — scores appear after you have PRs or issues in this category.">
+          <Box
+            sx={{
+              position: 'relative',
+              width: size,
+              height: size,
+              borderRadius: '50%',
+              border: '1px dashed',
+              borderColor: 'border.light',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: 'surface.subtle',
+            }}
+          >
+            <Typography
+              sx={(theme) => ({
+                fontFamily: FONTS.mono,
+                fontSize: size <= 48 ? '0.7rem' : '0.8rem',
+                fontWeight: 700,
+                color: theme.palette.text.tertiary,
+              })}
+            >
+              —
+            </Typography>
+          </Box>
+        </Tooltip>
+        {label && (
+          <Typography
+            sx={(theme) => ({
+              fontFamily: FONTS.mono,
+              fontSize: '0.55rem',
+              color: theme.palette.status.open,
+              textTransform: 'uppercase',
+              mt: 0.25,
+              letterSpacing: '0.04em',
+            })}
+          >
+            {label}
+          </Typography>
+        )}
+      </Box>
+    );
+  }
 
   return (
     <Box

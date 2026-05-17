@@ -1,4 +1,5 @@
 import { useCallback, useSyncExternalStore } from 'react';
+import { compareByWatchlist } from '../utils/watchlistSort';
 
 // TODO(2026-Q3): drop V1_KEY read path once the rollback window closes.
 const V1_KEY = 'gittensor.watchlist.v1';
@@ -252,3 +253,17 @@ export const useWatchlistCounts = (): CountsMap =>
 // should always use this helper to avoid drift in key format.
 export const serializePRKey = (repo: string, number: number): string =>
   `${repo}#${number}`;
+
+export const comparePRsByWatchlist = <
+  T extends { repository: string; pullRequestNumber: number },
+>(
+  a: T,
+  b: T,
+  isWatched: (key: string) => boolean,
+): number =>
+  compareByWatchlist(
+    a,
+    b,
+    (pr) => serializePRKey(pr.repository, pr.pullRequestNumber),
+    isWatched,
+  );

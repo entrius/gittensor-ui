@@ -35,6 +35,12 @@ export const useReposAndWeights = () =>
 export const useLanguagesAndWeights = () =>
   useDashboardQuery<LanguageWeight[]>('useLanguagesAndWeights', '/languages');
 
+export const useLinesTotal = (params: { from: string; to: string }) =>
+  useDashboardQuery<number>('useLinesTotal', '/lines/total', undefined, {
+    from: params.from,
+    to: params.to,
+  });
+
 export const useInfiniteCommitLog = (options?: {
   refetchInterval?: number;
 }) => {
@@ -51,13 +57,17 @@ export const useInfiniteCommitLog = (options?: {
       });
       return data;
     },
-    getNextPageParam: (lastPage: CommitLog[], allPages: CommitLog[][]) => {
+    getNextPageParam: (
+      lastPage: CommitLog[],
+      _allPages: CommitLog[][],
+      lastPageParam: number,
+    ) => {
       // If the last page has fewer items than the limit, we've reached the end
       if (lastPage.length < limit) {
         return undefined;
       }
-      // Otherwise, return the next page number
-      return allPages.length + 1;
+      // Use lastPageParam to avoid stale allPages count during background refetches
+      return lastPageParam + 1;
     },
     initialPageParam: 1,
     refetchInterval: options?.refetchInterval,

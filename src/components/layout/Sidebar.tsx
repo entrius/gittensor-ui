@@ -356,9 +356,13 @@ const SidebarNavLink: React.FC<{
           display: 'block',
           flexShrink: 0,
         },
-        '&:hover': {
+        '&:hover, &:focus-visible': {
           backgroundColor: 'rgba(255, 255, 255, 0.05)',
           color: 'primary.main',
+        },
+        '&:focus-visible': {
+          outline: 'none',
+          boxShadow: (theme) => `0 0 0 2px ${theme.palette.primary.main}`,
         },
       }}
     >

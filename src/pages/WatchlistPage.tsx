@@ -33,6 +33,7 @@ import {
   Tabs,
   Badge,
   useMediaQuery,
+  useTheme,
   Portal,
   TablePagination,
 } from '@mui/material';
@@ -43,6 +44,7 @@ import ViewListIcon from '@mui/icons-material/ViewList';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
+import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import StarIcon from '@mui/icons-material/Star';
 import PersonIcon from '@mui/icons-material/Person';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -71,6 +73,7 @@ import {
   useAllPrs,
   useMinersIssues,
 } from '../api';
+import { useFiltersPanelOpenInUrl } from '../hooks/useFiltersPanelUrlState';
 import type {
   CommitLog,
   MinerIssue,
@@ -86,12 +89,14 @@ import {
   isOutsideScoringWindow,
 } from '../utils/ExplorerUtils';
 import {
+  comparePRsByWatchlist,
+  serializePRKey,
   useWatchlist,
   useWatchlistCounts,
-  serializePRKey,
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
 import { useWatchedPRs, type WatchedPRSource } from '../hooks/useWatchedPRs';
+import { usePrSourceFilter } from '../hooks/usePrSourceFilter';
 import {
   isMergedPr,
   isClosedUnmergedPr,
@@ -100,7 +105,6 @@ import {
 import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatDate, formatTokenAmount } from '../utils/format';
-import { compareByWatchlist } from '../utils/watchlistSort';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import theme, {
   CHART_COLORS,
@@ -115,6 +119,10 @@ import {
   FONTS,
   getRepositoryOwnerAvatarBackground,
 } from '../components/leaderboard/types';
+import {
+  echartsAxisTooltipChrome,
+  echartsFontFamily,
+} from '../utils/echarts/gittensorChartTheme';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
@@ -608,14 +616,14 @@ const WatchlistOptionsSidebarPanel: React.FC<
     hasActiveFilter: boolean;
   }
 > = (props) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useFiltersPanelOpenInUrl();
 
   return (
     <Box>
       <Box
         component="button"
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(!open)}
         sx={(t) => ({
           display: 'flex',
           alignItems: 'center',
@@ -953,7 +961,6 @@ type WatchedRepoStats = Repository & {
   // Hoisted from `config` for downstream sort/render code; populated when
   // constructing each row from the API Repository.
   weight: number | string;
-  inactiveAt: string | null | undefined;
   totalScore: number;
   totalPRs: number;
   uniqueMiners: Set<string>;
@@ -961,13 +968,6 @@ type WatchedRepoStats = Repository & {
   discoveryIssues: number;
   discoveryContributors: Set<string>;
 };
-
-const isRepoActive = (repo: Repository): boolean => !repo.config?.inactiveAt;
-
-type RepoStatusFilter = 'all' | 'active' | 'inactive';
-
-const isRepoStatusFilter = (v: unknown): v is RepoStatusFilter =>
-  v === 'all' || v === 'active' || v === 'inactive';
 
 const isPrStatusFilterStored = (v: unknown): v is PrStatusFilter =>
   v === 'all' || v === 'open' || v === 'merged' || v === 'closed';
@@ -1089,14 +1089,6 @@ const repoHeaderStack = (
   </Box>
 );
 
-const repoStatusMeta = (repo: Repository) => {
-  const active = isRepoActive(repo);
-  return {
-    label: active ? 'ACTIVE' : 'INACTIVE',
-    color: active ? STATUS_COLORS.success : STATUS_COLORS.closed,
-  };
-};
-
 const getRepoHref = (repo: Repository) =>
   `/miners/repository?name=${encodeURIComponent(repo.fullName)}`;
 
@@ -1144,7 +1136,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
     cellSx: repoCellSx,
     renderCell: (repo) => (
       <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
-        {parseFloat(String(repo.config?.weight ?? 0)).toFixed(2)}
+        {parseFloat(String(repo.config?.emissionShare ?? 0)).toFixed(2)}
       </Typography>
     ),
   },
@@ -1412,10 +1404,8 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
   repo,
   maxWeight,
 }) => {
-  const { label, color } = repoStatusMeta(repo);
   const owner = repo.fullName.split('/')[0] || '';
-  const weight = parseFloat(String(repo.config?.weight ?? 0));
-  const isInactive = !!repo.config?.inactiveAt;
+  const weight = parseFloat(String(repo.config?.emissionShare ?? 0));
   const weightPct =
     maxWeight > 0 ? Math.max(0, Math.min(100, (weight / maxWeight) * 100)) : 0;
 
@@ -1434,7 +1424,6 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
         gap: 1.5,
         cursor: 'pointer',
         transition: 'all 0.2s',
-        opacity: isInactive ? 0.5 : 1,
         '&:hover': {
           backgroundColor: theme.palette.surface.light,
           borderColor: theme.palette.border.medium,
@@ -1476,29 +1465,6 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
             </Typography>
           </Tooltip>
         </LinkBox>
-        <Typography
-          component="span"
-          sx={(theme) => ({
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '0.65rem',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-            px: 0.75,
-            py: 0.25,
-            borderRadius: '4px',
-            flexShrink: 0,
-            color,
-            backgroundColor: alpha(
-              isInactive
-                ? theme.palette.status.closed
-                : theme.palette.status.success,
-              0.12,
-            ),
-          })}
-        >
-          {label === 'ACTIVE' ? 'Active' : 'Inactive'}
-        </Typography>
         <WatchlistButton
           category="repos"
           itemKey={repo.fullName}
@@ -1642,17 +1608,12 @@ const useWatchlistSidebarFixedRight = () =>
   useMediaQuery(theme.breakpoints.up('xl'));
 
 const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
+  const theme = useTheme();
   const { data: repos } = useReposAndWeights();
   const { data: allPrs } = useAllPrs();
   const { data: allMiners } = useAllMiners();
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] =
-    useSessionStoredState<RepoStatusFilter>(
-      'watchlist:repos:statusFilter',
-      'all',
-      isRepoStatusFilter,
-    );
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(false);
@@ -1669,7 +1630,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
+  }, [searchQuery, sortField, sortOrder, viewMode]);
 
   const handleSort = (field: RepoSortKey) => {
     if (sortField === field) {
@@ -1718,8 +1679,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         const d = discoveryByRepo.get(key);
         return {
           ...r,
-          weight: r.config?.weight ?? 0,
-          inactiveAt: r.config?.inactiveAt ?? null,
+          weight: r.config?.emissionShare ?? 0,
           totalScore: s?.totalScore || 0,
           totalPRs: s?.totalPRs || 0,
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
@@ -1730,28 +1690,14 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       });
   }, [repos, allPrs, allMiners, itemKeys]);
 
-  const counts = useMemo(() => {
-    let active = 0;
-    let inactive = 0;
-    for (const r of items) {
-      if (isRepoActive(r)) active++;
-      else inactive++;
-    }
-    return { all: items.length, active, inactive };
-  }, [items]);
+  const counts = useMemo(() => ({ all: items.length }), [items]);
 
   const filtered = useMemo(() => {
     let result = items;
-    if (statusFilter === 'active')
-      result = result.filter((r) => isRepoActive(r));
-    else if (statusFilter === 'inactive')
-      result = result.filter((r) => !isRepoActive(r));
-
     const q = searchQuery.trim().toLowerCase();
     if (q) result = result.filter((r) => r.fullName.toLowerCase().includes(q));
-
     return result;
-  }, [items, statusFilter, searchQuery]);
+  }, [items, searchQuery]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -1763,8 +1709,8 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           return cmpStr(a.fullName, b.fullName);
         case 'weight':
           return cmpNum(
-            parseFloat(String(a.config?.weight ?? 0)),
-            parseFloat(String(b.config?.weight ?? 0)),
+            parseFloat(String(a.config?.emissionShare ?? 0)),
+            parseFloat(String(b.config?.emissionShare ?? 0)),
           );
         case 'totalScore':
           return cmpNum(a.totalScore, b.totalScore);
@@ -1787,14 +1733,11 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     });
   }, [filtered, sortField, sortOrder]);
 
-  const totalRepoPages = Math.max(
-    1,
-    Math.ceil(filtered.length / ROWS_PER_PAGE),
-  );
-
-  useEffect(() => {
-    setPage((p) => Math.min(p, totalRepoPages - 1));
-  }, [totalRepoPages]);
+  const repoRankByKey = useMemo(() => {
+    const m = new Map<string, number>();
+    sorted.forEach((r, i) => m.set(r.fullName.toLowerCase(), i + 1));
+    return m;
+  }, [sorted]);
 
   const paged = useMemo(() => {
     if (sidebarFixedRight) {
@@ -1827,7 +1770,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const maxWeight = useMemo(
     () =>
       items.reduce(
-        (m, r) => Math.max(m, parseFloat(String(r.config?.weight ?? 0))),
+        (m, r) => Math.max(m, parseFloat(String(r.config?.emissionShare ?? 0))),
         0,
       ),
     [items],
@@ -1838,14 +1781,33 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     const borderSubtle = alpha(white, 0.08);
     const textColor = alpha(white, 0.85);
     const gridColor = borderSubtle;
+    const tooltipBorderColor = alpha(theme.palette.text.primary, 0.14);
     const tooltipLabelColor = alpha(white, TEXT_OPACITY.secondary);
-    const primaryColor = UI_COLORS.white;
+    const primaryColor = theme.palette.text.primary;
+    const chartFont = echartsFontFamily(theme);
 
-    const chartData = paged.map((repo) => ({
-      name: repo.fullName.split('/')[1] || repo.fullName,
-      repository: repo.fullName,
-      value: parseFloat(String(repo.config?.weight ?? 0)),
-    }));
+    const chartData = paged.map((repo) => {
+      const weight = parseFloat(String(repo.config?.weight ?? 0));
+      const ossScore = repo.totalScore || 0;
+      const prs = repo.totalPRs || 0;
+      const contributors = repo.uniqueMiners?.size || 0;
+      const discoveryScore = repo.discoveryScore || 0;
+      const discoveryIssues = repo.discoveryIssues || 0;
+      const discoveryContributors = repo.discoveryContributors?.size || 0;
+      return {
+        name: repo.fullName.split('/')[1] || repo.fullName,
+        repository: repo.fullName,
+        value: weight,
+        rank: repoRankByKey.get(repo.fullName.toLowerCase()) ?? 1,
+        ossScore,
+        prs,
+        contributors,
+        discoveryScore,
+        discoveryIssues,
+        discoveryContributors,
+        weight,
+      };
+    });
 
     const barGradient = {
       type: 'linear' as const,
@@ -1863,6 +1825,14 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     const seriesData = chartData.map((item) => ({
       value: item.value,
       repository: item.repository,
+      rank: item.rank,
+      weight: item.weight,
+      prs: item.prs,
+      contributors: item.contributors,
+      ossScore: item.ossScore,
+      discoveryScore: item.discoveryScore,
+      discoveryIssues: item.discoveryIssues,
+      discoveryContributors: item.discoveryContributors,
       itemStyle: {
         color: barGradient,
         borderRadius: [6, 6, 0, 0],
@@ -1890,21 +1860,37 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           type: 'shadow',
           shadowStyle: { color: borderSubtle },
         },
-        backgroundColor: UI_COLORS.surfaceTooltip,
-        borderColor: alpha(white, 0.15),
-        borderWidth: 1,
-        textStyle: { color: primaryColor, fontSize: 12 },
+        ...echartsAxisTooltipChrome(theme),
+        textStyle: {
+          color: primaryColor,
+          fontFamily: chartFont,
+          fontSize: 12,
+        },
         padding: [12, 16],
-        formatter: (params: unknown) => {
+        formatter: (params: TooltipComponentFormatterCallbackParams) => {
           if (!Array.isArray(params)) return '';
-          const data = params[0] as { dataIndex: number };
+          const data = params[0];
           const item = seriesData[data.dataIndex];
+          if (!item) return '';
+
+          const statRow = (label: string, value: string) => `
+                <span style="color: ${tooltipLabelColor}; min-width: 0;">${label}</span>
+                <span style="color: ${primaryColor}; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;">${value}</span>`;
+
           return `
-            <div style="font-family: 'JetBrains Mono', monospace;">
-              <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px;">
-                ${item.repository}
+            <div style="font-family: ${chartFont}; display: grid; grid-template-columns: minmax(0, max-content); width: max-content; max-width: min(420px, 92vw); box-sizing: border-box;">
+              <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px; line-height: 1.35;">
+                #${item.rank} ${item.repository}
               </div>
-              <div style="color: ${tooltipLabelColor};">Weight: <span style="color: ${primaryColor}; font-weight: 600;">${item.value.toFixed(2)}</span></div>
+              <div style="margin-top: 0; padding-top: 8px; border-top: 1px solid ${tooltipBorderColor}; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; row-gap: 6px; align-items: baseline; min-width: 0;">
+                ${statRow('OSS score:', item.ossScore.toFixed(2))}
+                ${statRow('PRs:', String(item.prs))}
+                ${statRow('OSS contributors:', String(item.contributors))}
+                ${statRow('Issue score:', item.discoveryScore.toFixed(2))}
+                ${statRow('Issues:', String(item.discoveryIssues))}
+                ${statRow('Issue contributors:', String(item.discoveryContributors))}
+                ${statRow('Weight:', item.weight.toFixed(2))}
+              </div>
             </div>
           `;
         },
@@ -1956,7 +1942,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         },
       ],
     };
-  }, [paged, useLogScale]);
+  }, [paged, useLogScale, theme, repoRankByKey]);
 
   return (
     <Card
@@ -1985,22 +1971,8 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                   label="All"
                   count={counts.all}
                   color={STATUS_COLORS.neutral}
-                  isActive={statusFilter === 'all'}
-                  onClick={() => setStatusFilter('all')}
-                />
-                <FilterButton
-                  label="Active"
-                  count={counts.active}
-                  color={STATUS_COLORS.success}
-                  isActive={statusFilter === 'active'}
-                  onClick={() => setStatusFilter('active')}
-                />
-                <FilterButton
-                  label="Inactive"
-                  count={counts.inactive}
-                  color={STATUS_COLORS.closed}
-                  isActive={statusFilter === 'inactive'}
-                  onClick={() => setStatusFilter('inactive')}
+                  isActive
+                  onClick={() => {}}
                 />
               </Box>
             }
@@ -2080,7 +2052,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             viewModeToggle={
               <ReposViewModeToggle viewMode={viewMode} onChange={setViewMode} />
             }
-            hasActiveFilter={statusFilter !== 'all'}
+            hasActiveFilter={false}
           />
         )}
       </DebouncedSearchInput>
@@ -2113,13 +2085,6 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           getRowKey={(repo) => repo.fullName}
           getRowHref={getRepoHref}
           linkState={{ backLabel: 'Back to Watchlist' }}
-          getRowSx={(repo) =>
-            isRepoActive(repo)
-              ? {}
-              : {
-                  opacity: 0.5,
-                }
-          }
           minWidth="1180px"
           stickyHeader
           emptyLabel="No watched repositories found."
@@ -3407,6 +3372,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
   const { isWatched } = useWatchlist('prs');
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
+  const {
+    active: activeSources,
+    toggle: toggleSource,
+    isAllOn: sourcesAllOn,
+  } = usePrSourceFilter();
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useSessionStoredState<PrStatusFilter>(
     'watchlist:prs:statusFilter',
@@ -3427,7 +3397,15 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode, isWatched]);
+  }, [
+    statusFilter,
+    searchQuery,
+    sortField,
+    sortOrder,
+    viewMode,
+    isWatched,
+    activeSources,
+  ]);
 
   const handleSort = (field: PrSortKey) => {
     if (sortField === field) {
@@ -3443,15 +3421,36 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     setPage(0);
   };
 
-  const counts = useMemo(() => getPrStatusCounts(items), [items]);
+  const scopedItems = useMemo(() => {
+    if (sourcesAllOn) return items;
+    return items.filter((pr) =>
+      sourcesByKey
+        .get(serializePRKey(pr.repository, pr.pullRequestNumber))
+        ?.some((s) => activeSources.has(s)),
+    );
+  }, [items, sourcesByKey, activeSources, sourcesAllOn]);
+
+  const sourceCounts = useMemo(() => {
+    const counts = { starred: 0, miner: 0, repo: 0 };
+    for (const pr of items) {
+      const sources = sourcesByKey.get(
+        serializePRKey(pr.repository, pr.pullRequestNumber),
+      );
+      if (!sources) continue;
+      for (const s of sources) counts[s] += 1;
+    }
+    return counts;
+  }, [items, sourcesByKey]);
+
+  const counts = useMemo(() => getPrStatusCounts(scopedItems), [scopedItems]);
 
   const filtered = useMemo(() => {
-    return filterPrs(items, {
+    return filterPrs(scopedItems, {
       statusFilter,
       searchQuery,
       includeNumber: true,
     });
-  }, [items, statusFilter, searchQuery]);
+  }, [scopedItems, statusFilter, searchQuery]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -3474,11 +3473,8 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         }
         case 'score':
           return cmpNum(parseFloat(a.score || '0'), parseFloat(b.score || '0'));
-        case 'watch': {
-          const key = (pr: CommitLog) =>
-            serializePRKey(pr.repository, pr.pullRequestNumber);
-          return compareByWatchlist(a, b, key, isWatched) * dir;
-        }
+        case 'watch':
+          return comparePRsByWatchlist(a, b, isWatched) * dir;
         default:
           return 0;
       }
@@ -3572,6 +3568,35 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                   isActive={statusFilter === 'closed'}
                   onClick={() => setStatusFilter('closed')}
                 />
+                <Box
+                  sx={{
+                    width: '1px',
+                    height: 20,
+                    backgroundColor: 'border.light',
+                    mx: 0.5,
+                  }}
+                />
+                <FilterButton
+                  label="Starred"
+                  count={sourceCounts.starred}
+                  color={SOURCE_META.starred.color}
+                  isActive={activeSources.has('starred')}
+                  onClick={() => toggleSource('starred')}
+                />
+                <FilterButton
+                  label="Miner"
+                  count={sourceCounts.miner}
+                  color={SOURCE_META.miner.color}
+                  isActive={activeSources.has('miner')}
+                  onClick={() => toggleSource('miner')}
+                />
+                <FilterButton
+                  label="Repo"
+                  count={sourceCounts.repo}
+                  color={SOURCE_META.repo.color}
+                  isActive={activeSources.has('repo')}
+                  onClick={() => toggleSource('repo')}
+                />
               </Box>
             }
             searchValue={draftValue}
@@ -3591,7 +3616,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 }}
               />
             }
-            hasActiveFilter={statusFilter !== 'all'}
+            hasActiveFilter={statusFilter !== 'all' || !sourcesAllOn}
           />
         )}
       </DebouncedSearchInput>

@@ -18,7 +18,11 @@ import {
 } from '../../components/common/DataTable';
 import { WatchlistButton } from '../../components/common';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
-import { serializePRKey } from '../../hooks/useWatchlist';
+import {
+  comparePRsByWatchlist,
+  serializePRKey,
+  useWatchlist,
+} from '../../hooks/useWatchlist';
 import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
@@ -33,7 +37,8 @@ type PrSortField =
   | 'lines'
   | 'score'
   | 'status'
-  | 'mergedAt';
+  | 'mergedAt'
+  | 'watch';
 type SortOrder = 'asc' | 'desc';
 
 interface RepositoryPRsTableProps {
@@ -50,6 +55,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { isWatched } = useWatchlist('prs');
   const [filter, setFilter] = useSessionStoredState<PrStatusFilter>(
     'repository:prs:statusFilter',
     state,
@@ -139,12 +145,14 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
             a.mergedAt ? new Date(a.mergedAt).getTime() : 0,
             b.mergedAt ? new Date(b.mergedAt).getTime() : 0,
           );
+        case 'watch':
+          return comparePRsByWatchlist(a, b, isWatched) * dir;
         case 'score':
         default:
           return cmpNum(parseFloat(a.score || '0'), parseFloat(b.score || '0'));
       }
     });
-  }, [filteredPRs, sortField, sortOrder]);
+  }, [filteredPRs, sortField, sortOrder, isWatched]);
 
   const handleRowClick = useCallback(
     (pr: CommitLog) => {
@@ -229,6 +237,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'pullRequestNumber',
       header: 'PR #',
+      width: 88,
       sortKey: 'pullRequestNumber',
       renderCell: (pr) => (
         // Native <a> to GitHub — `onRowClick` (no row-as-anchor) keeps this valid HTML.
@@ -250,6 +259,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'pullRequestTitle',
       header: 'Title',
+      width: 320,
       sortKey: 'pullRequestTitle',
       renderCell: (pr) => (
         <ScrollAwareTooltip
@@ -260,7 +270,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         >
           <Box
             sx={{
-              maxWidth: '300px',
+              maxWidth: '100%',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -274,9 +284,12 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'author',
       header: 'Author',
+      width: 180,
       sortKey: 'author',
       renderCell: (pr) => (
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        <Box
+          sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}
+        >
           <Avatar
             src={getRepositoryOwnerAvatarSrc(pr.author)}
             alt={pr.author}
@@ -284,7 +297,13 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           />
           <Box
             component="span"
-            sx={{ whiteSpace: 'nowrap', wordBreak: 'keep-all' }}
+            sx={{
+              minWidth: 0,
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              whiteSpace: 'nowrap',
+              wordBreak: 'keep-all',
+            }}
           >
             {pr.author}
           </Box>
@@ -294,6 +313,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'commitCount',
       header: 'Commits',
+      width: 104,
       align: 'right',
       sortKey: 'commitCount',
       renderCell: (pr) => pr.commitCount,
@@ -301,10 +321,11 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'lines',
       header: '+/-',
+      width: 120,
       align: 'right',
       sortKey: 'lines',
       renderCell: (pr) => (
-        <>
+        <Box component="span" sx={{ whiteSpace: 'nowrap' }}>
           <Box
             component="span"
             sx={{ color: theme.palette.diff.additions, mr: 1 }}
@@ -314,12 +335,13 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           <Box component="span" sx={{ color: theme.palette.diff.deletions }}>
             -{pr.deletions}
           </Box>
-        </>
+        </Box>
       ),
     },
     {
       key: 'score',
       header: 'Score',
+      width: 112,
       align: 'right',
       sortKey: 'score',
       renderCell: (pr) => (
@@ -331,6 +353,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'status',
       header: 'Status',
+      width: 112,
       sortKey: 'status',
       renderCell: (pr) => {
         const state =
@@ -351,6 +374,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'mergedAt',
       header: 'Merged',
+      width: 120,
       align: 'right',
       sortKey: 'mergedAt',
       renderCell: (pr) =>
@@ -359,7 +383,9 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     {
       key: 'watch',
       header: '★',
+      width: 64,
       align: 'center',
+      sortKey: 'watch',
       renderCell: (pr) => (
         <WatchlistButton
           category="prs"
@@ -402,37 +428,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         display: 'flex',
         flexDirection: 'column',
         overflow: 'hidden',
-        // Restructure so only the body scrolls — the header sits above the
-        // scroll area, so the scrollbar never appears next to the header row.
-        '& .MuiTableContainer-root': {
-          overflow: 'visible',
-        },
-        '& .MuiTable-root': {
-          display: 'block',
-        },
-        '& .MuiTableHead-root': {
-          display: 'block',
-          // Reserve space matching the body's scrollbar gutter so columns line up.
-          paddingRight: '8px',
-          backgroundColor: theme.palette.surface.tooltip,
-        },
-        '& .MuiTableHead-root .MuiTableRow-root': {
-          display: 'table',
-          tableLayout: 'fixed',
-          width: '100%',
-        },
-        '& .MuiTableBody-root': {
-          display: 'block',
-          maxHeight: '500px',
-          overflowY: 'auto',
-          scrollbarGutter: 'stable',
-          ...scrollbarSx,
-        },
-        '& .MuiTableBody-root .MuiTableRow-root': {
-          display: 'table',
-          tableLayout: 'fixed',
-          width: '100%',
-        },
       }}
       elevation={0}
     >
@@ -440,7 +435,14 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         columns={columns}
         rows={sortedPRs}
         getRowKey={(pr) => `${pr.repository}-${pr.pullRequestNumber}`}
+        minWidth="1120px"
         stickyHeader
+        tableContainerSx={{
+          maxHeight: 500,
+          overflow: 'auto',
+          scrollbarGutter: 'stable',
+          ...scrollbarSx,
+        }}
         size="medium"
         header={headerToolbar}
         emptyState={
