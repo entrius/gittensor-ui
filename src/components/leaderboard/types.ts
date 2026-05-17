@@ -75,7 +75,19 @@ export type SortOption =
   | 'totalIssues'
   | 'issueDiscoveryScore'
   | 'credibility'
+  | 'username'
   | 'watch';
+
+const isNumericGithubId = (value?: string) => !value || /^\d+$/.test(value);
+
+/** Sort/search key aligned with MinerIdentityCell: login when known, else githubId. */
+export const minerSortName = (miner: MinerStats): string => {
+  const name =
+    !isNumericGithubId(miner.author) && miner.author
+      ? miner.author
+      : miner.githubId;
+  return (name ?? '').toLowerCase();
+};
 
 export const FONTS = {
   mono: '"JetBrains Mono", monospace',
