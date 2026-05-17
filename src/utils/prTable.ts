@@ -68,8 +68,12 @@ export type ScorePredicate = {
   value: number;
 };
 
+<<<<<<< HEAD
 const SCORE_TOKEN_RE =
   /\bscore\s*((?:>=|<=|>|<|=))\s*([0-9]+(?:\.[0-9]+)?)/i;
+=======
+const SCORE_TOKEN_RE = /\bscore\s*((?:>=|<=|>|<|=))\s*([0-9]+(?:\.[0-9]+)?)/i;
+>>>>>>> 23aa500 (refactor(pr-table): streamline filtering logic and improve readability in RepositoryPRsTable component)
 
 export const parsePrSearchQuery = (
   raw: string,
