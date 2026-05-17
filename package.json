@@ -11,8 +11,6 @@
     "format": "prettier --write \"src/**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,tsx,js,jsx,json,css,scss,md}\"",
     "preview": "vite preview --host 0.0.0.0",
-    "test": "vitest run",
-    "test:watch": "vitest",
     "prepare": "husky"
   },
   "dependencies": {
@@ -57,7 +55,6 @@
     "lint-staged": "^16.4.0",
     "prettier": "^3.2.5",
     "typescript": "^5.5.4",
-    "vite": "^5.3.1",
-    "vitest": "^4.0.18"
+    "vite": "^5.3.1"
   }
 }

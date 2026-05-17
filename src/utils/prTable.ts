@@ -33,12 +33,17 @@ export const filterPrs = <T extends CommitLog>(
   const normalizedQuery = searchQuery.trim().toLowerCase();
   if (!normalizedQuery) return filtered;
 
-  return filtered.filter(
-    (pr) =>
-      pr.pullRequestTitle?.toLowerCase().includes(normalizedQuery) ||
-      pr.repository.toLowerCase().includes(normalizedQuery) ||
-      (includeNumber && String(pr.pullRequestNumber).includes(normalizedQuery)),
-  );
+  return filtered.filter((pr) => {
+    if (pr.pullRequestTitle?.toLowerCase().includes(normalizedQuery))
+      return true;
+    if (pr.repository.toLowerCase().includes(normalizedQuery)) return true;
+    if (includeNumber) {
+      const num = String(pr.pullRequestNumber);
+      if (num.includes(normalizedQuery)) return true;
+      if (`#${num}`.includes(normalizedQuery)) return true;
+    }
+    return false;
+  });
 };
 
 export const paginateItems = <T>(items: T[], page: number, pageSize: number) =>

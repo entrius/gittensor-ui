@@ -37,6 +37,7 @@ import {
 import { useSearchParams } from 'react-router-dom';
 import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import {
   useMinerStats,
   useMinerPRs,
@@ -1037,7 +1038,19 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
     if (!isMobile) setIsMobileSearchOpen(false);
   }, [isMobile]);
 
-  const statusCounts = useMemo(() => getPrStatusCounts(prs ?? []), [prs]);
+  // Count over the search scope (excluding the active status filter) so each
+  // button reflects what the user would see if they clicked it.
+  const statusCounts = useMemo(
+    () =>
+      getPrStatusCounts(
+        filterPrs(prs ?? [], {
+          searchQuery,
+          includeNumber: true,
+          statusFilter: 'all',
+        }),
+      ),
+    [prs, searchQuery],
+  );
 
   const statusFilterTotal = useMemo(() => {
     switch (statusFilter) {
@@ -1056,24 +1069,13 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
 
   const filteredPrs = useMemo(() => {
     if (!prs) return [];
-    let list = [...filterPrs(prs, { statusFilter })].sort(
-      (a, b) => parseFloat(b.score || '0') - parseFloat(a.score || '0'),
-    );
-    const q = searchQuery.trim().toLowerCase();
-    if (q) {
-      list = list.filter((pr) => {
-        const title = (pr.pullRequestTitle || '').toLowerCase();
-        const repo = (pr.repository || '').toLowerCase();
-        const num = String(pr.pullRequestNumber);
-        return (
-          title.includes(q) ||
-          repo.includes(q) ||
-          num.includes(q) ||
-          `#${num}`.includes(q)
-        );
-      });
-    }
-    return list;
+    return [
+      ...filterPrs(prs, {
+        searchQuery,
+        includeNumber: true,
+        statusFilter,
+      }),
+    ].sort((a, b) => parseFloat(b.score || '0') - parseFloat(a.score || '0'));
   }, [prs, statusFilter, searchQuery]);
 
   const paging = useMemo(() => {
@@ -1148,6 +1150,15 @@ const PrBreakdownView: React.FC<{ githubId: string }> = ({ githubId }) => {
                     }}
                   />
                 </InputAdornment>
+              ),
+              endAdornment: (
+                <ClearSearchAdornment
+                  visible={Boolean(searchQuery)}
+                  onClear={() => {
+                    setSearchQuery('');
+                    setDraftValue('');
+                  }}
+                />
               ),
             }}
             sx={textFieldSx}

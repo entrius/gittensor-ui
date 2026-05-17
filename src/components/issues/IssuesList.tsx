@@ -460,7 +460,7 @@ const IssuesList: React.FC<IssuesListProps> = ({
       backgroundColor: 'transparent',
       title: {
         text: 'Bounty Pool by Repository',
-        subtext: `${filteredIssues.length} issues`,
+        subtext: `${filteredIssues.length} issue(s)`,
         left: 'center',
         top: 20,
         textStyle: {

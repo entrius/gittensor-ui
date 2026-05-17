@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { Box, Typography } from '@mui/material';
+import { Box, Typography, Tooltip } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
 import { SectionCard } from './SectionCard';
@@ -440,69 +440,103 @@ const ActivityDonutCard: React.FC<ActivityDonutCardProps> = ({
               position: 'relative',
             }}
           >
-            <ReactECharts
-              option={{
-                backgroundColor: 'transparent',
-                series: [
-                  {
-                    type: 'pie',
-                    radius: ['65%', '90%'],
-                    silent: true,
-                    label: { show: false },
-                    itemStyle: { borderRadius: 3, borderWidth: 0 },
-                    data:
-                      total > 0
-                        ? segments.map((segment) => ({
-                            value: segment.value,
-                            itemStyle: { color: segment.color },
-                          }))
-                        : [
-                            {
-                              value: 1,
-                              itemStyle: { color: 'rgba(255,255,255,0.08)' },
-                            },
-                          ],
-                  },
-                ],
-              }}
-              style={{ width: '100%', height: '100%' }}
-              opts={{ renderer: 'svg' }}
-            />
-            <Box
-              sx={(theme) => ({
-                position: 'absolute',
-                inset: 0,
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                justifyContent: 'center',
-                pointerEvents: 'none',
-                color: theme.palette.text.primary,
-              })}
-            >
-              <Typography
-                sx={{
-                  fontFamily: FONTS.mono,
-                  fontSize: '1rem',
-                  fontWeight: 700,
-                  color: rateColor,
-                  lineHeight: 1,
-                }}
-              >
-                {rate}%
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.56rem',
-                  color: STATUS_COLORS.open,
-                  mt: 0.5,
-                  textTransform: 'uppercase',
-                }}
-              >
-                {rateLabel}
-              </Typography>
-            </Box>
+            {total === 0 ? (
+              <Tooltip title="No distribution data for this period yet.">
+                <Box
+                  sx={(theme) => ({
+                    width: '100%',
+                    height: '100%',
+                    borderRadius: '50%',
+                    border: '1px dashed',
+                    borderColor: 'border.light',
+                    backgroundColor: 'surface.subtle',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    color: theme.palette.text.tertiary,
+                  })}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: FONTS.mono,
+                      fontSize: '1rem',
+                      fontWeight: 700,
+                    }}
+                  >
+                    —
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: FONTS.mono,
+                      fontSize: '0.5rem',
+                      mt: 0.25,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    No data
+                  </Typography>
+                </Box>
+              </Tooltip>
+            ) : (
+              <>
+                <ReactECharts
+                  option={{
+                    backgroundColor: 'transparent',
+                    series: [
+                      {
+                        type: 'pie',
+                        radius: ['65%', '90%'],
+                        silent: true,
+                        label: { show: false },
+                        itemStyle: { borderRadius: 3, borderWidth: 0 },
+                        data: segments.map((segment) => ({
+                          value: segment.value,
+                          itemStyle: { color: segment.color },
+                        })),
+                      },
+                    ],
+                  }}
+                  style={{ width: '100%', height: '100%' }}
+                  opts={{ renderer: 'svg' }}
+                />
+                <Box
+                  sx={(theme) => ({
+                    position: 'absolute',
+                    inset: 0,
+                    display: 'flex',
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    pointerEvents: 'none',
+                    color: theme.palette.text.primary,
+                  })}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: FONTS.mono,
+                      fontSize: '1rem',
+                      fontWeight: 700,
+                      color: rateColor,
+                      lineHeight: 1,
+                    }}
+                  >
+                    {rate}%
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: FONTS.mono,
+                      fontSize: '0.56rem',
+                      color: STATUS_COLORS.open,
+                      mt: 0.5,
+                      textTransform: 'uppercase',
+                    }}
+                  >
+                    {rateLabel}
+                  </Typography>
+                </Box>
+              </>
+            )}
           </Box>
 
           <Box sx={{ flex: 1, minWidth: 0 }}>
