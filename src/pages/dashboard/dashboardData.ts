@@ -11,7 +11,6 @@ import {
   type CommitLog,
   type MinerEvaluation,
   type MirrorDashboardIssue,
-  type Repository,
 } from '../../api';
 import {
   getPrStatusLabel,
@@ -340,46 +339,36 @@ export const buildDashboardTrendData = (
   };
 };
 
+// Each PR contributes to exactly one bucket, keyed by its terminal state and
+// the timestamp that produced that state. API does not currently return
+// closedAt for PRs — fall back to prCreatedAt so closed PRs are still windowed.
+const getPrTerminalTimestamp = (
+  pr: CommitLog,
+  status: ReturnType<typeof getPrStatusLabel>,
+): string | null | undefined => {
+  if (status === 'Merged') return pr.mergedAt;
+  if (status === 'Closed') return pr.closedAt ?? pr.prCreatedAt;
+  return pr.prCreatedAt;
+};
+
 const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
-  const statusCounts = {
-    total: 0,
-    merged: 0,
-    open: 0,
-    closed: 0,
-  };
+  const counts = { merged: 0, open: 0, closed: 0 };
 
   prs.forEach((pr) => {
-    const normalizedState = getPrStatusLabel(pr);
-    const createdInWindow = isWithinWindow(toTimestamp(pr.prCreatedAt), window);
-    const mergedInWindow = isWithinWindow(toTimestamp(pr.mergedAt), window);
-    // API does not currently return closedAt for PRs — fall back to
-    // prCreatedAt so closed PRs are still tracked within the window.
-    const closedInWindow = isWithinWindow(
-      toTimestamp(pr.closedAt ?? pr.prCreatedAt),
-      window,
-    );
+    const status = getPrStatusLabel(pr);
+    if (
+      !isWithinWindow(toTimestamp(getPrTerminalTimestamp(pr, status)), window)
+    )
+      return;
 
-    if (createdInWindow) {
-      statusCounts.open += 1;
-      statusCounts.total += 1;
-    }
-
-    if (mergedInWindow) {
-      statusCounts.merged += 1;
-      statusCounts.total += 1;
-    }
-
-    if (normalizedState === 'Closed' && closedInWindow) {
-      statusCounts.closed += 1;
-      statusCounts.total += 1;
-    }
+    if (status === 'Merged') counts.merged += 1;
+    else if (status === 'Closed') counts.closed += 1;
+    else counts.open += 1;
   });
 
   return {
-    total: statusCounts.total,
-    merged: statusCounts.merged,
-    open: statusCounts.open,
-    closed: statusCounts.closed,
+    total: counts.merged + counts.open + counts.closed,
+    ...counts,
   };
 };
 
@@ -635,6 +624,7 @@ export const buildDashboardOverview = (
 export const buildDashboardKpis = (
   prs: CommitLog[],
   issues: MirrorDashboardIssue[],
+  totalLinesCommitted: number,
   range: TrendTimeRange,
   now = new Date(),
 ): DashboardKpi[] => {
@@ -651,10 +641,6 @@ export const buildDashboardKpis = (
     0,
   );
   const totalIssuesSolved = solvedIssues.length;
-  const totalLinesCommitted = mergedWindowPrs.reduce(
-    (sum, pr) => sum + parseNumber(pr.additions) + parseNumber(pr.deletions),
-    0,
-  );
   const totalRepositories = new Set(
     mergedWindowPrs.map((pr) => pr.repository).filter(Boolean),
   ).size;
@@ -905,27 +891,13 @@ interface RepoAccumulator {
   totalScore: number;
 }
 
-type InactiveRepoSet = Set<string>;
-
-const buildInactiveRepoSet = (repos: Repository[]): InactiveRepoSet =>
-  new Set(
-    repos
-      .filter((r: Repository): boolean => !!r.config?.inactiveAt)
-      .map((r: Repository): string => r.fullName.toLowerCase()),
-  );
-
-const isMergedInWindow = (
-  pr: CommitLog,
-  cutoff: number,
-  inactiveRepos: InactiveRepoSet,
-): boolean => {
+const isMergedInWindow = (pr: CommitLog, cutoff: number): boolean => {
   const merged: number | null = toTimestamp(pr.mergedAt);
   return (
     merged !== null &&
     merged >= cutoff &&
     getPrStatusLabel(pr) === 'Merged' &&
-    Boolean(pr.repository) &&
-    !inactiveRepos.has(pr.repository.toLowerCase())
+    Boolean(pr.repository)
   );
 };
 
@@ -991,18 +963,13 @@ const buildRepoEntry = (
   };
 };
 
-export const buildFeaturedWork = (
-  prs: CommitLog[],
-  repos: Repository[],
-): FeaturedWorkRepo[] => {
+export const buildFeaturedWork = (prs: CommitLog[]): FeaturedWorkRepo[] => {
   const config: FeaturedWorkConfig = FEATURED_WORK_CONFIG;
   const now: number = Date.now();
   const cutoff: number = now - config.windowHours * HOUR_MS;
 
-  const inactiveRepos: InactiveRepoSet = buildInactiveRepoSet(repos);
-
   const windowPrs: CommitLog[] = prs.filter((pr: CommitLog): boolean =>
-    isMergedInWindow(pr, cutoff, inactiveRepos),
+    isMergedInWindow(pr, cutoff),
   );
 
   const repoMap: Map<string, RepoAccumulator> = groupPrsByRepo(windowPrs);
