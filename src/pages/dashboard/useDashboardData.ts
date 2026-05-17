@@ -12,6 +12,7 @@ import {
   useAllMiners,
   useAllPrs,
   useIssues,
+  useLinesTotal,
   useMirrorDashboardIssues,
   useReposAndWeights,
 } from '../../api';
@@ -30,6 +31,7 @@ import {
   buildFeaturedContributors,
   buildFeaturedWork,
   buildFeaturedDiscoveryContributors,
+  getWindowBounds,
   GITTENSOR_START_MS,
   type TrendTimeRange,
 } from './dashboardData';
@@ -51,6 +53,15 @@ export const useDashboardData = (range: TrendTimeRange) => {
   const minersQuery = useAllMiners();
   const issuesQuery = useIssues();
   const reposQuery = useReposAndWeights();
+
+  const { from, to } = useMemo(() => {
+    const bounds = getWindowBounds(range);
+    return {
+      from: new Date(bounds.startMs).toISOString(),
+      to: new Date(bounds.endMs).toISOString(),
+    };
+  }, [range]);
+  const linesTotalQuery = useLinesTotal({ from, to });
 
   // Single bulk mirror call replaces the previous per-miner fan-out.
   // The mirror is roster-blind; we filter to subnet authors below using the
@@ -142,10 +153,17 @@ export const useDashboardData = (range: TrendTimeRange) => {
     [datasets.prs.data],
   );
 
+  const totalLinesCommitted = linesTotalQuery.data ?? 0;
+
   const kpis = useMemo(
     () =>
-      buildDashboardKpis(datasets.prs.data, datasets.minerIssues.data, range),
-    [datasets.minerIssues.data, datasets.prs.data, range],
+      buildDashboardKpis(
+        datasets.prs.data,
+        datasets.minerIssues.data,
+        totalLinesCommitted,
+        range,
+      ),
+    [datasets.minerIssues.data, datasets.prs.data, totalLinesCommitted, range],
   );
 
   const isFeaturedWorkLoading =

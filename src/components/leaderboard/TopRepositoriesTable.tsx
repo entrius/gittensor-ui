@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useMemo,
-  useEffect,
-  useCallback,
-  useRef,
-} from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -39,7 +33,6 @@ import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import { RepositoryCard } from './RepositoryCard';
 import {
   REPOSITORIES_CARD_ROWS,
-  REPOSITORIES_DEFAULT_CARD_ROWS,
   REPOSITORIES_DEFAULT_LIST_ROWS,
   REPOSITORIES_LIST_ROWS,
   REPOSITORIES_VALID_ROWS,
@@ -52,15 +45,20 @@ import {
 } from './repositoriesViewMode';
 import ReactECharts from 'echarts-for-react';
 import type { TooltipComponentFormatterCallbackParams } from 'echarts';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
-import { ClearSearchAdornment, WatchlistButton } from '../common';
+import {
+  ClearSearchAdornment,
+  ChartEmptyPanel,
+  WatchlistButton,
+} from '../common';
 import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import {
   compareByWatchlist,
   getRepositoryOwnerAvatarSrc,
   truncateText,
 } from '../../utils';
+import { useDataTableParams } from '../../hooks/useDataTableParams';
 import { useWatchlist } from '../../hooks/useWatchlist';
 import { RankIcon } from './RankIcon';
 import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
@@ -91,7 +89,6 @@ type SortColumn =
   | 'discoveryIssues'
   | 'discoveryContributors'
   | 'watch';
-type SortDirection = 'asc' | 'desc';
 type ViewMode = RepositoriesViewMode;
 
 /** Chart-friendly metrics (excludes purely-display columns like rank/watch). */
@@ -166,7 +163,7 @@ const ISSUE_METRIC_KEYS = new Set<ChartMetricKey>([
   'discoveryContributors',
 ]);
 
-const VALID_SORT_COLUMNS: SortColumn[] = [
+const VALID_SORT_COLUMNS: readonly SortColumn[] = [
   'rank',
   'repository',
   'weight',
@@ -177,7 +174,16 @@ const VALID_SORT_COLUMNS: SortColumn[] = [
   'discoveryIssues',
   'discoveryContributors',
   'watch',
-];
+] as const;
+
+const SEARCH_QUERY_PARAM = 'search';
+const PAGE_QUERY_PARAM = 'page';
+const ROWS_QUERY_PARAM = 'rows';
+
+type TopRepositoriesUrlFilters = {
+  search: string;
+  view: ViewMode;
+};
 
 /** List view: show numeric zeros when the row has OSS activity (avoids PRs > 0 with OSS score "-"). */
 const repoHasOssActivity = (repo: RepoStats) =>
@@ -196,53 +202,71 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   linkState,
 }) => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Read initial state from URL params, falling back to defaults
-  const urlRows = parseInt(searchParams.get('rows') || '0', 10);
-  const urlPage = parseInt(searchParams.get('page') || '0', 10);
-  const urlSort = searchParams.get('sort') as SortColumn;
-  const urlDir = searchParams.get('dir') as SortDirection;
-  const urlSearch = searchParams.get('search') || '';
+  // `view` always serializes (never null) so toggling re-renders even when
+  // the new value matches localStorage. See TopMinersTable.tsx for context.
+  const filtersConfig = useMemo(
+    () => ({
+      search: {
+        paramKey: SEARCH_QUERY_PARAM,
+        parse: (raw: string | null): string => raw ?? '',
+        serialize: (value: string): string | null => value.trim() || null,
+      },
+      view: {
+        paramKey: REPOSITORIES_VIEW_QUERY_PARAM,
+        parse: (raw: string | null): ViewMode =>
+          getRepositoriesViewModeFromQuery(
+            raw,
+            readStoredRepositoriesViewMode(),
+          ),
+        serialize: (value: ViewMode): string => value,
+        resetPageOnChange: false,
+      },
+    }),
+    [],
+  );
 
-  const [searchQuery, setSearchQuery] = useState(urlSearch);
-  const [showChart, setShowChart] = useState(false);
-  const [page, setPage] = useState(urlPage >= 0 ? urlPage : 0);
-  const [rowsPerPage, setRowsPerPage] = useState(() => {
-    const initialView = getRepositoriesViewModeFromQuery(
-      searchParams.get(REPOSITORIES_VIEW_QUERY_PARAM),
-      readStoredRepositoriesViewMode(),
-    );
-    return REPOSITORIES_VALID_ROWS.includes(urlRows)
-      ? clampRowsForRepositoriesView(urlRows, initialView)
-      : initialView === 'cards'
-        ? REPOSITORIES_DEFAULT_CARD_ROWS
-        : REPOSITORIES_DEFAULT_LIST_ROWS;
+  const {
+    sortField: sortColumn,
+    sortOrder: sortDirection,
+    setSort: handleSort,
+    page,
+    setPage,
+    rowsPerPage: rawRowsPerPage,
+    setRowsPerPage,
+    filters,
+    setFilter,
+  } = useDataTableParams<SortColumn, TopRepositoriesUrlFilters>({
+    sortKeys: VALID_SORT_COLUMNS,
+    defaultSortKey: 'weight',
+    // Repository sorts A-Z by default; numeric columns default to desc.
+    defaultOrderOverrides: { repository: 'asc' },
+    defaultRowsPerPage: REPOSITORIES_DEFAULT_LIST_ROWS,
+    rowsPerPageOptions: REPOSITORIES_VALID_ROWS,
+    paramKeys: { page: PAGE_QUERY_PARAM, rowsPerPage: ROWS_QUERY_PARAM },
+    filters: filtersConfig,
   });
-  const [sortColumn, setSortColumn] = useState<SortColumn>(
-    urlSort && VALID_SORT_COLUMNS.includes(urlSort) ? urlSort : 'weight',
-  );
-  const [sortDirection, setSortDirection] = useState<SortDirection>(
-    urlDir === 'asc' || urlDir === 'desc' ? urlDir : 'desc',
-  );
+
+  const { search: searchQuery, view: viewMode } = filters;
+
+  // List and cards use different page-size scales (10/25/50 vs 12/24/48).
+  // Clamp the hook's raw value to the active view's options for display.
+  const rowsPerPage = clampRowsForRepositoriesView(rawRowsPerPage, viewMode);
+
+  const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(true);
+
+  const handleSearchChange = useCallback(
+    (value: string) => setFilter('search', value),
+    [setFilter],
+  );
+
   const chartMetricKey: ChartMetricKey = VALID_CHART_METRIC_KEYS.has(
     sortColumn as ChartMetricKey,
   )
     ? (sortColumn as ChartMetricKey)
     : 'totalScore';
-  const [storedViewMode, setStoredViewMode] = useState<ViewMode>(
-    readStoredRepositoriesViewMode,
-  );
-  const viewMode = useMemo(
-    () =>
-      getRepositoriesViewModeFromQuery(
-        searchParams.get(REPOSITORIES_VIEW_QUERY_PARAM),
-        storedViewMode,
-      ),
-    [searchParams, storedViewMode],
-  );
-  const isInitialMount = useRef(true);
+
   const { isWatched } = useWatchlist('repos');
   const theme = useTheme();
   const debouncedSearchTrim = searchQuery.trim();
@@ -272,55 +296,20 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     return opts;
   }, [sortColumn]);
 
-  // Sync filter state to URL params (replace, don't push)
-  const syncToUrl = useCallback(
-    (overrides?: Record<string, string | undefined>) => {
-      const params: Record<string, string> = {};
-      const rows = overrides?.rows ?? String(rowsPerPage);
-      const pg = overrides?.page ?? String(page);
-      const sort = overrides?.sort ?? sortColumn;
-      const dir = overrides?.dir ?? sortDirection;
-      const search = overrides?.search ?? searchQuery;
-      const view = overrides?.view ?? viewMode;
-
-      if (rows !== '10') params.rows = rows;
-      if (pg !== '0') params.page = pg;
-      if (sort !== 'weight') params.sort = sort;
-      if (dir !== 'desc') params.dir = dir;
-      if (search) params.search = search;
-      if (view === 'cards') params.view = view;
-
-      setSearchParams(params, { replace: true });
-    },
-    [
-      rowsPerPage,
-      page,
-      sortColumn,
-      sortDirection,
-      searchQuery,
-      viewMode,
-      setSearchParams,
-    ],
-  );
-
   const handleViewModeChange = useCallback(
     (nextMode: ViewMode) => {
+      // Persist to localStorage before the URL write so the parse fallback
+      // sees the new value.
       writeStoredRepositoriesViewMode(nextMode);
-      setStoredViewMode(nextMode);
+      // Reflow from the clamped (visible) value so stale URLs like
+      // `?view=list&rows=24` land on the new view's default, not on 24.
       const nextRows = clampRowsForRepositoriesView(rowsPerPage, nextMode);
       if (nextRows !== rowsPerPage) {
         setRowsPerPage(nextRows);
-        setPage(0);
-        syncToUrl({
-          view: nextMode,
-          rows: String(nextRows),
-          page: '0',
-        });
-      } else {
-        syncToUrl({ view: nextMode });
       }
+      setFilter('view', nextMode);
     },
-    [rowsPerPage, syncToUrl],
+    [rowsPerPage, setRowsPerPage, setFilter],
   );
 
   const rankedRepositories = useMemo(() => {
@@ -701,30 +690,12 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
-    syncToUrl({ page: String(newPage) });
   };
 
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const newRows = parseInt(event.target.value, 10);
-    setRowsPerPage(newRows);
-    setPage(0);
-    syncToUrl({ rows: String(newRows), page: '0' });
-  };
-
-  const handleSort = (column: SortColumn) => {
-    let newDir: SortDirection;
-    if (sortColumn === column) {
-      newDir = sortDirection === 'asc' ? 'desc' : 'asc';
-      setSortDirection(newDir);
-    } else {
-      newDir = column === 'repository' ? 'asc' : 'desc';
-      setSortColumn(column);
-      setSortDirection(newDir);
-    }
-    setPage(0);
-    syncToUrl({ sort: column, dir: newDir, page: '0' });
+    setRowsPerPage(parseInt(event.target.value, 10));
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
@@ -765,8 +736,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
   const searchInput = (
     <DebouncedSearchInput
-      initialDraft={urlSearch}
-      onDebouncedChange={setSearchQuery}
+      initialDraft={searchQuery}
+      onDebouncedChange={handleSearchChange}
     >
       {({ draftValue, setDraftValue }) => {
         return (
@@ -781,7 +752,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               endAdornment: (
                 <ClearSearchAdornment
                   visible={Boolean(debouncedSearchTrim)}
-                  onClear={() => setSearchQuery('')}
+                  onClear={() => handleSearchChange('')}
                 />
               ),
             }}
@@ -1109,15 +1080,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     },
   ];
 
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    setPage(0);
-    syncToUrl({ search: searchQuery, page: '0' });
-  }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
-
   if (isLoading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -1198,12 +1160,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 </Typography>
                 <Select
                   value={rowsPerPage}
-                  onChange={(e) => {
-                    const newRows = e.target.value as number;
-                    setRowsPerPage(newRows);
-                    setPage(0);
-                    syncToUrl({ rows: String(newRows), page: '0' });
-                  }}
+                  onChange={(e) => setRowsPerPage(e.target.value as number)}
                   sx={{
                     color: 'text.primary',
                     backgroundColor: 'background.default',
@@ -1344,12 +1301,20 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             backgroundColor: 'surface.subtle',
           }}
         >
-          {showChart && chartTopRepositories.length > 0 && (
-            <ReactECharts
-              option={getChartOption()}
-              style={{ height: '100%', width: '100%' }}
-            />
-          )}
+          {showChart &&
+            (chartTopRepositories.length > 0 ? (
+              <ReactECharts
+                option={getChartOption()}
+                style={{ height: '100%', width: '100%' }}
+              />
+            ) : (
+              <ChartEmptyPanel
+                empty
+                minHeight="100%"
+                title="No repositories to chart"
+                hint="Adjust filters or search so at least one repository appears in the list, or switch back to table view."
+              />
+            ))}
         </Box>
       </Collapse>
 

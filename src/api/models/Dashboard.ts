@@ -34,11 +34,6 @@ export type LanguageWeight = {
   language: string | null; // Canonical language name (e.g., "python" for .py, .pyi)
 };
 
-export type CommitsTrend = {
-  date: string;
-  linesCommitted: number | string; // API returns string, needs conversion
-};
-
 /**
  * Dashboard statistics
  *
@@ -162,7 +157,6 @@ export type CommitLog = {
   baseScore?: string; // Backend returns as string
 
   // Score multiplier fields (from /miners/{id}/prs endpoint)
-  repoWeightMultiplier?: string;
   issueMultiplier?: string;
   openPrSpamMultiplier?: string;
   timeDecayMultiplier?: string;
@@ -284,7 +278,6 @@ export type PullRequestDetails = {
   mergedAt: string | null;
   prCreatedAt: string;
   prState: string;
-  repoWeightMultiplier: string; // float returned as string
   baseScore: string; // float returned as string
   issueMultiplier: string; // float returned as string
   openPrSpamMultiplier: string; // float returned as string
