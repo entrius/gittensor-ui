@@ -615,7 +615,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           color: (t) => alpha(t.palette.text.primary, 0.5),
         }}
       >
-        {githubData?.followers ?? 0} followers
+        {githubData?.followers ?? 0} follower(s)
         {minerStats.updatedAt
           ? ` • Updated ${formatTimeAgo(new Date(minerStats.updatedAt))}`
           : ''}
