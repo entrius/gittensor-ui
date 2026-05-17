@@ -26,6 +26,7 @@ import {
 import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
+import { formatDate } from '../../utils/format';
 import FilterButton from '../FilterButton';
 import { AUTHOR_FILTER_ALL, AuthorFilter } from './AuthorFilter';
 
@@ -377,8 +378,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       width: 120,
       align: 'right',
       sortKey: 'mergedAt',
-      renderCell: (pr) =>
-        pr.mergedAt ? new Date(pr.mergedAt).toLocaleDateString() : '-',
+      renderCell: (pr) => formatDate(pr.mergedAt),
     },
     {
       key: 'watch',

@@ -36,6 +36,7 @@ import {
 } from '../../hooks/useMinerRepositoriesOpenIssues';
 import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import { type RepositoryIssue } from '../../api/models/Miner';
+import { formatDate } from '../../utils/format';
 
 type IssueFilter = 'all' | 'open' | 'solved' | 'closed';
 
@@ -607,7 +608,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           renderCell: (issue) =>
             issue.createdAt ? (
               <Tooltip
-                title={new Date(issue.createdAt).toLocaleDateString()}
+                title={formatDate(issue.createdAt)}
                 placement="bottom"
                 arrow
               >
@@ -800,7 +801,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           renderCell: (issue) =>
             issue.createdAt ? (
               <Tooltip
-                title={new Date(issue.createdAt).toLocaleDateString()}
+                title={formatDate(issue.createdAt)}
                 placement="bottom"
                 arrow
               >

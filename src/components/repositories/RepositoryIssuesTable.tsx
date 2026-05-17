@@ -24,6 +24,7 @@ import {
   type DataTableColumn,
 } from '../../components/common/DataTable';
 import { formatTokenAmount, getLowerText, type SortOrder } from '../../utils';
+import { formatDate } from '../../utils/format';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import {
   getIssueStatusMeta,
@@ -271,8 +272,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       width: 128,
       align: 'right',
       sortKey: 'created',
-      renderCell: (issue) =>
-        issue.createdAt ? new Date(issue.createdAt).toLocaleDateString() : '-',
+      renderCell: (issue) => formatDate(issue.createdAt),
     },
     {
       key: 'closed',
@@ -280,8 +280,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       width: 128,
       align: 'right',
       sortKey: 'closed',
-      renderCell: (issue) =>
-        issue.closedAt ? new Date(issue.closedAt).toLocaleDateString() : '-',
+      renderCell: (issue) => formatDate(issue.closedAt),
     },
   ];
 

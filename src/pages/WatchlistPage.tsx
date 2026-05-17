@@ -4051,7 +4051,7 @@ const buildIssueColumns = (
             color: (t) => alpha(t.palette.text.primary, 0.6),
           }}
         >
-          {d ? new Date(d).toLocaleDateString() : '-'}
+          {formatDate(d)}
         </Typography>
       );
     },
