@@ -927,6 +927,7 @@ const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
 
 const MinersList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allMinersStats, isLoading } = useAllMiners();
+  const { remove } = useWatchlist('miners');
   const watchedSet = useMemo(() => new Set(itemKeys), [itemKeys]);
 
   const minerStats = useMemo(() => {
@@ -941,8 +942,50 @@ const MinersList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       }));
   }, [allMinersStats, watchedSet]);
 
+  const unresolvedIds = useMemo(() => {
+    if (isLoading || !allMinersStats) return [];
+    const known = new Set(allMinersStats.map((m) => m.githubId));
+    return itemKeys.filter((id) => !known.has(id));
+  }, [allMinersStats, isLoading, itemKeys]);
+
+  const handleRemoveUnresolved = useCallback(() => {
+    unresolvedIds.forEach((id) => remove(id));
+  }, [unresolvedIds, remove]);
+
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box
+      sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}
+    >
+      {unresolvedIds.length > 0 && (
+        <Card
+          sx={(theme) => ({
+            p: 1.5,
+            display: 'flex',
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            justifyContent: 'space-between',
+            gap: 1.5,
+            flexDirection: { xs: 'column', sm: 'row' },
+            backgroundColor: alpha(theme.palette.status.warningOrange, 0.08),
+            border: `1px solid ${alpha(theme.palette.status.warningOrange, 0.3)}`,
+          })}
+          elevation={0}
+        >
+          <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+            {unresolvedIds.length} watched{' '}
+            {unresolvedIds.length === 1 ? 'miner' : 'miners'} could not be
+            loaded (the account may not be tracked by Gittensor).
+          </Typography>
+          <Button
+            size="small"
+            variant="outlined"
+            color="warning"
+            onClick={handleRemoveUnresolved}
+            sx={{ textTransform: 'none', flexShrink: 0 }}
+          >
+            Remove unresolved
+          </Button>
+        </Card>
+      )}
       <TopMinersTable
         miners={minerStats}
         isLoading={isLoading}
@@ -4060,7 +4103,7 @@ const buildIssueColumns = (
             color: (t) => alpha(t.palette.text.primary, 0.6),
           }}
         >
-          {d ? new Date(d).toLocaleDateString() : '-'}
+          {formatDate(d)}
         </Typography>
       );
     },

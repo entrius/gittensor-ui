@@ -36,6 +36,7 @@ import {
 } from '../../hooks/useMinerRepositoriesOpenIssues';
 import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import { type RepositoryIssue } from '../../api/models/Miner';
+import { formatDate } from '../../utils/format';
 
 type IssueFilter = 'all' | 'open' | 'solved' | 'closed';
 
@@ -194,6 +195,20 @@ const getIssueCounts = (issues: RepositoryIssue[]) => ({
   closed: issues.filter(isClosedIssue).length,
 });
 
+const applyIssueSearch = (
+  issues: RepositoryIssue[],
+  search: string,
+): RepositoryIssue[] => {
+  const q = search.trim().toLowerCase();
+  if (!q) return issues;
+  return issues.filter(
+    (i) =>
+      i.title.toLowerCase().includes(q) ||
+      i.repositoryFullName.toLowerCase().includes(q) ||
+      String(i.number).includes(q),
+  );
+};
+
 const applyIssueFilter = (
   issues: RepositoryIssue[],
   filter: IssueFilter,
@@ -205,15 +220,7 @@ const applyIssueFilter = (
   if (filter === 'open') result = result.filter(isOpenIssue);
   else if (filter === 'solved') result = result.filter(isSolvedIssue);
   else if (filter === 'closed') result = result.filter(isClosedIssue);
-  const q = search.trim().toLowerCase();
-  if (q) {
-    result = result.filter(
-      (i) =>
-        i.title.toLowerCase().includes(q) ||
-        i.repositoryFullName.toLowerCase().includes(q) ||
-        String(i.number).includes(q),
-    );
-  }
+  result = applyIssueSearch(result, search);
   return [...result].sort((a, b) => {
     let cmp = 0;
     if (sortField === 'number') cmp = a.number - b.number;
@@ -427,8 +434,16 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
   const mineTotalPages = Math.ceil(filteredMine.length / PAGE_SIZE);
   const otherTotalPages = Math.ceil(filteredOther.length / PAGE_SIZE);
 
-  const mineCounts = useMemo(() => getIssueCounts(mineIssues), [mineIssues]);
-  const otherCounts = useMemo(() => getIssueCounts(otherIssues), [otherIssues]);
+  // Count over the search scope (excluding the active status filter) so each
+  // button reflects what the user would see if they clicked it.
+  const mineCounts = useMemo(
+    () => getIssueCounts(applyIssueSearch(mineIssues, mineSearch)),
+    [mineIssues, mineSearch],
+  );
+  const otherCounts = useMemo(
+    () => getIssueCounts(applyIssueSearch(otherIssues, otherSearch)),
+    [otherIssues, otherSearch],
+  );
 
   const mineColumns: DataTableColumn<RepositoryIssue, IssueSortField>[] =
     useMemo(
@@ -593,7 +608,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           renderCell: (issue) =>
             issue.createdAt ? (
               <Tooltip
-                title={new Date(issue.createdAt).toLocaleDateString()}
+                title={formatDate(issue.createdAt)}
                 placement="bottom"
                 arrow
               >
@@ -786,7 +801,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           renderCell: (issue) =>
             issue.createdAt ? (
               <Tooltip
-                title={new Date(issue.createdAt).toLocaleDateString()}
+                title={formatDate(issue.createdAt)}
                 placement="bottom"
                 arrow
               >

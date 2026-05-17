@@ -512,7 +512,7 @@ const GlobalSearchBar: React.FC = () => {
       <TextField
         fullWidth
         size="small"
-        placeholder="Search miners, repositories, PRs, issues..."
+        placeholder="Search miners (name / hotkey), repositories, PRs, issues..."
         value={query}
         autoComplete="off"
         inputRef={inputRef}

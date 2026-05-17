@@ -43,6 +43,7 @@ import {
   useWatchlist,
 } from '../../hooks/useWatchlist';
 import TablePagination from '../common/TablePagination';
+import { formatDate } from '../../utils/format';
 import { tooltipSlotProps } from '../../theme';
 
 type PrSortField =
@@ -240,10 +241,18 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
 
   const totalPages = Math.ceil(sortedPRs.length / PAGE_SIZE);
 
+  // Count over the search + author scope (excluding the active status filter)
+  // so each button reflects what the user would see if they clicked it.
   const statusCounts = useMemo(() => {
     if (!prs) return { all: 0, open: 0, merged: 0, closed: 0 };
-    return getPrStatusCounts(prs);
-  }, [prs]);
+    const scope = filterPrs(prs, {
+      author: selectedAuthor,
+      includeNumber: true,
+      searchQuery,
+      statusFilter: 'all',
+    });
+    return getPrStatusCounts(scope);
+  }, [prs, selectedAuthor, searchQuery]);
 
   const hasFilters =
     Boolean(selectedAuthor) ||
@@ -456,7 +465,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       },
       renderCell: (pr) =>
         pr.mergedAt
-          ? new Date(pr.mergedAt).toLocaleDateString()
+          ? formatDate(pr.mergedAt)
           : pr.prState === 'CLOSED'
             ? 'Closed'
             : 'Open',
