@@ -72,6 +72,9 @@ const issueSearchParams = (
 ): Record<string, string | number> => ({
   q: `repo:${repositoryFullName} is:issue is:open${extra ? ` ${extra}` : ''}`,
   per_page: 1,
+  // GitHub's Issues search now requires advanced_search=true; without it the
+  // endpoint returns 422 Validation Failed.
+  advanced_search: 'true',
 });
 
 interface StatCardProps {

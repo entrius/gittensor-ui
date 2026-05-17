@@ -339,46 +339,36 @@ export const buildDashboardTrendData = (
   };
 };
 
+// Each PR contributes to exactly one bucket, keyed by its terminal state and
+// the timestamp that produced that state. API does not currently return
+// closedAt for PRs — fall back to prCreatedAt so closed PRs are still windowed.
+const getPrTerminalTimestamp = (
+  pr: CommitLog,
+  status: ReturnType<typeof getPrStatusLabel>,
+): string | null | undefined => {
+  if (status === 'Merged') return pr.mergedAt;
+  if (status === 'Closed') return pr.closedAt ?? pr.prCreatedAt;
+  return pr.prCreatedAt;
+};
+
 const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
-  const statusCounts = {
-    total: 0,
-    merged: 0,
-    open: 0,
-    closed: 0,
-  };
+  const counts = { merged: 0, open: 0, closed: 0 };
 
   prs.forEach((pr) => {
-    const normalizedState = getPrStatusLabel(pr);
-    const createdInWindow = isWithinWindow(toTimestamp(pr.prCreatedAt), window);
-    const mergedInWindow = isWithinWindow(toTimestamp(pr.mergedAt), window);
-    // API does not currently return closedAt for PRs — fall back to
-    // prCreatedAt so closed PRs are still tracked within the window.
-    const closedInWindow = isWithinWindow(
-      toTimestamp(pr.closedAt ?? pr.prCreatedAt),
-      window,
-    );
+    const status = getPrStatusLabel(pr);
+    if (
+      !isWithinWindow(toTimestamp(getPrTerminalTimestamp(pr, status)), window)
+    )
+      return;
 
-    if (createdInWindow) {
-      statusCounts.open += 1;
-      statusCounts.total += 1;
-    }
-
-    if (mergedInWindow) {
-      statusCounts.merged += 1;
-      statusCounts.total += 1;
-    }
-
-    if (normalizedState === 'Closed' && closedInWindow) {
-      statusCounts.closed += 1;
-      statusCounts.total += 1;
-    }
+    if (status === 'Merged') counts.merged += 1;
+    else if (status === 'Closed') counts.closed += 1;
+    else counts.open += 1;
   });
 
   return {
-    total: statusCounts.total,
-    merged: statusCounts.merged,
-    open: statusCounts.open,
-    closed: statusCounts.closed,
+    total: counts.merged + counts.open + counts.closed,
+    ...counts,
   };
 };
 
