@@ -41,6 +41,12 @@ import {
 
 type ViewMode = 'prs' | 'issues';
 
+/** Matches miner details mode labels: OSS Contributions / Issue Discovery. */
+const ACTIVITY_SECTION_TITLE: Record<ViewMode, string> = {
+  prs: 'OSS Contributions Activity',
+  issues: 'Issue Discovery Activity',
+};
+
 interface MinerActivityProps {
   githubId: string;
   viewMode?: ViewMode;
@@ -578,7 +584,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
           }}
         >
           <Typography variant="sectionTitle">
-            {isIssueMode ? 'Issue Discovery Activity' : 'Developer Activity'}
+            {ACTIVITY_SECTION_TITLE[isIssueMode ? 'issues' : 'prs']}
           </Typography>
           <Box sx={{ alignSelf: { xs: 'stretch', sm: 'auto' }, minWidth: 0 }}>
             <TrustBadge
