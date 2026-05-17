@@ -2,6 +2,7 @@ import React from 'react';
 import { Box } from '@mui/material';
 import { type CommitLog } from '../../api/models/Dashboard';
 import { getGithubAvatarSrc } from '../../utils';
+import { formatDate } from '../../utils/format';
 import { type DataTableColumn } from '../../components/common/DataTable';
 import SearchResultsCard from './SearchResultsCard';
 import {
@@ -17,7 +18,7 @@ const formatPrScore = (pr: CommitLog) => {
 };
 
 const formatPrDateOrStatus = (pr: CommitLog) => {
-  if (pr.mergedAt) return new Date(pr.mergedAt).toLocaleDateString();
+  if (pr.mergedAt) return formatDate(pr.mergedAt);
   if (pr.prState === 'CLOSED') return 'Closed';
   return 'Open';
 };

@@ -43,6 +43,7 @@ import {
   useWatchlist,
 } from '../../hooks/useWatchlist';
 import TablePagination from '../common/TablePagination';
+import { formatDate } from '../../utils/format';
 import { tooltipSlotProps } from '../../theme';
 
 type PrSortField =
@@ -464,7 +465,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       },
       renderCell: (pr) =>
         pr.mergedAt
-          ? new Date(pr.mergedAt).toLocaleDateString()
+          ? formatDate(pr.mergedAt)
           : pr.prState === 'CLOSED'
             ? 'Closed'
             : 'Open',
