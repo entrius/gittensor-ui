@@ -286,6 +286,22 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             >
               {formatRank(rank)}
             </Typography>
+            {miner.viewRank != null && miner.viewRank !== miner.rank && (
+              <Typography
+                component="span"
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.58rem',
+                  fontWeight: 500,
+                  color: theme.palette.text.tertiary,
+                  lineHeight: 1,
+                  flexShrink: 0,
+                  ml: 0.75,
+                })}
+              >
+                ·{miner.viewRank} in view
+              </Typography>
+            )}
           </Box>
         )}
 

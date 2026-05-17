@@ -1,0 +1,126 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 490" font-family="'JetBrains Mono','Courier New',monospace">
+  <rect width="860" height="490" fill="#0d1117"/>
+  
+  <!-- Before -->
+  <text x="24" y="30" fill="#8b949e" font-size="13" font-weight="600" text-transform="uppercase" letter-spacing="1">BEFORE — no filter indicator</text>
+  <rect x="20" y="44" width="400" height="195" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  
+  <text x="36" y="72" fill="#e6edf3" font-size="13" font-weight="600">Rank  Miner</text>
+  <line x1="36" y1="80" x2="400" y2="80" stroke="#21262d" stroke-width="1"/>
+  
+  <text x="36" y="102" fill="#8b949e" font-size="12">#01</text>
+  <text x="80" y="102" fill="#e6edf3" font-size="13">miner-alpha</text>
+  <rect x="240" y="91" width="58" height="18" rx="4" fill="rgba(63,185,80,0.15)"/>
+  <text x="248" y="104" fill="#3fb950" font-size="10">Eligible</text>
+  
+  <text x="36" y="128" fill="#8b949e" font-size="12">#02</text>
+  <text x="80" y="128" fill="#e6edf3" font-size="13">miner-beta</text>
+  <rect x="238" y="117" width="58" height="18" rx="4" fill="rgba(63,185,80,0.15)"/>
+  <text x="246" y="130" fill="#3fb950" font-size="10">Eligible</text>
+  
+  <text x="36" y="154" fill="#8b949e" font-size="12">#16</text>
+  <text x="80" y="154" fill="#6e7681" font-size="13" opacity="0.5">miner-delta</text>
+  <rect x="250" y="143" width="66" height="18" rx="4" fill="#21262d"/>
+  <text x="258" y="156" fill="#6e7681" font-size="10">Ineligible</text>
+  
+  <text x="36" y="180" fill="#8b949e" font-size="12">#19</text>
+  <text x="80" y="180" fill="#6e7681" font-size="13" opacity="0.5">miner-epsilon</text>
+  <rect x="250" y="169" width="66" height="18" rx="4" fill="#21262d"/>
+  <text x="258" y="182" fill="#6e7681" font-size="10">Ineligible</text>
+  
+  <text x="36" y="206" fill="#8b949e" font-size="12">#23</text>
+  <text x="80" y="206" fill="#e6edf3" font-size="13">miner-kappa</text>
+  <rect x="240" y="195" width="58" height="18" rx="4" fill="rgba(63,185,80,0.15)"/>
+  <text x="248" y="208" fill="#3fb950" font-size="10">Eligible</text>
+  
+  <line x1="36" y1="215" x2="400" y2="215" stroke="#21262d" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="36" y="230" fill="#6e7681" font-size="10">Gaps (16, 19, 23) with no UI explanation → confusing</text>
+  
+  <!-- After -->
+  <text x="450" y="30" fill="#8b949e" font-size="13" font-weight="600" text-transform="uppercase" letter-spacing="1">AFTER — shows "·N in view" indicator</text>
+  <rect x="440" y="44" width="400" height="195" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  
+  <text x="456" y="72" fill="#e6edf3" font-size="13" font-weight="600">Rank  Miner</text>
+  <line x1="456" y1="80" x2="830" y2="80" stroke="#21262d" stroke-width="1"/>
+  
+  <text x="456" y="102" fill="#8b949e" font-size="12">#01</text>
+  <text x="500" y="102" fill="#e6edf3" font-size="13">miner-alpha</text>
+  <rect x="660" y="91" width="58" height="18" rx="4" fill="rgba(63,185,80,0.15)"/>
+  <text x="668" y="104" fill="#3fb950" font-size="10">Eligible</text>
+  
+  <text x="456" y="128" fill="#8b949e" font-size="12">#02</text>
+  <text x="500" y="128" fill="#e6edf3" font-size="13">miner-beta</text>
+  <rect x="658" y="117" width="58" height="18" rx="4" fill="rgba(63,185,80,0.15)"/>
+  <text x="666" y="130" fill="#3fb950" font-size="10">Eligible</text>
+  
+  <text x="456" y="154" fill="#8b949e" font-size="12">#23</text>
+  <text x="500" y="154" fill="#e6edf3" font-size="13">miner-kappa</text>
+  <text x="590" y="154" fill="#6e7681" font-size="11">·4 in view</text>
+  <rect x="680" y="143" width="58" height="18" rx="4" fill="rgba(63,185,80,0.15)"/>
+  <text x="688" y="156" fill="#3fb950" font-size="10">Eligible</text>
+  <rect x="453" y="143" width="377" height="22" rx="4" fill="none" stroke="#1f6feb" stroke-width="1" stroke-dasharray="4,2"/>
+  
+  <text x="456" y="180" fill="#8b949e" font-size="12">#48</text>
+  <text x="500" y="180" fill="#e6edf3" font-size="13">miner-theta</text>
+  <text x="590" y="180" fill="#6e7681" font-size="11">·4 in view</text>
+  <rect x="680" y="169" width="58" height="18" rx="4" fill="rgba(63,185,80,0.15)"/>
+  <text x="688" y="182" fill="#3fb950" font-size="10">Eligible</text>
+  <rect x="453" y="169" width="377" height="22" rx="4" fill="none" stroke="#1f6feb" stroke-width="1" stroke-dasharray="4,2"/>
+  
+  <text x="456" y="206" fill="#8b949e" font-size="12">#94</text>
+  <text x="500" y="206" fill="#e6edf3" font-size="13">miner-omega</text>
+  <text x="590" y="206" fill="#6e7681" font-size="11">·5 in view</text>
+  <rect x="680" y="195" width="58" height="18" rx="4" fill="rgba(63,185,80,0.15)"/>
+  <text x="688" y="208" fill="#3fb950" font-size="10">Eligible</text>
+  <rect x="453" y="195" width="377" height="22" rx="4" fill="none" stroke="#1f6feb" stroke-width="1" stroke-dasharray="4,2"/>
+  
+  <line x1="456" y1="215" x2="830" y2="215" stroke="#21262d" stroke-width="1" stroke-dasharray="4,2"/>
+  <text x="456" y="230" fill="#6e7681" font-size="10">Rank #48 → ·4 in view (4th visible after filtering)</text>
+  
+  <!-- Detail: Card + List Views -->
+  <text x="24" y="280" fill="#8b949e" font-size="13" font-weight="600" text-transform="uppercase" letter-spacing="1">Card view &amp; List view</text>
+  
+  <!-- Card view -->
+  <rect x="20" y="294" width="400" height="175" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  <text x="36" y="320" fill="#e6edf3" font-size="14" font-weight="600">miner-theta</text>
+  <text x="36" y="338" fill="#3fb950" font-size="11">● Eligible</text>
+  <rect x="280" y="307" width="54" height="24" rx="6" fill="none" stroke="#30363d"/>
+  <text x="286" y="323" fill="#8b949e" font-size="13">#48</text>
+  <text x="340" y="323" fill="#6e7681" font-size="11">·4 in view</text>
+  
+  <line x1="20" y1="356" x2="420" y2="356" stroke="#21262d" stroke-width="1"/>
+  <text x="36" y="380" fill="#8b949e" font-size="10" text-transform="uppercase">Earnings</text>
+  <text x="36" y="404" fill="#e6edf3" font-size="20" font-weight="700">$1,234</text>
+  <text x="140" y="404" fill="#8b949e" font-size="11">/day</text>
+  
+  <line x1="226" y1="356" x2="226" y2="468" stroke="#21262d" stroke-width="1"/>
+  <text x="280" y="380" fill="#8b949e" font-size="10" text-transform="uppercase">Credibility</text>
+  <circle cx="300" cy="420" r="28" fill="none" stroke="#30363d" stroke-width="6"/>
+  <text x="293" y="425" fill="#e6edf3" font-size="13" font-weight="700">85%</text>
+  
+  <!-- List view -->
+  <rect x="440" y="294" width="400" height="175" rx="8" fill="#161b22" stroke="#30363d" stroke-width="1"/>
+  
+  <rect x="456" y="308" width="370" height="32" rx="4" fill="#0d1117">
+    <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite"/>
+  </rect>
+  <text x="468" y="324" fill="#8b949e" font-size="12">#48</text>
+  <text x="504" y="324" fill="#6e7681" font-size="11">·4</text>
+  <text x="534" y="324" fill="#e6edf3" font-size="13">miner-theta</text>
+  <text x="668" y="324" fill="#3fb950" font-size="12" font-weight="600">$1,234</text>
+  
+  <rect x="456" y="348" width="370" height="32" rx="4" fill="#0d1117">
+    <animate attributeName="opacity" values="0.6;1;0.6" dur="2s" repeatCount="indefinite"/>
+  </rect>
+  <text x="468" y="364" fill="#8b949e" font-size="12">#94</text>
+  <text x="504" y="364" fill="#6e7681" font-size="11">·5</text>
+  <text x="534" y="364" fill="#e6edf3" font-size="13">miner-omega</text>
+  <text x="660" y="364" fill="#3fb950" font-size="12" font-weight="600">$2,468</text>
+  
+  <line x1="456" y1="392" x2="830" y2="392" stroke="#21262d" stroke-width="1"/>
+  <text x="456" y="410" fill="#6e7681" font-size="10">List view: Rank icon → "·N" indicator right after rank number</text>
+  <text x="456" y="430" fill="#6e7681" font-size="10">Card view: "·N in view" appears after the rank pill in the header</text>
+  
+  <!-- Footer -->
+  <text x="24" y="475" fill="#6e7681" font-size="10">Only shown when a search or eligibility filter is active AND viewRank differs from global rank</text>
+</svg>
