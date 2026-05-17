@@ -130,23 +130,25 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     }
   }, [issueRepoStats, statusFilter]);
 
-  const repoStatusCounts = useMemo(
-    () => ({
-      all: repoStats.length,
-      recent: repoStats.filter(isRecentRepoStats).length,
-      stale: repoStats.filter(isStaleRepoStats).length,
-    }),
-    [repoStats],
-  );
+  // Count over the search scope (excluding the active status filter) so each
+  // button reflects what the user would see if they clicked it.
+  const repoStatusCounts = useMemo(() => {
+    const scope = filterBySearch(repoStats, searchQuery);
+    return {
+      all: scope.length,
+      recent: scope.filter(isRecentRepoStats).length,
+      stale: scope.filter(isStaleRepoStats).length,
+    };
+  }, [repoStats, searchQuery]);
 
-  const issueRepoStatusCounts = useMemo(
-    () => ({
-      all: issueRepoStats.length,
-      recent: issueRepoStats.filter(isRecentIssueRepoStats).length,
-      stale: issueRepoStats.filter(isStaleIssueRepoStats).length,
-    }),
-    [issueRepoStats],
-  );
+  const issueRepoStatusCounts = useMemo(() => {
+    const scope = filterBySearch(issueRepoStats, searchQuery);
+    return {
+      all: scope.length,
+      recent: scope.filter(isRecentIssueRepoStats).length,
+      stale: scope.filter(isStaleIssueRepoStats).length,
+    };
+  }, [issueRepoStats, searchQuery]);
 
   const filteredRepoStats = useMemo(
     () => filterBySearch(statusFilteredRepoStats, searchQuery),
