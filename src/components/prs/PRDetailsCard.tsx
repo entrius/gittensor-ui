@@ -91,6 +91,12 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   const tokenScoreValue = parseNumber(prDetails.tokenScore);
   const scoreSubValue = (raw: unknown, num: number) =>
     raw != null ? `Score ${num.toFixed(2)}` : undefined;
+  const formatTokenDonutTooltip = (params: {
+    name: string;
+    value: number;
+    percent: number;
+  }) =>
+    `${params.name}: ${Number(params.value).toFixed(2)} (${params.percent.toFixed(2)}%)`;
   type DetailItem = {
     label: string;
     value: string;
@@ -154,7 +160,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
         tooltip: {
           trigger: 'item',
           confine: true,
-          formatter: '{b}: {c} ({d}%)',
+          formatter: formatTokenDonutTooltip,
           backgroundColor: alpha(theme.palette.common.black, 0.9),
           borderColor: alpha(theme.palette.common.white, 0.15),
           borderWidth: 1,
