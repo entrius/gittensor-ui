@@ -34,6 +34,13 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
   const usdEstimate = hasPrices
     ? formatAlphaToUsd(issue.targetBounty, taoPrice, alphaPrice)
     : null;
+  const metaLabelSx = {
+    fontSize: '0.7rem',
+    color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
+    textTransform: 'uppercase' as const,
+    letterSpacing: '0.5px',
+    mb: 0.9,
+  };
 
   return (
     <Card
@@ -121,15 +128,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
               minWidth: { sm: 170 },
             }}
           >
-            <Typography
-              sx={{
-                fontSize: '0.7rem',
-                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                mb: 0.5,
-              }}
-            >
+            <Typography sx={{ ...metaLabelSx, mb: 0.5 }}>
               {issue.status === 'completed' ? 'Payout' : 'Bounty'}
             </Typography>
             {issue.status === 'registered' ? (
@@ -200,20 +199,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
 
           {issue.authorLogin && (
             <Box sx={{ minWidth: { sm: 140 } }}>
-              <Typography
-                sx={{
-                  fontSize: '0.7rem',
-                  color: alpha(
-                    theme.palette.common.white,
-                    TEXT_OPACITY.tertiary,
-                  ),
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.5px',
-                  mb: 0.9,
-                }}
-              >
-                Author
-              </Typography>
+              <Typography sx={metaLabelSx}>Author</Typography>
               <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                 <Avatar
                   src={getGithubAvatarSrc(issue.authorLogin)}
@@ -238,17 +224,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
           )}
 
           <Box sx={{ minWidth: { sm: 160 } }}>
-            <Typography
-              sx={{
-                fontSize: '0.7rem',
-                color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-                textTransform: 'uppercase',
-                letterSpacing: '0.5px',
-                mb: 0.9,
-              }}
-            >
-              Created
-            </Typography>
+            <Typography sx={metaLabelSx}>Created</Typography>
             <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
               <CalendarTodayOutlinedIcon
                 sx={{
