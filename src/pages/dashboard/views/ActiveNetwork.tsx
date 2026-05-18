@@ -1,11 +1,13 @@
 import React from 'react';
 import { Box, CircularProgress } from '@mui/material';
 import {
+  type DashboardContributionCalendar,
   type DashboardKpi,
   type DashboardOverviewSection,
   type DashboardTrendSeries,
   type TrendTimeRange,
 } from '../dashboardData';
+import ContributionCalendar from './ContributionCalendar';
 import ContributionTrends from './ContributionTrends';
 import DashboardOverview from './DashboardOverview';
 
@@ -13,6 +15,7 @@ interface ActiveNetworkProps {
   range: TrendTimeRange;
   trendLabels: string[];
   trendSeries: DashboardTrendSeries[];
+  contributionCalendar: DashboardContributionCalendar;
   sections: DashboardOverviewSection[];
   kpis: DashboardKpi[];
   isLoading?: boolean;
@@ -23,6 +26,7 @@ const ActiveNetwork: React.FC<ActiveNetworkProps> = ({
   range,
   trendLabels,
   trendSeries,
+  contributionCalendar,
   sections,
   kpis,
   isLoading = false,
@@ -44,6 +48,11 @@ const ActiveNetwork: React.FC<ActiveNetworkProps> = ({
         series={trendSeries}
         isLoading={isLoading}
         onRangeChange={onRangeChange}
+      />
+
+      <ContributionCalendar
+        calendar={contributionCalendar}
+        isLoading={isLoading}
       />
 
       {isLoading ? (

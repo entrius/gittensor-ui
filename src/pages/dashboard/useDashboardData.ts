@@ -25,6 +25,7 @@ import {
   type Repository,
 } from '../../api/models';
 import {
+  buildDashboardContributionCalendar,
   buildDashboardKpis,
   buildDashboardOverview,
   buildDashboardTrendData,
@@ -134,6 +135,15 @@ const useDashboardData = (range: TrendTimeRange) => {
     [datasets.minerIssues.data, datasets.prs.data, range],
   );
 
+  const contributionCalendar = useMemo(
+    () =>
+      buildDashboardContributionCalendar(
+        datasets.prs.data,
+        datasets.minerIssues.data,
+      ),
+    [datasets.minerIssues.data, datasets.prs.data],
+  );
+
   const featuredContributors = useMemo(
     () => buildFeaturedContributors(datasets.prs.data, datasets.miners.data),
     [datasets.miners.data, datasets.prs.data],
@@ -153,7 +163,10 @@ const useDashboardData = (range: TrendTimeRange) => {
     [datasets.prs.data],
   );
 
-  const totalLinesCommitted = Number(linesTotalQuery.data?.linesCommitted) || 0;
+  const totalLinesCommitted = useMemo(
+    () => Number(linesTotalQuery.data?.linesCommitted) || 0,
+    [linesTotalQuery.data],
+  );
 
   const kpis = useMemo(
     () =>
@@ -175,6 +188,7 @@ const useDashboardData = (range: TrendTimeRange) => {
     overview,
     trendLabels: trendData.labels,
     trendSeries: trendData.series,
+    contributionCalendar,
     featuredWork,
     isFeaturedWorkLoading,
     featuredContributors,
