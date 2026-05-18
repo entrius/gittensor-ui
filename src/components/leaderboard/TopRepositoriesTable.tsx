@@ -59,6 +59,7 @@ import {
   truncateText,
 } from '../../utils';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
+import { useClampUrlPage } from '../../hooks/useUrlPaginationParam';
 import { useWatchlist } from '../../hooks/useWatchlist';
 import { RankIcon } from './RankIcon';
 import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
@@ -377,13 +378,21 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     [rankedRepositories],
   );
 
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredRepositories.length / rowsPerPage),
+  );
+  useClampUrlPage(page, setPage, totalPages, !isLoading);
+
+  const safePage = Math.min(page, totalPages - 1);
+
   const pagedRepositories = useMemo(
     () =>
       filteredRepositories.slice(
-        page * rowsPerPage,
-        page * rowsPerPage + rowsPerPage,
+        safePage * rowsPerPage,
+        safePage * rowsPerPage + rowsPerPage,
       ),
-    [filteredRepositories, page, rowsPerPage],
+    [filteredRepositories, safePage, rowsPerPage],
   );
 
   /* Chart shows the top N repos for the chosen metric (independent of the
@@ -1467,7 +1476,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         component="div"
         count={filteredRepositories.length}
         rowsPerPage={rowsPerPage}
-        page={page}
+        page={safePage}
         onPageChange={handleChangePage}
         onRowsPerPageChange={handleChangeRowsPerPage}
         showFirstButton

@@ -50,11 +50,19 @@ export type UseDataTableParamsConfig<
   // same page (e.g. prefix with the table name).
   paramKeys?: Partial<ParamKeys>;
   /**
+   * How the `page` URL param is encoded. Default `one-based` (page 1 = first
+   * page, omitted from URL). Use `raw` when the slot stores a non-page integer
+   * (e.g. leaderboard `visible` item count).
+   */
+  pageUrlFormat?: 'one-based' | 'raw';
+  /**
    * Additional URL-backed filters beyond sort/pagination. Each entry
    * provides `parse` / `serialize` so the hook stays type-safe.
    */
   filters?: { [K in keyof Filters]: FilterConfig<Filters[K]> };
 };
+
+type SetPage = (next: number | ((prev: number) => number)) => void;
 
 export type UseDataTableParamsResult<
   SortKey extends string,
@@ -65,7 +73,7 @@ export type UseDataTableParamsResult<
   page: number;
   rowsPerPage: number;
   setSort: (field: SortKey) => void;
-  setPage: (page: number) => void;
+  setPage: SetPage;
   setRowsPerPage: (rowsPerPage: number) => void;
   filters: Filters;
   setFilter: <K extends keyof Filters>(key: K, value: Filters[K]) => void;
@@ -91,10 +99,18 @@ const parseSortOrder = (
   return fallback;
 };
 
-const parsePage = (value: string | null): number => {
+const parseRawNonNegativeInt = (value: string | null): number => {
   if (!value) return 0;
   const parsed = Number.parseInt(value, 10);
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+};
+
+/** URL stores 1-based page numbers; hook consumers use 0-based indices. */
+const parseOneBasedPage = (value: string | null): number => {
+  if (!value) return 0;
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return 0;
+  return parsed - 1;
 };
 
 const parseRowsPerPage = (
@@ -137,6 +153,7 @@ export const useDataTableParams = <
   defaultRowsPerPage = 25,
   rowsPerPageOptions,
   paramKeys: paramKeysOverride,
+  pageUrlFormat = 'one-based',
   filters: filtersConfig,
 }: UseDataTableParamsConfig<SortKey, Filters>): UseDataTableParamsResult<
   SortKey,
@@ -171,9 +188,17 @@ export const useDataTableParams = <
     [searchParams, paramKeys.order, orderFor, sortField],
   );
 
+  const parsePageFromUrl = useCallback(
+    (value: string | null) =>
+      pageUrlFormat === 'raw'
+        ? parseRawNonNegativeInt(value)
+        : parseOneBasedPage(value),
+    [pageUrlFormat],
+  );
+
   const page = useMemo(
-    () => parsePage(searchParams.get(paramKeys.page)),
-    [searchParams, paramKeys.page],
+    () => parsePageFromUrl(searchParams.get(paramKeys.page)),
+    [searchParams, paramKeys.page, parsePageFromUrl],
   );
 
   const rowsPerPage = useMemo(
@@ -245,19 +270,35 @@ export const useDataTableParams = <
     [setSearchParams, paramKeys, sortKeys, defaultSortKey, orderFor],
   );
 
-  const setPage = useCallback(
-    (nextPage: number) => {
+  const setPage = useCallback<SetPage>(
+    (nextPage) => {
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
-          if (nextPage <= 0) next.delete(paramKeys.page);
-          else next.set(paramKeys.page, String(nextPage));
+          const current =
+            pageUrlFormat === 'raw'
+              ? parseRawNonNegativeInt(prev.get(paramKeys.page))
+              : parseOneBasedPage(prev.get(paramKeys.page));
+          const resolved =
+            typeof nextPage === 'function' ? nextPage(current) : nextPage;
+          const clamped =
+            Number.isFinite(resolved) && resolved >= 0
+              ? Math.floor(resolved)
+              : 0;
+          if (pageUrlFormat === 'raw') {
+            if (clamped <= 0) next.delete(paramKeys.page);
+            else next.set(paramKeys.page, String(clamped));
+          } else if (clamped <= 0) {
+            next.delete(paramKeys.page);
+          } else {
+            next.set(paramKeys.page, String(clamped + 1));
+          }
           return next;
         },
         { replace: true },
       );
     },
-    [setSearchParams, paramKeys.page],
+    [setSearchParams, paramKeys.page, pageUrlFormat],
   );
 
   const setRowsPerPage = useCallback(
@@ -288,9 +329,14 @@ export const useDataTableParams = <
         (prev) => {
           const next = new URLSearchParams(prev);
           const serialized = config.serialize(value);
+          const currentRaw = prev.get(filterParamKey);
+          const unchanged =
+            serialized === null
+              ? currentRaw === null || currentRaw === ''
+              : serialized === currentRaw;
           if (serialized === null) next.delete(filterParamKey);
           else next.set(filterParamKey, serialized);
-          if (resetPage) next.delete(paramKeys.page);
+          if (resetPage && !unchanged) next.delete(paramKeys.page);
           return next;
         },
         { replace: true },

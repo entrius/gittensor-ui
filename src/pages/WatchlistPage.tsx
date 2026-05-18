@@ -75,6 +75,11 @@ import {
   MINER_ISSUES_FULL_HISTORY_SINCE_ISO,
 } from '../api';
 import { useFiltersPanelOpenInUrl } from '../hooks/useFiltersPanelUrlState';
+import {
+  useClampUrlPage,
+  useResetPageOnDepsChange,
+  useUrlPaginationParam,
+} from '../hooks/useUrlPaginationParam';
 import type {
   CommitLog,
   MinerIssue,
@@ -1648,8 +1653,13 @@ const WatchlistStackedPagination: React.FC<{
 );
 
 /** Sidebar is beside main content only at `xl+`; below that, paginate tables so stacked sidebars stay reachable. */
-const useWatchlistSidebarFixedRight = () =>
-  useMediaQuery(theme.breakpoints.up('xl'));
+const useWatchlistSidebarFixedRight = () => {
+  const query = theme.breakpoints.up('xl');
+  const defaultMatches =
+    typeof window !== 'undefined' &&
+    window.matchMedia(query.replace(/^@media\s*/, '')).matches;
+  return useMediaQuery(query, { defaultMatches });
+};
 
 const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const theme = useTheme();
@@ -1661,20 +1671,20 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(false);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useUrlPaginationParam({ pageParam: 'reposPage' });
   const observerTarget = useRef<HTMLDivElement>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const [sortField, setSortField] = useState<RepoSortKey>('weight');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  useEffect(() => {
-    setPage(0);
-  }, [sidebarFixedRight]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [searchQuery, sortField, sortOrder, viewMode]);
+  useResetPageOnDepsChange(setPage, [sidebarFixedRight]);
+  useResetPageOnDepsChange(setPage, [
+    searchQuery,
+    sortField,
+    sortOrder,
+    viewMode,
+  ]);
 
   const handleSort = (field: RepoSortKey) => {
     if (sortField === field) {
@@ -1783,6 +1793,10 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     return m;
   }, [sorted]);
 
+  const totalRepoPages = Math.max(1, Math.ceil(sorted.length / ROWS_PER_PAGE));
+
+  useClampUrlPage(page, setPage, totalRepoPages, repos !== undefined);
+
   const paged = useMemo(() => {
     if (sidebarFixedRight) {
       return sorted.slice(0, (page + 1) * ROWS_PER_PAGE);
@@ -1809,7 +1823,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [sidebarFixedRight, page, filtered.length]);
+  }, [sidebarFixedRight, page, filtered.length, setPage]);
 
   const maxWeight = useMemo(
     () =>
@@ -2535,7 +2549,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<BountyStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useUrlPaginationParam({ pageParam: 'bountiesPage' });
   const observerTarget = useRef<HTMLDivElement>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
@@ -2560,13 +2574,14 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     }
   }, [sortField, bountyVisibleSortKeys]);
 
-  useEffect(() => {
-    setPage(0);
-  }, [sidebarFixedRight]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
+  useResetPageOnDepsChange(setPage, [sidebarFixedRight]);
+  useResetPageOnDepsChange(setPage, [
+    statusFilter,
+    searchQuery,
+    sortField,
+    sortOrder,
+    viewMode,
+  ]);
 
   const handleSort = useCallback(
     (field: BountySortKey) => {
@@ -2579,7 +2594,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       }
       setPage(0);
     },
-    [sortField, bountyVisibleSortKeys, getDefaultSortDirection],
+    [sortField, bountyVisibleSortKeys, getDefaultSortDirection, setPage],
   );
 
   const counts = useMemo(() => getBountyCounts(items), [items]);
@@ -2615,9 +2630,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     Math.ceil(filtered.length / ROWS_PER_PAGE),
   );
 
-  useEffect(() => {
-    setPage((p) => Math.min(p, totalBountyPages - 1));
-  }, [totalBountyPages]);
+  useClampUrlPage(page, setPage, totalBountyPages, !isLoading);
 
   const paged = useMemo(() => {
     if (sidebarFixedRight) {
@@ -2645,7 +2658,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [sidebarFixedRight, page, filtered.length]);
+  }, [sidebarFixedRight, page, filtered.length, setPage]);
 
   return (
     <Card
@@ -3428,26 +3441,20 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     isPrStatusFilterStored,
   );
   const [viewMode, setViewMode] = useWatchlistViewMode();
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useUrlPaginationParam({ pageParam: 'prsPage' });
   const observerTarget = useRef<HTMLDivElement>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const [sortField, setSortField] = useState<PrSortKey>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  useEffect(() => {
-    setPage(0);
-  }, [sidebarFixedRight]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [
+  useResetPageOnDepsChange(setPage, [sidebarFixedRight]);
+  useResetPageOnDepsChange(setPage, [
     statusFilter,
     searchQuery,
     sortField,
     sortOrder,
     viewMode,
-    isWatched,
     activeSources,
   ]);
 
@@ -3527,9 +3534,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   const totalPrPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
 
-  useEffect(() => {
-    setPage((p) => Math.min(p, totalPrPages - 1));
-  }, [totalPrPages]);
+  useClampUrlPage(page, setPage, totalPrPages, !isLoading);
 
   const paged = useMemo(() => {
     if (sidebarFixedRight) {
@@ -3557,7 +3562,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [sidebarFixedRight, page, filtered.length]);
+  }, [sidebarFixedRight, page, filtered.length, setPage]);
 
   return (
     <Card
@@ -4413,20 +4418,21 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useUrlPaginationParam({ pageParam: 'issuesPage' });
   const observerTarget = useRef<HTMLDivElement>(null);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const [sortField, setSortField] = useState<IssueSortKey>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
 
-  useEffect(() => {
-    setPage(0);
-  }, [sidebarFixedRight]);
-
-  useEffect(() => {
-    setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
+  useResetPageOnDepsChange(setPage, [sidebarFixedRight]);
+  useResetPageOnDepsChange(setPage, [
+    statusFilter,
+    searchQuery,
+    sortField,
+    sortOrder,
+    viewMode,
+  ]);
 
   const handleSort = (field: IssueSortKey) => {
     if (sortField === field) {
@@ -4472,9 +4478,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     Math.ceil(filtered.length / ROWS_PER_PAGE),
   );
 
-  useEffect(() => {
-    setPage((p) => Math.min(p, totalIssuePages - 1));
-  }, [totalIssuePages]);
+  useClampUrlPage(page, setPage, totalIssuePages, !isLoading);
 
   const paged = useMemo(() => {
     if (sidebarFixedRight) {
@@ -4502,7 +4506,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [sidebarFixedRight, page, filtered.length]);
+  }, [sidebarFixedRight, page, filtered.length, setPage]);
 
   return (
     <Card

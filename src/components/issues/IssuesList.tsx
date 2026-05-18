@@ -40,6 +40,11 @@ import { format } from 'date-fns';
 import { IssueBounty } from '../../api/models/Issues';
 import { usePrices } from '../../hooks/usePrices';
 import {
+  useClampUrlPage,
+  useResetPageOnDepsChange,
+  useUrlPaginationParam,
+} from '../../hooks/useUrlPaginationParam';
+import {
   formatAlphaToUsd,
   formatDate,
   formatTokenAmount,
@@ -62,6 +67,7 @@ import {
   ISSUES_LIST_ROWS,
   ISSUES_DEFAULT_CARD_ROWS,
   ISSUES_DEFAULT_LIST_ROWS,
+  ISSUES_VALID_ROWS,
   clampRowsForIssuesView,
   getIssuesViewModeFromQuery,
   readStoredIssuesViewMode,
@@ -266,10 +272,14 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
   const [searchQuery, setSearchQuery] = useState('');
   const [showChart, setShowChart] = useState(false);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState<number>(() =>
-    viewMode === 'cards' ? ISSUES_DEFAULT_CARD_ROWS : ISSUES_DEFAULT_LIST_ROWS,
-  );
+  const [page, setPage, rowsPerPage, setRowsPerPage] = useUrlPaginationParam({
+    pageParam: 'page',
+    rows: {
+      paramName: 'rows',
+      allowed: ISSUES_VALID_ROWS,
+      defaultRows: ISSUES_DEFAULT_LIST_ROWS,
+    },
+  });
 
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
@@ -423,16 +433,16 @@ const IssuesList: React.FC<IssuesListProps> = ({
   const pageSize = clampRowsForIssuesView(rowsPerPage, viewMode);
   const totalPages = Math.max(1, Math.ceil(sortedIssues.length / pageSize));
 
-  // Reset to page 0 when filter/search/sort/view/rowsPerPage changes.
-  // set-state-during-render (not useEffect) so React discards the stale render
-  // before commit, avoiding a one-frame flash of the clamped old page.
-  const paginationResetKey = `${filterType}|${searchQuery}|${sortKey}|${sortDirection}|${viewMode}|${pageSize}`;
-  const [prevPaginationResetKey, setPrevPaginationResetKey] =
-    useState(paginationResetKey);
-  if (paginationResetKey !== prevPaginationResetKey) {
-    setPrevPaginationResetKey(paginationResetKey);
-    setPage(0);
-  }
+  useResetPageOnDepsChange(setPage, [
+    filterType,
+    searchQuery,
+    sortKey,
+    sortDirection,
+    viewMode,
+    pageSize,
+  ]);
+
+  useClampUrlPage(page, setPage, totalPages, !isLoading);
 
   const safePage = Math.min(page, totalPages - 1);
 

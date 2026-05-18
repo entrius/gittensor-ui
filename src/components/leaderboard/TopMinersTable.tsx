@@ -27,6 +27,11 @@ import { MinersList } from './MinersList';
 import theme, { STATUS_COLORS } from '../../theme';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
 import {
+  useClampUrlPage,
+  useResetPageOnDepsChange,
+  useUrlPaginationParam,
+} from '../../hooks/useUrlPaginationParam';
+import {
   FILTERS_PANEL_QUERY_PARAM,
   parseFiltersPanelOpen,
   serializeFiltersPanelOpen,
@@ -283,6 +288,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     // Reuse the hook's `page` slot for our "show more" count — setSort and
     // filter changes reset it, which is the behavior we want.
     paramKeys: { page: VISIBLE_QUERY_PARAM },
+    pageUrlFormat: 'raw',
     filters: filtersConfig,
   });
 
@@ -382,34 +388,39 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     setVisibleCount(0);
   }, [filteredMiners.length, visibleCount, setVisibleCount]);
 
-  const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
+  const xlQuery = theme.breakpoints.up('xl');
+  const isLargeScreen = useMediaQuery(xlQuery, {
+    defaultMatches:
+      typeof window !== 'undefined' &&
+      window.matchMedia(xlQuery.replace(/^@media\s*/, '')).matches,
+  });
   const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
   const observerTarget = useRef<HTMLDivElement>(null);
-  const [stackedLayoutPage, setStackedLayoutPage] = useState(0);
+  const [stackedLayoutPage, setStackedLayoutPage] = useUrlPaginationParam({
+    pageParam: 'page',
+  });
 
-  useEffect(() => {
-    setStackedLayoutPage(0);
-  }, [
+  useResetPageOnDepsChange(setStackedLayoutPage, [
     sortOption,
     sortDirection,
     viewMode,
     searchQuery,
     eligibleOssFilter,
     eligibleDiscoveryFilter,
+    isLargeScreen,
   ]);
-
-  useEffect(() => {
-    setStackedLayoutPage(0);
-  }, [isLargeScreen]);
 
   const stackedLayoutTotalPages = Math.max(
     1,
     Math.ceil(filteredMiners.length / MINERS_PAGE_SIZE),
   );
 
-  useEffect(() => {
-    setStackedLayoutPage((p) => Math.min(p, stackedLayoutTotalPages - 1));
-  }, [stackedLayoutTotalPages]);
+  useClampUrlPage(
+    stackedLayoutPage,
+    setStackedLayoutPage,
+    stackedLayoutTotalPages,
+    !isLoading,
+  );
 
   const visibleMiners = useMemo(() => {
     if (isLargeScreen) {

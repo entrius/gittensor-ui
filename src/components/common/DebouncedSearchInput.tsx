@@ -54,6 +54,7 @@ export function DebouncedSearchInput({
   const [draftValue, setDraftValue] = useState(initialDraft);
   const debounced = useDebouncedValue(draftValue, debounceMs);
   const didInitInitialRef = useRef(false);
+  const skipInitialDebouncedSyncRef = useRef(true);
 
   useEffect(() => {
     if (!didInitInitialRef.current) {
@@ -64,6 +65,12 @@ export function DebouncedSearchInput({
   }, [initialDraft]);
 
   useEffect(() => {
+    // Parent tables already hydrate filters from the URL; firing on mount would
+    // call setFilter with the same value and (before the no-op guard) reset page.
+    if (skipInitialDebouncedSyncRef.current) {
+      skipInitialDebouncedSyncRef.current = false;
+      return;
+    }
     onDebouncedChange(debounced);
   }, [debounced, onDebouncedChange]);
 

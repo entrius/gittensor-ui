@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef } from 'react';
 import {
   Box,
   TablePagination,
@@ -32,6 +32,11 @@ import {
   echartsTransparentBackground,
 } from '../../utils/echarts/gittensorChartTheme';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import {
+  useClampUrlPage,
+  useResetPageOnDepsChange,
+  useUrlPaginationParam,
+} from '../../hooks/useUrlPaginationParam';
 
 type SortField = 'extension' | 'weight' | 'language';
 type SortOrder = 'asc' | 'desc';
@@ -47,6 +52,9 @@ interface LanguageDisplayRow extends LanguageRow {
   displayNumber: number;
 }
 
+const LANGUAGE_ROWS_OPTIONS = [5, 10, 25, 50] as const;
+const LANGUAGE_DEFAULT_ROWS = 10;
+
 const LanguageWeightsTable: React.FC = () => {
   const theme = useTheme();
   const { data: languages, isLoading } = useLanguagesAndWeights();
@@ -54,8 +62,14 @@ const LanguageWeightsTable: React.FC = () => {
   const [sortField, setSortField] = useState<SortField>('weight');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [showChart, setShowChart] = useState(false);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [page, setPage, rowsPerPage, setRowsPerPage] = useUrlPaginationParam({
+    pageParam: 'page',
+    rows: {
+      paramName: 'rows',
+      allowed: LANGUAGE_ROWS_OPTIONS,
+      defaultRows: LANGUAGE_DEFAULT_ROWS,
+    },
+  });
   const containerRef = useRef<HTMLDivElement>(null);
 
   // Scrolls only the table's own scrollport back to the first row. Avoids the
@@ -80,19 +94,10 @@ const LanguageWeightsTable: React.FC = () => {
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
     scrollTableToTop();
   };
 
-  useEffect(() => {
-    setPage(0);
-  }, [searchQuery]);
+  useResetPageOnDepsChange(setPage, [searchQuery]);
 
   const filteredAndSortedLanguages = useMemo<LanguageRow[]>(() => {
     if (!languages) return [];
@@ -134,19 +139,29 @@ const LanguageWeightsTable: React.FC = () => {
     return filtered;
   }, [languages, searchQuery, sortField, sortOrder]);
 
+  const totalLanguagePages = Math.max(
+    1,
+    Math.ceil(filteredAndSortedLanguages.length / rowsPerPage),
+  );
+
+  useClampUrlPage(page, setPage, totalLanguagePages, !isLoading);
+
   const paginatedLanguages = useMemo(() => {
-    const startIndex = page * rowsPerPage;
+    const safePage = Math.min(page, totalLanguagePages - 1);
+    const startIndex = safePage * rowsPerPage;
     const endIndex = startIndex + rowsPerPage;
     return filteredAndSortedLanguages.slice(startIndex, endIndex);
-  }, [filteredAndSortedLanguages, page, rowsPerPage]);
+  }, [filteredAndSortedLanguages, page, rowsPerPage, totalLanguagePages]);
+
+  const safePage = Math.min(page, totalLanguagePages - 1);
 
   const displayRows = useMemo<LanguageDisplayRow[]>(
     () =>
       paginatedLanguages.map((lang, i) => ({
         ...lang,
-        displayNumber: page * rowsPerPage + i + 1,
+        displayNumber: safePage * rowsPerPage + i + 1,
       })),
-    [paginatedLanguages, page, rowsPerPage],
+    [paginatedLanguages, safePage, rowsPerPage],
   );
 
   const chartOption = useMemo(() => {
@@ -360,7 +375,6 @@ const LanguageWeightsTable: React.FC = () => {
                 value={rowsPerPage}
                 onChange={(e) => {
                   setRowsPerPage(Number(e.target.value));
-                  setPage(0);
                   scrollTableToTop();
                 }}
                 sx={{
@@ -498,9 +512,9 @@ const LanguageWeightsTable: React.FC = () => {
         component="div"
         count={filteredAndSortedLanguages.length}
         rowsPerPage={rowsPerPage}
-        page={page}
+        page={safePage}
         onPageChange={handleChangePage}
-        onRowsPerPageChange={handleChangeRowsPerPage}
+        onRowsPerPageChange={() => {}}
         showFirstButton
         showLastButton
         sx={{
