@@ -94,9 +94,11 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             sx={{
               fontFamily:
                 '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif',
-              fontSize: '1.5rem',
+              fontSize: { xs: '1.2rem', sm: '1.5rem' },
               fontWeight: 600,
               color: 'text.primary',
+              wordBreak: 'break-word',
+              overflowWrap: 'anywhere',
             }}
           >
             {issue.title}
@@ -106,16 +108,15 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
         {/* Bounty and metadata row */}
         <Box
           sx={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            flexDirection: { xs: 'column', sm: 'row' },
-            columnGap: { sm: 4 },
+            display: 'grid',
+            gridTemplateColumns: { xs: '1fr 1fr', sm: 'auto auto auto' },
+            columnGap: { xs: 2, sm: 4 },
             rowGap: { xs: 1.75, sm: 2 },
-            flexWrap: { xs: 'nowrap', sm: 'wrap' },
+            alignItems: 'flex-start',
           }}
         >
           <Box
-            sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { sm: 170 } }}
+            sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' }, minWidth: { sm: 170 } }}
           >
             <Typography
               sx={{
@@ -196,7 +197,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
 
           {issue.authorLogin && (
             <Box
-              sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { sm: 140 } }}
+              sx={{ minWidth: { sm: 140 } }}
             >
               <Typography
                 sx={{
@@ -236,7 +237,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
           )}
 
           <Box
-            sx={{ width: { xs: '100%', sm: 'auto' }, minWidth: { sm: 160 } }}
+            sx={{ minWidth: { sm: 160 } }}
           >
             <Typography
               sx={{

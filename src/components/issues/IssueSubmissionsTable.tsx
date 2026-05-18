@@ -7,7 +7,6 @@ import {
   CircularProgress,
   Typography,
   alpha,
-  useMediaQuery,
   useTheme,
 } from '@mui/material';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
@@ -34,7 +33,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
   backLabel,
 }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const linkState = backLabel ? { backLabel } : undefined;
   const winnerSubmission =
     submissions?.find((submission) => submission.isWinner) ?? null;
@@ -441,7 +439,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
           <DataTable
             columns={columns}
             rows={otherSubmissions}
-            minWidth={isMobile ? 832 : undefined}
+            minWidth={832}
             getRowKey={(submission) =>
               `${submission.repositoryFullName}-${submission.number}`
             }
