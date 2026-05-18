@@ -95,6 +95,8 @@ const StatTile: React.FC<StatTileProps> = ({
       display: 'flex',
       flexDirection: 'column',
       gap: 0.5,
+      minWidth: 0,
+      overflow: 'hidden',
     }}
   >
     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -174,6 +176,7 @@ const StatTile: React.FC<StatTileProps> = ({
         fontWeight: 600,
         color: color || 'text.primary',
         lineHeight: 1.2,
+        overflowWrap: 'break-word',
       }}
     >
       {value}
@@ -184,6 +187,7 @@ const StatTile: React.FC<StatTileProps> = ({
           fontSize: '0.75rem',
           color: (t) => alpha(t.palette.text.primary, 0.4),
           mt: 0.25,
+          overflowWrap: 'break-word',
         }}
       >
         {sub}
@@ -195,6 +199,8 @@ const StatTile: React.FC<StatTileProps> = ({
 const COPY_FEEDBACK_MS = 1500;
 const HOTKEY_VISIBLE_EDGE_CHARS = 5;
 const STATS_GRID_SX = { mt: { xs: 0, sm: 1.5 } } as const;
+// minWidth: 0 prevents flex children from overflowing the grid row (min-width: auto default)
+const STAT_COL = { xs: 6, sm: 4, lg: 2, sx: { minWidth: 0 } } as const;
 
 const formatHotkeyPreview = (hotkey: string): string => {
   if (!hotkey) return '';
@@ -214,7 +220,7 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
     color: 'inherit',
     fontSize: { xs: '0.55rem', sm: '0.65rem' },
     fontFamily: '"JetBrains Mono", monospace',
-    wordBreak: 'normal',
+    overflowWrap: 'anywhere',
     lineHeight: 1,
   } as const;
 
@@ -232,6 +238,8 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
           lineHeight: 1,
           p: 0,
           m: 0,
+          maxWidth: '100%',
+          overflow: 'hidden',
           color: (t) =>
             copied
               ? t.palette.status.success
@@ -310,6 +318,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
       score: rank('score', (m) => Number(m.totalScore)),
       totalPrs: rank('prs', (m) => Number(m.totalPrs)),
       credibility: rank('credibility', (m) => Number(m.credibility ?? 0)),
+      earnings: rank('earnings', (m) => Number(m.usdPerDay ?? 0)),
       issueCredibility: rank('issueCredibility', (m) =>
         Number(m.issueCredibility ?? 0),
       ),
@@ -497,6 +506,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                 fontSize: { xs: '1.15rem', sm: '1.35rem' },
                 fontWeight: 700,
                 color: 'text.primary',
+                overflowWrap: 'break-word',
               }}
             >
               {githubData?.name || username}
@@ -510,6 +520,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               alignItems: { xs: 'flex-start', sm: 'center' },
               gap: { xs: 0.35, sm: 1 },
               flexWrap: 'wrap',
+              minWidth: 0,
             }}
           >
             <Typography
@@ -604,7 +615,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
           color: (t) => alpha(t.palette.text.primary, 0.5),
         }}
       >
-        {githubData?.followers ?? 0} followers
+        {githubData?.followers ?? 0} follower(s)
         {minerStats.updatedAt
           ? ` • Updated ${formatTimeAgo(new Date(minerStats.updatedAt))}`
           : ''}
@@ -612,7 +623,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
 
       {viewMode === 'prs' ? (
         <Grid container spacing={1.5} sx={STATS_GRID_SX}>
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid item {...STAT_COL}>
             <StatTile
               label="Score"
               value={parseNumber(minerStats.totalScore).toFixed(2)}
@@ -624,7 +635,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               rank={rankings?.score}
             />
           </Grid>
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid item {...STAT_COL}>
             <StatTile
               label="Credibility"
               value={`${(cred * 100).toFixed(1)}%`}
@@ -634,7 +645,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               tooltip="Ratio of merged PRs to total attempts (merged + closed). Higher credibility means a stronger multiplier on your scores."
             />
           </Grid>
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid item {...STAT_COL}>
             <StatTile
               label="Token Score"
               value={parseNumber(minerStats.totalTokenScore).toFixed(0)}
@@ -642,7 +653,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               tooltip="Token score is the sum of all scored AST elements from your merged PRs. Structural nodes (functions, classes, modules) carry more weight per node because they represent high-value code organization. Leaf nodes (statements, expressions) are scored individually. A higher structural-to-leaf ratio generally means better-organized contributions."
             />
           </Grid>
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid item {...STAT_COL}>
             <StatTile
               label="PRs"
               value={String(minerStats.totalPrs || 0)}
@@ -651,7 +662,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               tooltip="Total pull requests submitted. Lines count includes both additions and deletions across all PRs."
             />
           </Grid>
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid item {...STAT_COL}>
             <StatTile
               label="Open Risk"
               value={`${openPrs} / ${openPrThreshold}`}
@@ -664,7 +675,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               tooltip={`Open PRs have collateral deducted from score. Exceeding ${openPrThreshold} triggers a full penalty. Threshold scales with token score (+1 per 300).`}
             />
           </Grid>
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid item {...STAT_COL}>
             <StatTile
               label="Earnings"
               value={`~$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
@@ -674,20 +685,21 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                   ? STATUS_COLORS.success
                   : undefined
               }
+              rank={rankings?.earnings}
               tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
             />
           </Grid>
         </Grid>
       ) : (
         <Grid container spacing={1.5} sx={STATS_GRID_SX}>
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid item {...STAT_COL}>
             <StatTile
               label="Score"
               value={parseNumber(minerStats.issueDiscoveryScore).toFixed(2)}
               tooltip="Aggregate score for issue discovery contributions."
             />
           </Grid>
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid item {...STAT_COL}>
             <StatTile
               label="Credibility"
               value={`${(parseNumber(minerStats.issueCredibility) * 100).toFixed(1)}%`}
@@ -697,7 +709,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               tooltip="Credibility = solved / (solved + max(0, closed − 1)). One closed issue is forgiven. 80%+ required for eligibility."
             />
           </Grid>
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid item {...STAT_COL}>
             <StatTile
               label="Token Score"
               value={parseNumber(minerStats.issueTokenScore).toFixed(0)}
@@ -705,7 +717,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               tooltip="Sum of solving PR token scores across valid issues. Reflects code quality generated by discovered issues."
             />
           </Grid>
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid item {...STAT_COL}>
             <StatTile
               label="Issues"
               value={String(
@@ -717,7 +729,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               tooltip="Total discovered issues (solved + open + closed). Only solved issues with a qualifying PR contribute to your discovery score."
             />
           </Grid>
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid item {...STAT_COL}>
             <StatTile
               label="Open Risk"
               value={`${minerStats.totalOpenIssues || 0} / ${calculateOpenIssueThreshold(minerStats)}`}
@@ -728,7 +740,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
               tooltip="Open issues count toward spam detection. Exceeding the threshold triggers a full penalty on all discovery scores."
             />
           </Grid>
-          <Grid item xs={6} sm={4} md={2}>
+          <Grid item {...STAT_COL}>
             <StatTile
               label="Earnings"
               value={`~$${Math.round(minerStats.usdPerDay ?? 0).toLocaleString()}/d`}
@@ -738,6 +750,7 @@ const MinerScoreCard: React.FC<MinerScoreCardProps> = ({
                   ? STATUS_COLORS.success
                   : undefined
               }
+              rank={rankings?.earnings}
               tooltip="Estimated earnings based on current network incentive distribution. Actual payouts depend on validator consensus."
             />
           </Grid>

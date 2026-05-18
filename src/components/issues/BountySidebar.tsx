@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import {
   Avatar,
@@ -16,6 +16,7 @@ import { useQueries } from '@tanstack/react-query';
 import axios from 'axios';
 
 import {
+  getIssueSubmissionsQueryKey,
   type IssueBounty,
   type IssuesStats,
   type IssueSubmission,
@@ -28,6 +29,7 @@ import { CHART_COLORS, CREDIBILITY_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc, parseNumber } from '../../utils';
 import { formatAlphaToUsd, formatTokenAmount } from '../../utils/format';
 import { usePrices } from '../../hooks/usePrices';
+import { useFiltersPanelOpenInUrl } from '../../hooks/useFiltersPanelUrlState';
 
 type FilterType = 'all' | 'available' | 'pending' | 'history';
 
@@ -52,15 +54,20 @@ interface HunterRow {
   totalAlpha: number;
 }
 
-const TOP_HUNTERS_FETCH_LIMIT = 50;
+// Sample size for the leaderboard aggregation. Display is capped at `topN`
+// (5) further down, so this only needs to be wide enough for a representative
+// ranking — not the full bounty history. Kept small to avoid fanning out a
+// browser's full per-origin connection budget on first paint.
+const TOP_HUNTERS_FETCH_LIMIT = 15;
 
 const fetchIssueSubmissions = async (
   id: number,
+  signal?: AbortSignal,
 ): Promise<IssueSubmission[]> => {
   const baseUrl = import.meta.env.VITE_REACT_APP_BASE_URL;
   const path = `/issues/${id}/submissions`;
   const url = baseUrl ? `${baseUrl}${path}` : path;
-  const { data } = await axios.get<IssueSubmission[]>(url);
+  const { data } = await axios.get<IssueSubmission[]>(url, { signal });
   return data;
 };
 
@@ -69,8 +76,9 @@ const fetchIssueSubmissions = async (
  *
  * For each completed bounty we fetch its `/issues/{id}/submissions`, find the
  * row with `isWinner: true`, and tally its `authorLogin` plus the bounty's
- * paid `bountyAmount`. Cache key matches `useIssueSubmissions` so the bounty
- * details page re-uses these fetches.
+ * paid `bountyAmount`. Reuses the `useIssueSubmissions` cache key via
+ * `getIssueSubmissionsQueryKey` so the bounty-details page shares these
+ * fetches.
  */
 const useTopBountyHunters = (
   issues: IssueBounty[],
@@ -89,12 +97,8 @@ const useTopBountyHunters = (
 
   const queries = useQueries({
     queries: completedBounties.map((b) => ({
-      queryKey: [
-        'useIssueSubmissions',
-        `/issues/${b.id}/submissions`,
-        undefined,
-      ] as const,
-      queryFn: () => fetchIssueSubmissions(b.id),
+      queryKey: getIssueSubmissionsQueryKey(b.id),
+      queryFn: ({ signal }) => fetchIssueSubmissions(b.id, signal),
       staleTime: 60_000,
       retry: false,
     })),
@@ -153,7 +157,7 @@ const useTopBountyHunters = (
 
 const FilterSection: React.FC = () => {
   const [searchParams] = useSearchParams();
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useFiltersPanelOpenInUrl();
 
   const filterType = useMemo<FilterType>(() => {
     const f = searchParams.get('filter');
@@ -178,7 +182,7 @@ const FilterSection: React.FC = () => {
       <Box
         component="button"
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(!open)}
         sx={(t) => ({
           display: 'flex',
           alignItems: 'center',
@@ -303,8 +307,7 @@ const ActivityLegendRow: React.FC<{ segment: DonutSegment }> = ({
 );
 
 /* ------------------------------------------------------------------
- * Bounty Pool & Total Payouts — replaces the old top-of-page IssueStats.
- * Two tile values, matching `MinerStatusTile` density.
+ * Bounty Pool & Total Payouts — two tile values, matching `MinerStatusTile` density.
  * ------------------------------------------------------------------ */
 
 const PoolPayoutsCard: React.FC<{ stats?: IssuesStats }> = ({ stats }) => {
@@ -400,7 +403,8 @@ const CompletionDonut: React.FC<{
       else if (i.status === 'cancelled') cancelled += 1;
     }
     const total = registered + active + completed + cancelled;
-    const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+    const finished = completed + cancelled;
+    const rate = finished > 0 ? Math.round((completed / finished) * 100) : null;
     return { registered, active, completed, cancelled, total, rate };
   }, [issues]);
 
@@ -503,11 +507,14 @@ const CompletionDonut: React.FC<{
                     fontFamily: FONTS.mono,
                     fontSize: '1rem',
                     fontWeight: 700,
-                    color: rateColor(breakdown.rate),
+                    color:
+                      breakdown.rate == null
+                        ? STATUS_COLORS.open
+                        : rateColor(breakdown.rate),
                     lineHeight: 1,
                   }}
                 >
-                  {breakdown.rate}%
+                  {breakdown.rate == null ? '—' : `${breakdown.rate}%`}
                 </Typography>
                 <Typography
                   sx={{

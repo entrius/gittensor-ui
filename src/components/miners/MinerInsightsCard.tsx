@@ -444,7 +444,9 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
                     lineHeight: 1.45,
                     wordBreak: 'break-word',
                   }}
-                />
+                >
+                  {insight.description}
+                </Typography>
               </Box>
             </Box>
           );

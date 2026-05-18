@@ -64,29 +64,8 @@ const IssuesPage: React.FC = () => {
   );
 
   const statsQuery = useIssuesStats();
-  const activeIssuesQuery = useIssues('active');
-  const registeredIssuesQuery = useIssues('registered');
-  const historyIssuesQuery = useIssues('completed,cancelled');
-
-  const allIssues = useMemo(() => {
-    const seen = new Set<number>();
-    const result = [];
-    for (const issue of [
-      ...(activeIssuesQuery.data || []),
-      ...(registeredIssuesQuery.data || []),
-      ...(historyIssuesQuery.data || []),
-    ]) {
-      if (!seen.has(issue.id)) {
-        seen.add(issue.id);
-        result.push(issue);
-      }
-    }
-    return result;
-  }, [
-    activeIssuesQuery.data,
-    registeredIssuesQuery.data,
-    historyIssuesQuery.data,
-  ]);
+  const { data, isLoading } = useIssues();
+  const allIssues = useMemo(() => data ?? [], [data]);
 
   const counts = useMemo(
     () => ({
@@ -99,12 +78,6 @@ const IssuesPage: React.FC = () => {
     }),
     [allIssues],
   );
-
-  // Show loading skeleton only while no data is available yet
-  const isLoading =
-    activeIssuesQuery.isLoading &&
-    registeredIssuesQuery.isLoading &&
-    historyIssuesQuery.isLoading;
 
   return (
     <Page title="Issue Bounties">
@@ -140,7 +113,7 @@ const IssuesPage: React.FC = () => {
               borderBottom: '1px solid',
               borderColor: 'border.light',
               position: 'sticky',
-              top: 64,
+              top: 60,
               zIndex: 50,
               backgroundColor: (t) => alpha(t.palette.background.default, 0.85),
               backdropFilter: 'blur(12px)',

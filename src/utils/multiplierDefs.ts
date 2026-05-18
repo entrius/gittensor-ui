@@ -61,13 +61,6 @@ const PILL_CONFIGS: PillConfig[] = [
     desc: 'Based on your PR success rate, scaled to reward consistency.',
   },
   {
-    key: 'repoWt',
-    label: 'repo wt',
-    field: 'repoWeightMultiplier',
-    title: 'Repo Weight',
-    desc: 'Based on repository weight and activity.',
-  },
-  {
     key: 'issue',
     label: 'issue',
     field: 'issueMultiplier',
@@ -165,12 +158,10 @@ function buildDensityEntry(pr: PullRequestDetails): MultiplierGridEntry | null {
 }
 
 const OPEN_GRID: GridConfig[] = [
-  { label: 'Repo Weight', field: 'repoWeightMultiplier' },
   { label: 'Issue Bonus', field: 'issueMultiplier' },
 ];
 
 const MERGED_GRID: GridConfig[] = [
-  { label: 'Repo Weight', field: 'repoWeightMultiplier' },
   { label: 'Issue Bonus', field: 'issueMultiplier' },
   { label: 'Credibility', field: 'credibilityMultiplier', isCredibility: true },
   { label: 'Review Quality', field: 'reviewQualityMultiplier' },

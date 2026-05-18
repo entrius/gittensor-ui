@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useSessionStoredState } from '../hooks/useSessionStoredState';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -20,12 +21,19 @@ import { STATUS_COLORS } from '../theme';
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline';
 import ListAltIcon from '@mui/icons-material/ListAlt';
 
+const isIssueDetailsTabIndex = (v: unknown): v is number =>
+  typeof v === 'number' && Number.isInteger(v) && v >= 0 && v <= 1;
+
 const IssueDetailsPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const idParam = searchParams.get('id');
   const id = idParam ? parseInt(idParam, 10) : 0;
-  const [tabValue, setTabValue] = useState(0);
+  const [tabValue, setTabValue] = useSessionStoredState(
+    'issue:detailsTab',
+    0,
+    isIssueDetailsTabIndex,
+  );
 
   const { data: issue, isLoading: isLoadingDetails } = useIssueDetails(id);
   const { data: submissions, isLoading: isLoadingSubmissions } =

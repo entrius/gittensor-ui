@@ -390,7 +390,17 @@ const GlobalSearchBar: React.FC = () => {
   // Global shortcuts: Cmd/Ctrl+K and "/" to focus the search input.
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
+      const target =
+        (e.target as HTMLElement | null) ||
+        (document.activeElement as HTMLElement | null);
+      const isOverlayTarget = Boolean(
+        target?.closest(
+          '[role="dialog"], [role="menu"], [role="listbox"], [aria-modal="true"]',
+        ),
+      );
+
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        if (isOverlayTarget) return;
         e.preventDefault();
         const input = inputRef.current;
         if (input) {
@@ -401,9 +411,6 @@ const GlobalSearchBar: React.FC = () => {
       }
 
       if (e.key === '/' && !e.metaKey && !e.ctrlKey && !e.altKey) {
-        const target =
-          (e.target as HTMLElement | null) ||
-          (document.activeElement as HTMLElement | null);
         if (!target) return;
         const tag = target.tagName;
         const isEditable =
@@ -412,13 +419,7 @@ const GlobalSearchBar: React.FC = () => {
           target.isContentEditable === true;
         if (isEditable) return;
         // Don't steal focus from open modals / menus / select popovers.
-        if (
-          target.closest(
-            '[role="dialog"], [role="menu"], [role="listbox"], [aria-modal="true"]',
-          )
-        ) {
-          return;
-        }
+        if (isOverlayTarget) return;
         e.preventDefault();
         inputRef.current?.focus();
       }
@@ -510,7 +511,7 @@ const GlobalSearchBar: React.FC = () => {
       <TextField
         fullWidth
         size="small"
-        placeholder="Search miners, repositories, PRs, issues..."
+        placeholder="Search miners (name / hotkey), repositories, PRs, issues..."
         value={query}
         autoComplete="off"
         inputRef={inputRef}

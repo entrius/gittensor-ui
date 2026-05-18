@@ -57,10 +57,11 @@ const HighlightRow: React.FC<{
         sx={{
           display: 'flex',
           alignItems: 'center',
-          gap: 1.5,
+          gap: { xs: 1, sm: 1.5 },
           overflow: 'hidden',
-          mr: 2,
+          mr: { xs: 1, sm: 2 },
           flex: 1,
+          minWidth: 0,
         }}
       >
         <Avatar
@@ -101,8 +102,8 @@ const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
       color: theme.palette.text.secondary,
       textTransform: 'uppercase',
       letterSpacing: '0.05em',
-      mb: 1.5,
-      pb: 1,
+      mb: { xs: 1, sm: 1.5 },
+      pb: { xs: 0.75, sm: 1 },
       borderBottom: '1px solid',
       borderColor: theme.palette.border.subtle,
     })}
@@ -112,7 +113,7 @@ const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
 );
 
 const cardSx = (theme: Theme) => ({
-  p: 2,
+  p: { xs: 1.5, sm: 2 },
   borderRadius: 2,
   border: '1px solid',
   borderColor: theme.palette.border.light,
@@ -202,12 +203,15 @@ const RepositoriesPage: React.FC = () => {
           totalScore: s?.totalScore || 0,
           totalPRs: s?.totalPRs || 0,
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
-          weight: parseFloat(String(repo.config?.weight ?? 0)) || 0,
-          inactiveAt: repo.config?.inactiveAt ?? null,
+          weight: parseFloat(String(repo.config?.emissionShare ?? 0)) || 0,
           mirrorEnabled: repo.config?.mirrorEnabled ?? false,
           discoveryScore: d?.discoveryScore ?? 0,
           discoveryIssues: d?.discoveryIssues ?? 0,
           discoveryContributors: d?.discoveryContributors ?? new Set<string>(),
+          issueDiscoveryShare:
+            parseFloat(String(repo.config?.issueDiscoveryShare ?? 0)) || 0,
+          trustedLabelPipeline: repo.config?.trustedLabelPipeline ?? false,
+          labelMultipliers: repo.config?.labelMultipliers,
         };
       })
       .sort((a, b) => b.totalScore - a.totalScore);
@@ -332,12 +336,14 @@ const RepositoriesPage: React.FC = () => {
         // Tiebreak by repo weight
         const weightA = parseFloat(
           String(
-            repoMap.get(a.repository?.toLowerCase() ?? '')?.config?.weight ?? 0,
+            repoMap.get(a.repository?.toLowerCase() ?? '')?.config
+              ?.emissionShare ?? 0,
           ),
         );
         const weightB = parseFloat(
           String(
-            repoMap.get(b.repository?.toLowerCase() ?? '')?.config?.weight ?? 0,
+            repoMap.get(b.repository?.toLowerCase() ?? '')?.config
+              ?.emissionShare ?? 0,
           ),
         );
         return weightB - weightA;
@@ -363,8 +369,8 @@ const RepositoriesPage: React.FC = () => {
           width: '100%',
           maxWidth: 1440,
           mx: 'auto',
-          py: { xs: 2, sm: 3 },
-          px: { xs: 2, sm: 3 },
+          py: { xs: 1.5, sm: 3 },
+          px: { xs: 1.25, sm: 3 },
         }}
       >
         {/* ── Highlight Sections ─────────────────────────────────────── */}
@@ -372,8 +378,8 @@ const RepositoriesPage: React.FC = () => {
           sx={{
             display: 'grid',
             gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr 1fr' },
-            gap: 2,
-            mb: 3,
+            gap: { xs: 1.25, sm: 2 },
+            mb: { xs: 2, sm: 3 },
             alignItems: 'stretch',
           }}
         >
@@ -694,7 +700,7 @@ const RepositoriesPage: React.FC = () => {
         {/* ── Main Table ────────────────────────────────────────────── */}
         <Card
           sx={(theme) => ({
-            borderRadius: 3,
+            borderRadius: { xs: 2, sm: 3 },
             border: '1px solid',
             borderColor: theme.palette.border.light,
             backgroundColor: theme.palette.surface.transparent,

@@ -12,16 +12,18 @@ import {
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
 import { useMinerPRs, useReposAndWeights, useIssues } from '../../api';
+import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import { LinkBox } from '../common/linkBehavior';
 import {
   DataTable,
+  WatchlistButton,
   type DataTableColumn,
-} from '../../components/common/DataTable';
+} from '../../components/common';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
-import RankBadge from './RankBadge';
+import { RankIcon } from '../leaderboard/RankIcon';
 import EmptyStateMessage from './EmptyStateMessage';
-import TablePagination from './TablePagination';
-import ExplorerFilterButton from './ExplorerFilterButton';
+import TablePagination from '../common/TablePagination';
+import FilterButton from '../FilterButton';
 import { searchFieldSx } from './MinerRepositoriesTable.styles';
 import {
   type RepoSortField,
@@ -45,7 +47,7 @@ import { scrollbarSx } from '../../theme';
 
 type ViewMode = 'prs' | 'issues';
 
-type RepoStatusFilter = 'all' | 'active' | 'inactive' | 'recent' | 'stale';
+type RepoStatusFilter = 'all' | 'recent' | 'stale';
 
 interface MinerRepositoriesTableProps {
   githubId: string;
@@ -54,16 +56,16 @@ interface MinerRepositoriesTableProps {
 
 const PAGE_SIZE = 20;
 
-/** Active on subnet + latest merged PR within the rolling scoring window. */
+/** Latest merged PR is within the rolling scoring window. */
 const isRecentRepoStats = (r: RepoStats): boolean =>
-  !r.inactiveAt && !isOutsideScoringWindow(r.latestPrDate);
+  !isOutsideScoringWindow(r.latestPrDate);
 
 /** Latest merged PR is older than the rolling scoring window. */
 const isStaleRepoStats = (r: RepoStats): boolean =>
   isOutsideScoringWindow(r.latestPrDate);
 
 const isRecentIssueRepoStats = (r: IssueRepoStats): boolean =>
-  !r.inactiveAt && !isOutsideScoringWindow(r.latestActivityDate);
+  !isOutsideScoringWindow(r.latestActivityDate);
 
 const isStaleIssueRepoStats = (r: IssueRepoStats): boolean =>
   isOutsideScoringWindow(r.latestActivityDate);
@@ -88,48 +90,24 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
 
   useEffect(() => {
     setPage(0);
-  }, [viewMode, statusFilter]);
-
-  const inactiveAtByRepo = useMemo(() => {
-    const m = new Map<string, string | null>();
-    for (const r of repos || []) {
-      if (r?.fullName) {
-        m.set(r.fullName.toLowerCase(), r.config?.inactiveAt ?? null);
-      }
-    }
-    return m;
-  }, [repos]);
+  }, [viewMode, statusFilter, searchQuery]);
 
   const repoWeights = useMemo(() => buildRepoWeightsMap(repos), [repos]);
 
-  const repoStats = useMemo(() => {
-    const base = aggregatePRsByRepository(prs || [], repoWeights);
-    return base.map((row) => ({
-      ...row,
-      inactiveAt: inactiveAtByRepo.get(row.repository.toLowerCase()) ?? null,
-    }));
-  }, [prs, repoWeights, inactiveAtByRepo]);
+  const repoStats = useMemo(
+    () => aggregatePRsByRepository(prs || [], repoWeights),
+    [prs, repoWeights],
+  );
 
-  const issueRepoStats = useMemo(() => {
-    const base = aggregateIssueDiscoveryByRepository(
-      prs || [],
-      issues,
-      repoWeights,
-    );
-    return base.map((row) => ({
-      ...row,
-      inactiveAt: inactiveAtByRepo.get(row.repository.toLowerCase()) ?? null,
-    }));
-  }, [prs, issues, repoWeights, inactiveAtByRepo]);
+  const issueRepoStats = useMemo(
+    () => aggregateIssueDiscoveryByRepository(prs || [], issues, repoWeights),
+    [prs, issues, repoWeights],
+  );
 
   const statusFilteredRepoStats = useMemo(() => {
     switch (statusFilter) {
       case 'all':
         return repoStats;
-      case 'active':
-        return repoStats.filter((r) => !r.inactiveAt);
-      case 'inactive':
-        return repoStats.filter((r) => !!r.inactiveAt);
       case 'recent':
         return repoStats.filter(isRecentRepoStats);
       case 'stale':
@@ -143,10 +121,6 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     switch (statusFilter) {
       case 'all':
         return issueRepoStats;
-      case 'active':
-        return issueRepoStats.filter((r) => !r.inactiveAt);
-      case 'inactive':
-        return issueRepoStats.filter((r) => !!r.inactiveAt);
       case 'recent':
         return issueRepoStats.filter(isRecentIssueRepoStats);
       case 'stale':
@@ -156,27 +130,25 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
     }
   }, [issueRepoStats, statusFilter]);
 
-  const repoStatusCounts = useMemo(
-    () => ({
-      all: repoStats.length,
-      active: repoStats.filter((r) => !r.inactiveAt).length,
-      inactive: repoStats.filter((r) => !!r.inactiveAt).length,
-      recent: repoStats.filter(isRecentRepoStats).length,
-      stale: repoStats.filter(isStaleRepoStats).length,
-    }),
-    [repoStats],
-  );
+  // Count over the search scope (excluding the active status filter) so each
+  // button reflects what the user would see if they clicked it.
+  const repoStatusCounts = useMemo(() => {
+    const scope = filterBySearch(repoStats, searchQuery);
+    return {
+      all: scope.length,
+      recent: scope.filter(isRecentRepoStats).length,
+      stale: scope.filter(isStaleRepoStats).length,
+    };
+  }, [repoStats, searchQuery]);
 
-  const issueRepoStatusCounts = useMemo(
-    () => ({
-      all: issueRepoStats.length,
-      active: issueRepoStats.filter((r) => !r.inactiveAt).length,
-      inactive: issueRepoStats.filter((r) => !!r.inactiveAt).length,
-      recent: issueRepoStats.filter(isRecentIssueRepoStats).length,
-      stale: issueRepoStats.filter(isStaleIssueRepoStats).length,
-    }),
-    [issueRepoStats],
-  );
+  const issueRepoStatusCounts = useMemo(() => {
+    const scope = filterBySearch(issueRepoStats, searchQuery);
+    return {
+      all: scope.length,
+      recent: scope.filter(isRecentIssueRepoStats).length,
+      stale: scope.filter(isStaleIssueRepoStats).length,
+    };
+  }, [issueRepoStats, searchQuery]);
 
   const filteredRepoStats = useMemo(
     () => filterBySearch(statusFilteredRepoStats, searchQuery),
@@ -310,8 +282,8 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       sortKey: 'rank',
       renderCell: (repo) => {
         const indexInPage = pagedRepoRows.indexOf(repo);
-        const rank = page * PAGE_SIZE + indexInPage;
-        return <RankBadge rank={rank} displayNumber={rank + 1} />;
+        const rank = page * PAGE_SIZE + indexInPage + 1;
+        return <RankIcon rank={rank} size="md" />;
       },
     },
     {
@@ -364,6 +336,21 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       sortKey: 'weight',
       renderCell: (repo) => repo.weight.toFixed(4),
     },
+    {
+      key: 'watch',
+      header: '★',
+      width: '52px',
+      align: 'center',
+      cellSx: { p: 0 },
+      renderCell: (repo) =>
+        repo.repository ? (
+          <WatchlistButton
+            category="repos"
+            itemKey={repo.repository}
+            size="small"
+          />
+        ) : null,
+    },
   ];
 
   const issueColumns: DataTableColumn<IssueRepoStats, IssueRepoSortField>[] = [
@@ -374,8 +361,8 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       sortKey: 'rank',
       renderCell: (repo) => {
         const indexInPage = pagedIssueRows.indexOf(repo);
-        const rank = page * PAGE_SIZE + indexInPage;
-        return <RankBadge rank={rank} displayNumber={rank + 1} />;
+        const rank = page * PAGE_SIZE + indexInPage + 1;
+        return <RankIcon rank={rank} size="md" />;
       },
     },
     {
@@ -437,6 +424,21 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
       align: 'right',
       sortKey: 'weight',
       renderCell: (repo) => repo.weight.toFixed(4),
+    },
+    {
+      key: 'watch',
+      header: '★',
+      width: '52px',
+      align: 'center',
+      cellSx: { p: 0 },
+      renderCell: (repo) =>
+        repo.repository ? (
+          <WatchlistButton
+            category="repos"
+            itemKey={repo.repository}
+            size="small"
+          />
+        ) : null,
     },
   ];
 
@@ -520,76 +522,64 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
               '& > *': { flexShrink: 0 },
             }}
           >
-            <ExplorerFilterButton
+            <FilterButton
               label="All"
               count={statusCounts.all}
               color={theme.palette.status.neutral}
-              selected={statusFilter === 'all'}
+              isActive={statusFilter === 'all'}
               onClick={() => setStatusFilter('all')}
             />
-            <ExplorerFilterButton
-              label="Active"
-              count={statusCounts.active}
-              color={theme.palette.status.success}
-              selected={statusFilter === 'active'}
-              onClick={() => setStatusFilter('active')}
-            />
-            <ExplorerFilterButton
-              label="Inactive"
-              count={statusCounts.inactive}
-              color={theme.palette.status.closed}
-              selected={statusFilter === 'inactive'}
-              onClick={() => setStatusFilter('inactive')}
-            />
-            <ExplorerFilterButton
+            <FilterButton
               label="Recent"
               count={statusCounts.recent}
               color={theme.palette.status.merged}
-              selected={statusFilter === 'recent'}
+              isActive={statusFilter === 'recent'}
               onClick={() => setStatusFilter('recent')}
             />
-            <ExplorerFilterButton
+            <FilterButton
               label="Stale"
               count={statusCounts.stale}
               color={theme.palette.status.warning}
-              selected={statusFilter === 'stale'}
+              isActive={statusFilter === 'stale'}
               onClick={() => setStatusFilter('stale')}
             />
           </Box>
         </Box>
       </Box>
 
-      <TextField
-        size="small"
-        placeholder="Search repositories..."
-        value={searchQuery}
-        onChange={(e) => {
-          setSearchQuery(e.target.value);
-          setPage(0);
-        }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon
-                sx={{
-                  color: (t) => alpha(t.palette.text.primary, 0.3),
-                  fontSize: '1rem',
-                }}
-              />
-            </InputAdornment>
-          ),
-          endAdornment: (
-            <ClearSearchAdornment
-              visible={Boolean(searchQuery)}
-              onClear={() => {
-                setSearchQuery('');
-                setPage(0);
-              }}
-            />
-          ),
-        }}
-        sx={searchFieldSx}
-      />
+      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+        {({ draftValue, setDraftValue }) => (
+          <TextField
+            size="small"
+            placeholder="Search repositories..."
+            value={draftValue}
+            onChange={(e) => {
+              setDraftValue(e.target.value);
+            }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon
+                    sx={{
+                      color: (t) => alpha(t.palette.text.primary, 0.3),
+                      fontSize: '1rem',
+                    }}
+                  />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <ClearSearchAdornment
+                  visible={Boolean(draftValue)}
+                  onClear={() => {
+                    setDraftValue('');
+                  }}
+                />
+              ),
+            }}
+            sx={searchFieldSx}
+          />
+        )}
+      </DebouncedSearchInput>
     </Box>
   );
 
@@ -635,11 +625,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             onChange: handleIssueSort,
           }}
           getRowSx={(repo) => ({
-            opacity: repo.inactiveAt
-              ? 0.5
-              : isOutsideScoringWindow(repo.latestActivityDate)
-                ? 0.4
-                : 1,
+            opacity: isOutsideScoringWindow(repo.latestActivityDate) ? 0.4 : 1,
             transition: 'opacity 0.2s',
           })}
           pagination={
@@ -668,11 +654,7 @@ const MinerRepositoriesTable: React.FC<MinerRepositoriesTableProps> = ({
             onChange: handlePrSort,
           }}
           getRowSx={(repo) => ({
-            opacity: repo.inactiveAt
-              ? 0.5
-              : isOutsideScoringWindow(repo.latestPrDate)
-                ? 0.4
-                : 1,
+            opacity: isOutsideScoringWindow(repo.latestPrDate) ? 0.4 : 1,
             transition: 'opacity 0.2s',
           })}
           pagination={

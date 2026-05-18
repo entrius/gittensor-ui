@@ -12,6 +12,8 @@ import {
   useAllMiners,
   useAllPrs,
   useIssues,
+  useLinesTotal,
+  useMirrorDashboardIssues,
   useReposAndWeights,
 } from '../../api';
 import {
@@ -19,6 +21,7 @@ import {
   type DatasetState,
   type IssueBounty,
   type MinerEvaluation,
+  type MirrorDashboardIssue,
   type Repository,
 } from '../../api/models';
 import {
@@ -28,6 +31,8 @@ import {
   buildFeaturedContributors,
   buildFeaturedWork,
   buildFeaturedDiscoveryContributors,
+  getWindowBounds,
+  GITTENSOR_START_MS,
   type TrendTimeRange,
 } from './dashboardData';
 
@@ -36,13 +41,54 @@ type DashboardDatasets = {
   miners: DatasetState<MinerEvaluation>;
   issues: DatasetState<IssueBounty>;
   repos: DatasetState<Repository>;
+  minerIssues: DatasetState<MirrorDashboardIssue>;
 };
 
-const useDashboardData = (range: TrendTimeRange) => {
+// Pinned once per module load — same `since` for every dashboard mount keeps
+// the React Query cache key stable across renders and route remounts.
+const DASHBOARD_ISSUES_SINCE_ISO = new Date(GITTENSOR_START_MS).toISOString();
+
+export const useDashboardData = (range: TrendTimeRange) => {
   const prsQuery = useAllPrs();
   const minersQuery = useAllMiners();
   const issuesQuery = useIssues();
   const reposQuery = useReposAndWeights();
+
+  const { from, to } = useMemo(() => {
+    const bounds = getWindowBounds(range);
+    return {
+      from: new Date(bounds.startMs).toISOString(),
+      to: new Date(bounds.endMs).toISOString(),
+    };
+  }, [range]);
+  const linesTotalQuery = useLinesTotal({ from, to });
+
+  // Single bulk mirror call replaces the previous per-miner fan-out.
+  // The mirror is roster-blind; we filter to subnet authors below using the
+  // gittensor miner roster.
+  const dashboardIssuesQuery = useMirrorDashboardIssues(
+    DASHBOARD_ISSUES_SINCE_ISO,
+  );
+
+  const minerGithubIdSet = useMemo(() => {
+    const set = new Set<string>();
+    (minersQuery.data ?? []).forEach((m) => {
+      if (m.githubId) set.add(m.githubId);
+    });
+    return set;
+  }, [minersQuery.data]);
+
+  const minerIssuesData = useMemo<MirrorDashboardIssue[]>(
+    () =>
+      (dashboardIssuesQuery.data ?? []).filter(
+        (issue) =>
+          !!issue.author_github_id &&
+          minerGithubIdSet.has(issue.author_github_id),
+      ),
+    [dashboardIssuesQuery.data, minerGithubIdSet],
+  );
+  const isMinerIssuesLoading = dashboardIssuesQuery.isLoading;
+  const isMinerIssuesError = dashboardIssuesQuery.isError;
 
   const datasets: DashboardDatasets = {
     prs: {
@@ -65,6 +111,11 @@ const useDashboardData = (range: TrendTimeRange) => {
       isLoading: reposQuery.isLoading,
       isError: reposQuery.isError,
     },
+    minerIssues: {
+      data: minerIssuesData,
+      isLoading: isMinerIssuesLoading,
+      isError: isMinerIssuesError,
+    },
   };
 
   const overview = useMemo(
@@ -75,8 +126,12 @@ const useDashboardData = (range: TrendTimeRange) => {
 
   const trendData = useMemo(
     () =>
-      buildDashboardTrendData(datasets.prs.data, datasets.issues.data, range),
-    [datasets.issues.data, datasets.prs.data, range],
+      buildDashboardTrendData(
+        datasets.prs.data,
+        datasets.minerIssues.data,
+        range,
+      ),
+    [datasets.minerIssues.data, datasets.prs.data, range],
   );
 
   const featuredContributors = useMemo(
@@ -94,13 +149,21 @@ const useDashboardData = (range: TrendTimeRange) => {
   );
 
   const featuredWork = useMemo(
-    () => buildFeaturedWork(datasets.prs.data, datasets.repos.data),
-    [datasets.prs.data, datasets.repos.data],
+    () => buildFeaturedWork(datasets.prs.data),
+    [datasets.prs.data],
   );
 
+  const totalLinesCommitted = linesTotalQuery.data ?? 0;
+
   const kpis = useMemo(
-    () => buildDashboardKpis(datasets.prs.data, datasets.issues.data, range),
-    [datasets.issues.data, datasets.prs.data, range],
+    () =>
+      buildDashboardKpis(
+        datasets.prs.data,
+        datasets.minerIssues.data,
+        totalLinesCommitted,
+        range,
+      ),
+    [datasets.minerIssues.data, datasets.prs.data, totalLinesCommitted, range],
   );
 
   const isFeaturedWorkLoading =
@@ -119,11 +182,13 @@ const useDashboardData = (range: TrendTimeRange) => {
     isLoading:
       datasets.prs.isLoading ||
       datasets.miners.isLoading ||
-      datasets.issues.isLoading,
+      datasets.issues.isLoading ||
+      datasets.minerIssues.isLoading,
     isError:
       datasets.prs.isError ||
       datasets.miners.isError ||
-      datasets.issues.isError,
+      datasets.issues.isError ||
+      datasets.minerIssues.isError,
   };
 };
 

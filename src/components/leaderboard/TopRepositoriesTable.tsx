@@ -1,10 +1,4 @@
-import React, {
-  useState,
-  useMemo,
-  useEffect,
-  useCallback,
-  useRef,
-} from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 import {
   Box,
   Card,
@@ -36,11 +30,9 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
-import FilterButton from '../FilterButton';
 import { RepositoryCard } from './RepositoryCard';
 import {
   REPOSITORIES_CARD_ROWS,
-  REPOSITORIES_DEFAULT_CARD_ROWS,
   REPOSITORIES_DEFAULT_LIST_ROWS,
   REPOSITORIES_LIST_ROWS,
   REPOSITORIES_VALID_ROWS,
@@ -53,14 +45,20 @@ import {
 } from './repositoriesViewMode';
 import ReactECharts from 'echarts-for-react';
 import type { TooltipComponentFormatterCallbackParams } from 'echarts';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
-import { ClearSearchAdornment, WatchlistButton } from '../common';
+import {
+  ClearSearchAdornment,
+  ChartEmptyPanel,
+  WatchlistButton,
+} from '../common';
+import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import {
   compareByWatchlist,
   getRepositoryOwnerAvatarSrc,
   truncateText,
 } from '../../utils';
+import { useDataTableParams } from '../../hooks/useDataTableParams';
 import { useWatchlist } from '../../hooks/useWatchlist';
 import { RankIcon } from './RankIcon';
 import { getRepositoryOwnerAvatarBackground, type RepoStats } from './types';
@@ -91,7 +89,6 @@ type SortColumn =
   | 'discoveryIssues'
   | 'discoveryContributors'
   | 'watch';
-type SortDirection = 'asc' | 'desc';
 type ViewMode = RepositoriesViewMode;
 
 /** Chart-friendly metrics (excludes purely-display columns like rank/watch). */
@@ -166,7 +163,7 @@ const ISSUE_METRIC_KEYS = new Set<ChartMetricKey>([
   'discoveryContributors',
 ]);
 
-const VALID_SORT_COLUMNS: SortColumn[] = [
+const VALID_SORT_COLUMNS: readonly SortColumn[] = [
   'rank',
   'repository',
   'weight',
@@ -177,7 +174,16 @@ const VALID_SORT_COLUMNS: SortColumn[] = [
   'discoveryIssues',
   'discoveryContributors',
   'watch',
-];
+] as const;
+
+const SEARCH_QUERY_PARAM = 'search';
+const PAGE_QUERY_PARAM = 'page';
+const ROWS_QUERY_PARAM = 'rows';
+
+type TopRepositoriesUrlFilters = {
+  search: string;
+  view: ViewMode;
+};
 
 /** List view: show numeric zeros when the row has OSS activity (avoids PRs > 0 with OSS score "-"). */
 const repoHasOssActivity = (repo: RepoStats) =>
@@ -196,73 +202,79 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   linkState,
 }) => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
 
-  // Read initial state from URL params, falling back to defaults
-  const urlRows = parseInt(searchParams.get('rows') || '0', 10);
-  const urlPage = parseInt(searchParams.get('page') || '0', 10);
-  const urlSort = searchParams.get('sort') as SortColumn;
-  const urlDir = searchParams.get('dir') as SortDirection;
-  const urlSearch = searchParams.get('search') || '';
-  const urlStatusFilter = searchParams.get('status') as
-    | 'all'
-    | 'active'
-    | 'inactive'
-    | null;
-
-  const [searchQuery, setSearchQuery] = useState(urlSearch);
-  const [statusFilter, setStatusFilter] = useState<
-    'all' | 'active' | 'inactive'
-  >(
-    urlStatusFilter === 'active' || urlStatusFilter === 'inactive'
-      ? urlStatusFilter
-      : 'all',
+  // `view` always serializes (never null) so toggling re-renders even when
+  // the new value matches localStorage. See TopMinersTable.tsx for context.
+  const filtersConfig = useMemo(
+    () => ({
+      search: {
+        paramKey: SEARCH_QUERY_PARAM,
+        parse: (raw: string | null): string => raw ?? '',
+        serialize: (value: string): string | null => value.trim() || null,
+      },
+      view: {
+        paramKey: REPOSITORIES_VIEW_QUERY_PARAM,
+        parse: (raw: string | null): ViewMode =>
+          getRepositoriesViewModeFromQuery(
+            raw,
+            readStoredRepositoriesViewMode(),
+          ),
+        serialize: (value: ViewMode): string => value,
+        resetPageOnChange: false,
+      },
+    }),
+    [],
   );
-  const [showChart, setShowChart] = useState(false);
-  const [page, setPage] = useState(urlPage >= 0 ? urlPage : 0);
-  const [rowsPerPage, setRowsPerPage] = useState(() => {
-    const initialView = getRepositoriesViewModeFromQuery(
-      searchParams.get(REPOSITORIES_VIEW_QUERY_PARAM),
-      readStoredRepositoriesViewMode(),
-    );
-    return REPOSITORIES_VALID_ROWS.includes(urlRows)
-      ? clampRowsForRepositoriesView(urlRows, initialView)
-      : initialView === 'cards'
-        ? REPOSITORIES_DEFAULT_CARD_ROWS
-        : REPOSITORIES_DEFAULT_LIST_ROWS;
+
+  const {
+    sortField: sortColumn,
+    sortOrder: sortDirection,
+    setSort: handleSort,
+    page,
+    setPage,
+    rowsPerPage: rawRowsPerPage,
+    setRowsPerPage,
+    filters,
+    setFilter,
+  } = useDataTableParams<SortColumn, TopRepositoriesUrlFilters>({
+    sortKeys: VALID_SORT_COLUMNS,
+    defaultSortKey: 'weight',
+    // Repository sorts A-Z by default; numeric columns default to desc.
+    defaultOrderOverrides: { repository: 'asc' },
+    defaultRowsPerPage: REPOSITORIES_DEFAULT_LIST_ROWS,
+    rowsPerPageOptions: REPOSITORIES_VALID_ROWS,
+    paramKeys: { page: PAGE_QUERY_PARAM, rowsPerPage: ROWS_QUERY_PARAM },
+    filters: filtersConfig,
   });
-  const [sortColumn, setSortColumn] = useState<SortColumn>(
-    urlSort && VALID_SORT_COLUMNS.includes(urlSort) ? urlSort : 'weight',
-  );
-  const [sortDirection, setSortDirection] = useState<SortDirection>(
-    urlDir === 'asc' || urlDir === 'desc' ? urlDir : 'desc',
-  );
+
+  const { search: searchQuery, view: viewMode } = filters;
+
+  // List and cards use different page-size scales (10/25/50 vs 12/24/48).
+  // Clamp the hook's raw value to the active view's options for display.
+  const rowsPerPage = clampRowsForRepositoriesView(rawRowsPerPage, viewMode);
+
+  const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(true);
+
+  const handleSearchChange = useCallback(
+    (value: string) => setFilter('search', value),
+    [setFilter],
+  );
+
   const chartMetricKey: ChartMetricKey = VALID_CHART_METRIC_KEYS.has(
     sortColumn as ChartMetricKey,
   )
     ? (sortColumn as ChartMetricKey)
     : 'totalScore';
-  const [isMobileSearchOpen, setIsMobileSearchOpen] = useState(false);
-  const [storedViewMode, setStoredViewMode] = useState<ViewMode>(
-    readStoredRepositoriesViewMode,
-  );
-  const viewMode = useMemo(
-    () =>
-      getRepositoriesViewModeFromQuery(
-        searchParams.get(REPOSITORIES_VIEW_QUERY_PARAM),
-        storedViewMode,
-      ),
-    [searchParams, storedViewMode],
-  );
-  const isInitialMount = useRef(true);
+
   const { isWatched } = useWatchlist('repos');
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const trimmedSearch = searchQuery.trim();
-  const isMobileSearchVisible =
-    isMobile && (isMobileSearchOpen || !!trimmedSearch);
-  const isDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(trimmedSearch);
+  const debouncedSearchTrim = searchQuery.trim();
+  const debouncedIsDirectRepoInput = /^[^/\s]+\/[^/\s]+$/.test(
+    debouncedSearchTrim,
+  );
+  const isCompactChart = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobileControls = useMediaQuery(theme.breakpoints.down('md'));
 
   const cardSortSelectOptions = useMemo(() => {
     const opts = [...CARD_SORT_OPTIONS];
@@ -284,58 +296,20 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     return opts;
   }, [sortColumn]);
 
-  // Sync filter state to URL params (replace, don't push)
-  const syncToUrl = useCallback(
-    (overrides?: Record<string, string | undefined>) => {
-      const params: Record<string, string> = {};
-      const rows = overrides?.rows ?? String(rowsPerPage);
-      const pg = overrides?.page ?? String(page);
-      const sort = overrides?.sort ?? sortColumn;
-      const dir = overrides?.dir ?? sortDirection;
-      const search = overrides?.search ?? searchQuery;
-      const active = overrides?.status ?? statusFilter;
-      const view = overrides?.view ?? viewMode;
-
-      if (rows !== '10') params.rows = rows;
-      if (pg !== '0') params.page = pg;
-      if (sort !== 'weight') params.sort = sort;
-      if (dir !== 'desc') params.dir = dir;
-      if (search) params.search = search;
-      if (active !== 'all') params.status = active;
-      if (view === 'cards') params.view = view;
-
-      setSearchParams(params, { replace: true });
-    },
-    [
-      rowsPerPage,
-      page,
-      sortColumn,
-      sortDirection,
-      searchQuery,
-      statusFilter,
-      viewMode,
-      setSearchParams,
-    ],
-  );
-
   const handleViewModeChange = useCallback(
     (nextMode: ViewMode) => {
+      // Persist to localStorage before the URL write so the parse fallback
+      // sees the new value.
       writeStoredRepositoriesViewMode(nextMode);
-      setStoredViewMode(nextMode);
+      // Reflow from the clamped (visible) value so stale URLs like
+      // `?view=list&rows=24` land on the new view's default, not on 24.
       const nextRows = clampRowsForRepositoriesView(rowsPerPage, nextMode);
       if (nextRows !== rowsPerPage) {
         setRowsPerPage(nextRows);
-        setPage(0);
-        syncToUrl({
-          view: nextMode,
-          rows: String(nextRows),
-          page: '0',
-        });
-      } else {
-        syncToUrl({ view: nextMode });
       }
+      setFilter('view', nextMode);
     },
-    [rowsPerPage, syncToUrl],
+    [rowsPerPage, setRowsPerPage, setFilter],
   );
 
   const rankedRepositories = useMemo(() => {
@@ -387,12 +361,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const filteredRepositories = useMemo(() => {
     let filtered = rankedRepositories;
 
-    if (statusFilter === 'active') {
-      filtered = filtered.filter((repo) => !repo.inactiveAt);
-    } else if (statusFilter === 'inactive') {
-      filtered = filtered.filter((repo) => !!repo.inactiveAt);
-    }
-
     // Apply search filter
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
@@ -402,7 +370,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     }
 
     return filtered;
-  }, [rankedRepositories, statusFilter, searchQuery]);
+  }, [rankedRepositories, searchQuery]);
 
   const maxWeight = useMemo(
     () => rankedRepositories.reduce((m, r) => (r.weight > m ? r.weight : m), 0),
@@ -549,15 +517,31 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       },
     }));
 
+    const baseTitle = echartsBarChartTitle(
+      theme,
+      metric.title,
+      'Top repositories ranked by the selected metric',
+    );
+
     return {
       ...echartsTransparentBackground(),
-      title: echartsBarChartTitle(
-        theme,
-        metric.title,
-        'Top repositories ranked by the selected metric',
-      ),
+      title: isCompactChart
+        ? {
+            ...baseTitle,
+            top: 8,
+            textStyle: {
+              ...baseTitle.textStyle,
+              fontSize: 13,
+            },
+            subtextStyle: {
+              ...baseTitle.subtextStyle,
+              fontSize: 10,
+            },
+          }
+        : baseTitle,
       tooltip: {
         trigger: 'axis',
+        confine: true,
         axisPointer: {
           type: 'shadow',
           shadowStyle: {
@@ -635,7 +619,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         type: effectiveLogScale ? 'log' : 'value',
         min: effectiveLogScale ? 1 : 0,
         logBase: 10,
-        name: metric.yAxis,
+        name: isCompactChart ? '' : metric.yAxis,
         nameTextStyle: {
           color: textColor,
           fontFamily: chartFont,
@@ -706,40 +690,21 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
   const handleChangePage = (_event: unknown, newPage: number) => {
     setPage(newPage);
-    syncToUrl({ page: String(newPage) });
   };
 
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
-    const newRows = parseInt(event.target.value, 10);
-    setRowsPerPage(newRows);
-    setPage(0);
-    syncToUrl({ rows: String(newRows), page: '0' });
-  };
-
-  const handleSort = (column: SortColumn) => {
-    let newDir: SortDirection;
-    if (sortColumn === column) {
-      newDir = sortDirection === 'asc' ? 'desc' : 'asc';
-      setSortDirection(newDir);
-    } else {
-      newDir = column === 'repository' ? 'asc' : 'desc';
-      setSortColumn(column);
-      setSortDirection(newDir);
-    }
-    setPage(0);
-    syncToUrl({ sort: column, dir: newDir, page: '0' });
+    setRowsPerPage(parseInt(event.target.value, 10));
   };
 
   const handleSearchKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === 'Enter' && isDirectRepoInput) {
-      navigate(getRepositoryHref(trimmedSearch), {
+    const raw = (e.target as HTMLInputElement).value.trim();
+    const direct = /^[^/\s]+\/[^/\s]+$/.test(raw);
+    if (e.key === 'Enter' && direct) {
+      navigate(getRepositoryHref(raw), {
         state: linkState,
       });
-    }
-    if (e.key === 'Escape' && !trimmedSearch) {
-      setIsMobileSearchOpen(false);
     }
   };
 
@@ -770,38 +735,101 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   } as const;
 
   const searchInput = (
-    <TextField
-      placeholder="Search or enter owner/repo..."
-      size="small"
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      onKeyDown={handleSearchKeyDown}
-      onBlur={() => {
-        if (isMobile && !trimmedSearch) {
-          setIsMobileSearchOpen(false);
-        }
-      }}
-      autoFocus={isMobileSearchOpen}
-      InputProps={{
-        startAdornment: searchAdornment,
-        endAdornment: (
-          <ClearSearchAdornment
-            visible={Boolean(trimmedSearch)}
-            onClear={() => setSearchQuery('')}
-          />
-        ),
-      }}
-      sx={{
-        width: '300px',
-        ...(isMobileSearchVisible
-          ? {
+    <DebouncedSearchInput
+      initialDraft={searchQuery}
+      onDebouncedChange={handleSearchChange}
+    >
+      {({ draftValue, setDraftValue }) => {
+        return (
+          <TextField
+            placeholder="Search or enter owner/repo..."
+            size="small"
+            value={draftValue}
+            onChange={(e) => setDraftValue(e.target.value)}
+            onKeyDown={handleSearchKeyDown}
+            InputProps={{
+              startAdornment: searchAdornment,
+              endAdornment: (
+                <ClearSearchAdornment
+                  visible={Boolean(debouncedSearchTrim)}
+                  onClear={() => handleSearchChange('')}
+                />
+              ),
+            }}
+            sx={{
+              width: { xs: '100%', sm: '200px' },
               flexBasis: { xs: '100%', sm: 'auto' },
-              order: { xs: 10, sm: 'initial' },
-            }
-          : {}),
-        ...searchFieldBaseSx,
+              order: { xs: -1, sm: 'initial' },
+              ...searchFieldBaseSx,
+            }}
+          />
+        );
       }}
-    />
+    </DebouncedSearchInput>
+  );
+
+  const chartControls = (
+    <>
+      {showChart && (
+        <FormControlLabel
+          labelPlacement="start"
+          control={
+            <Switch
+              checked={useLogScale}
+              onChange={(e) => setUseLogScale(e.target.checked)}
+              size="small"
+              sx={{
+                '& .MuiSwitch-switchBase.Mui-checked': {
+                  color: 'primary.main',
+                },
+                '& .MuiSwitch-track': {
+                  backgroundColor: 'border.medium',
+                },
+              }}
+            />
+          }
+          label={
+            <Typography
+              variant="body2"
+              sx={{
+                fontSize: '0.8rem',
+                color: 'text.secondary',
+              }}
+            >
+              Log Scale
+            </Typography>
+          }
+          sx={{ ml: 0 }}
+        />
+      )}
+      <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+        <IconButton
+          onClick={() => setShowChart(!showChart)}
+          size="small"
+          sx={{
+            color: showChart ? 'text.primary' : 'text.tertiary',
+            border: '1px solid',
+            borderColor: 'border.light',
+            borderRadius: 2,
+            padding: '6px',
+            width: 36,
+            height: 36,
+            flexShrink: 0,
+            ml: { xs: 'auto', md: 0 },
+            '&:hover': {
+              backgroundColor: 'surface.light',
+              borderColor: 'border.medium',
+            },
+          }}
+        >
+          {showChart ? (
+            <TableChartIcon fontSize="small" />
+          ) : (
+            <BarChartIcon fontSize="small" />
+          )}
+        </IconButton>
+      </Tooltip>
+    </>
   );
 
   const compactSortableHeaderSx = {
@@ -1039,6 +1067,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
       header: '★',
       width: '52px',
       align: 'center',
+      sortKey: 'watch',
       cellSx: { p: 0 },
       renderCell: (repo) =>
         repo.repository ? (
@@ -1050,21 +1079,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         ) : null,
     },
   ];
-
-  useEffect(() => {
-    if (isInitialMount.current) {
-      isInitialMount.current = false;
-      return;
-    }
-    setPage(0);
-    syncToUrl({ search: searchQuery, page: '0' });
-  }, [searchQuery]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    if (!isMobile) {
-      setIsMobileSearchOpen(false);
-    }
-  }, [isMobile]);
 
   if (isLoading) {
     return (
@@ -1096,117 +1110,64 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
         {/* Row 1: All Controls */}
         <Box
           sx={{
-            p: { xs: 1.5, md: 2 },
+            p: { xs: 1, sm: 1.5, md: 2 },
             display: 'flex',
             flexDirection: { xs: 'column', md: 'row' },
             alignItems: { xs: 'stretch', md: 'center' },
-            gap: { xs: 1.25, md: 2 },
+            gap: { xs: 1, md: 2 },
           }}
         >
           <Box
             sx={{
               display: 'flex',
-              gap: 0.5,
               alignItems: 'center',
+              justifyContent: { xs: 'flex-start', md: 'flex-end' },
+              gap: { xs: 0.75, sm: 1 },
               flexWrap: 'wrap',
               width: { xs: '100%', md: 'auto' },
             }}
           >
-            <FilterButton
-              label="All"
-              count={rankedRepositories.length}
-              color={STATUS_COLORS.neutral}
-              isActive={statusFilter === 'all'}
-              onClick={() => {
-                setStatusFilter('all');
-                setPage(0);
-                syncToUrl({ status: 'all', page: '0' });
-              }}
-            />
-            <FilterButton
-              label="Active"
-              count={rankedRepositories.filter((r) => !r.inactiveAt).length}
-              color={STATUS_COLORS.success}
-              isActive={statusFilter === 'active'}
-              onClick={() => {
-                setStatusFilter('active');
-                setPage(0);
-                syncToUrl({ status: 'active', page: '0' });
-              }}
-            />
-            <FilterButton
-              label="Inactive"
-              count={rankedRepositories.filter((r) => !!r.inactiveAt).length}
-              color={STATUS_COLORS.closed}
-              isActive={statusFilter === 'inactive'}
-              onClick={() => {
-                setStatusFilter('inactive');
-                setPage(0);
-                syncToUrl({ status: 'inactive', page: '0' });
-              }}
-            />
-          </Box>
-
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: { xs: 'space-between', md: 'flex-end' },
-              gap: 1,
-              flexWrap: 'wrap',
-              width: { xs: '100%', md: 'auto' },
-            }}
-          >
-            <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-              <IconButton
-                onClick={() => setShowChart(!showChart)}
-                size="small"
+            {!isMobileControls && (
+              <Box
                 sx={{
-                  color: showChart ? 'text.primary' : 'text.tertiary',
-                  border: '1px solid',
-                  borderColor: 'border.light',
-                  borderRadius: 2,
-                  padding: '6px',
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                    borderColor: 'border.medium',
-                  },
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
                 }}
               >
-                {showChart ? (
-                  <TableChartIcon fontSize="small" />
-                ) : (
-                  <BarChartIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
+                {chartControls}
+              </Box>
+            )}
 
             <FormControl size="small">
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: { xs: 0.75, sm: 1 },
+                }}
+              >
                 <Typography
                   variant="body2"
                   sx={{
                     color: 'text.secondary',
                     fontSize: '0.8rem',
+                    minWidth: { xs: 36, md: 'auto' },
+                    flexShrink: 0,
                   }}
                 >
                   Rows:
                 </Typography>
                 <Select
                   value={rowsPerPage}
-                  onChange={(e) => {
-                    const newRows = e.target.value as number;
-                    setRowsPerPage(newRows);
-                    setPage(0);
-                    syncToUrl({ rows: String(newRows), page: '0' });
-                  }}
+                  onChange={(e) => setRowsPerPage(e.target.value as number)}
                   sx={{
                     color: 'text.primary',
                     backgroundColor: 'background.default',
                     fontSize: '0.8rem',
                     height: '36px',
                     borderRadius: 2,
-                    minWidth: '80px',
+                    minWidth: '140px',
                     '& fieldset': { borderColor: 'border.light' },
                     '&:hover fieldset': {
                       borderColor: 'border.medium',
@@ -1227,32 +1188,9 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               </Box>
             </FormControl>
 
-            {isMobileSearchVisible ? (
-              searchInput
-            ) : isMobile ? (
-              <IconButton
-                size="small"
-                onClick={() => setIsMobileSearchOpen(true)}
-                sx={{
-                  color: 'text.tertiary',
-                  border: '1px solid',
-                  borderColor: 'border.light',
-                  borderRadius: 2,
-                  width: 36,
-                  height: 36,
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                    borderColor: 'border.medium',
-                  },
-                }}
-              >
-                <SearchIcon sx={{ fontSize: '1rem' }} />
-              </IconButton>
-            ) : (
-              searchInput
-            )}
+            {searchInput}
 
-            <Box sx={{ ml: { xs: 0, md: 'auto' } }}>
+            <Box sx={{ ml: 'auto' }}>
               <ViewModeToggle
                 viewMode={viewMode}
                 onChange={handleViewModeChange}
@@ -1260,143 +1198,136 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             </Box>
           </Box>
         </Box>
-      </Box>
 
-      {(viewMode === 'cards' || showChart) && (
-        <Box
-          sx={{
-            px: 2,
-            py: 1.5,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'flex-end',
-            gap: 1,
-            borderBottom: '1px solid',
-            borderColor: 'border.light',
-          }}
-        >
-          <Typography
-            variant="body2"
-            sx={{ color: 'text.secondary', fontSize: '0.8rem' }}
-          >
-            Sort:
-          </Typography>
-          <Select
-            size="small"
-            value={sortColumn}
-            onChange={(e) => handleSort(e.target.value as SortColumn)}
+        {(viewMode === 'cards' || showChart) && (
+          <Box
             sx={{
-              color: 'text.primary',
-              backgroundColor: 'background.default',
-              fontSize: '0.8rem',
-              height: '36px',
-              borderRadius: 2,
-              minWidth: '140px',
-              '& fieldset': { borderColor: 'border.light' },
-              '&:hover fieldset': { borderColor: 'border.medium' },
-              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-              '& .MuiSelect-select': { py: 0.75 },
+              px: { xs: 1, sm: 1.5, md: 2 },
+              pb: { xs: 1, sm: 1.5, md: 2 },
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: { xs: 'flex-start', md: 'flex-end' },
+              gap: { xs: 0.75, sm: 1 },
             }}
           >
-            {cardSortSelectOptions.map((opt) => (
-              <MenuItem key={opt.value} value={opt.value}>
-                {opt.label}
-              </MenuItem>
-            ))}
-          </Select>
-          <Tooltip title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}>
-            <IconButton
-              onClick={() => handleSort(sortColumn)}
-              size="small"
-              aria-label={
-                sortDirection === 'asc' ? 'Sort descending' : 'Sort ascending'
-              }
+            <Typography
+              variant="body2"
               sx={{
-                color: 'text.primary',
-                border: '1px solid',
-                borderColor: 'border.light',
-                borderRadius: 2,
-                padding: '6px',
-                '&:hover': {
-                  backgroundColor: 'surface.light',
-                  borderColor: 'border.medium',
-                },
+                color: 'text.secondary',
+                fontSize: '0.8rem',
+                minWidth: { xs: 36, md: 'auto' },
+                flexShrink: 0,
               }}
             >
-              {sortDirection === 'asc' ? (
-                <ArrowUpwardIcon fontSize="small" />
-              ) : (
-                <ArrowDownwardIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Tooltip>
-        </Box>
-      )}
+              Sort:
+            </Typography>
+            <Select
+              size="small"
+              value={sortColumn}
+              onChange={(e) => handleSort(e.target.value as SortColumn)}
+              sx={{
+                color: 'text.primary',
+                backgroundColor: 'background.default',
+                fontSize: '0.8rem',
+                height: '36px',
+                borderRadius: 2,
+                minWidth: '140px',
+                '& fieldset': { borderColor: 'border.light' },
+                '&:hover fieldset': { borderColor: 'border.medium' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                '& .MuiSelect-select': { py: 0.75 },
+              }}
+            >
+              {cardSortSelectOptions.map((opt) => (
+                <MenuItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </MenuItem>
+              ))}
+            </Select>
+            <Tooltip
+              title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
+            >
+              <IconButton
+                onClick={() => handleSort(sortColumn)}
+                size="small"
+                aria-label={
+                  sortDirection === 'asc' ? 'Sort descending' : 'Sort ascending'
+                }
+                sx={{
+                  color: 'text.primary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
+                  borderRadius: 2,
+                  padding: '6px',
+                  ml: { xs: 'auto', md: 0 },
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
+                    borderColor: 'border.medium',
+                  },
+                }}
+              >
+                {sortDirection === 'asc' ? (
+                  <ArrowUpwardIcon fontSize="small" />
+                ) : (
+                  <ArrowDownwardIcon fontSize="small" />
+                )}
+              </IconButton>
+            </Tooltip>
+          </Box>
+        )}
+
+        {isMobileControls && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              px: { xs: 1, sm: 1.5 },
+              pb: { xs: 1, sm: 1.5 },
+            }}
+          >
+            {chartControls}
+          </Box>
+        )}
+      </Box>
 
       <Collapse in={showChart}>
         <Box
           sx={{
+            p: { xs: 0.5, sm: 1.5, md: 2 },
             borderBottom: '1px solid',
             borderColor: 'border.light',
+            height: { xs: 360, sm: 440, md: 500 },
             backgroundColor: 'surface.subtle',
           }}
         >
-          <Box
-            sx={{
-              px: 2,
-              pt: 1.5,
-              pb: 1,
-              display: 'flex',
-              alignItems: 'center',
-              gap: 1.5,
-              flexWrap: 'wrap',
-            }}
-          >
-            <FormControlLabel
-              control={
-                <Switch
-                  checked={useLogScale}
-                  onChange={(e) => setUseLogScale(e.target.checked)}
-                  size="small"
-                  sx={{
-                    '& .MuiSwitch-switchBase.Mui-checked': {
-                      color: 'primary.main',
-                    },
-                    '& .MuiSwitch-track': { backgroundColor: 'border.medium' },
-                  }}
-                />
-              }
-              label={
-                <Typography
-                  variant="body2"
-                  sx={{ fontSize: '0.8rem', color: 'text.secondary' }}
-                >
-                  Log Scale
-                </Typography>
-              }
-            />
-          </Box>
-          <Box sx={{ px: 2, pb: 2, height: '460px' }}>
-            {showChart && chartTopRepositories.length > 0 && (
+          {showChart &&
+            (chartTopRepositories.length > 0 ? (
               <ReactECharts
                 option={getChartOption()}
                 style={{ height: '100%', width: '100%' }}
               />
-            )}
-          </Box>
+            ) : (
+              <ChartEmptyPanel
+                empty
+                minHeight="100%"
+                title="No repositories to chart"
+                hint="Adjust filters or search so at least one repository appears in the list, or switch back to table view."
+              />
+            ))}
         </Box>
       </Collapse>
 
       {viewMode === 'cards' && (
         <Box
           sx={{
-            p: 2,
+            p: { xs: 1, sm: 1.5, md: 2 },
             overflowY: 'auto',
             ...scrollbarSx,
           }}
         >
           {isLoading ? (
-            <Grid container spacing={2}>
+            <Grid container spacing={{ xs: 1.25, sm: 2 }}>
               {Array.from({ length: rowsPerPage }).map((_, i) => (
                 <Grid item xs={12} sm={6} md={4} lg={4} key={i}>
                   <Skeleton
@@ -1410,7 +1341,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               ))}
             </Grid>
           ) : pagedRepositories.length > 0 ? (
-            <Grid container spacing={2}>
+            <Grid container spacing={{ xs: 1.25, sm: 2 }}>
               {pagedRepositories.map((repo) => (
                 <Grid item xs={12} sm={6} md={4} lg={4} key={repo.repository}>
                   <RepositoryCard
@@ -1422,7 +1353,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 </Grid>
               ))}
             </Grid>
-          ) : trimmedSearch && isDirectRepoInput ? (
+          ) : debouncedSearchTrim && debouncedIsDirectRepoInput ? (
             <Box
               sx={{
                 display: 'flex',
@@ -1438,7 +1369,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   component="span"
                   sx={{ fontFamily: '"JetBrains Mono", monospace' }}
                 >
-                  {trimmedSearch}
+                  {debouncedSearchTrim}
                 </Typography>
                 ?
               </Typography>
@@ -1446,7 +1377,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 size="small"
                 variant="outlined"
                 onClick={() =>
-                  navigate(getRepositoryHref(trimmedSearch), {
+                  navigate(getRepositoryHref(debouncedSearchTrim), {
                     state: linkState,
                   })
                 }
@@ -1478,8 +1409,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             getRowKey={(repo) => repo.repository || ''}
             getRowHref={(repo) => getRepositoryHref(repo.repository || '')}
             linkState={linkState}
-            getRowSx={(repo) => ({
-              opacity: repo.inactiveAt ? 0.5 : 1,
+            getRowSx={() => ({
               '&:hover': { backgroundColor: 'border.subtle' },
               transition: 'all 0.2s',
               borderBottom: '1px solid',
@@ -1494,8 +1424,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             }}
             emptyState={
               !filteredRepositories.length &&
-              trimmedSearch &&
-              isDirectRepoInput ? (
+              debouncedSearchTrim &&
+              debouncedIsDirectRepoInput ? (
                 <Box
                   sx={{
                     display: 'flex',
@@ -1510,13 +1440,15 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 >
                   <Typography sx={{ color: 'text.secondary' }}>
                     Repository not in tracked list. Open details for{' '}
-                    <Typography component="span">{trimmedSearch}</Typography>?
+                    <Typography component="span">
+                      {debouncedSearchTrim}
+                    </Typography>
                   </Typography>
                   <Button
                     size="small"
                     variant="outlined"
                     onClick={() =>
-                      navigate(getRepositoryHref(trimmedSearch), {
+                      navigate(getRepositoryHref(debouncedSearchTrim), {
                         state: linkState,
                       })
                     }
@@ -1544,7 +1476,24 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           borderTop: '1px solid',
           borderColor: 'border.light',
           color: 'text.secondary',
-          '.MuiTablePagination-displayedRows': {},
+          overflow: 'hidden',
+          '& .MuiToolbar-root': {
+            px: { xs: 0.5, sm: 2 },
+            minHeight: { xs: 44, sm: 52 },
+            flexWrap: 'wrap',
+            justifyContent: { xs: 'center', sm: 'flex-end' },
+            rowGap: 0.5,
+          },
+          '& .MuiTablePagination-displayedRows': {
+            fontSize: { xs: '0.72rem', sm: '0.8rem' },
+            margin: 0,
+          },
+          '& .MuiTablePagination-actions': {
+            ml: { xs: 0.5, sm: 2.5 },
+            '& .MuiIconButton-root': {
+              padding: { xs: '4px', sm: '8px' },
+            },
+          },
         }}
       />
     </Card>

@@ -16,7 +16,9 @@ import {
   Grid,
   IconButton,
   InputAdornment,
+  MenuItem,
   Popover,
+  Select,
   Switch,
   TextField,
   Tooltip,
@@ -31,14 +33,18 @@ import {
   Tabs,
   Badge,
   useMediaQuery,
+  useTheme,
   Portal,
+  TablePagination,
 } from '@mui/material';
+import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import SearchIcon from '@mui/icons-material/Search';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import BarChartIcon from '@mui/icons-material/BarChart';
 import TableChartIcon from '@mui/icons-material/TableChart';
 import ReactECharts from 'echarts-for-react';
+import type { TooltipComponentFormatterCallbackParams } from 'echarts';
 import StarIcon from '@mui/icons-material/Star';
 import PersonIcon from '@mui/icons-material/Person';
 import FolderIcon from '@mui/icons-material/Folder';
@@ -47,6 +53,7 @@ import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import { Link as RouterLink, useSearchParams } from 'react-router-dom';
 import { Page } from '../components/layout';
 import { useTwitterStickySidebar } from '../hooks/useTwitterStickySidebar';
+import { useSessionStoredState } from '../hooks/useSessionStoredState';
 import {
   TopMinersTable,
   ActivitySidebarCards,
@@ -65,7 +72,9 @@ import {
   useIssues,
   useAllPrs,
   useMinersIssues,
+  MINER_ISSUES_FULL_HISTORY_SINCE_ISO,
 } from '../api';
+import { useFiltersPanelOpenInUrl } from '../hooks/useFiltersPanelUrlState';
 import type {
   CommitLog,
   MinerIssue,
@@ -73,6 +82,7 @@ import type {
 } from '../api/models/Dashboard';
 import type { IssueBounty } from '../api/models/Issues';
 import { usePrices } from '../hooks/usePrices';
+import { DebouncedSearchInput } from '../components/common/DebouncedSearchInput';
 import { BountyCard } from '../components/issues/BountyCard';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import {
@@ -80,12 +90,14 @@ import {
   isOutsideScoringWindow,
 } from '../utils/ExplorerUtils';
 import {
+  comparePRsByWatchlist,
+  serializePRKey,
   useWatchlist,
   useWatchlistCounts,
-  serializePRKey,
   type WatchlistCategory,
 } from '../hooks/useWatchlist';
 import { useWatchedPRs, type WatchedPRSource } from '../hooks/useWatchedPRs';
+import { usePrSourceFilter } from '../hooks/usePrSourceFilter';
 import {
   isMergedPr,
   isClosedUnmergedPr,
@@ -94,7 +106,6 @@ import {
 import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatDate, formatTokenAmount } from '../utils/format';
-import { compareByWatchlist } from '../utils/watchlistSort';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import theme, {
   CHART_COLORS,
@@ -109,6 +120,10 @@ import {
   FONTS,
   getRepositoryOwnerAvatarBackground,
 } from '../components/leaderboard/types';
+import {
+  echartsAxisTooltipChrome,
+  echartsFontFamily,
+} from '../utils/echarts/gittensorChartTheme';
 
 const TAB_ORDER: readonly WatchlistCategory[] = [
   'miners',
@@ -248,7 +263,7 @@ export const WatchlistContent: React.FC = () => {
           borderBottom: '1px solid',
           borderColor: 'border.light',
           position: 'sticky',
-          top: 64,
+          top: 60,
           zIndex: 50,
           backgroundColor: (t) => alpha(t.palette.background.default, 0.85),
           backdropFilter: 'blur(12px)',
@@ -257,15 +272,33 @@ export const WatchlistContent: React.FC = () => {
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
-          variant="fullWidth"
+          variant="scrollable"
+          scrollButtons="auto"
+          allowScrollButtonsMobile
           sx={(t) => ({
+            maxWidth: '100%',
+            minWidth: 0,
             minHeight: 52,
+            '& .MuiTabs-scroller': {
+              overscrollBehaviorX: 'contain',
+            },
+            '& .MuiTabs-flexContainer': {
+              minWidth: '100%',
+            },
+            '& .MuiTabs-scrollButtons': {
+              color: t.palette.text.primary,
+              width: 32,
+              '&.Mui-disabled': {
+                opacity: 0.25,
+              },
+            },
             '& .MuiTab-root': {
               minHeight: 52,
               fontSize: '0.95rem',
               fontWeight: 700,
               textTransform: 'none',
               letterSpacing: '0.01em',
+              flex: '1 0 auto',
               color: alpha(t.palette.text.primary, 0.45),
               transition: 'color 0.2s, background-color 0.2s',
               '&:hover': {
@@ -584,14 +617,14 @@ const WatchlistOptionsSidebarPanel: React.FC<
     hasActiveFilter: boolean;
   }
 > = (props) => {
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useFiltersPanelOpenInUrl();
 
   return (
     <Box>
       <Box
         component="button"
         type="button"
-        onClick={() => setOpen((v) => !v)}
+        onClick={() => setOpen(!open)}
         sx={(t) => ({
           display: 'flex',
           alignItems: 'center',
@@ -895,6 +928,7 @@ const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
 
 const MinersList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allMinersStats, isLoading } = useAllMiners();
+  const { remove } = useWatchlist('miners');
   const watchedSet = useMemo(() => new Set(itemKeys), [itemKeys]);
 
   const minerStats = useMemo(() => {
@@ -909,8 +943,50 @@ const MinersList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       }));
   }, [allMinersStats, watchedSet]);
 
+  const unresolvedIds = useMemo(() => {
+    if (isLoading || !allMinersStats) return [];
+    const known = new Set(allMinersStats.map((m) => m.githubId));
+    return itemKeys.filter((id) => !known.has(id));
+  }, [allMinersStats, isLoading, itemKeys]);
+
+  const handleRemoveUnresolved = useCallback(() => {
+    unresolvedIds.forEach((id) => remove(id));
+  }, [unresolvedIds, remove]);
+
   return (
-    <Box sx={{ width: '100%' }}>
+    <Box
+      sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 2 }}
+    >
+      {unresolvedIds.length > 0 && (
+        <Card
+          sx={(theme) => ({
+            p: 1.5,
+            display: 'flex',
+            alignItems: { xs: 'flex-start', sm: 'center' },
+            justifyContent: 'space-between',
+            gap: 1.5,
+            flexDirection: { xs: 'column', sm: 'row' },
+            backgroundColor: alpha(theme.palette.status.warningOrange, 0.08),
+            border: `1px solid ${alpha(theme.palette.status.warningOrange, 0.3)}`,
+          })}
+          elevation={0}
+        >
+          <Typography sx={{ fontSize: '0.85rem', color: 'text.secondary' }}>
+            {unresolvedIds.length} watched{' '}
+            {unresolvedIds.length === 1 ? 'miner' : 'miners'} could not be
+            loaded (the account may not be tracked by Gittensor).
+          </Typography>
+          <Button
+            size="small"
+            variant="outlined"
+            color="warning"
+            onClick={handleRemoveUnresolved}
+            sx={{ textTransform: 'none', flexShrink: 0 }}
+          >
+            Remove unresolved
+          </Button>
+        </Card>
+      )}
       <TopMinersTable
         miners={minerStats}
         isLoading={isLoading}
@@ -929,7 +1005,6 @@ type WatchedRepoStats = Repository & {
   // Hoisted from `config` for downstream sort/render code; populated when
   // constructing each row from the API Repository.
   weight: number | string;
-  inactiveAt: string | null | undefined;
   totalScore: number;
   totalPRs: number;
   uniqueMiners: Set<string>;
@@ -938,9 +1013,8 @@ type WatchedRepoStats = Repository & {
   discoveryContributors: Set<string>;
 };
 
-const isRepoActive = (repo: Repository): boolean => !repo.config?.inactiveAt;
-
-type RepoStatusFilter = 'all' | 'active' | 'inactive';
+const isPrStatusFilterStored = (v: unknown): v is PrStatusFilter =>
+  v === 'all' || v === 'open' || v === 'merged' || v === 'closed';
 
 type RepoSortKey =
   | 'name'
@@ -1059,14 +1133,6 @@ const repoHeaderStack = (
   </Box>
 );
 
-const repoStatusMeta = (repo: Repository) => {
-  const active = isRepoActive(repo);
-  return {
-    label: active ? 'ACTIVE' : 'INACTIVE',
-    color: active ? STATUS_COLORS.success : STATUS_COLORS.closed,
-  };
-};
-
 const getRepoHref = (repo: Repository) =>
   `/miners/repository?name=${encodeURIComponent(repo.fullName)}`;
 
@@ -1114,7 +1180,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
     cellSx: repoCellSx,
     renderCell: (repo) => (
       <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
-        {parseFloat(String(repo.config?.weight ?? 0)).toFixed(2)}
+        {parseFloat(String(repo.config?.emissionShare ?? 0)).toFixed(2)}
       </Typography>
     ),
   },
@@ -1382,10 +1448,8 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
   repo,
   maxWeight,
 }) => {
-  const { label, color } = repoStatusMeta(repo);
   const owner = repo.fullName.split('/')[0] || '';
-  const weight = parseFloat(String(repo.config?.weight ?? 0));
-  const isInactive = !!repo.config?.inactiveAt;
+  const weight = parseFloat(String(repo.config?.emissionShare ?? 0));
   const weightPct =
     maxWeight > 0 ? Math.max(0, Math.min(100, (weight / maxWeight) * 100)) : 0;
 
@@ -1404,7 +1468,6 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
         gap: 1.5,
         cursor: 'pointer',
         transition: 'all 0.2s',
-        opacity: isInactive ? 0.5 : 1,
         '&:hover': {
           backgroundColor: theme.palette.surface.light,
           borderColor: theme.palette.border.medium,
@@ -1446,29 +1509,6 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
             </Typography>
           </Tooltip>
         </LinkBox>
-        <Typography
-          component="span"
-          sx={(theme) => ({
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '0.65rem',
-            fontWeight: 600,
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-            px: 0.75,
-            py: 0.25,
-            borderRadius: '4px',
-            flexShrink: 0,
-            color,
-            backgroundColor: alpha(
-              isInactive
-                ? theme.palette.status.closed
-                : theme.palette.status.success,
-              0.12,
-            ),
-          })}
-        >
-          {label === 'ACTIVE' ? 'Active' : 'Inactive'}
-        </Typography>
         <WatchlistButton
           category="repos"
           itemKey={repo.fullName}
@@ -1579,14 +1619,45 @@ const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
   );
 };
 
-const ROWS_PER_PAGE = 50;
+const ROWS_PER_PAGE = 60; // If we set this to 50, tile mode displays 2 cards with an empty slot in the last row.
+
+const WatchlistStackedPagination: React.FC<{
+  count: number;
+  page: number;
+  onPageChange: (nextPage: number) => void;
+}> = ({ count, page, onPageChange }) => (
+  <TablePagination
+    rowsPerPageOptions={[]}
+    component="div"
+    count={count}
+    rowsPerPage={ROWS_PER_PAGE}
+    page={page}
+    onPageChange={(_event, newPage) => onPageChange(newPage)}
+    onRowsPerPageChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+      void e;
+    }}
+    showFirstButton
+    showLastButton
+    sx={{
+      borderTop: '1px solid',
+      borderColor: 'border.light',
+      color: 'text.secondary',
+      '.MuiTablePagination-displayedRows': {},
+    }}
+  />
+);
+
+/** Sidebar is beside main content only at `xl+`; below that, paginate tables so stacked sidebars stay reachable. */
+const useWatchlistSidebarFixedRight = () =>
+  useMediaQuery(theme.breakpoints.up('xl'));
 
 const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
+  const theme = useTheme();
   const { data: repos } = useReposAndWeights();
   const { data: allPrs } = useAllPrs();
   const { data: allMiners } = useAllMiners();
+  const sidebarFixedRight = useWatchlistSidebarFixedRight();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<RepoStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(false);
@@ -1599,7 +1670,11 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
+  }, [sidebarFixedRight]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [searchQuery, sortField, sortOrder, viewMode]);
 
   const handleSort = (field: RepoSortKey) => {
     if (sortField === field) {
@@ -1648,8 +1723,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         const d = discoveryByRepo.get(key);
         return {
           ...r,
-          weight: r.config?.weight ?? 0,
-          inactiveAt: r.config?.inactiveAt ?? null,
+          weight: r.config?.emissionShare ?? 0,
           totalScore: s?.totalScore || 0,
           totalPRs: s?.totalPRs || 0,
           uniqueMiners: s?.uniqueMiners || new Set<string>(),
@@ -1660,28 +1734,14 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       });
   }, [repos, allPrs, allMiners, itemKeys]);
 
-  const counts = useMemo(() => {
-    let active = 0;
-    let inactive = 0;
-    for (const r of items) {
-      if (isRepoActive(r)) active++;
-      else inactive++;
-    }
-    return { all: items.length, active, inactive };
-  }, [items]);
+  const counts = useMemo(() => ({ all: items.length }), [items]);
 
   const filtered = useMemo(() => {
     let result = items;
-    if (statusFilter === 'active')
-      result = result.filter((r) => isRepoActive(r));
-    else if (statusFilter === 'inactive')
-      result = result.filter((r) => !isRepoActive(r));
-
     const q = searchQuery.trim().toLowerCase();
     if (q) result = result.filter((r) => r.fullName.toLowerCase().includes(q));
-
     return result;
-  }, [items, statusFilter, searchQuery]);
+  }, [items, searchQuery]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -1693,8 +1753,8 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           return cmpStr(a.fullName, b.fullName);
         case 'weight':
           return cmpNum(
-            parseFloat(String(a.config?.weight ?? 0)),
-            parseFloat(String(b.config?.weight ?? 0)),
+            parseFloat(String(a.config?.emissionShare ?? 0)),
+            parseFloat(String(b.config?.emissionShare ?? 0)),
           );
         case 'totalScore':
           return cmpNum(a.totalScore, b.totalScore);
@@ -1717,12 +1777,22 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     });
   }, [filtered, sortField, sortOrder]);
 
-  const paged = useMemo(
-    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
-    [sorted, page],
-  );
+  const repoRankByKey = useMemo(() => {
+    const m = new Map<string, number>();
+    sorted.forEach((r, i) => m.set(r.fullName.toLowerCase(), i + 1));
+    return m;
+  }, [sorted]);
+
+  const paged = useMemo(() => {
+    if (sidebarFixedRight) {
+      return sorted.slice(0, (page + 1) * ROWS_PER_PAGE);
+    }
+    const start = page * ROWS_PER_PAGE;
+    return sorted.slice(start, start + ROWS_PER_PAGE);
+  }, [sorted, page, sidebarFixedRight]);
 
   useEffect(() => {
+    if (!sidebarFixedRight) return;
     const target = observerTarget.current;
     if (!target) return;
     const observer = new IntersectionObserver(
@@ -1739,12 +1809,12 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [page, filtered.length]);
+  }, [sidebarFixedRight, page, filtered.length]);
 
   const maxWeight = useMemo(
     () =>
       items.reduce(
-        (m, r) => Math.max(m, parseFloat(String(r.config?.weight ?? 0))),
+        (m, r) => Math.max(m, parseFloat(String(r.config?.emissionShare ?? 0))),
         0,
       ),
     [items],
@@ -1755,14 +1825,33 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     const borderSubtle = alpha(white, 0.08);
     const textColor = alpha(white, 0.85);
     const gridColor = borderSubtle;
+    const tooltipBorderColor = alpha(theme.palette.text.primary, 0.14);
     const tooltipLabelColor = alpha(white, TEXT_OPACITY.secondary);
-    const primaryColor = UI_COLORS.white;
+    const primaryColor = theme.palette.text.primary;
+    const chartFont = echartsFontFamily(theme);
 
-    const chartData = paged.map((repo) => ({
-      name: repo.fullName.split('/')[1] || repo.fullName,
-      repository: repo.fullName,
-      value: parseFloat(String(repo.config?.weight ?? 0)),
-    }));
+    const chartData = paged.map((repo) => {
+      const weight = parseFloat(String(repo.config?.weight ?? 0));
+      const ossScore = repo.totalScore || 0;
+      const prs = repo.totalPRs || 0;
+      const contributors = repo.uniqueMiners?.size || 0;
+      const discoveryScore = repo.discoveryScore || 0;
+      const discoveryIssues = repo.discoveryIssues || 0;
+      const discoveryContributors = repo.discoveryContributors?.size || 0;
+      return {
+        name: repo.fullName.split('/')[1] || repo.fullName,
+        repository: repo.fullName,
+        value: weight,
+        rank: repoRankByKey.get(repo.fullName.toLowerCase()) ?? 1,
+        ossScore,
+        prs,
+        contributors,
+        discoveryScore,
+        discoveryIssues,
+        discoveryContributors,
+        weight,
+      };
+    });
 
     const barGradient = {
       type: 'linear' as const,
@@ -1780,6 +1869,14 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     const seriesData = chartData.map((item) => ({
       value: item.value,
       repository: item.repository,
+      rank: item.rank,
+      weight: item.weight,
+      prs: item.prs,
+      contributors: item.contributors,
+      ossScore: item.ossScore,
+      discoveryScore: item.discoveryScore,
+      discoveryIssues: item.discoveryIssues,
+      discoveryContributors: item.discoveryContributors,
       itemStyle: {
         color: barGradient,
         borderRadius: [6, 6, 0, 0],
@@ -1807,21 +1904,37 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           type: 'shadow',
           shadowStyle: { color: borderSubtle },
         },
-        backgroundColor: UI_COLORS.surfaceTooltip,
-        borderColor: alpha(white, 0.15),
-        borderWidth: 1,
-        textStyle: { color: primaryColor, fontSize: 12 },
+        ...echartsAxisTooltipChrome(theme),
+        textStyle: {
+          color: primaryColor,
+          fontFamily: chartFont,
+          fontSize: 12,
+        },
         padding: [12, 16],
-        formatter: (params: unknown) => {
+        formatter: (params: TooltipComponentFormatterCallbackParams) => {
           if (!Array.isArray(params)) return '';
-          const data = params[0] as { dataIndex: number };
+          const data = params[0];
           const item = seriesData[data.dataIndex];
+          if (!item) return '';
+
+          const statRow = (label: string, value: string) => `
+                <span style="color: ${tooltipLabelColor}; min-width: 0;">${label}</span>
+                <span style="color: ${primaryColor}; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap;">${value}</span>`;
+
           return `
-            <div style="font-family: 'JetBrains Mono', monospace;">
-              <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px;">
-                ${item.repository}
+            <div style="font-family: ${chartFont}; display: grid; grid-template-columns: minmax(0, max-content); width: max-content; max-width: min(420px, 92vw); box-sizing: border-box;">
+              <div style="font-weight: 600; margin-bottom: 8px; font-size: 13px; line-height: 1.35;">
+                #${item.rank} ${item.repository}
               </div>
-              <div style="color: ${tooltipLabelColor};">Weight: <span style="color: ${primaryColor}; font-weight: 600;">${item.value.toFixed(2)}</span></div>
+              <div style="margin-top: 0; padding-top: 8px; border-top: 1px solid ${tooltipBorderColor}; display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 10px; row-gap: 6px; align-items: baseline; min-width: 0;">
+                ${statRow('OSS score:', item.ossScore.toFixed(2))}
+                ${statRow('PRs:', String(item.prs))}
+                ${statRow('OSS contributors:', String(item.contributors))}
+                ${statRow('Issue score:', item.discoveryScore.toFixed(2))}
+                ${statRow('Issues:', String(item.discoveryIssues))}
+                ${statRow('Issue contributors:', String(item.discoveryContributors))}
+                ${statRow('Weight:', item.weight.toFixed(2))}
+              </div>
             </div>
           `;
         },
@@ -1873,7 +1986,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         },
       ],
     };
-  }, [paged, useLogScale]);
+  }, [paged, useLogScale, theme, repoRankByKey]);
 
   return (
     <Card
@@ -1886,117 +1999,107 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         overflow: 'hidden',
       }}
     >
-      <WatchlistPortal
-        filterContent={
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 0.5,
-              alignItems: 'center',
-              flexWrap: 'wrap',
-            }}
-          >
-            <FilterButton
-              label="All"
-              count={counts.all}
-              color={STATUS_COLORS.neutral}
-              isActive={statusFilter === 'all'}
-              onClick={() => setStatusFilter('all')}
-            />
-            <FilterButton
-              label="Active"
-              count={counts.active}
-              color={STATUS_COLORS.success}
-              isActive={statusFilter === 'active'}
-              onClick={() => setStatusFilter('active')}
-            />
-            <FilterButton
-              label="Inactive"
-              count={counts.inactive}
-              color={STATUS_COLORS.closed}
-              isActive={statusFilter === 'inactive'}
-              onClick={() => setStatusFilter('inactive')}
-            />
-          </Box>
-        }
-        sortContent={
-          viewMode === 'cards' ? (
-            <WatchlistRepoCardSortPills
-              sortField={sortField}
-              sortOrder={sortOrder}
-              onSortChange={handleSort}
-            />
-          ) : undefined
-        }
-        extraContent={
-          <>
-            <Box>
-              <OptionsLabel>Chart</OptionsLabel>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
-                  <IconButton
-                    onClick={() => setShowChart((v) => !v)}
-                    size="small"
-                    sx={{
-                      color: showChart ? 'text.primary' : 'text.tertiary',
-                      border: '1px solid',
-                      borderColor: 'border.light',
-                      borderRadius: 2,
-                      padding: '6px',
-                      '&:hover': {
-                        backgroundColor: 'surface.light',
-                        borderColor: 'border.medium',
-                      },
-                    }}
-                  >
-                    {showChart ? (
-                      <TableChartIcon fontSize="small" />
-                    ) : (
-                      <BarChartIcon fontSize="small" />
-                    )}
-                  </IconButton>
-                </Tooltip>
-                {showChart && (
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={useLogScale}
-                        onChange={(e) => setUseLogScale(e.target.checked)}
+      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+        {({ draftValue, setDraftValue }) => (
+          <WatchlistPortal
+            filterContent={
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 0.5,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <FilterButton
+                  label="All"
+                  count={counts.all}
+                  color={STATUS_COLORS.neutral}
+                  isActive
+                  onClick={() => {}}
+                />
+              </Box>
+            }
+            sortContent={
+              viewMode === 'cards' ? (
+                <WatchlistRepoCardSortPills
+                  sortField={sortField}
+                  sortOrder={sortOrder}
+                  onSortChange={handleSort}
+                />
+              ) : undefined
+            }
+            extraContent={
+              <>
+                <Box>
+                  <OptionsLabel>Chart</OptionsLabel>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <Tooltip title={showChart ? 'Hide Chart' : 'Show Chart'}>
+                      <IconButton
+                        onClick={() => setShowChart((v) => !v)}
                         size="small"
                         sx={{
-                          '& .MuiSwitch-switchBase.Mui-checked': {
-                            color: 'primary.main',
-                          },
-                          '& .MuiSwitch-track': {
-                            backgroundColor: 'border.medium',
+                          color: showChart ? 'text.primary' : 'text.tertiary',
+                          border: '1px solid',
+                          borderColor: 'border.light',
+                          borderRadius: 2,
+                          padding: '6px',
+                          '&:hover': {
+                            backgroundColor: 'surface.light',
+                            borderColor: 'border.medium',
                           },
                         }}
-                      />
-                    }
-                    label={
-                      <Typography
-                        variant="body2"
-                        sx={{ fontSize: '0.8rem', color: 'text.secondary' }}
                       >
-                        Log Scale
-                      </Typography>
-                    }
-                  />
-                )}
-              </Box>
-            </Box>
-          </>
-        }
-        searchValue={searchQuery}
-        searchPlaceholder="Search repositories..."
-        onSearchChange={setSearchQuery}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        viewModeToggle={
-          <ReposViewModeToggle viewMode={viewMode} onChange={setViewMode} />
-        }
-        hasActiveFilter={statusFilter !== 'all'}
-      />
+                        {showChart ? (
+                          <TableChartIcon fontSize="small" />
+                        ) : (
+                          <BarChartIcon fontSize="small" />
+                        )}
+                      </IconButton>
+                    </Tooltip>
+                    {showChart && (
+                      <FormControlLabel
+                        control={
+                          <Switch
+                            checked={useLogScale}
+                            onChange={(e) => setUseLogScale(e.target.checked)}
+                            size="small"
+                            sx={{
+                              '& .MuiSwitch-switchBase.Mui-checked': {
+                                color: 'primary.main',
+                              },
+                              '& .MuiSwitch-track': {
+                                backgroundColor: 'border.medium',
+                              },
+                            }}
+                          />
+                        }
+                        label={
+                          <Typography
+                            variant="body2"
+                            sx={{ fontSize: '0.8rem', color: 'text.secondary' }}
+                          >
+                            Log Scale
+                          </Typography>
+                        }
+                      />
+                    )}
+                  </Box>
+                </Box>
+              </>
+            }
+            searchValue={draftValue}
+            searchPlaceholder="Search repositories..."
+            onSearchChange={setDraftValue}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+            viewModeToggle={
+              <ReposViewModeToggle viewMode={viewMode} onChange={setViewMode} />
+            }
+            hasActiveFilter={false}
+          />
+        )}
+      </DebouncedSearchInput>
 
       <Collapse in={showChart}>
         <Box
@@ -2026,13 +2129,6 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           getRowKey={(repo) => repo.fullName}
           getRowHref={getRepoHref}
           linkState={{ backLabel: 'Back to Watchlist' }}
-          getRowSx={(repo) =>
-            isRepoActive(repo)
-              ? {}
-              : {
-                  opacity: 0.5,
-                }
-          }
           minWidth="1180px"
           stickyHeader
           emptyLabel="No watched repositories found."
@@ -2041,6 +2137,15 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             order: sortOrder,
             onChange: handleSort,
           }}
+          pagination={
+            !sidebarFixedRight ? (
+              <WatchlistStackedPagination
+                count={filtered.length}
+                page={page}
+                onPageChange={setPage}
+              />
+            ) : undefined
+          }
         />
       ) : (
         <Box
@@ -2081,7 +2186,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
-      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+      {sidebarFixedRight && filtered.length > (page + 1) * ROWS_PER_PAGE && (
         <Box
           ref={observerTarget}
           sx={{
@@ -2109,6 +2214,13 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
+      {!sidebarFixedRight && viewMode !== 'list' ? (
+        <WatchlistStackedPagination
+          count={filtered.length}
+          page={page}
+          onPageChange={setPage}
+        />
+      ) : null}
     </Card>
   );
 };
@@ -2120,7 +2232,71 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 // ---------------------------------------------------------------------------
 
 type BountyStatusFilter = 'all' | 'available' | 'pending' | 'history';
-type BountySortKey = 'issue' | 'repo' | 'bounty' | 'status' | 'date';
+/** Aligns with `IssuesList` / `/bounties` sort dropdown keys per filter tab. */
+type BountySortKey =
+  | 'id'
+  | 'repository'
+  | 'issue'
+  | 'bounty'
+  | 'funding'
+  | 'status'
+  | 'solver'
+  | 'date';
+
+const BOUNTY_SORT_LABELS: Record<BountySortKey, string> = {
+  id: 'ID',
+  repository: 'Repository',
+  issue: 'Issue',
+  bounty: 'Bounty',
+  funding: 'Funding',
+  status: 'Status',
+  solver: 'Solver',
+  date: 'Date',
+};
+
+const bountyVisibleSortKeysForFilter = (
+  statusFilter: BountyStatusFilter,
+): BountySortKey[] => {
+  const common: BountySortKey[] = ['id', 'repository', 'issue'];
+  if (statusFilter === 'pending')
+    return [...common, 'bounty', 'funding', 'status'];
+  if (statusFilter === 'history')
+    return [...common, 'bounty', 'solver', 'status', 'date'];
+  return [...common, 'bounty', 'status'];
+};
+
+const parseBountyAmount = (value: string | null | undefined): number => {
+  const parsed = Number.parseFloat(value ?? '0');
+  return Number.isFinite(parsed) ? parsed : 0;
+};
+
+const getBountySortValue = (
+  issue: IssueBounty,
+  key: BountySortKey,
+): number | string => {
+  switch (key) {
+    case 'id':
+      return issue.id;
+    case 'funding': {
+      const target = parseBountyAmount(issue.targetBounty);
+      return target > 0 ? parseBountyAmount(issue.bountyAmount) / target : 0;
+    }
+    case 'solver':
+      return (issue.solverHotkey ?? '').toLowerCase();
+    case 'date':
+      return new Date(
+        issue.completedAt || issue.updatedAt || issue.createdAt || 0,
+      ).getTime();
+    case 'repository':
+      return (issue.repositoryFullName || '').toLowerCase();
+    case 'issue':
+      return `${(issue.title || '').toLowerCase()}::${String(issue.issueNumber).padStart(10, '0')}`;
+    case 'bounty':
+      return parseBountyAmount(issue.targetBounty);
+    case 'status':
+      return getIssueStatusMeta(issue.status).text;
+  }
+};
 
 const BOUNTY_STATUS_FILTERS: readonly BountyStatusFilter[] = [
   'all',
@@ -2213,6 +2389,24 @@ const buildBountyColumns = (): DataTableColumn<
   BountySortKey
 >[] => [
   {
+    key: 'id',
+    header: 'ID',
+    width: '56px',
+    sortKey: 'id',
+    cellSx: bountyCellSx,
+    renderCell: (i) => (
+      <Typography
+        sx={{
+          fontSize: '0.75rem',
+          color: (t) => alpha(t.palette.text.primary, 0.65),
+          fontVariantNumeric: 'tabular-nums',
+        }}
+      >
+        #{i.id}
+      </Typography>
+    ),
+  },
+  {
     key: 'issue',
     header: 'Issue',
     width: '90px',
@@ -2247,7 +2441,7 @@ const buildBountyColumns = (): DataTableColumn<
     key: 'repo',
     header: 'Repository',
     width: '24%',
-    sortKey: 'repo',
+    sortKey: 'repository',
     cellSx: bountyCellSx,
     renderCell: (i) => (
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
@@ -2338,6 +2532,7 @@ const buildBountyColumns = (): DataTableColumn<
 const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { data: allIssues, isLoading } = useIssues();
   const { taoPrice, alphaPrice } = usePrices();
+  const sidebarFixedRight = useWatchlistSidebarFixedRight();
   const bountyColumns = useMemo(() => buildBountyColumns(), []);
 
   const items = useMemo<IssueBounty[]>(() => {
@@ -2356,23 +2551,49 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [showChart, setShowChart] = useState(false);
 
-  const [sortField, setSortField] = useState<BountySortKey>('date');
+  const [sortField, setSortField] = useState<BountySortKey>('id');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [showChart, setShowChart] = useState(false);
+
+  const bountyVisibleSortKeys = useMemo(
+    () => bountyVisibleSortKeysForFilter(statusFilter),
+    [statusFilter],
+  );
+
+  const getDefaultSortDirection = useCallback(
+    (key: BountySortKey): 'asc' | 'desc' =>
+      key === 'id' || key === 'bounty' || key === 'date' ? 'desc' : 'asc',
+    [],
+  );
+
+  useEffect(() => {
+    if (!bountyVisibleSortKeys.includes(sortField)) {
+      setSortField('id');
+      setSortOrder('desc');
+    }
+  }, [sortField, bountyVisibleSortKeys]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [sidebarFixedRight]);
 
   useEffect(() => {
     setPage(0);
   }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
 
-  const handleSort = (field: BountySortKey) => {
-    if (sortField === field) {
-      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortOrder(field === 'repo' ? 'asc' : 'desc');
-    }
-    setPage(0);
-  };
+  const handleSort = useCallback(
+    (field: BountySortKey) => {
+      if (!bountyVisibleSortKeys.includes(field)) return;
+      if (sortField === field) {
+        setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortField(field);
+        setSortOrder(getDefaultSortDirection(field));
+      }
+      setPage(0);
+    },
+    [sortField, bountyVisibleSortKeys, getDefaultSortDirection],
+  );
 
   const counts = useMemo(() => getBountyCounts(items), [items]);
 
@@ -2382,33 +2603,29 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   );
 
   const sorted = useMemo(() => {
-    const dir = sortOrder === 'asc' ? 1 : -1;
-    const cmpStr = (a = '', b = '') => a.localeCompare(b) * dir;
-    const cmpNum = (a = 0, b = 0) => (a - b) * dir;
-    return [...filtered].sort((a, b) => {
-      switch (sortField) {
-        case 'issue':
-          return cmpNum(a.issueNumber, b.issueNumber);
-        case 'repo':
-          return cmpStr(a.repositoryFullName, b.repositoryFullName);
-        case 'bounty':
-          return cmpNum(
-            parseFloat(a.targetBounty || a.bountyAmount || '0'),
-            parseFloat(b.targetBounty || b.bountyAmount || '0'),
-          );
-        case 'status':
-          return cmpStr(a.status, b.status);
-        case 'date':
-          return cmpStr(bountyDate(a), bountyDate(b));
-        default:
-          return 0;
-      }
+    const directionFactor = sortOrder === 'asc' ? 1 : -1;
+    const collator = new Intl.Collator(undefined, {
+      sensitivity: 'base',
+      numeric: true,
     });
+    const decorated = filtered.map((row) => ({
+      row,
+      value: getBountySortValue(row, sortField),
+    }));
+    decorated.sort((a, b) => {
+      if (typeof a.value === 'number' && typeof b.value === 'number') {
+        return (a.value - b.value) * directionFactor;
+      }
+      return (
+        collator.compare(String(a.value), String(b.value)) * directionFactor
+      );
+    });
+    return decorated.map((d) => d.row);
   }, [filtered, sortField, sortOrder]);
 
-  const paged = useMemo(
-    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
-    [sorted, page],
+  const totalBountyPages = Math.max(
+    1,
+    Math.ceil(filtered.length / ROWS_PER_PAGE),
   );
 
   const chartOption = useMemo(() => {
@@ -2513,6 +2730,19 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   }, [sorted]);
 
   useEffect(() => {
+    setPage((p) => Math.min(p, totalBountyPages - 1));
+  }, [totalBountyPages]);
+
+  const paged = useMemo(() => {
+    if (sidebarFixedRight) {
+      return sorted.slice(0, (page + 1) * ROWS_PER_PAGE);
+    }
+    const start = page * ROWS_PER_PAGE;
+    return sorted.slice(start, start + ROWS_PER_PAGE);
+  }, [sorted, page, sidebarFixedRight]);
+
+  useEffect(() => {
+    if (!sidebarFixedRight) return;
     const target = observerTarget.current;
     if (!target) return;
     const observer = new IntersectionObserver(
@@ -2529,7 +2759,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [page, filtered.length]);
+  }, [sidebarFixedRight, page, filtered.length]);
 
   return (
     <Card
@@ -2543,141 +2773,151 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         flexDirection: 'column',
       }}
     >
-      <WatchlistPortal
-        filterContent={
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 0.5,
-              alignItems: 'center',
-              flexWrap: 'wrap',
-            }}
-          >
-            {BOUNTY_STATUS_FILTERS.map((s) => (
-              <FilterButton
-                key={s}
-                label={s[0].toUpperCase() + s.slice(1)}
-                count={counts[s]}
-                color={bountyStatusColor(s)}
-                isActive={statusFilter === s}
-                onClick={() => setStatusFilter(s)}
-              />
-            ))}
-          </Box>
-        }
-        sortContent={
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 0.5,
-              flexWrap: 'wrap',
-              justifyContent: 'flex-start',
-            }}
-          >
-            {WATCHLIST_BOUNTY_SORT_OPTIONS.map((opt) => {
-              const isActive = sortField === opt.value;
-              return (
-                <Box
-                  key={opt.value}
-                  component="button"
-                  type="button"
-                  onClick={() => handleSort(opt.value)}
-                  sx={(t) => ({
-                    px: 1.5,
-                    minHeight: 32,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
+      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+        {({ draftValue, setDraftValue }) => (
+          <WatchlistPortal
+            filterContent={
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 0.5,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                {BOUNTY_STATUS_FILTERS.map((s) => (
+                  <FilterButton
+                    key={s}
+                    label={s[0].toUpperCase() + s.slice(1)}
+                    count={counts[s]}
+                    color={bountyStatusColor(s)}
+                    isActive={statusFilter === s}
+                    onClick={() => setStatusFilter(s)}
+                  />
+                ))}
+              </Box>
+            }
+            sortContent={
+              <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+                <Select
+                  size="small"
+                  value={
+                    bountyVisibleSortKeys.includes(sortField) ? sortField : 'id'
+                  }
+                  onChange={(e) => {
+                    const key = e.target.value as BountySortKey;
+                    setSortField(key);
+                    setSortOrder(getDefaultSortDirection(key));
+                    setPage(0);
+                  }}
+                  sx={{
+                    flex: 1,
+                    minWidth: 0,
                     borderRadius: 2,
-                    cursor: 'pointer',
-                    font: 'inherit',
-                    backgroundColor: isActive
-                      ? alpha(t.palette.text.primary, 0.1)
-                      : 'transparent',
-                    color: isActive
-                      ? t.palette.text.primary
-                      : STATUS_COLORS.open,
-                    border: '1px solid',
-                    borderColor: isActive
-                      ? t.palette.border.medium
-                      : 'transparent',
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      backgroundColor: t.palette.surface.light,
-                      color: t.palette.text.primary,
+                    backgroundColor: 'background.default',
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'border.light',
                     },
-                  })}
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'border.medium',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'primary.main',
+                    },
+                    '& .MuiSelect-select': {
+                      py: 0.75,
+                      fontSize: '0.8rem',
+                      color: 'text.primary',
+                    },
+                  }}
                 >
-                  <Typography
+                  {bountyVisibleSortKeys.map((key) => (
+                    <MenuItem key={key} value={key}>
+                      {BOUNTY_SORT_LABELS[key]}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <Tooltip
+                  title={sortOrder === 'asc' ? 'Ascending' : 'Descending'}
+                  arrow
+                >
+                  <IconButton
+                    size="small"
+                    onClick={() =>
+                      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'))
+                    }
                     sx={{
-                      fontSize: '0.75rem',
-                      fontWeight: isActive ? 600 : 500,
+                      flexShrink: 0,
+                      color: 'text.primary',
+                      border: '1px solid',
+                      borderColor: 'border.light',
+                      borderRadius: 2,
+                      padding: '6px',
+                      '&:hover': {
+                        backgroundColor: 'surface.light',
+                        borderColor: 'border.medium',
+                      },
                     }}
                   >
-                    {opt.label}
-                  </Typography>
-                  {isActive && (
-                    <Box
+                    <ArrowUpwardIcon
+                      fontSize="small"
                       sx={{
-                        display: 'flex',
                         transform:
                           sortOrder === 'desc' ? 'rotate(180deg)' : 'none',
-                        transition: 'transform 0.2s',
+                        transition: 'transform 0.2s ease',
                       }}
-                    >
-                      <KeyboardArrowDownIcon sx={{ fontSize: '0.9rem' }} />
-                    </Box>
-                  )}
-                </Box>
-              );
-            })}
-          </Box>
-        }
-        searchValue={searchQuery}
-        searchPlaceholder="Search bounties..."
-        onSearchChange={setSearchQuery}
-        viewMode={viewMode}
-        onViewModeChange={(next) => {
-          setViewMode(next);
-          setPage(0);
-        }}
-        viewModeToggle={
-          <PRsViewModeToggle
+                    />
+                  </IconButton>
+                </Tooltip>
+              </Box>
+            }
+            searchValue={draftValue}
+            searchPlaceholder="Search bounties..."
+            onSearchChange={setDraftValue}
             viewMode={viewMode}
-            onChange={(next) => {
+            onViewModeChange={(next) => {
               setViewMode(next);
               setPage(0);
             }}
+            viewModeToggle={
+              <PRsViewModeToggle
+                viewMode={viewMode}
+                onChange={(next) => {
+                  setViewMode(next);
+                  setPage(0);
+                }}
+              />
+            }
+            extraContent={
+              <Box>
+                <OptionsLabel>Chart</OptionsLabel>
+                <IconButton
+                  onClick={() => setShowChart((v) => !v)}
+                  size="small"
+                  sx={{
+                    color: showChart ? 'text.primary' : 'text.tertiary',
+                    border: '1px solid',
+                    borderColor: 'border.light',
+                    borderRadius: 2,
+                    padding: '6px',
+                    '&:hover': {
+                      backgroundColor: 'surface.light',
+                      borderColor: 'border.medium',
+                    },
+                  }}
+                >
+                  {showChart ? (
+                    <TableChartIcon fontSize="small" />
+                  ) : (
+                    <BarChartIcon fontSize="small" />
+                  )}
+                </IconButton>
+              </Box>
+            }
+            hasActiveFilter={statusFilter !== 'all'}
           />
-        }
-        extraContent={
-          <Box>
-            <OptionsLabel>Chart</OptionsLabel>
-            <IconButton
-              onClick={() => setShowChart((v) => !v)}
-              size="small"
-              sx={{
-                color: showChart ? 'text.primary' : 'text.tertiary',
-                border: '1px solid',
-                borderColor: 'border.light',
-                borderRadius: 2,
-                padding: '6px',
-                '&:hover': {
-                  backgroundColor: 'surface.light',
-                  borderColor: 'border.medium',
-                },
-              }}
-            >
-              {showChart ? (
-                <TableChartIcon fontSize="small" />
-              ) : (
-                <BarChartIcon fontSize="small" />
-              )}
-            </IconButton>
-          </Box>
-        }
-        hasActiveFilter={statusFilter !== 'all'}
-      />
+        )}
+      </DebouncedSearchInput>
 
       <Collapse in={showChart}>
         <Box
@@ -2706,7 +2946,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           getRowKey={bountyKey}
           getRowHref={getBountyHref}
           linkState={{ backLabel: 'Back to Watchlist' }}
-          minWidth="900px"
+          minWidth="980px"
           stickyHeader
           isLoading={isLoading && items.length === 0}
           emptyLabel="No watched bounties found."
@@ -2715,6 +2955,15 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             order: sortOrder,
             onChange: handleSort,
           }}
+          pagination={
+            !sidebarFixedRight ? (
+              <WatchlistStackedPagination
+                count={filtered.length}
+                page={page}
+                onPageChange={setPage}
+              />
+            ) : undefined
+          }
         />
       ) : (
         <Box
@@ -2768,7 +3017,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
-      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+      {sidebarFixedRight && filtered.length > (page + 1) * ROWS_PER_PAGE && (
         <Box
           ref={observerTarget}
           sx={{
@@ -2796,6 +3045,13 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
+      {!sidebarFixedRight && viewMode !== 'list' ? (
+        <WatchlistStackedPagination
+          count={filtered.length}
+          page={page}
+          onPageChange={setPage}
+        />
+      ) : null}
     </Card>
   );
 };
@@ -2833,7 +3089,7 @@ const SOURCE_META: Record<
 > = {
   starred: {
     label: 'Starred',
-    tooltip: 'You starred this pull request',
+    tooltip: 'You starred this issue',
     Icon: StarIcon,
     color: '#facc15',
   },
@@ -3319,8 +3575,18 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const { items, sourcesByKey, isLoading } = useWatchedPRs(itemKeys);
   const prColumns = useMemo(() => buildPrColumns(sourcesByKey), [sourcesByKey]);
   const { isWatched } = useWatchlist('prs');
+  const sidebarFixedRight = useWatchlistSidebarFixedRight();
+  const {
+    active: activeSources,
+    toggle: toggleSource,
+    isAllOn: sourcesAllOn,
+  } = usePrSourceFilter();
   const [searchQuery, setSearchQuery] = useState('');
-  const [statusFilter, setStatusFilter] = useState<PrStatusFilter>('all');
+  const [statusFilter, setStatusFilter] = useSessionStoredState<PrStatusFilter>(
+    'watchlist:prs:statusFilter',
+    'all',
+    isPrStatusFilterStored,
+  );
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -3331,7 +3597,19 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode, isWatched]);
+  }, [sidebarFixedRight]);
+
+  useEffect(() => {
+    setPage(0);
+  }, [
+    statusFilter,
+    searchQuery,
+    sortField,
+    sortOrder,
+    viewMode,
+    isWatched,
+    activeSources,
+  ]);
 
   const handleSort = (field: PrSortKey) => {
     if (sortField === field) {
@@ -3347,15 +3625,36 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     setPage(0);
   };
 
-  const counts = useMemo(() => getPrStatusCounts(items), [items]);
+  const scopedItems = useMemo(() => {
+    if (sourcesAllOn) return items;
+    return items.filter((pr) =>
+      sourcesByKey
+        .get(serializePRKey(pr.repository, pr.pullRequestNumber))
+        ?.some((s) => activeSources.has(s)),
+    );
+  }, [items, sourcesByKey, activeSources, sourcesAllOn]);
+
+  const sourceCounts = useMemo(() => {
+    const counts = { starred: 0, miner: 0, repo: 0 };
+    for (const pr of items) {
+      const sources = sourcesByKey.get(
+        serializePRKey(pr.repository, pr.pullRequestNumber),
+      );
+      if (!sources) continue;
+      for (const s of sources) counts[s] += 1;
+    }
+    return counts;
+  }, [items, sourcesByKey]);
+
+  const counts = useMemo(() => getPrStatusCounts(scopedItems), [scopedItems]);
 
   const filtered = useMemo(() => {
-    return filterPrs(items, {
+    return filterPrs(scopedItems, {
       statusFilter,
       searchQuery,
       includeNumber: true,
     });
-  }, [items, statusFilter, searchQuery]);
+  }, [scopedItems, statusFilter, searchQuery]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -3378,23 +3677,30 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         }
         case 'score':
           return cmpNum(parseFloat(a.score || '0'), parseFloat(b.score || '0'));
-        case 'watch': {
-          const key = (pr: CommitLog) =>
-            serializePRKey(pr.repository, pr.pullRequestNumber);
-          return compareByWatchlist(a, b, key, isWatched) * dir;
-        }
+        case 'watch':
+          return comparePRsByWatchlist(a, b, isWatched) * dir;
         default:
           return 0;
       }
     });
   }, [filtered, sortField, sortOrder, isWatched]);
 
-  const paged = useMemo(
-    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
-    [sorted, page],
-  );
+  const totalPrPages = Math.max(1, Math.ceil(filtered.length / ROWS_PER_PAGE));
 
   useEffect(() => {
+    setPage((p) => Math.min(p, totalPrPages - 1));
+  }, [totalPrPages]);
+
+  const paged = useMemo(() => {
+    if (sidebarFixedRight) {
+      return sorted.slice(0, (page + 1) * ROWS_PER_PAGE);
+    }
+    const start = page * ROWS_PER_PAGE;
+    return sorted.slice(start, start + ROWS_PER_PAGE);
+  }, [sorted, page, sidebarFixedRight]);
+
+  useEffect(() => {
+    if (!sidebarFixedRight) return;
     const target = observerTarget.current;
     if (!target) return;
     const observer = new IntersectionObserver(
@@ -3411,7 +3717,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [page, filtered.length]);
+  }, [sidebarFixedRight, page, filtered.length]);
 
   return (
     <Card
@@ -3426,65 +3732,98 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       }}
     >
       {/* Compact Options trigger */}
-      <WatchlistPortal
-        filterContent={
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 0.5,
-              alignItems: 'center',
-              flexWrap: 'wrap',
-            }}
-          >
-            <FilterButton
-              label="All"
-              count={counts.all}
-              color={STATUS_COLORS.neutral}
-              isActive={statusFilter === 'all'}
-              onClick={() => setStatusFilter('all')}
-            />
-            <FilterButton
-              label="Open"
-              count={counts.open}
-              color={STATUS_COLORS.open}
-              isActive={statusFilter === 'open'}
-              onClick={() => setStatusFilter('open')}
-            />
-            <FilterButton
-              label="Merged"
-              count={counts.merged}
-              color={STATUS_COLORS.merged}
-              isActive={statusFilter === 'merged'}
-              onClick={() => setStatusFilter('merged')}
-            />
-            <FilterButton
-              label="Closed"
-              count={counts.closed}
-              color={STATUS_COLORS.closed}
-              isActive={statusFilter === 'closed'}
-              onClick={() => setStatusFilter('closed')}
-            />
-          </Box>
-        }
-        searchValue={searchQuery}
-        searchPlaceholder="Search PRs..."
-        onSearchChange={setSearchQuery}
-        viewMode={viewMode}
-        onViewModeChange={(next) => {
-          setViewMode(next);
-          setPage(0);
-        }}
-        viewModeToggle={
-          <PRsViewModeToggle
+      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+        {({ draftValue, setDraftValue }) => (
+          <WatchlistPortal
+            filterContent={
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 0.5,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                <FilterButton
+                  label="All"
+                  count={counts.all}
+                  color={STATUS_COLORS.neutral}
+                  isActive={statusFilter === 'all'}
+                  onClick={() => setStatusFilter('all')}
+                />
+                <FilterButton
+                  label="Open"
+                  count={counts.open}
+                  color={STATUS_COLORS.open}
+                  isActive={statusFilter === 'open'}
+                  onClick={() => setStatusFilter('open')}
+                />
+                <FilterButton
+                  label="Merged"
+                  count={counts.merged}
+                  color={STATUS_COLORS.merged}
+                  isActive={statusFilter === 'merged'}
+                  onClick={() => setStatusFilter('merged')}
+                />
+                <FilterButton
+                  label="Closed"
+                  count={counts.closed}
+                  color={STATUS_COLORS.closed}
+                  isActive={statusFilter === 'closed'}
+                  onClick={() => setStatusFilter('closed')}
+                />
+                <Box
+                  sx={{
+                    width: '1px',
+                    height: 20,
+                    backgroundColor: 'border.light',
+                    mx: 0.5,
+                  }}
+                />
+                <FilterButton
+                  label="Starred"
+                  count={sourceCounts.starred}
+                  color={SOURCE_META.starred.color}
+                  isActive={activeSources.has('starred')}
+                  onClick={() => toggleSource('starred')}
+                />
+                <FilterButton
+                  label="Miner"
+                  count={sourceCounts.miner}
+                  color={SOURCE_META.miner.color}
+                  isActive={activeSources.has('miner')}
+                  onClick={() => toggleSource('miner')}
+                />
+                <FilterButton
+                  label="Repo"
+                  count={sourceCounts.repo}
+                  color={SOURCE_META.repo.color}
+                  isActive={activeSources.has('repo')}
+                  onClick={() => toggleSource('repo')}
+                />
+              </Box>
+            }
+            searchValue={draftValue}
+            searchPlaceholder="Search PRs..."
+            onSearchChange={setDraftValue}
             viewMode={viewMode}
-            onChange={(next) => {
+            onViewModeChange={(next) => {
               setViewMode(next);
               setPage(0);
             }}
+            viewModeToggle={
+              <PRsViewModeToggle
+                viewMode={viewMode}
+                onChange={(next) => {
+                  setViewMode(next);
+                  setPage(0);
+                }}
+              />
+            }
+            hasActiveFilter={statusFilter !== 'all' || !sourcesAllOn}
           />
-        }
-        hasActiveFilter={statusFilter !== 'all'}
-      />
+        )}
+      </DebouncedSearchInput>
 
       {/* Content */}
       {viewMode === 'list' ? (
@@ -3510,6 +3849,15 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
             order: sortOrder,
             onChange: handleSort,
           }}
+          pagination={
+            !sidebarFixedRight ? (
+              <WatchlistStackedPagination
+                count={filtered.length}
+                page={page}
+                onPageChange={setPage}
+              />
+            ) : undefined
+          }
         />
       ) : (
         <Box
@@ -3561,7 +3909,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
-      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+      {sidebarFixedRight && filtered.length > (page + 1) * ROWS_PER_PAGE && (
         <Box
           ref={observerTarget}
           sx={{
@@ -3589,6 +3937,13 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           )}
         </Box>
       )}
+      {!sidebarFixedRight && viewMode !== 'list' ? (
+        <WatchlistStackedPagination
+          count={filtered.length}
+          page={page}
+          onPageChange={setPage}
+        />
+      ) : null}
     </Card>
   );
 };
@@ -3608,18 +3963,47 @@ const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
   'resolved',
   'closed',
 ];
+/** UI labels — `resolved` is "Solved" to match MinerOpenDiscoveryIssuesByRepo. */
+const ISSUE_FILTER_LABELS: Record<IssueStatusFilter, string> = {
+  all: 'All',
+  open: 'Open',
+  resolved: 'Solved',
+  closed: 'Closed',
+};
+
 const issueCellSx = { py: 1.5 } as const;
 
+/** Synthetic starred rows (mirror missing) carry this marker on `state_reason`. */
+const WATCHLIST_ISSUE_PENDING_MIRROR_MARKER =
+  '__gittensor_watchlist_pending_mirror__';
+
+// Same buckets as MinerOpenDiscoveryIssuesByRepo (`isOpenIssue` / `isSolvedIssue` /
+// `isClosedIssue`): open = not closed; solved = closed + linked PR; else closed.
+const minerWatchlistIssueClosed = (issue: MinerIssue): boolean => {
+  if ((issue.state ?? '').toUpperCase() === 'CLOSED') return true;
+  const ca = issue.closed_at;
+  return ca != null && String(ca).trim() !== '';
+};
+
+const minerWatchlistIssueLinkedPr = (issue: MinerIssue): number | null => {
+  const n = issue.solving_pr?.pr_number ?? issue.solved_by_pr;
+  return typeof n === 'number' && Number.isFinite(n) ? n : null;
+};
+
 const issueState = (issue: MinerIssue): Exclude<IssueStatusFilter, 'all'> => {
-  if ((issue.state_reason ?? '').toLowerCase() === 'completed')
-    return 'resolved';
-  return issue.state === 'CLOSED' ? 'closed' : 'open';
+  if (issue.state_reason === WATCHLIST_ISSUE_PENDING_MIRROR_MARKER)
+    return 'open';
+  if (!minerWatchlistIssueClosed(issue)) return 'open';
+  if (minerWatchlistIssueLinkedPr(issue) != null) return 'resolved';
+  return 'closed';
 };
 
 const issueStatusMeta = (issue: MinerIssue) => {
+  if (issue.state_reason === WATCHLIST_ISSUE_PENDING_MIRROR_MARKER) {
+    return { label: '—', color: STATUS_COLORS.neutral };
+  }
   const s = issueState(issue);
-  if (s === 'resolved')
-    return { label: 'RESOLVED', color: STATUS_COLORS.merged };
+  if (s === 'resolved') return { label: 'SOLVED', color: STATUS_COLORS.merged };
   if (s === 'closed') return { label: 'CLOSED', color: STATUS_COLORS.closed };
   return { label: 'OPEN', color: STATUS_COLORS.open };
 };
@@ -3629,6 +4013,17 @@ const issueDate = (issue: MinerIssue): string =>
 
 const issueKey = (issue: MinerIssue) =>
   `${issue.repo_full_name}#${issue.issue_number}`;
+
+const parseIssueKey = (
+  key: string,
+): { repoFullName: string; issueNumber: number } | null => {
+  const idx = key.lastIndexOf('#');
+  if (idx <= 0 || idx >= key.length - 1) return null;
+  const repoFullName = key.slice(0, idx);
+  const issueNumber = Number(key.slice(idx + 1));
+  if (!Number.isFinite(issueNumber)) return null;
+  return { repoFullName, issueNumber };
+};
 
 const issueStatusColor = (s: IssueStatusFilter): string => {
   switch (s) {
@@ -3860,7 +4255,7 @@ const buildIssueColumns = (
             color: (t) => alpha(t.palette.text.primary, 0.6),
           }}
         >
-          {d ? new Date(d).toLocaleDateString() : '-'}
+          {formatDate(d)}
         </Typography>
       );
     },
@@ -4068,8 +4463,12 @@ const IssueCard: React.FC<{
 };
 
 const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
-  const issueQueries = useMinersIssues(minerIds, minerIds.length > 0);
-  const isLoading = issueQueries.some((q) => q.isLoading);
+  const issueQueries = useMinersIssues(
+    minerIds,
+    minerIds.length > 0,
+    MINER_ISSUES_FULL_HISTORY_SINCE_ISO,
+  );
+  const sidebarFixedRight = useWatchlistSidebarFixedRight();
 
   const { ids: starredIssueIds } = useWatchlist('issues');
   const { ids: watchedRepoIds } = useWatchlist('repos');
@@ -4080,36 +4479,8 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   );
   const watchedMinerSet = useMemo(() => new Set(minerIds), [minerIds]);
 
-  const sourcesByKey = useMemo(() => {
-    const map = new Map<string, WatchedPRSource[]>();
-    issueQueries.forEach((q) => {
-      (q.data ?? []).forEach((issue) => {
-        const key = issueKey(issue);
-        if (map.has(key)) return;
-        const sources: WatchedPRSource[] = [];
-        if (starredSet.has(key)) sources.push('starred');
-        if (
-          issue.author_github_id &&
-          watchedMinerSet.has(issue.author_github_id)
-        ) {
-          sources.push('miner');
-        }
-        if (watchedRepoSet.has(issue.repo_full_name.toLowerCase())) {
-          sources.push('repo');
-        }
-        map.set(key, sources);
-      });
-    });
-    return map;
-  }, [issueQueries, starredSet, watchedMinerSet, watchedRepoSet]);
-
-  const issueColumns = useMemo(
-    () => buildIssueColumns(sourcesByKey),
-    [sourcesByKey],
-  );
-
   // Flatten + dedupe issues across all watched miners.
-  const items = useMemo<MinerIssue[]>(() => {
+  const mirroredItems = useMemo<MinerIssue[]>(() => {
     const map = new Map<string, MinerIssue>();
     issueQueries.forEach((q) => {
       (q.data ?? []).forEach((issue) => {
@@ -4126,6 +4497,79 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     return Array.from(map.values());
   }, [issueQueries]);
 
+  const mirroredIssueKeys = useMemo(() => {
+    const keys = new Set<string>();
+    mirroredItems.forEach((issue) => keys.add(issueKey(issue)));
+    return keys;
+  }, [mirroredItems]);
+
+  // Starred issues should always render, even when miner mirror feeds
+  // do not contain them. Build a minimal row from the serialized key.
+  const starredFallbackItems = useMemo<MinerIssue[]>(
+    () =>
+      starredIssueIds
+        .filter((key) => !mirroredIssueKeys.has(key))
+        .map((key) => {
+          const parsed = parseIssueKey(key);
+          if (!parsed) return null;
+          return {
+            repo_full_name: parsed.repoFullName,
+            issue_number: parsed.issueNumber,
+            title: `${parsed.repoFullName} #${parsed.issueNumber}`,
+            state: 'OPEN',
+            state_reason: WATCHLIST_ISSUE_PENDING_MIRROR_MARKER,
+            author_github_id: null,
+            author_login: null,
+            created_at: null,
+            closed_at: null,
+            updated_at: null,
+            solved_by_pr: null,
+            labels: [],
+          } as MinerIssue;
+        })
+        .filter((issue): issue is MinerIssue => issue !== null),
+    [starredIssueIds, mirroredIssueKeys],
+  );
+
+  const items = useMemo<MinerIssue[]>(() => {
+    const map = new Map<string, MinerIssue>();
+    [...mirroredItems, ...starredFallbackItems].forEach((issue) => {
+      const key = issueKey(issue);
+      const existing = map.get(key);
+      if (!existing || issueDate(issue) > issueDate(existing)) {
+        map.set(key, issue);
+      }
+    });
+    return Array.from(map.values());
+  }, [mirroredItems, starredFallbackItems]);
+
+  const sourcesByKey = useMemo(() => {
+    const map = new Map<string, WatchedPRSource[]>();
+    items.forEach((issue) => {
+      const key = issueKey(issue);
+      const sources: WatchedPRSource[] = [];
+      if (starredSet.has(key)) sources.push('starred');
+      if (
+        issue.author_github_id &&
+        watchedMinerSet.has(issue.author_github_id)
+      ) {
+        sources.push('miner');
+      }
+      if (watchedRepoSet.has(issue.repo_full_name.toLowerCase())) {
+        sources.push('repo');
+      }
+      map.set(key, sources);
+    });
+    return map;
+  }, [items, starredSet, watchedMinerSet, watchedRepoSet]);
+
+  const issueColumns = useMemo(
+    () => buildIssueColumns(sourcesByKey),
+    [sourcesByKey],
+  );
+
+  const isLoading = issueQueries.some((q) => q.isLoading);
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
@@ -4135,6 +4579,10 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
 
   const [sortField, setSortField] = useState<IssueSortKey>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+
+  useEffect(() => {
+    setPage(0);
+  }, [sidebarFixedRight]);
 
   useEffect(() => {
     setPage(0);
@@ -4179,12 +4627,25 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     });
   }, [filtered, sortField, sortOrder]);
 
-  const paged = useMemo(
-    () => sorted.slice(0, (page + 1) * ROWS_PER_PAGE),
-    [sorted, page],
+  const totalIssuePages = Math.max(
+    1,
+    Math.ceil(filtered.length / ROWS_PER_PAGE),
   );
 
   useEffect(() => {
+    setPage((p) => Math.min(p, totalIssuePages - 1));
+  }, [totalIssuePages]);
+
+  const paged = useMemo(() => {
+    if (sidebarFixedRight) {
+      return sorted.slice(0, (page + 1) * ROWS_PER_PAGE);
+    }
+    const start = page * ROWS_PER_PAGE;
+    return sorted.slice(start, start + ROWS_PER_PAGE);
+  }, [sorted, page, sidebarFixedRight]);
+
+  useEffect(() => {
+    if (!sidebarFixedRight) return;
     const target = observerTarget.current;
     if (!target) return;
     const observer = new IntersectionObserver(
@@ -4201,7 +4662,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     );
     observer.observe(target);
     return () => observer.disconnect();
-  }, [page, filtered.length]);
+  }, [sidebarFixedRight, page, filtered.length]);
 
   return (
     <Card
@@ -4216,38 +4677,51 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
       }}
     >
       {/* Compact Options trigger */}
-      <WatchlistPortal
-        filterContent={
-          <Box
-            sx={{
-              display: 'flex',
-              gap: 0.5,
-              alignItems: 'center',
-              flexWrap: 'wrap',
+      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+        {({ draftValue, setDraftValue }) => (
+          <WatchlistPortal
+            filterContent={
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 0.5,
+                  alignItems: 'center',
+                  flexWrap: 'wrap',
+                }}
+              >
+                {ISSUE_STATUS_FILTERS.map((s) => (
+                  <FilterButton
+                    key={s}
+                    label={ISSUE_FILTER_LABELS[s]}
+                    count={counts[s]}
+                    color={issueStatusColor(s)}
+                    isActive={statusFilter === s}
+                    onClick={() => setStatusFilter(s)}
+                  />
+                ))}
+              </Box>
+            }
+            searchValue={draftValue}
+            searchPlaceholder="Search issues..."
+            onSearchChange={setDraftValue}
+            viewMode={viewMode}
+            onViewModeChange={(next) => {
+              setViewMode(next);
+              setPage(0);
             }}
-          >
-            {ISSUE_STATUS_FILTERS.map((s) => (
-              <FilterButton
-                key={s}
-                label={s[0].toUpperCase() + s.slice(1)}
-                count={counts[s]}
-                color={issueStatusColor(s)}
-                isActive={statusFilter === s}
-                onClick={() => setStatusFilter(s)}
+            viewModeToggle={
+              <PRsViewModeToggle
+                viewMode={viewMode}
+                onChange={(next) => {
+                  setViewMode(next);
+                  setPage(0);
+                }}
               />
-            ))}
-          </Box>
-        }
-        searchValue={searchQuery}
-        searchPlaceholder="Search issues..."
-        onSearchChange={setSearchQuery}
-        viewMode={viewMode}
-        onViewModeChange={setViewMode}
-        viewModeToggle={
-          <PRsViewModeToggle viewMode={viewMode} onChange={setViewMode} />
-        }
-        hasActiveFilter={statusFilter !== 'all'}
-      />
+            }
+            hasActiveFilter={statusFilter !== 'all'}
+          />
+        )}
+      </DebouncedSearchInput>
 
       {viewMode === 'list' ? (
         <DataTable<MinerIssue, IssueSortKey>
@@ -4269,6 +4743,15 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
             order: sortOrder,
             onChange: handleSort,
           }}
+          pagination={
+            !sidebarFixedRight ? (
+              <WatchlistStackedPagination
+                count={filtered.length}
+                page={page}
+                onPageChange={setPage}
+              />
+            ) : undefined
+          }
         />
       ) : (
         <Box
@@ -4318,7 +4801,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
           )}
         </Box>
       )}
-      {filtered.length > (page + 1) * ROWS_PER_PAGE && (
+      {sidebarFixedRight && filtered.length > (page + 1) * ROWS_PER_PAGE && (
         <Box
           ref={observerTarget}
           sx={{
@@ -4346,6 +4829,13 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
           )}
         </Box>
       )}
+      {!sidebarFixedRight && viewMode !== 'list' ? (
+        <WatchlistStackedPagination
+          count={filtered.length}
+          page={page}
+          onPageChange={setPage}
+        />
+      ) : null}
     </Card>
   );
 };
