@@ -39,6 +39,14 @@ export type LanguageWeight = {
  *
  * API endpoint: GET /dash/stats
  */
+/**
+ * Cumulative lines committed for a date range.
+ * API endpoint: GET /dash/lines/total
+ */
+export type LinesTotal = {
+  linesCommitted: number;
+};
+
 export type Stats = {
   uniqueRepositories: string | number;
   totalLinesChanged: string | number;

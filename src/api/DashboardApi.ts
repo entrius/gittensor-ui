@@ -7,6 +7,7 @@ import {
   type RepoChanges,
   type LanguageWeight,
   type CommitLog,
+  type LinesTotal,
 } from './models/Dashboard';
 
 const useDashboardQuery = <TResponse = void, TSelect = TResponse>(
@@ -44,7 +45,7 @@ export const useRepoCommits = () =>
   useDashboardQuery<RepoChanges[]>('useRepoCommits', '/repos/commits');
 
 export const useLinesTotal = (params: { from: string; to: string }) =>
-  useDashboardQuery<number>('useLinesTotal', '/lines/total', undefined, {
+  useDashboardQuery<LinesTotal>('useLinesTotal', '/lines/total', undefined, {
     from: params.from,
     to: params.to,
   });
