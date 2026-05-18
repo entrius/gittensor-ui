@@ -116,7 +116,10 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
           }}
         >
           <Box
-            sx={{ gridColumn: { xs: '1 / -1', sm: 'auto' }, minWidth: { sm: 170 } }}
+            sx={{
+              gridColumn: { xs: '1 / -1', sm: 'auto' },
+              minWidth: { sm: 170 },
+            }}
           >
             <Typography
               sx={{
@@ -196,9 +199,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
           </Box>
 
           {issue.authorLogin && (
-            <Box
-              sx={{ minWidth: { sm: 140 } }}
-            >
+            <Box sx={{ minWidth: { sm: 140 } }}>
               <Typography
                 sx={{
                   fontSize: '0.7rem',
@@ -236,9 +237,7 @@ const IssueHeaderCard: React.FC<IssueHeaderCardProps> = ({ issue }) => {
             </Box>
           )}
 
-          <Box
-            sx={{ minWidth: { sm: 160 } }}
-          >
+          <Box sx={{ minWidth: { sm: 160 } }}>
             <Typography
               sx={{
                 fontSize: '0.7rem',
