@@ -45,7 +45,7 @@ const FOOTER_LINKS: ReadonlyArray<{ label: string; href: string }> = [
     label: 'Community',
     href: 'https://docs.learnbittensor.org/resources/community-links',
   },
-  { label: 'Github', href: 'https://github.com/entrius/gittensor' },
+  { label: 'GitHub', href: 'https://github.com/entrius/gittensor' },
   { label: 'X', href: 'https://x.com/gittensor_io' },
 ];
 
