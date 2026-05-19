@@ -826,6 +826,82 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
     </>
   );
 
+  // Sort dropdown + direction toggle. Rendered inline with the other controls
+  // (not on its own row) for card view, and for either view while the chart is
+  // open. List view sorts via column headers, so it has no inline sort control.
+  const sortControls = (
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: { xs: 0.75, sm: 1 },
+      }}
+    >
+      <Typography
+        variant="body2"
+        sx={{
+          color: 'text.secondary',
+          fontSize: '0.8rem',
+          flexShrink: 0,
+        }}
+      >
+        Sort:
+      </Typography>
+      <Select
+        size="small"
+        value={sortColumn}
+        onChange={(e) => handleSort(e.target.value as SortColumn)}
+        sx={{
+          color: 'text.primary',
+          backgroundColor: 'background.default',
+          fontSize: '0.8rem',
+          height: '36px',
+          borderRadius: 2,
+          minWidth: '140px',
+          '& fieldset': { borderColor: 'border.light' },
+          '&:hover fieldset': { borderColor: 'border.medium' },
+          '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+          '& .MuiSelect-select': { py: 0.75 },
+        }}
+      >
+        {cardSortSelectOptions.map((opt) => (
+          <MenuItem key={opt.value} value={opt.value}>
+            {opt.label}
+          </MenuItem>
+        ))}
+      </Select>
+      <Tooltip title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}>
+        <IconButton
+          onClick={() => handleSort(sortColumn)}
+          size="small"
+          aria-label={
+            sortDirection === 'asc' ? 'Sort descending' : 'Sort ascending'
+          }
+          sx={{
+            color: 'text.primary',
+            border: '1px solid',
+            borderColor: 'border.light',
+            borderRadius: 2,
+            padding: '6px',
+            width: 36,
+            height: 36,
+            flexShrink: 0,
+            '&:hover': {
+              backgroundColor: 'surface.light',
+              borderColor: 'border.medium',
+            },
+          }}
+        >
+          {sortDirection === 'asc' ? (
+            <ArrowUpwardIcon fontSize="small" />
+          ) : (
+            <ArrowDownwardIcon fontSize="small" />
+          )}
+        </IconButton>
+      </Tooltip>
+    </Box>
+  );
+
   const compactSortableHeaderSx = {
     whiteSpace: 'nowrap',
     '& .MuiTableSortLabel-root': {
@@ -1101,7 +1177,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           borderColor: 'border.light',
         }}
       >
-        {/* Row 1: All Controls */}
+        {/* All controls — single row */}
         <Box
           sx={{
             p: { xs: 1, sm: 1.5, md: 2 },
@@ -1184,6 +1260,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
 
             {searchInput}
 
+            {(viewMode === 'cards' || showChart) && sortControls}
+
             <Box sx={{ ml: 'auto' }}>
               <ViewModeToggle
                 viewMode={viewMode}
@@ -1192,83 +1270,6 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             </Box>
           </Box>
         </Box>
-
-        {(viewMode === 'cards' || showChart) && (
-          <Box
-            sx={{
-              px: { xs: 1, sm: 1.5, md: 2 },
-              pb: { xs: 1, sm: 1.5, md: 2 },
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: { xs: 'flex-start', md: 'flex-end' },
-              gap: { xs: 0.75, sm: 1 },
-            }}
-          >
-            <Typography
-              variant="body2"
-              sx={{
-                color: 'text.secondary',
-                fontSize: '0.8rem',
-                minWidth: { xs: 36, md: 'auto' },
-                flexShrink: 0,
-              }}
-            >
-              Sort:
-            </Typography>
-            <Select
-              size="small"
-              value={sortColumn}
-              onChange={(e) => handleSort(e.target.value as SortColumn)}
-              sx={{
-                color: 'text.primary',
-                backgroundColor: 'background.default',
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                minWidth: '140px',
-                '& fieldset': { borderColor: 'border.light' },
-                '&:hover fieldset': { borderColor: 'border.medium' },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-                '& .MuiSelect-select': { py: 0.75 },
-              }}
-            >
-              {cardSortSelectOptions.map((opt) => (
-                <MenuItem key={opt.value} value={opt.value}>
-                  {opt.label}
-                </MenuItem>
-              ))}
-            </Select>
-            <Tooltip
-              title={sortDirection === 'asc' ? 'Ascending' : 'Descending'}
-            >
-              <IconButton
-                onClick={() => handleSort(sortColumn)}
-                size="small"
-                aria-label={
-                  sortDirection === 'asc' ? 'Sort descending' : 'Sort ascending'
-                }
-                sx={{
-                  color: 'text.primary',
-                  border: '1px solid',
-                  borderColor: 'border.light',
-                  borderRadius: 2,
-                  padding: '6px',
-                  ml: { xs: 'auto', md: 0 },
-                  '&:hover': {
-                    backgroundColor: 'surface.light',
-                    borderColor: 'border.medium',
-                  },
-                }}
-              >
-                {sortDirection === 'asc' ? (
-                  <ArrowUpwardIcon fontSize="small" />
-                ) : (
-                  <ArrowDownwardIcon fontSize="small" />
-                )}
-              </IconButton>
-            </Tooltip>
-          </Box>
-        )}
 
         {isMobileControls && (
           <Box

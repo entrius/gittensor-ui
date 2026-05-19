@@ -21,40 +21,61 @@ interface RiskAssessment {
 
 const ICON_SIZE = { fontSize: 18 };
 
+/**
+ * Credibility eligibility gate (gittensor MIN_CREDIBILITY). A miner at or above
+ * this clears the PR-eligibility bar; below it they do not. Per-repo configs
+ * can raise it, but the badge uses the global default as the reference point.
+ */
+const CREDIBILITY_GATE = 0.8;
+
 const getRiskAssessment = (
   credibility: number,
   totalPRs: number,
 ): RiskAssessment => {
-  if (credibility >= 1 && totalPRs >= 5)
+  // Elite: perfect credibility AND established history (5+ PRs)
+  if (credibility >= 1 && totalPRs >= 5) {
     return {
       level: 'elite',
       icon: <WorkspacePremiumIcon sx={ICON_SIZE} />,
       message: 'Proven Expert - Prioritize Merge',
     };
-  if (credibility >= 0.7 && totalPRs >= 3)
+  }
+
+  // High Trust: clears the eligibility gate AND has some history (3+ PRs)
+  if (credibility >= CREDIBILITY_GATE && totalPRs >= 3) {
     return {
       level: 'low',
       icon: <CheckCircleIcon sx={ICON_SIZE} />,
       message: 'High Trust - Expedite Code Review',
     };
-  if (credibility >= 0.5 && totalPRs < 3)
+  }
+
+  // New Contributor: clears the eligibility gate but has limited history (< 3 PRs)
+  if (credibility >= CREDIBILITY_GATE) {
     return {
       level: 'medium-new',
       icon: <InfoOutlinedIcon sx={ICON_SIZE} />,
       message: 'New Contributor - Standard Code Review',
     };
-  if (credibility >= 0.5)
+  }
+
+  // Below the eligibility bar: some credibility but under the 0.80 gate
+  if (credibility >= 0.5) {
     return {
       level: 'medium',
       icon: <WarningAmberIcon sx={ICON_SIZE} />,
-      message: 'Moderate Trust - Standard Code Review',
+      message: 'Below Eligibility Bar - Standard Code Review',
     };
-  if (credibility < 0.1)
+  }
+
+  if (credibility < 0.1) {
     return {
       level: 'critical',
       icon: <BlockIcon sx={ICON_SIZE} />,
       message: 'Untrusted - Heavy Code Review',
     };
+  }
+
   return {
     level: 'high',
     icon: <ErrorOutlineIcon sx={ICON_SIZE} />,

@@ -295,5 +295,3 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
     </Card>
   );
 };
-
-export default RepositoryCard;

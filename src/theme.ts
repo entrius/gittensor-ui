@@ -502,12 +502,6 @@ declare module '@mui/material/Typography' {
   }
 }
 
-declare module '@mui/material/Button' {
-  interface ButtonPropsVariantOverrides {
-    back: true;
-  }
-}
-
 declare module '@mui/material/Card' {
   interface CardPropsVariantOverrides {
     glass: true;
@@ -525,7 +519,6 @@ declare module '@mui/material/Chip' {
 export const createAppTheme = (mode: ThemeMode) => {
   const isDark = mode === 'dark';
   const baseColor = isDark ? UI_COLORS.white : UI_COLORS.black;
-  const inverseColor = isDark ? UI_COLORS.black : UI_COLORS.white;
   // Two-tone surface: canvas (page) sits behind floating paper (cards) so
   // light mode gets proper visual hierarchy (GitHub-style: #f6f8fa canvas,
   // #ffffff cards). Dark mode keeps the original near-black canvas with a
@@ -717,35 +710,6 @@ export const createAppTheme = (mode: ThemeMode) => {
             backgroundColor: 'rgb(190, 52, 85)',
           },
         },
-      },
-      MuiButton: {
-        variants: [
-          {
-            props: { variant: 'back' },
-            style: {
-              color: alpha(textPrimary, 0.7),
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '0.8rem',
-              fontWeight: 500,
-              letterSpacing: '0.5px',
-              textTransform: 'none',
-              backgroundColor: backgroundDefault,
-              border: `1px solid ${alpha(baseColor, 0.1)}`,
-              borderRadius: '8px',
-              padding: '8px 16px',
-              transition: 'all 0.2s',
-              '&:hover': {
-                color: textPrimary,
-                // Dark: lighten the button face. Light: add a soft gray tint
-                // instead of alpha(white, 0.8) which is invisible on white.
-                backgroundColor: isDark
-                  ? alpha(inverseColor, 0.8)
-                  : alpha(baseColor, 0.06),
-                borderColor: alpha(baseColor, isDark ? 0.2 : 0.28),
-              },
-            },
-          },
-        ],
       },
       MuiCard: {
         defaultProps: {

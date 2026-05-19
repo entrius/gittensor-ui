@@ -9,7 +9,7 @@ import {
   useTheme,
 } from '@mui/material';
 
-export interface KpiCardProps {
+interface KpiCardProps {
   title: string;
   value?: string | number;
   subtitle?: string;

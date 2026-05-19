@@ -4,7 +4,7 @@ import { useWatchlist, serializePRKey } from './useWatchlist';
 
 export type WatchedPRSource = 'starred' | 'miner' | 'repo';
 
-export const getWatchedSources = (
+const getWatchedSources = (
   pr: CommitLog,
   starredKeys: Set<string>,
   watchedReposLowercase: Set<string>,
@@ -23,16 +23,7 @@ export const getWatchedSources = (
   return sources;
 };
 
-export const matchesWatchedSet = (
-  pr: CommitLog,
-  starredKeys: Set<string>,
-  watchedReposLowercase: Set<string>,
-  watchedMinerIds: Set<string>,
-): boolean =>
-  getWatchedSources(pr, starredKeys, watchedReposLowercase, watchedMinerIds)
-    .length > 0;
-
-export interface UseWatchedPRsResult {
+interface UseWatchedPRsResult {
   items: CommitLog[];
   sourcesByKey: Map<string, WatchedPRSource[]>;
   isLoading: boolean;
