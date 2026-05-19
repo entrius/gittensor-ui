@@ -335,7 +335,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   );
 
   const handleSearchChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => setFilter('search', e.target.value),
+    (e: React.ChangeEvent<HTMLInputElement>) =>
+      setFilter('search', e.target.value),
     [setFilter],
   );
 
