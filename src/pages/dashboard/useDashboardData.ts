@@ -48,7 +48,7 @@ type DashboardDatasets = {
 // the React Query cache key stable across renders and route remounts.
 const DASHBOARD_ISSUES_SINCE_ISO = new Date(GITTENSOR_START_MS).toISOString();
 
-export const useDashboardData = (range: TrendTimeRange) => {
+const useDashboardData = (range: TrendTimeRange) => {
   const prsQuery = useAllPrs();
   const minersQuery = useAllMiners();
   const issuesQuery = useIssues();
@@ -153,7 +153,7 @@ export const useDashboardData = (range: TrendTimeRange) => {
     [datasets.prs.data],
   );
 
-  const totalLinesCommitted = linesTotalQuery.data ?? 0;
+  const totalLinesCommitted = Number(linesTotalQuery.data?.linesCommitted) || 0;
 
   const kpis = useMemo(
     () =>

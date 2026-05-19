@@ -138,7 +138,7 @@ const toTimestamp = (value?: string | null): number | null => {
 const isWithinWindow = (timestamp: number | null, window: WindowBounds) =>
   timestamp !== null && timestamp >= window.startMs && timestamp < window.endMs;
 
-export const getRangeConfig = (range: PresetTimeRange) => RANGE_CONFIG[range];
+const getRangeConfig = (range: PresetTimeRange) => RANGE_CONFIG[range];
 
 export const getWindowBounds = (
   range: TrendTimeRange,
@@ -153,7 +153,7 @@ export const getWindowBounds = (
   return { startMs: endMs - windowMs, endMs };
 };
 
-export const getPreviousWindowBounds = (
+const getPreviousWindowBounds = (
   range: TrendTimeRange,
   now = new Date(),
 ): WindowBounds | null => {
@@ -173,12 +173,12 @@ export const getPreviousWindowBounds = (
 // The conjunction matters — state_reason alone misses cases where GitHub
 // doesn't set 'completed', and solving_pr.merged_at alone counts not-planned
 // closures with stray PR links.
-export const isResolvedMinerIssue = (issue: MirrorDashboardIssue): boolean =>
+const isResolvedMinerIssue = (issue: MirrorDashboardIssue): boolean =>
   issue.state === 'CLOSED' &&
   issue.state_reason === 'COMPLETED' &&
   !!issue.solving_pr?.merged_at;
 
-export const isResolvedInWindow = (
+const isResolvedInWindow = (
   issue: MirrorDashboardIssue,
   window: WindowBounds,
 ): boolean =>
@@ -780,7 +780,7 @@ const pickTopOssContributor = (
       const mergedPrDiff = (b.totalMergedPrs ?? 0) - (a.totalMergedPrs ?? 0);
       if (mergedPrDiff !== 0) return mergedPrDiff;
 
-      return a.id - b.id;
+      return a.githubId.localeCompare(b.githubId);
     })
     .find(
       (miner) =>
@@ -1003,7 +1003,7 @@ const pickTopDiscoveryMiner = (
     .sort((a, b) => {
       const diff =
         parseNumber(b.issueDiscoveryScore) - parseNumber(a.issueDiscoveryScore);
-      return diff !== 0 ? diff : a.id - b.id;
+      return diff !== 0 ? diff : a.githubId.localeCompare(b.githubId);
     })[0];
 
   if (!top) return undefined;
@@ -1094,7 +1094,7 @@ const pickHighestIssueTokenScoreMiner = (
     .sort((a, b) => {
       const diff =
         parseNumber(b.issueTokenScore) - parseNumber(a.issueTokenScore);
-      return diff !== 0 ? diff : a.id - b.id;
+      return diff !== 0 ? diff : a.githubId.localeCompare(b.githubId);
     })[0];
 
   if (!top) return undefined;

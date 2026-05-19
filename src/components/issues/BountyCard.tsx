@@ -314,5 +314,3 @@ export const BountyCard: React.FC<BountyCardProps> = ({
     </Card>
   );
 };
-
-export default BountyCard;

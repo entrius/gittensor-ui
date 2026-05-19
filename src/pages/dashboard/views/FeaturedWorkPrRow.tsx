@@ -12,7 +12,7 @@ import {
   prTitleSx,
 } from './featuredWorkStyles';
 
-export interface FeaturedWorkPrRowProps {
+interface FeaturedWorkPrRowProps {
   repository: string;
   pr: FeaturedWorkPr;
   mono: string;

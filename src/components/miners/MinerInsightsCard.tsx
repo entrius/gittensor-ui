@@ -1,22 +1,13 @@
 import React, { useMemo } from 'react';
-import { Box, Card, Chip, Typography, alpha } from '@mui/material';
+import { Box, Card, Typography, alpha } from '@mui/material';
 import {
   CheckCircle as AchievementIcon,
   ErrorOutline as WarningIcon,
   Lightbulb as TipIcon,
 } from '@mui/icons-material';
-import {
-  useGeneralConfig,
-  useMinerStats,
-  type MinerEvaluation,
-  type RepositoryPrScoring,
-} from '../../api';
+import { useMinerStats } from '../../api';
+import type { MinerRepositoryEvaluation } from '../../api/models/Dashboard';
 import { STATUS_COLORS } from '../../theme';
-import {
-  calculateDynamicOpenPrThreshold,
-  calculateOpenIssueThreshold,
-  parseNumber,
-} from '../../utils/ExplorerUtils';
 
 interface MinerInsightsCardProps {
   githubId: string;
@@ -33,218 +24,127 @@ interface InsightItem {
   priority: number;
 }
 
-const getOpenPrInsight = (
-  minerStats: MinerEvaluation,
-  prScoring: RepositoryPrScoring | undefined,
-): InsightItem | null => {
-  const threshold = calculateDynamicOpenPrThreshold(minerStats, prScoring);
-  const totalOpenPrs = parseNumber(minerStats.totalOpenPrs);
-  const gap = threshold - totalOpenPrs;
+/** Per-repo eligibility / score / credibility accessors, mode-aware. */
+const eligibleFor = (
+  repo: MinerRepositoryEvaluation,
+  isIssueMode: boolean,
+): boolean => (isIssueMode ? repo.isIssueEligible : repo.isEligible);
 
-  if (totalOpenPrs >= threshold) {
-    return {
-      id: 'open-pr-limit-hit',
-      type: 'warning',
-      title: 'Open PR limit exceeded',
-      description: `You currently have ${totalOpenPrs} open PRs against a threshold of ${threshold}. Merge or close open PRs to reduce collateral and recover score efficiency.`,
-      priority: 100,
-    };
+const scoreFor = (
+  repo: MinerRepositoryEvaluation,
+  isIssueMode: boolean,
+): number => (isIssueMode ? repo.issueDiscoveryScore : repo.totalScore);
+
+const credibilityFor = (
+  repo: MinerRepositoryEvaluation,
+  isIssueMode: boolean,
+): number => (isIssueMode ? repo.issueCredibility : repo.credibility);
+
+/**
+ * Build per-repository insights. Each insight names the repository it
+ * concerns. Eligibility verdicts come straight from the server-computed
+ * `isEligible` / `isIssueEligible` flags — each repo applies its own
+ * configurable gate, so no fixed threshold is ever printed here.
+ */
+const buildInsights = (
+  repositories: MinerRepositoryEvaluation[],
+  isIssueMode: boolean,
+): InsightItem[] => {
+  const assembled: InsightItem[] = [];
+
+  if (repositories.length === 0) {
+    assembled.push({
+      id: 'no-repos',
+      type: 'tip',
+      title: 'No repository evaluations yet',
+      description: isIssueMode
+        ? 'Discover and solve issues in tracked repositories to start earning a per-repository standing.'
+        : 'Open and merge pull requests in tracked repositories to start earning a per-repository standing.',
+      priority: 40,
+    });
+    return assembled;
   }
 
-  if (gap <= 2) {
-    return {
-      id: 'open-pr-limit-near',
+  const eligibleRepos = repositories.filter((r) => eligibleFor(r, isIssueMode));
+  const ineligibleRepos = repositories.filter(
+    (r) => !eligibleFor(r, isIssueMode),
+  );
+
+  // Ineligible repos with a server-supplied reason — name the repo + reason.
+  ineligibleRepos
+    .filter((r) => r.failedReason)
+    .slice(0, 2)
+    .forEach((repo, index) => {
+      assembled.push({
+        id: `ineligible-${repo.repositoryFullName}`,
+        type: 'warning',
+        title: `Ineligible in ${repo.repositoryFullName}`,
+        description: `${repo.failedReason} Credibility in this repository is ${(
+          credibilityFor(repo, isIssueMode) * 100
+        ).toFixed(1)}%.`,
+        priority: 95 - index,
+      });
+    });
+
+  // Ineligible with no reason string — generic prompt, still repo-named.
+  const unexplainedIneligible = ineligibleRepos.find((r) => !r.failedReason);
+  if (unexplainedIneligible && assembled.length < 3) {
+    assembled.push({
+      id: `ineligible-generic-${unexplainedIneligible.repositoryFullName}`,
       type: 'warning',
-      title: 'Open PR limit approaching',
-      description: `You are ${gap} PR${gap === 1 ? '' : 's'} away from your current open-PR threshold (${threshold}). Avoid opening more PRs until recent ones merge.`,
-      priority: 85,
-    };
+      title: `Not yet eligible in ${unexplainedIneligible.repositoryFullName}`,
+      description: isIssueMode
+        ? "Raise issue credibility and solved-issue volume to clear this repository's eligibility gate."
+        : "Raise merge credibility and contribution volume to clear this repository's eligibility gate.",
+      priority: 80,
+    });
   }
 
-  return null;
-};
-
-const getCredibilityInsight = (minerStats: MinerEvaluation): InsightItem => {
-  const credibility = parseNumber(minerStats.credibility);
-  const credibilityPercent = (credibility * 100).toFixed(1);
-  const totalPrs = parseNumber(minerStats.totalPrs);
-
-  if (credibility >= 0.9 && totalPrs >= 10) {
-    return {
-      id: 'credibility-excellent',
+  // Strongest eligible repo — an achievement that names where the miner leads.
+  if (eligibleRepos.length > 0) {
+    const topRepo = eligibleRepos.reduce((best, current) =>
+      scoreFor(current, isIssueMode) > scoreFor(best, isIssueMode)
+        ? current
+        : best,
+    );
+    assembled.push({
+      id: `top-repo-${topRepo.repositoryFullName}`,
       type: 'achievement',
-      title: 'Excellent credibility',
-      description: `Your merge credibility is ${credibilityPercent}% across ${totalPrs} PRs. Keep this consistency to maximize multiplier impact.`,
-      priority: 50,
-    };
+      title: `Strongest in ${topRepo.repositoryFullName}`,
+      description: `${
+        isIssueMode ? 'Issue-discovery' : 'OSS'
+      } score here is ${scoreFor(topRepo, isIssueMode).toFixed(2)} with ${(
+        credibilityFor(topRepo, isIssueMode) * 100
+      ).toFixed(1)}% credibility. Keep this consistency to maximize earnings.`,
+      priority: 55,
+    });
   }
 
-  if (credibility < 0.6 && totalPrs >= 5) {
-    return {
-      id: 'credibility-needs-work',
-      type: 'tip',
-      title: 'Improve merge reliability',
-      description: `Credibility is currently ${credibilityPercent}%. Focus on narrower PR scope, complete tests, and clear issue linkage to raise your merge rate.`,
-      priority: 70,
-    };
-  }
-
-  return {
-    id: 'credibility-stable',
-    type: 'tip',
-    title: 'Keep credibility trending upward',
-    description: `Credibility is ${credibilityPercent}%. Prioritize high-confidence PRs to move toward the top credibility band.`,
-    priority: 35,
-  };
-};
-
-const getEligibilityInsight = (
-  minerStats: MinerEvaluation,
-): InsightItem | null => {
-  const isEligible = minerStats.isEligible ?? false;
-
-  if (isEligible) return null;
-
-  return {
-    id: 'eligibility-ineligible',
-    type: 'warning',
-    title: 'Not yet eligible',
-    description:
-      'You are currently ineligible for rewards. Improve your credibility, increase your token score, and contribute to more repositories to become eligible.',
-    priority: 90,
-  };
-};
-
-const getCollateralInsight = (
-  minerStats: MinerEvaluation,
-): InsightItem | null => {
-  const collateralScore = parseNumber(minerStats.totalCollateralScore);
-  if (collateralScore <= 0) return null;
-
-  return {
-    id: 'collateral-impact',
-    type: 'warning',
-    title: 'Collateral is suppressing score',
-    description: `Current open-PR collateral impact is ${collateralScore.toFixed(2)} score points. Closing stale or risky open PRs can recover effective score.`,
-    priority: 75,
-  };
-};
-
-// ---------------------------------------------------------------------------
-// Issue-mode insight generators
-// ---------------------------------------------------------------------------
-
-const getOpenIssueRiskInsight = (
-  minerStats: MinerEvaluation,
-): InsightItem | null => {
-  const openIssues = parseNumber(minerStats.totalOpenIssues);
-  const threshold = calculateOpenIssueThreshold(minerStats);
-  const gap = threshold - openIssues;
-
-  if (openIssues >= threshold) {
-    return {
-      id: 'open-issue-limit-hit',
-      type: 'warning',
-      title: 'Open issue limit exceeded',
-      description: `You have ${openIssues} open issues against a threshold of ${threshold}. This triggers a full penalty on all discovery scores. Close or resolve open issues to recover.`,
-      priority: 100,
-    };
-  }
-
-  if (gap <= 2) {
-    return {
-      id: 'open-issue-limit-near',
-      type: 'warning',
-      title: 'Open issue limit approaching',
-      description: `You are ${gap} issue${gap === 1 ? '' : 's'} away from your open-issue threshold (${threshold}). Avoid opening more issues until existing ones are resolved.`,
-      priority: 85,
-    };
-  }
-
-  return null;
-};
-
-const getIssueEligibilityInsight = (
-  minerStats: MinerEvaluation,
-): InsightItem | null => {
-  const isIssueEligible = minerStats.isIssueEligible ?? false;
-
-  if (isIssueEligible) return null;
-
-  const validSolved = parseNumber(minerStats.totalValidSolvedIssues);
-  const remaining = Math.max(7 - validSolved, 0);
-
-  return {
-    id: 'issue-eligibility-ineligible',
-    type: 'warning',
-    title: 'Not yet eligible for issue rewards',
-    description:
-      remaining > 0
-        ? `You need ${remaining} more valid solved issue${remaining === 1 ? '' : 's'} (solving PR token score ≥ 5) to reach the 7-issue eligibility gate.`
-        : 'Improve your issue credibility and token score to become eligible for issue discovery rewards.',
-    priority: 90,
-  };
-};
-
-const getIssueCredibilityInsight = (
-  minerStats: MinerEvaluation,
-): InsightItem => {
-  const issueCred = parseNumber(minerStats.issueCredibility);
-  const credPercent = (issueCred * 100).toFixed(1);
-  const solvedIssues = parseNumber(minerStats.totalSolvedIssues);
-
-  if (issueCred >= 0.9 && solvedIssues >= 7) {
-    return {
-      id: 'issue-credibility-excellent',
+  // Eligible-everywhere achievement, or a coverage tip.
+  if (eligibleRepos.length === repositories.length) {
+    assembled.push({
+      id: 'eligible-all',
       type: 'achievement',
-      title: 'Excellent issue credibility',
-      description: `Issue credibility is ${credPercent}% across ${solvedIssues} solved issues. Your discovered issues consistently lead to quality solutions.`,
-      priority: 50,
-    };
-  }
-
-  if (issueCred < 0.6 && solvedIssues >= 3) {
-    return {
-      id: 'issue-credibility-needs-work',
+      title: 'Eligible across every repository',
+      description: `You clear the gate in all ${repositories.length} evaluated ${
+        repositories.length === 1 ? 'repository' : 'repositories'
+      }.`,
+      priority: 45,
+    });
+  } else if (eligibleRepos.length > 0) {
+    assembled.push({
+      id: 'coverage-tip',
       type: 'tip',
-      title: 'Improve issue solve rate',
-      description: `Issue credibility is ${credPercent}%. Focus on discovering issues that are clearly actionable and lead to high-quality solving PRs.`,
-      priority: 70,
-    };
+      title: 'Expand eligible coverage',
+      description: `You are eligible in ${eligibleRepos.length} of ${
+        repositories.length
+      } repositories. Lifting credibility in the rest unlocks more of the network reward pool.`,
+      priority: 35,
+    });
   }
 
-  return {
-    id: 'issue-credibility-stable',
-    type: 'tip',
-    title: 'Keep issue credibility trending upward',
-    description: `Issue credibility is ${credPercent}%. Prioritize discovering well-scoped issues to build a stronger track record.`,
-    priority: 35,
-  };
+  return assembled;
 };
-
-const getIssueSolvedInsight = (
-  minerStats: MinerEvaluation,
-): InsightItem | null => {
-  const validSolved = parseNumber(minerStats.totalValidSolvedIssues);
-  const totalSolved = parseNumber(minerStats.totalSolvedIssues);
-
-  if (totalSolved > 0 && validSolved === 0) {
-    return {
-      id: 'no-valid-solved',
-      type: 'tip',
-      title: 'No valid solved issues yet',
-      description:
-        'Your solved issues have not yet produced solving PRs with token score ≥ 5. Discover issues that lead to more substantial code changes.',
-      priority: 60,
-    };
-  }
-
-  return null;
-};
-
-// ---------------------------------------------------------------------------
-// Shared rendering helpers
-// ---------------------------------------------------------------------------
 
 const getInsightStyle = (type: InsightType) => {
   switch (type) {
@@ -272,67 +172,30 @@ const getInsightStyle = (type: InsightType) => {
   }
 };
 
-const assembleIssueInsights = (minerStats: MinerEvaluation): InsightItem[] => {
-  const assembled: InsightItem[] = [];
-
-  const openIssueInsight = getOpenIssueRiskInsight(minerStats);
-  if (openIssueInsight) assembled.push(openIssueInsight);
-
-  const eligibilityInsight = getIssueEligibilityInsight(minerStats);
-  if (eligibilityInsight) assembled.push(eligibilityInsight);
-
-  assembled.push(getIssueCredibilityInsight(minerStats));
-
-  const solvedInsight = getIssueSolvedInsight(minerStats);
-  if (solvedInsight) assembled.push(solvedInsight);
-
-  return assembled;
-};
-
-const assemblePrInsights = (
-  minerStats: MinerEvaluation,
-  prScoring: RepositoryPrScoring | undefined,
-): InsightItem[] => {
-  const assembled: InsightItem[] = [];
-
-  const openPrInsight = getOpenPrInsight(minerStats, prScoring);
-  if (openPrInsight) assembled.push(openPrInsight);
-
-  const collateralInsight = getCollateralInsight(minerStats);
-  if (collateralInsight) assembled.push(collateralInsight);
-
-  const eligibilityInsight = getEligibilityInsight(minerStats);
-  if (eligibilityInsight) assembled.push(eligibilityInsight);
-
-  assembled.push(getCredibilityInsight(minerStats));
-
-  return assembled;
-};
-
+/**
+ * Per-repository-aware insights, rendered as a compact rail strip. Each
+ * actionable item names the repository it concerns — per-repo gates make a
+ * single miner-wide verdict meaningless.
+ */
 const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
   githubId,
   viewMode = 'prs',
 }) => {
   const { data: minerStats } = useMinerStats(githubId);
-  const { data: generalConfig } = useGeneralConfig();
-
   const isIssueMode = viewMode === 'issues';
-
-  const docsUrl = isIssueMode
-    ? 'https://docs.gittensor.io/issue-discovery.html'
-    : 'https://docs.gittensor.io/oss-contributions.html';
 
   const insights = useMemo(() => {
     if (!minerStats) return [];
+    // Pre-migration placeholder rows carry an empty repo name — drop them.
+    const repositories = (minerStats.repositories ?? []).filter(
+      (r) => r.repositoryFullName.trim().length > 0,
+    );
+    return buildInsights(repositories, isIssueMode)
+      .sort((a, b) => b.priority - a.priority)
+      .slice(0, 3);
+  }, [minerStats, isIssueMode]);
 
-    const assembled = isIssueMode
-      ? assembleIssueInsights(minerStats)
-      : assemblePrInsights(minerStats, generalConfig?.repositoryPrScoring);
-
-    return assembled.sort((a, b) => b.priority - a.priority).slice(0, 4);
-  }, [minerStats, generalConfig, isIssueMode]);
-
-  if (!minerStats) return null;
+  if (!minerStats || insights.length === 0) return null;
 
   return (
     <Card
@@ -341,34 +204,15 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
         border: '1px solid',
         borderColor: 'border.light',
         backgroundColor: 'transparent',
-        p: 3,
+        p: 2.5,
       }}
       elevation={0}
     >
-      <Box sx={{ mb: 2 }}>
-        <Typography
-          sx={{
-            color: 'text.primary',
-            fontSize: '1.1rem',
-            fontWeight: 600,
-            mb: 0.8,
-          }}
-        >
-          {isIssueMode ? 'Issue Discovery Insights' : 'Insights & Next Actions'}
-        </Typography>
-        <Typography
-          sx={{
-            color: (t) => alpha(t.palette.text.primary, 0.55),
-            fontSize: '0.85rem',
-          }}
-        >
-          {isIssueMode
-            ? 'Recommendations based on your issue eligibility, credibility, and open-issue posture.'
-            : 'Prioritized recommendations based on your eligibility, credibility, collateral, and open-PR posture.'}
-        </Typography>
-      </Box>
+      <Typography variant="statLabel" sx={{ display: 'block', mb: 1.5 }}>
+        {isIssueMode ? 'Issue discovery insights' : 'Insights & next actions'}
+      </Typography>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.2 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
         {insights.map((insight) => {
           const style = getInsightStyle(insight.type);
           return (
@@ -384,63 +228,27 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
                 alignItems: 'flex-start',
                 gap: 1.1,
                 minWidth: 0,
-                maxWidth: '100%',
-                boxSizing: 'border-box',
-                overflow: 'hidden',
               }}
             >
               <Box sx={{ color: style.color, mt: 0.15, flexShrink: 0 }}>
                 {style.icon}
               </Box>
-              <Box sx={{ flex: 1, minWidth: 0, maxWidth: '100%' }}>
-                <Box
+              <Box sx={{ flex: 1, minWidth: 0 }}>
+                <Typography
                   sx={{
-                    display: 'flex',
-                    flexWrap: 'wrap',
-                    alignItems: 'flex-start',
-                    justifyContent: 'space-between',
-                    columnGap: 1,
-                    rowGap: 0.75,
+                    color: style.color,
+                    fontSize: '0.81rem',
+                    fontWeight: 600,
+                    wordBreak: 'break-word',
                   }}
                 >
-                  <Typography
-                    sx={{
-                      color: style.color,
-                      fontSize: '0.83rem',
-                      fontWeight: 600,
-                      flex: '1 1 0',
-                      minWidth: 0,
-                      pr: { xs: 0, sm: 0.5 },
-                    }}
-                  >
-                    {insight.title}
-                  </Typography>
-                  <Chip
-                    size="small"
-                    label={insight.type}
-                    sx={{
-                      textTransform: 'uppercase',
-                      fontSize: '0.62rem',
-                      color: style.color,
-                      backgroundColor: alpha(style.color, 0.12),
-                      border: `1px solid ${alpha(style.color, 0.35)}`,
-                      height: 22,
-                      flexShrink: 0,
-                      alignSelf: 'flex-start',
-                      maxWidth: '100%',
-                      '& .MuiChip-label': {
-                        px: 0.75,
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                      },
-                    }}
-                  />
-                </Box>
+                  {insight.title}
+                </Typography>
                 <Typography
                   sx={{
                     color: (t) => alpha(t.palette.text.primary, 0.68),
-                    fontSize: '0.8rem',
-                    mt: 0.4,
+                    fontSize: '0.78rem',
+                    mt: 0.35,
                     lineHeight: 1.45,
                     wordBreak: 'break-word',
                   }}
@@ -452,32 +260,6 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
           );
         })}
       </Box>
-
-      <Typography
-        sx={{
-          mt: 2,
-          textAlign: { xs: 'center', sm: 'right' },
-          fontSize: '0.72rem',
-          color: (t) => alpha(t.palette.text.primary, 0.35),
-        }}
-      >
-        Learn more about scoring in the{' '}
-        <Typography
-          component="a"
-          href={docsUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          sx={{
-            color: 'primary.main',
-            fontSize: 'inherit',
-            fontFamily: 'inherit',
-            textDecoration: 'none',
-            '&:hover': { textDecoration: 'underline' },
-          }}
-        >
-          docs
-        </Typography>
-      </Typography>
     </Card>
   );
 };

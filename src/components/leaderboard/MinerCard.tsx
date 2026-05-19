@@ -62,6 +62,11 @@ const formatScore = (score: number): string =>
       })
     : '0.00';
 
+/** Miner-wide USD/day, shown as a secondary stat. '—' when unavailable —
+ *  per-repo views carry no earnings (earnings is a miner-wide figure). */
+const formatUsdPerDay = (usdPerDay: number | undefined): string =>
+  usdPerDay ? `$${Math.round(usdPerDay).toLocaleString()}/d` : '—';
+
 /* ═══════════════════════════════════════════════════════════════════ */
 
 export const MinerCard: React.FC<MinerCardProps> = ({
@@ -113,6 +118,11 @@ export const MinerCard: React.FC<MinerCardProps> = ({
           : undefined;
   const segments = getSegments(miner, variant);
 
+  // Rank is a network-leaderboard concept — the watchlist suppresses it
+  // entirely (pill, accent border, and the top-3 left hairline).
+  const showRank = !isWatchlist;
+  const accentColor = showRank ? rankColor : undefined;
+
   return (
     <Card
       component="a"
@@ -122,7 +132,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
         position: 'relative',
         p: 0,
         backgroundColor: 'transparent',
-        border: `1px solid ${rankColor ? alpha(rankColor, 0.35) : theme.palette.border.medium}`,
+        border: `1px solid ${accentColor ? alpha(accentColor, 0.35) : theme.palette.border.medium}`,
         borderRadius: 1.5,
         cursor: 'pointer',
         height: '100%',
@@ -144,7 +154,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
           textUnderlineOffset: '3px',
         },
         /* hairline left accent for top-3 */
-        '&::before': rankColor
+        '&::before': accentColor
           ? {
               content: '""',
               position: 'absolute',
@@ -152,7 +162,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
               bottom: 16,
               left: 0,
               width: '1.5px',
-              backgroundColor: rankColor,
+              backgroundColor: accentColor,
               borderRadius: '0 1.5px 1.5px 0',
               pointerEvents: 'none',
               zIndex: 2,
@@ -169,7 +179,9 @@ export const MinerCard: React.FC<MinerCardProps> = ({
       <Box
         sx={{
           display: 'grid',
-          gridTemplateColumns: 'auto 1fr auto auto',
+          gridTemplateColumns: showRank
+            ? 'auto 1fr auto auto'
+            : 'auto 1fr auto',
           alignItems: 'center',
           columnGap: 1.25,
           px: { xs: 1.75, sm: 2 },
@@ -215,11 +227,16 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             {username}
           </Typography>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.85 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: showDualEligibilityBadges ? 1.5 : 0.85,
+            }}
+          >
             {showDualEligibilityBadges ? (
               <>
                 <EligibilityLabel label="OSS" eligible={ossEligible} />
-                <Divider />
                 <EligibilityLabel
                   label="Issues"
                   eligible={discoveriesEligible}
@@ -234,41 +251,43 @@ export const MinerCard: React.FC<MinerCardProps> = ({
           </Box>
         </Box>
 
-        {/* Rank pill */}
-        <Box
-          sx={(theme) => ({
-            display: 'inline-flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            minWidth: 38,
-            height: 24,
-            px: 0.75,
-            borderRadius: 0.85,
-            border: `1px solid ${
-              isTopRank
-                ? alpha(theme.palette.text.primary, 0.32)
-                : theme.palette.border.light
-            }`,
-            backgroundColor: isTopRank
-              ? alpha(theme.palette.text.primary, 0.04)
-              : 'transparent',
-          })}
-        >
-          <Typography
+        {/* Rank pill — leaderboard / per-repo only; hidden on the watchlist */}
+        {showRank && (
+          <Box
             sx={(theme) => ({
-              fontFamily: FONTS.mono,
-              fontSize: '0.72rem',
-              fontWeight: isTopRank ? 700 : 500,
-              color: isTopRank
-                ? theme.palette.text.primary
-                : theme.palette.text.secondary,
-              fontFeatureSettings: TABULAR_NUMS,
-              lineHeight: 1,
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              minWidth: 38,
+              height: 24,
+              px: 0.75,
+              borderRadius: 0.85,
+              border: `1px solid ${
+                isTopRank
+                  ? alpha(theme.palette.text.primary, 0.32)
+                  : theme.palette.border.light
+              }`,
+              backgroundColor: isTopRank
+                ? alpha(theme.palette.text.primary, 0.04)
+                : 'transparent',
             })}
           >
-            {formatRank(rank)}
-          </Typography>
-        </Box>
+            <Typography
+              sx={(theme) => ({
+                fontFamily: FONTS.mono,
+                fontSize: '0.72rem',
+                fontWeight: isTopRank ? 700 : 500,
+                color: isTopRank
+                  ? theme.palette.text.primary
+                  : theme.palette.text.secondary,
+                fontFeatureSettings: TABULAR_NUMS,
+                lineHeight: 1,
+              })}
+            >
+              {formatRank(rank)}
+            </Typography>
+          </Box>
+        )}
 
         <Box>
           {miner.githubId && (
@@ -281,18 +300,20 @@ export const MinerCard: React.FC<MinerCardProps> = ({
         </Box>
       </Box>
 
-      {/* ─── HERO: EARNINGS │ CREDIBILITY ───────────────────── */}
+      {/* ─── HERO: TOTAL SCORE / EARNINGS │ CREDIBILITY ──────── */}
       <Box
         sx={(theme) => ({
           display: 'grid',
-          gridTemplateColumns: '1fr auto',
+          gridTemplateColumns: isWatchlist ? '1fr' : '1fr auto',
           alignItems: 'stretch',
           borderTop: `1px solid ${theme.palette.border.light}`,
           borderBottom: `1px solid ${theme.palette.border.light}`,
           backgroundColor: alpha(theme.palette.text.primary, 0.012),
         })}
       >
-        {/* Earnings */}
+        {/* Hero metric — Total Score for per-repo / leaderboard cards;
+            Earnings for the watchlist, where it is a meaningful miner-wide
+            figure rather than an ambiguous per-repo one. */}
         <Box
           sx={{
             px: { xs: 1.75, sm: 2 },
@@ -303,90 +324,104 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             minWidth: 0,
           }}
         >
-          <Overline>Earnings</Overline>
-          <Box
-            sx={{ display: 'flex', alignItems: 'baseline', gap: 0.45, mt: 0.7 }}
-          >
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '1.65rem',
-                fontWeight: 700,
-                color: theme.palette.text.primary,
-                opacity: isEligible ? 1 : INACTIVE_OPACITY,
-                lineHeight: 1,
-                letterSpacing: '-0.028em',
-                fontFeatureSettings: TABULAR_NUMS,
-              })}
-            >
-              ${Math.round(miner.usdPerDay || 0).toLocaleString()}
-            </Typography>
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '0.7rem',
-                fontWeight: 500,
-                color: theme.palette.text.secondary,
-                opacity: isEligible ? 1 : INACTIVE_OPACITY,
-              })}
-            >
-              /day
-            </Typography>
-          </Box>
-          <Typography
-            sx={(theme) => ({
-              fontFamily: FONTS.mono,
-              fontSize: '0.7rem',
-              fontWeight: 500,
-              color: theme.palette.text.tertiary,
-              opacity: isEligible ? 1 : INACTIVE_OPACITY,
-              mt: 0.45,
-              fontFeatureSettings: TABULAR_NUMS,
-            })}
-          >
-            ~${Math.round((miner.usdPerDay || 0) * 30).toLocaleString()}/mo
-          </Typography>
+          {isWatchlist ? (
+            <>
+              <Overline>Earnings</Overline>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'baseline',
+                  gap: 0.45,
+                  mt: 0.7,
+                }}
+              >
+                <Typography
+                  sx={(theme) => ({
+                    fontFamily: FONTS.mono,
+                    fontSize: '1.65rem',
+                    fontWeight: 700,
+                    color: theme.palette.text.primary,
+                    opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                    lineHeight: 1,
+                    letterSpacing: '-0.028em',
+                    fontFeatureSettings: TABULAR_NUMS,
+                  })}
+                >
+                  ${Math.round(miner.usdPerDay || 0).toLocaleString()}
+                </Typography>
+                <Typography
+                  sx={(theme) => ({
+                    fontFamily: FONTS.mono,
+                    fontSize: '0.7rem',
+                    fontWeight: 500,
+                    color: theme.palette.text.secondary,
+                    opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                  })}
+                >
+                  /day
+                </Typography>
+              </Box>
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.7rem',
+                  fontWeight: 500,
+                  color: theme.palette.text.tertiary,
+                  opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                  mt: 0.45,
+                  fontFeatureSettings: TABULAR_NUMS,
+                })}
+              >
+                ~${Math.round((miner.usdPerDay || 0) * 30).toLocaleString()}/mo
+              </Typography>
+            </>
+          ) : (
+            <>
+              <Overline>Total Score</Overline>
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '1.65rem',
+                  fontWeight: 700,
+                  color: theme.palette.text.primary,
+                  opacity: isEligible ? 1 : INACTIVE_OPACITY,
+                  lineHeight: 1,
+                  letterSpacing: '-0.028em',
+                  fontFeatureSettings: TABULAR_NUMS,
+                  mt: 0.7,
+                })}
+              >
+                {formatScore(Number(miner.totalScore))}
+              </Typography>
+            </>
+          )}
         </Box>
 
-        {/* Credibility */}
-        <Box
-          sx={(theme) => ({
-            px: { xs: 1.75, sm: 2 },
-            py: 1.5,
-            borderLeft: `1px solid ${theme.palette.border.light}`,
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 0.7,
-            minWidth: isWatchlist ? 144 : 96,
-          })}
-        >
-          <Overline>Credibility</Overline>
-          {isWatchlist ? (
-            <Box sx={{ display: 'flex', gap: 1.25 }}>
-              <CredDonut
-                segments={getPrSegments(miner)}
-                percent={credibilityPercent}
-                isEligible={ossEligible}
-                caption="PRs"
-              />
-              <CredDonut
-                segments={getIssueSegments(miner)}
-                percent={issueCredPercent}
-                isEligible={discoveriesEligible}
-                caption="Issues"
-              />
-            </Box>
-          ) : (
+        {/* Credibility — leaderboard / per-repo variants only. The watchlist
+            omits it: credibility is per-repository, not a global figure. */}
+        {!isWatchlist && (
+          <Box
+            sx={(theme) => ({
+              px: { xs: 1.75, sm: 2 },
+              py: 1.5,
+              borderLeft: `1px solid ${theme.palette.border.light}`,
+              display: 'flex',
+              flexDirection: 'column',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 0.7,
+              minWidth: 96,
+            })}
+          >
+            <Overline>Credibility</Overline>
             <CredDonut
               segments={segments}
               percent={isDiscoveries ? issueCredPercent : credibilityPercent}
               isEligible={isEligible}
               size={56}
             />
-          )}
-        </Box>
+          </Box>
+        )}
       </Box>
 
       {/* ─── ACTIVITY ROW(S) ───────────────────────────────── */}
@@ -394,9 +429,13 @@ export const MinerCard: React.FC<MinerCardProps> = ({
         <ActivityRow
           activityLabel={isDiscoveries ? 'Issue activity' : 'PR activity'}
           segments={segments}
-          scoreLabel={variant === 'watchlist' ? 'OSS' : 'Total Score'}
+          scoreLabel={isWatchlist ? 'OSS' : 'Earnings'}
           scoreValue={Number(miner.totalScore)}
+          scoreDisplay={
+            isWatchlist ? undefined : formatUsdPerDay(miner.usdPerDay)
+          }
           isEligible={isDiscoveries ? discoveriesEligible : ossEligible}
+          hideScore={isWatchlist}
         />
 
         {variant === 'watchlist' && (
@@ -407,6 +446,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
             scoreValue={Number(miner.issueDiscoveryScore ?? 0)}
             isEligible={discoveriesEligible}
             divider
+            hideScore
           />
         )}
       </Box>
@@ -457,16 +497,6 @@ const EligibilityLabel: React.FC<EligibilityLabelProps> = ({
   </Box>
 );
 
-const Divider: React.FC = () => (
-  <Box
-    sx={(theme) => ({
-      width: 1,
-      height: 10,
-      backgroundColor: theme.palette.border.light,
-    })}
-  />
-);
-
 /* ── Activity row: inline stats + score on the right ─────────── */
 
 interface ActivityRowProps {
@@ -474,8 +504,12 @@ interface ActivityRowProps {
   segments: Segment[];
   scoreLabel: string;
   scoreValue: number;
+  /** Pre-formatted value; overrides `formatScore(scoreValue)` when set. */
+  scoreDisplay?: string;
   isEligible: boolean;
   divider?: boolean;
+  /** Watchlist rows hide the score column — only the activity counts show. */
+  hideScore?: boolean;
 }
 
 const ActivityRow: React.FC<ActivityRowProps> = ({
@@ -483,8 +517,10 @@ const ActivityRow: React.FC<ActivityRowProps> = ({
   segments,
   scoreLabel,
   scoreValue,
+  scoreDisplay,
   isEligible,
   divider,
+  hideScore,
 }) => {
   const muiTheme = useTheme();
   const inactiveColor = alpha(muiTheme.palette.text.tertiary, INACTIVE_OPACITY);
@@ -502,7 +538,7 @@ const ActivityRow: React.FC<ActivityRowProps> = ({
     <Box
       sx={(theme) => ({
         display: 'grid',
-        gridTemplateColumns: '1fr auto',
+        gridTemplateColumns: hideScore ? '1fr' : '1fr auto',
         alignItems: 'center',
         columnGap: 2,
         px: { xs: 1.75, sm: 2 },
@@ -535,30 +571,32 @@ const ActivityRow: React.FC<ActivityRowProps> = ({
         </Box>
       </Box>
 
-      <Box
-        sx={{
-          textAlign: 'right',
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'flex-end',
-          gap: 0.5,
-        }}
-      >
-        <Overline align="right">{scoreLabel}</Overline>
-        <Typography
-          sx={(theme) => ({
-            fontFamily: FONTS.mono,
-            fontSize: '1.05rem',
-            color: isEligible ? theme.palette.text.primary : inactiveColor,
-            fontWeight: 700,
-            letterSpacing: '-0.02em',
-            fontFeatureSettings: TABULAR_NUMS,
-            lineHeight: 1,
-          })}
+      {!hideScore && (
+        <Box
+          sx={{
+            textAlign: 'right',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: 0.5,
+          }}
         >
-          {formatScore(scoreValue)}
-        </Typography>
-      </Box>
+          <Overline align="right">{scoreLabel}</Overline>
+          <Typography
+            sx={(theme) => ({
+              fontFamily: FONTS.mono,
+              fontSize: '1.05rem',
+              color: isEligible ? theme.palette.text.primary : inactiveColor,
+              fontWeight: 700,
+              letterSpacing: '-0.02em',
+              fontFeatureSettings: TABULAR_NUMS,
+              lineHeight: 1,
+            })}
+          >
+            {scoreDisplay ?? formatScore(scoreValue)}
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };
