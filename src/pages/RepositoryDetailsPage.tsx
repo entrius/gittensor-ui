@@ -31,11 +31,12 @@ import ArticleIcon from '@mui/icons-material/Article';
 import { GitPullRequestIcon, IssueOpenedIcon } from '@primer/octicons-react';
 import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
+import TuneIcon from '@mui/icons-material/Tune';
+import GroupsIcon from '@mui/icons-material/Groups';
 import { RANK_COLORS, STATUS_COLORS } from '../theme';
 import { Page } from '../components/layout';
 import { useReposAndWeights, useRepoBountySummary } from '../api';
 import {
-  RepositoryContributorsTable,
   RepositoryPRsTable,
   RepositoryIssuesTable,
   BackButton,
@@ -47,6 +48,8 @@ import {
   ContributingViewer,
   RepositoryMaintainers,
   RepositoryCheckTab,
+  RepositoryHyperparametersTab,
+  RepositoryMinersTab,
   WatchlistButton,
 } from '../components';
 
@@ -188,6 +191,8 @@ function CustomTabPanel(props: TabPanelProps) {
 /** Synced to the `tab` query param so back navigation from PR details restores the active tab. */
 const REPO_TAB_KEYS = [
   'readme',
+  'hyperparameters',
+  'miners',
   'code',
   'issues',
   'pull-requests',
@@ -238,25 +243,7 @@ const RepositoryDetailsPage: React.FC = () => {
     [repo, setSearchParams],
   );
 
-  const statusChips = useMemo(
-    () => (
-      <>
-        <Chip variant="info" label="Public" />
-        <Chip
-          label="Tracked"
-          sx={{
-            backgroundColor: alpha(STATUS_COLORS.success, 0.15),
-            color: 'status.success',
-            border: `1px solid ${alpha(STATUS_COLORS.success, 0.35)}`,
-            fontSize: '0.75rem',
-            height: '24px',
-            fontWeight: 600,
-          }}
-        />
-      </>
-    ),
-    [],
-  );
+  const statusChips = useMemo(() => <Chip variant="info" label="Public" />, []);
 
   const issuesTabLabel = useMemo(() => {
     const openBounties =
@@ -317,7 +304,11 @@ const RepositoryDetailsPage: React.FC = () => {
           description={`View code, issues, PRs, and contributors for ${repo} on Gittensor.`}
         />
         <Container maxWidth="lg" sx={{ py: 4 }}>
-          <BackButton to="/repositories" label="Back to Repositories" />
+          <BackButton
+            to="/repositories"
+            label="Back to Repositories"
+            variant="text"
+          />
           <Alert
             severity="warning"
             sx={(theme) => ({
@@ -359,14 +350,6 @@ const RepositoryDetailsPage: React.FC = () => {
       >
         <Container maxWidth="xl">
           <Box sx={{ pt: { xs: 1.5, md: 3 }, pb: 0 }}>
-            <Box sx={{ mb: { xs: 0, md: 2 } }}>
-              <BackButton
-                to="/repositories"
-                label="Back to Repositories"
-                mb={0}
-              />
-            </Box>
-
             <Grid
               container
               spacing={{ xs: 2, md: 4 }}
@@ -385,6 +368,18 @@ const RepositoryDetailsPage: React.FC = () => {
                       minWidth: 0,
                     }}
                   >
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        flexShrink: 0,
+                      }}
+                    >
+                      <BackButton
+                        to="/repositories"
+                        label="Back to Repositories"
+                      />
+                    </Box>
                     <Box
                       sx={{
                         display: 'flex',
@@ -471,6 +466,10 @@ const RepositoryDetailsPage: React.FC = () => {
                       rowGap: 1,
                     }}
                   >
+                    <BackButton
+                      to="/repositories"
+                      label="Back to Repositories"
+                    />
                     <Avatar
                       src={getRepositoryOwnerAvatarSrc(owner)}
                       alt={owner}
@@ -545,6 +544,18 @@ const RepositoryDetailsPage: React.FC = () => {
                 disableRipple
               />
               <Tab
+                icon={<TuneIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
+                iconPosition="start"
+                label="Hyperparameters"
+                disableRipple
+              />
+              <Tab
+                icon={<GroupsIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
+                iconPosition="start"
+                label="Miners"
+                disableRipple
+              />
+              <Tab
                 icon={<CodeIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
                 iconPosition="start"
                 label="Code"
@@ -616,18 +627,28 @@ const RepositoryDetailsPage: React.FC = () => {
               <ReadmeViewer repositoryFullName={repo} />
             </CustomTabPanel>
 
-            {/* Code Tab */}
+            {/* Hyperparameters Tab */}
             <CustomTabPanel value={tabValue} index={1}>
+              <RepositoryHyperparametersTab repositoryFullName={repo} />
+            </CustomTabPanel>
+
+            {/* Miners Tab */}
+            <CustomTabPanel value={tabValue} index={2}>
+              <RepositoryMinersTab repositoryFullName={repo} />
+            </CustomTabPanel>
+
+            {/* Code Tab */}
+            <CustomTabPanel value={tabValue} index={3}>
               <RepositoryCodeBrowser repositoryFullName={repo} />
             </CustomTabPanel>
 
             {/* Issues Tab */}
-            <CustomTabPanel value={tabValue} index={2}>
+            <CustomTabPanel value={tabValue} index={4}>
               <RepositoryIssuesTable repositoryFullName={repo} />
             </CustomTabPanel>
 
             {/* Pull Requests Tab */}
-            <CustomTabPanel value={tabValue} index={3}>
+            <CustomTabPanel value={tabValue} index={5}>
               <Grid container spacing={3}>
                 <Grid item xs={12} md={12}>
                   <RepositoryPRsTable repositoryFullName={repo} state="all" />
@@ -636,12 +657,12 @@ const RepositoryDetailsPage: React.FC = () => {
             </CustomTabPanel>
 
             {/* Contributing Tab */}
-            <CustomTabPanel value={tabValue} index={4}>
+            <CustomTabPanel value={tabValue} index={6}>
               <ContributingViewer repositoryFullName={repo} />
             </CustomTabPanel>
 
             {/* Repo Check Tab */}
-            <CustomTabPanel value={tabValue} index={5}>
+            <CustomTabPanel value={tabValue} index={7}>
               <RepositoryCheckTab repositoryFullName={repo} />
             </CustomTabPanel>
           </Grid>
@@ -653,18 +674,15 @@ const RepositoryDetailsPage: React.FC = () => {
                 {/* Repository Stats */}
                 <RepositoryStats repositoryFullName={repo} />
 
-                {tabValue === 2 || tabValue === 3 ? (
+                {tabValue === 4 || tabValue === 5 ? (
                   <RepositoryPrActivityChart
                     repositoryFullName={repo}
-                    viewMode={tabValue === 2 ? 'issues' : 'prs'}
+                    viewMode={tabValue === 4 ? 'issues' : 'prs'}
                   />
                 ) : null}
 
                 {/* Maintainers */}
                 <RepositoryMaintainers repositoryFullName={repo} />
-
-                {/* Contributors Table - it already has its own title "Top Miner Contributors" */}
-                <RepositoryContributorsTable repositoryFullName={repo} />
               </Box>
             </Box>
           </Grid>

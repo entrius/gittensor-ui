@@ -1,5 +1,4 @@
 export { default as LanguageWeightsTable } from './LanguageWeightsTable';
-export { default as RepositoryContributorsTable } from './RepositoryContributorsTable';
 export { default as RepositoryStats } from './RepositoryStats';
 export { default as RepositoryPrActivityChart } from './RepositoryPrActivityChart';
 export { default as ContributingViewer } from './ContributingViewer';
@@ -9,3 +8,5 @@ export { default as ReadmeViewer } from './ReadmeViewer';
 export { default as RepositoryCodeBrowser } from './RepositoryCodeBrowser';
 export { default as RepositoryMaintainers } from './RepositoryMaintainers';
 export { default as RepositoryCheckTab } from './RepositoryCheckTab';
+export { default as RepositoryHyperparametersTab } from './RepositoryHyperparametersTab';
+export { default as RepositoryMinersTab } from './RepositoryMinersTab';

@@ -1,7 +1,9 @@
 import { type GeneralConfigResponse } from '../../api/models';
+import { type RepositoryConfig } from '../../api/models/Dashboard';
 import { parseNumber } from '../../utils';
 
-export const PR_LOOKBACK_DAYS = 35;
+/** PR scoring window used when neither the repo nor global config supplies one. */
+const DEFAULT_LOOKBACK_DAYS = 30;
 const CURVE_RESOLUTION_DAYS = 0.25;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -10,9 +12,11 @@ export interface DecayParams {
   midpoint: number;
   steepness: number;
   floor: number;
+  /** Rolling window of days a merged PR keeps earning score — the x-axis domain. */
+  lookbackDays: number;
 }
 
-export interface DecayProjectionInput {
+interface DecayProjectionInput {
   mergedAt: string | null;
   prState: string;
   timeDecayMultiplier?: string | number | null;
@@ -23,6 +27,8 @@ export interface DecayProjectionInput {
 export interface DecayProjection {
   isMerged: boolean;
   inWindow: boolean;
+  /** Resolved lookback window for this PR's repo (drives the subline copy). */
+  lookbackDays: number;
   daysSinceMerge: number | null;
   /** Curve multiplier at days since merge (matches the drawn line). */
   chartNowMultiplier: number | null;
@@ -37,21 +43,57 @@ const DEFAULT_PARAMS: DecayParams = {
   midpoint: 10,
   steepness: 0.4,
   floor: 0.05,
+  lookbackDays: DEFAULT_LOOKBACK_DAYS,
 };
 
+/** First finite number among the candidates, else the fallback. */
+function firstFinite(candidates: unknown[], fallback: number): number {
+  for (const candidate of candidates) {
+    if (typeof candidate === 'number' && Number.isFinite(candidate)) {
+      return candidate;
+    }
+  }
+  return fallback;
+}
+
+/**
+ * Resolve the time-decay curve params for a PR's repository. Each knob
+ * resolves per-repo override → global config → static default, so a repo
+ * that sets `scoring.time_decay` (or `scoring.pr_lookback_days`) bends the
+ * chart while every other knob falls back to the subnet-wide config.
+ */
 export function resolveDecayParams(
-  config?: GeneralConfigResponse | null,
+  generalConfig?: GeneralConfigResponse | null,
+  repoConfig?: RepositoryConfig | null,
 ): DecayParams {
-  const cfg = config?.repositoryPrScoring;
+  const global = generalConfig?.repositoryPrScoring;
+  const scoring = repoConfig?.scoring;
+  const timeDecay = scoring?.time_decay;
   return {
-    graceHours: cfg?.timeDecayGracePeriodHours ?? DEFAULT_PARAMS.graceHours,
-    midpoint: cfg?.timeDecaySigmoidMidpoint ?? DEFAULT_PARAMS.midpoint,
-    steepness: cfg?.timeDecaySigmoidSteepnessScalar ?? DEFAULT_PARAMS.steepness,
-    floor: cfg?.timeDecayMinMultiplier ?? DEFAULT_PARAMS.floor,
+    graceHours: firstFinite(
+      [timeDecay?.grace_period_hours, global?.timeDecayGracePeriodHours],
+      DEFAULT_PARAMS.graceHours,
+    ),
+    midpoint: firstFinite(
+      [timeDecay?.sigmoid_midpoint_days, global?.timeDecaySigmoidMidpoint],
+      DEFAULT_PARAMS.midpoint,
+    ),
+    steepness: firstFinite(
+      [timeDecay?.sigmoid_steepness, global?.timeDecaySigmoidSteepnessScalar],
+      DEFAULT_PARAMS.steepness,
+    ),
+    floor: firstFinite(
+      [timeDecay?.min_multiplier, global?.timeDecayMinMultiplier],
+      DEFAULT_PARAMS.floor,
+    ),
+    lookbackDays: firstFinite(
+      [scoring?.pr_lookback_days],
+      DEFAULT_PARAMS.lookbackDays,
+    ),
   };
 }
 
-export function decayAt(days: number, params: DecayParams): number {
+function decayAt(days: number, params: DecayParams): number {
   if (days <= params.graceHours / 24) return 1;
   const sigmoid =
     1 / (1 + Math.exp(params.steepness * (days - params.midpoint)));
@@ -60,9 +102,15 @@ export function decayAt(days: number, params: DecayParams): number {
 
 export function buildDecayCurve(params: DecayParams): [number, number][] {
   const points: [number, number][] = [];
-  for (let day = 0; day <= PR_LOOKBACK_DAYS; day += CURVE_RESOLUTION_DAYS) {
+  for (let day = 0; day < params.lookbackDays; day += CURVE_RESOLUTION_DAYS) {
     points.push([+day.toFixed(2), +decayAt(day, params).toFixed(4)]);
   }
+  // Anchor the final point exactly at the lookback edge — the loop step may
+  // not land there for a non-multiple-of-resolution window.
+  points.push([
+    +params.lookbackDays.toFixed(2),
+    +decayAt(params.lookbackDays, params).toFixed(4),
+  ]);
   return points;
 }
 
@@ -100,9 +148,12 @@ function applyMultiplier(
   return score * multiplier;
 }
 
-function isWithinLookbackWindow(daysSinceMerge: number | null): boolean {
+function isWithinLookbackWindow(
+  daysSinceMerge: number | null,
+  lookbackDays: number,
+): boolean {
   if (daysSinceMerge == null) return false;
-  return daysSinceMerge <= PR_LOOKBACK_DAYS;
+  return daysSinceMerge <= lookbackDays;
 }
 
 export function buildDecayProjection(
@@ -127,7 +178,8 @@ export function buildDecayProjection(
   );
   return {
     isMerged,
-    inWindow: isWithinLookbackWindow(daysSinceMerge),
+    inWindow: isWithinLookbackWindow(daysSinceMerge, params.lookbackDays),
+    lookbackDays: params.lookbackDays,
     daysSinceMerge,
     chartNowMultiplier,
     currentMultiplier,
@@ -139,8 +191,8 @@ export function buildDecayProjection(
 export function buildDecaySubline(projection: DecayProjection): string {
   if (!projection.isMerged) return 'Open PRs hold full score until merged.';
   if (projection.daysSinceMerge == null) return '';
-  if (projection.daysSinceMerge > PR_LOOKBACK_DAYS) {
-    return `Outside ${PR_LOOKBACK_DAYS}-day scoring window.`;
+  if (projection.daysSinceMerge > projection.lookbackDays) {
+    return `Outside ${projection.lookbackDays}-day scoring window.`;
   }
   return `${projection.daysSinceMerge.toFixed(1)} days since merge`;
 }

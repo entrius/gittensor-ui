@@ -12,7 +12,7 @@ export function chartNumericSeriesHasPositive(
   );
 }
 
-export interface ChartEmptyPanelProps {
+interface ChartEmptyPanelProps {
   /** When true, children are hidden and the empty state is shown instead. */
   empty: boolean;
   title: string;
