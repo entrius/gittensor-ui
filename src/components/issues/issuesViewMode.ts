@@ -1,7 +1,7 @@
 export type IssuesViewMode = 'cards' | 'list';
 
 export const ISSUES_VIEW_QUERY_PARAM = 'view';
-export const ISSUES_VIEW_STORAGE_KEY = 'issues:viewMode';
+const ISSUES_VIEW_STORAGE_KEY = 'issues:viewMode';
 
 export const readStoredIssuesViewMode = (): IssuesViewMode => {
   try {

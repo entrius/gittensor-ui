@@ -7,12 +7,12 @@ import {
 } from '@mui/material';
 import { ExpandMore } from '@mui/icons-material';
 
-export interface FAQProps {
+interface FAQProps {
   question: string;
   answer: React.ReactNode;
 }
 
-export const FAQ: React.FC<FAQProps> = ({ question, answer }) => (
+const FAQ: React.FC<FAQProps> = ({ question, answer }) => (
   <Accordion
     disableGutters
     elevation={0}

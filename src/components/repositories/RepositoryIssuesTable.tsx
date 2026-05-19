@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import {
   Box,
@@ -32,6 +32,7 @@ import {
 } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
+import TablePagination from '../../components/common/TablePagination';
 
 interface RepositoryIssuesTableProps {
   repositoryFullName: string;
@@ -50,6 +51,8 @@ type RepoIssuesFilter = 'all' | 'open' | 'closed';
 const isRepoIssuesFilter = (v: unknown): v is RepoIssuesFilter =>
   v === 'all' || v === 'open' || v === 'closed';
 
+const ISSUE_PAGE_SIZE = 20;
+
 const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   repositoryFullName,
 }) => {
@@ -63,6 +66,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   );
   const [sortKey, setSortKey] = useState<SortKey>('number');
   const [sortDirection, setSortDirection] = useState<SortOrder>('desc');
+  const [page, setPage] = useState(0);
 
   const counts = useMemo(() => {
     if (!issues) return { total: 0, open: 0, closed: 0 };
@@ -123,6 +127,21 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     });
     return decorated.map((item) => item.issue);
   }, [filteredIssues, sortKey, sortDirection]);
+
+  // Reset to the first page whenever the result set changes underneath us.
+  useEffect(() => {
+    setPage(0);
+  }, [filter, sortKey, sortDirection]);
+
+  const totalPages = Math.ceil(sortedIssues.length / ISSUE_PAGE_SIZE);
+  const pagedIssues = useMemo(
+    () =>
+      sortedIssues.slice(
+        page * ISSUE_PAGE_SIZE,
+        page * ISSUE_PAGE_SIZE + ISSUE_PAGE_SIZE,
+      ),
+    [sortedIssues, page],
+  );
 
   const handleSort = useCallback(
     (key: SortKey) => {
@@ -494,7 +513,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       >
         <DataTable<RepositoryIssue, SortKey>
           columns={columns}
-          rows={sortedIssues}
+          rows={pagedIssues}
           getRowKey={(issue) =>
             `${issue.number}-${issue.prNumber}-${issue.repositoryFullName}`
           }
@@ -529,6 +548,15 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             order: sortDirection,
             onChange: handleSort,
           }}
+          pagination={
+            totalPages > 1 ? (
+              <TablePagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+              />
+            ) : undefined
+          }
         />
       </Card>
     </Box>

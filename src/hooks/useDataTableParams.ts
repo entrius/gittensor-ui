@@ -20,7 +20,7 @@ const DEFAULT_PARAM_KEYS: ParamKeys = {
  * Configuration for an additional URL-backed filter (search, enum, etc.)
  * that should be co-located with the table's sort/pagination state.
  */
-export type FilterConfig<T> = {
+type FilterConfig<T> = {
   parse: (raw: string | null) => T;
   /** Return `null` to delete the param (used for "default" values). */
   serialize: (value: T) => string | null;
@@ -34,7 +34,7 @@ export type FilterConfig<T> = {
   resetPageOnChange?: boolean;
 };
 
-export type UseDataTableParamsConfig<
+type UseDataTableParamsConfig<
   SortKey extends string,
   Filters extends Record<string, unknown> = Record<string, never>,
 > = {

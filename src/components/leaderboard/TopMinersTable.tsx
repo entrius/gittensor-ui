@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   useRef,
@@ -47,9 +48,6 @@ import {
 } from './types';
 
 type ViewMode = 'cards' | 'list';
-
-// Re-export MinerStats for backward compatibility
-export type { MinerStats } from './types';
 
 const MINERS_PAGE_SIZE = 60;
 const ELIGIBLE_QUERY_PARAM = 'eligible';
@@ -394,7 +392,12 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       typeof window !== 'undefined' &&
       window.matchMedia(xlQuery.replace(/^@media\s*/, '')).matches,
   });
-  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  // Resolve the sidebar portal target synchronously so a tab switch (which
+  // remounts this table) renders straight into the sidebar instead of
+  // flashing the toolbar inline for one frame.
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(() =>
+    document.getElementById('tabs-options-portal'),
+  );
   const observerTarget = useRef<HTMLDivElement>(null);
   const [stackedLayoutPage, setStackedLayoutPage] = useUrlPaginationParam({
     pageParam: 'page',
@@ -457,7 +460,9 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     />
   ) : null;
 
-  useEffect(() => {
+  // On the very first page load the portal node is committed after this
+  // table's first render — pick it up before paint to avoid a flash.
+  useLayoutEffect(() => {
     setPortalTarget(document.getElementById('tabs-options-portal'));
   }, []);
 

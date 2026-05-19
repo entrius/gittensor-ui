@@ -39,13 +39,13 @@ export type DataTableColumn<T, SortKey extends string = never> = {
   sortKey?: SortKey;
 };
 
-export type DataTableSort<SortKey extends string> = {
+type DataTableSort<SortKey extends string> = {
   field: SortKey;
   order: SortOrder;
   onChange: (nextField: SortKey) => void;
 };
 
-export type DataTableProps<T, SortKey extends string = never> = {
+type DataTableProps<T, SortKey extends string = never> = {
   columns: DataTableColumn<T, SortKey>[];
   rows: T[];
   getRowKey: (item: T) => React.Key;
@@ -69,6 +69,13 @@ export type DataTableProps<T, SortKey extends string = never> = {
    * `getRowHref` is provided.
    */
   onRowClick?: (item: T) => void;
+  /**
+   * When provided, an extra full-width row is rendered directly beneath each
+   * row, holding this content. Returning `null` skips the extra row. Pair
+   * with `onRowClick` to toggle expansion — the consumer owns expansion
+   * state and should wrap the output in `<Collapse>` for animation.
+   */
+  renderExpandedRow?: (item: T) => React.ReactNode;
   getRowSx?: (item: T) => SystemStyleObject<Theme>;
   header?: React.ReactNode;
   /**
@@ -132,6 +139,7 @@ export const DataTable = <T, SortKey extends string = never>({
   getRowHref,
   linkState,
   onRowClick,
+  renderExpandedRow,
   getRowSx,
   header,
   pagination,
@@ -255,10 +263,10 @@ export const DataTable = <T, SortKey extends string = never>({
                       </TableCell>
                     );
                   });
+                  let rowEl: React.ReactNode;
                   if (href) {
-                    return (
+                    rowEl = (
                       <LinkTableRow
-                        key={getRowKey(item)}
                         href={href}
                         linkState={linkState}
                         sx={[
@@ -269,11 +277,9 @@ export const DataTable = <T, SortKey extends string = never>({
                         {cells}
                       </LinkTableRow>
                     );
-                  }
-                  if (onRowClick) {
-                    return (
+                  } else if (onRowClick) {
+                    rowEl = (
                       <TableRow
-                        key={getRowKey(item)}
                         role="button"
                         tabIndex={0}
                         onClick={() => onRowClick(item)}
@@ -291,11 +297,24 @@ export const DataTable = <T, SortKey extends string = never>({
                         {cells}
                       </TableRow>
                     );
+                  } else {
+                    rowEl = <TableRow sx={customRowSx}>{cells}</TableRow>;
                   }
+                  const expandedContent = renderExpandedRow?.(item);
                   return (
-                    <TableRow key={getRowKey(item)} sx={customRowSx}>
-                      {cells}
-                    </TableRow>
+                    <React.Fragment key={getRowKey(item)}>
+                      {rowEl}
+                      {expandedContent != null ? (
+                        <TableRow>
+                          <TableCell
+                            colSpan={columns.length}
+                            sx={{ p: 0, borderBottom: 'none' }}
+                          >
+                            {expandedContent}
+                          </TableCell>
+                        </TableRow>
+                      ) : null}
+                    </React.Fragment>
                   );
                 })}
               </TableBody>
@@ -308,5 +327,3 @@ export const DataTable = <T, SortKey extends string = never>({
     </>
   );
 };
-
-export default DataTable;

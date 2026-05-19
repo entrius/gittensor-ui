@@ -11,6 +11,7 @@ import {
   Card,
   Chip,
   CircularProgress,
+  Collapse,
   InputAdornment,
   TextField,
   Tooltip,
@@ -18,8 +19,12 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
+  Search as SearchIcon,
+} from '@mui/icons-material';
+import { useSearchParams } from 'react-router-dom';
 import { useMinerPRs, type CommitLog } from '../../api';
 import {
   filterPrs,
@@ -45,6 +50,7 @@ import {
 import TablePagination from '../common/TablePagination';
 import { formatDate } from '../../utils/format';
 import { tooltipSlotProps } from '../../theme';
+import MinerPrScoreDetail from './MinerPrScoreDetail';
 
 type PrSortField =
   | 'number'
@@ -100,13 +106,17 @@ const getScoreTooltip = (pr: CommitLog): string | null => {
 const isPrStatusFilter = (value: string | null): value is PrStatusFilter =>
   value !== null && (PR_STATUS_FILTERS as readonly string[]).includes(value);
 
+// Stable per-PR key — shared by the DataTable row key and the expanded-row
+// tracking set so the two never drift.
+const prRowKey = (pr: CommitLog): string =>
+  `${pr.repository}-${pr.pullRequestNumber}-${pr.prCreatedAt ?? ''}`;
+
 interface MinerPRsTableProps {
   githubId: string;
 }
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const { isWatched } = useWatchlist('prs');
@@ -114,6 +124,9 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
   const prStatusParam = searchParams.get('prStatus');
   const statusFilter: PrStatusFilter = isPrStatusFilter(prStatusParam)
     ? prStatusParam
@@ -124,6 +137,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     setSearchQuery('');
     setSortField('date');
     setSortDir('desc');
+    setExpandedKeys(new Set());
   }, [githubId]);
 
   const page = parseInt(searchParams.get('prPage') || '0', 10);
@@ -259,40 +273,45 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     statusFilter !== 'all' ||
     searchQuery.trim() !== '';
 
-  const handleRowClick = useCallback(
-    (pr: CommitLog) => {
-      navigate(
-        `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-        { state: { backLabel: `Back to ${prs?.[0]?.author || githubId}` } },
-      );
-    },
-    [navigate, prs, githubId],
-  );
+  // Row click toggles the in-place score breakdown — the navigate-to-PR
+  // affordance moved into the expanded panel ("PR Details" button).
+  const toggleExpanded = useCallback((pr: CommitLog) => {
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      const key = prRowKey(pr);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
 
   const columns: DataTableColumn<CommitLog, PrSortField>[] = [
+    {
+      key: 'expand',
+      header: '',
+      width: 44,
+      align: 'center',
+      renderCell: (pr) =>
+        expandedKeys.has(prRowKey(pr)) ? (
+          <ExpandLessIcon
+            sx={{ fontSize: '1.15rem', color: 'text.tertiary' }}
+          />
+        ) : (
+          <ExpandMoreIcon
+            sx={{ fontSize: '1.15rem', color: 'text.tertiary' }}
+          />
+        ),
+    },
     {
       key: 'number',
       header: 'PR #',
       width: '10%',
       sortKey: 'number',
       headerSx: { whiteSpace: 'nowrap' },
-      cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
-      renderCell: (pr) => (
-        // Native <a> to GitHub — `onRowClick` (no row-as-anchor) keeps this valid HTML.
-        <a
-          href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            color: 'inherit',
-            textDecoration: 'none',
-            fontWeight: 500,
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          #{pr.pullRequestNumber}
-        </a>
-      ),
+      // Plain label — the row click owns the interaction (toggles the
+      // breakdown accordion); GitHub / PR-detail links live inside it.
+      cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' }, fontWeight: 500 },
+      renderCell: (pr) => `#${pr.pullRequestNumber}`,
     },
     {
       key: 'title',
@@ -664,10 +683,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       <DataTable<CommitLog, PrSortField>
         columns={columns}
         rows={pagedPRs}
-        getRowKey={(pr) =>
-          `${pr.repository}-${pr.pullRequestNumber}-${pr.prCreatedAt ?? ''}`
-        }
-        minWidth="700px"
+        getRowKey={prRowKey}
+        minWidth="760px"
         stickyHeader
         size="medium"
         header={headerToolbar}
@@ -683,12 +700,24 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             </Typography>
           </Box>
         }
-        onRowClick={handleRowClick}
-        getRowSx={(pr) =>
-          pr.mergedAt && isOutsideScoringWindow(pr.mergedAt)
-            ? { opacity: 0.4, filter: 'grayscale(0.5)' }
-            : {}
-        }
+        onRowClick={toggleExpanded}
+        renderExpandedRow={(pr) => {
+          const open = expandedKeys.has(prRowKey(pr));
+          return (
+            <Collapse in={open} timeout="auto" unmountOnExit>
+              <MinerPrScoreDetail pr={pr} expanded={open} />
+            </Collapse>
+          );
+        }}
+        getRowSx={(pr) => {
+          if (pr.mergedAt && isOutsideScoringWindow(pr.mergedAt)) {
+            return { opacity: 0.4, filter: 'grayscale(0.5)' };
+          }
+          if (expandedKeys.has(prRowKey(pr))) {
+            return { backgroundColor: 'surface.subtle' };
+          }
+          return {};
+        }}
         sort={{
           field: sortField,
           order: sortDir,

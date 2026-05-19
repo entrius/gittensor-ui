@@ -11,13 +11,14 @@ import {
   useDebouncedValue,
 } from '../../hooks/useDebouncedValue';
 
-export type DebouncedSearchDraft = {
+type DebouncedSearchDraft = {
   draftValue: string;
   setDraftValue: React.Dispatch<React.SetStateAction<string>>;
 };
 
-export const DebouncedSearchDraftContext =
-  createContext<DebouncedSearchDraft | null>(null);
+const DebouncedSearchDraftContext = createContext<DebouncedSearchDraft | null>(
+  null,
+);
 
 export function useDebouncedSearchDraft(): DebouncedSearchDraft {
   const ctx = useContext(DebouncedSearchDraftContext);
@@ -29,7 +30,7 @@ export function useDebouncedSearchDraft(): DebouncedSearchDraft {
   return ctx;
 }
 
-export type DebouncedSearchInputProps = {
+type DebouncedSearchInputProps = {
   initialDraft?: string;
   debounceMs?: number;
   onDebouncedChange: (value: string) => void;
