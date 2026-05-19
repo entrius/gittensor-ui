@@ -459,9 +459,33 @@ export const WatchlistContent: React.FC = () => {
   );
 };
 
+/**
+ * Watchlist-scope miner stats: load the leaderboard rollup, filter to the
+ * watched `githubId`s, and flag a row as eligible when either reward track
+ * applies. Shared by `WatchlistPage` (sidebar widgets) and `MinersList`
+ * (table / cards) so both surfaces render from the same source.
+ */
+const useWatchlistMinerStats = (minerIds: string[]) => {
+  const { data: allMinersData, isLoading } = useAllMiners();
+  const watchedSet = useMemo(() => new Set(minerIds), [minerIds]);
+
+  const miners = useMemo(
+    () =>
+      mapAllMinersToStats(allMinersData ?? [])
+        .filter((m) => watchedSet.has(m.githubId))
+        .map((m) => ({
+          ...m,
+          isEligible: Boolean(m.ossIsEligible || m.discoveriesIsEligible),
+        })),
+    [allMinersData, watchedSet],
+  );
+
+  return { miners, isLoading, allMinersData };
+};
+
 const WatchlistPage: React.FC = () => {
   const { ids: minerIds } = useWatchlist('miners');
-  const { data: allMinersData } = useAllMiners();
+  const { miners: minerStats } = useWatchlistMinerStats(minerIds);
 
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -470,16 +494,6 @@ const WatchlistPage: React.FC = () => {
     isMobile || isTablet ? '100%' : isLargeScreen ? '340px' : '300px';
 
   const stickySidebarRef = useTwitterStickySidebar();
-
-  const minerStats = useMemo(() => {
-    const watchedSet = new Set(minerIds);
-    return mapAllMinersToStats(allMinersData ?? [])
-      .filter((m) => watchedSet.has(m.githubId))
-      .map((m) => ({
-        ...m,
-        isEligible: Boolean(m.ossIsEligible || m.discoveriesIsEligible),
-      }));
-  }, [allMinersData, minerIds]);
 
   return (
     <Page title="Watchlist">
@@ -938,27 +952,18 @@ const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
 };
 
 const MinersList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
-  const { data: allMinersStats, isLoading } = useAllMiners();
+  const {
+    miners: minerStats,
+    isLoading,
+    allMinersData,
+  } = useWatchlistMinerStats(itemKeys);
   const { remove } = useWatchlist('miners');
-  const watchedSet = useMemo(() => new Set(itemKeys), [itemKeys]);
-
-  const minerStats = useMemo(() => {
-    const all = mapAllMinersToStats(allMinersStats ?? []);
-    return all
-      .filter((m) => watchedSet.has(m.githubId))
-      .map((m) => ({
-        ...m,
-        // Watchlist cards should be enabled if miner is eligible for either
-        // OSS contributions or Issue Discoveries.
-        isEligible: Boolean(m.ossIsEligible || m.discoveriesIsEligible),
-      }));
-  }, [allMinersStats, watchedSet]);
 
   const unresolvedIds = useMemo(() => {
-    if (isLoading || !allMinersStats) return [];
-    const known = new Set(allMinersStats.map((m) => m.githubId));
+    if (isLoading || !allMinersData) return [];
+    const known = new Set(allMinersData.map((m) => m.githubId));
     return itemKeys.filter((id) => !known.has(id));
-  }, [allMinersStats, isLoading, itemKeys]);
+  }, [allMinersData, isLoading, itemKeys]);
 
   const handleRemoveUnresolved = useCallback(() => {
     unresolvedIds.forEach((id) => remove(id));
