@@ -15,8 +15,15 @@ import rehypeRaw from 'rehype-raw';
 import { formatDate } from '../../utils/format';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { STATUS_COLORS, scrollbarSx } from '../../theme';
+import { MarkdownImage } from './MarkdownImage';
 
 import 'github-markdown-css/github-markdown-dark.css';
+
+const conversationMarkdownComponents = {
+  img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
+    <MarkdownImage {...props} />
+  ),
+};
 
 /** A comment or the body rendered in the conversation timeline. */
 export type ConversationItem = {
@@ -337,8 +344,11 @@ const ConversationTimeline: React.FC<ConversationTimelineProps> = ({
                   backgroundColor: colors.border.default,
                   border: 0,
                 },
-                '& img': {
+                '& .markdown-body img': {
                   maxWidth: '100%',
+                  width: 'auto',
+                  height: 'auto',
+                  objectFit: 'contain',
                   borderRadius: '6px',
                   backgroundColor: 'transparent',
                 },
@@ -348,6 +358,7 @@ const ConversationTimeline: React.FC<ConversationTimelineProps> = ({
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   rehypePlugins={[rehypeRaw]}
+                  components={conversationMarkdownComponents}
                 >
                   {item.body}
                 </ReactMarkdown>
