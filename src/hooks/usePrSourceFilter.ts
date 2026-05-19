@@ -83,7 +83,7 @@ const subscribe = (listener: () => void) => {
 
 const getSnapshot = () => snapshot;
 
-export interface UsePrSourceFilter {
+interface UsePrSourceFilter {
   active: Set<WatchedPRSource>;
   toggle: (source: WatchedPRSource) => void;
   isAllOn: boolean;

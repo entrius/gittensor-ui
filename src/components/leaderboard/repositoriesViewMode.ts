@@ -1,7 +1,7 @@
 export type RepositoriesViewMode = 'cards' | 'list';
 
 export const REPOSITORIES_VIEW_QUERY_PARAM = 'view';
-export const REPOSITORIES_VIEW_STORAGE_KEY = 'repositories:viewMode';
+const REPOSITORIES_VIEW_STORAGE_KEY = 'repositories:viewMode';
 
 export const readStoredRepositoriesViewMode = (): RepositoriesViewMode => {
   try {
@@ -41,7 +41,7 @@ export const REPOSITORIES_VALID_ROWS: readonly number[] = [
   ...REPOSITORIES_CARD_ROWS,
 ];
 export const REPOSITORIES_DEFAULT_LIST_ROWS = 10;
-export const REPOSITORIES_DEFAULT_CARD_ROWS = 12;
+const REPOSITORIES_DEFAULT_CARD_ROWS = 12;
 
 export const clampRowsForRepositoriesView = (
   rows: number,

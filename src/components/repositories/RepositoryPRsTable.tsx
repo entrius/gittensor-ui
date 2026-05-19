@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import {
   Avatar,
@@ -17,6 +17,7 @@ import {
   type DataTableColumn,
 } from '../../components/common/DataTable';
 import { WatchlistButton } from '../../components/common';
+import TablePagination from '../../components/common/TablePagination';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import {
   comparePRsByWatchlist,
@@ -50,6 +51,8 @@ interface RepositoryPRsTableProps {
 const isPrStatusFilter = (v: unknown): v is PrStatusFilter =>
   v === 'all' || v === 'open' || v === 'merged' || v === 'closed';
 
+const PR_PAGE_SIZE = 20;
+
 const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   repositoryFullName,
   state = 'all',
@@ -64,6 +67,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   );
   const [sortField, setSortField] = useState<PrSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [page, setPage] = useState(0);
   const authorFilter = searchParams.get('prAuthor') ?? AUTHOR_FILTER_ALL;
 
   const setAuthorFilter = useCallback(
@@ -154,6 +158,18 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       }
     });
   }, [filteredPRs, sortField, sortOrder, isWatched]);
+
+  // Reset to the first page whenever the result set changes underneath us.
+  useEffect(() => {
+    setPage(0);
+  }, [filter, authorFilter, sortField, sortOrder]);
+
+  const totalPages = Math.ceil(sortedPRs.length / PR_PAGE_SIZE);
+  const pagedPRs = useMemo(
+    () =>
+      sortedPRs.slice(page * PR_PAGE_SIZE, page * PR_PAGE_SIZE + PR_PAGE_SIZE),
+    [sortedPRs, page],
+  );
 
   const handleRowClick = useCallback(
     (pr: CommitLog) => {
@@ -433,7 +449,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     >
       <DataTable<CommitLog, PrSortField>
         columns={columns}
-        rows={sortedPRs}
+        rows={pagedPRs}
         getRowKey={(pr) => `${pr.repository}-${pr.pullRequestNumber}`}
         minWidth="1120px"
         stickyHeader
@@ -463,6 +479,15 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           order: sortOrder,
           onChange: handleSort,
         }}
+        pagination={
+          totalPages > 1 ? (
+            <TablePagination
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          ) : undefined
+        }
       />
     </Card>
   );

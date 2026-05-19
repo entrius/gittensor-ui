@@ -43,7 +43,7 @@ export const CREDIBILITY_COLORS = {
   poor: '#f87171', // Red - below 30%
 } as const;
 
-export const RISK_COLORS = {
+const RISK_COLORS = {
   exceeded: 'rgba(248, 113, 113, 0.9)', // Red - threshold exceeded
   critical: 'rgba(251, 146, 60, 0.9)', // Orange - 1 away
   approaching: 'rgba(250, 204, 21, 0.9)', // Yellow - 2 away
@@ -403,12 +403,6 @@ declare module '@mui/material/Typography' {
   }
 }
 
-declare module '@mui/material/Button' {
-  interface ButtonPropsVariantOverrides {
-    back: true;
-  }
-}
-
 declare module '@mui/material/Card' {
   interface CardPropsVariantOverrides {
     glass: true;
@@ -585,31 +579,6 @@ const theme = createTheme({
           backgroundColor: 'rgb(190, 52, 85)',
         },
       },
-    },
-    MuiButton: {
-      variants: [
-        {
-          props: { variant: 'back' },
-          style: {
-            color: 'rgba(255, 255, 255, 0.7)',
-            fontFamily: '"JetBrains Mono", monospace',
-            fontSize: '0.8rem',
-            fontWeight: 500,
-            letterSpacing: '0.5px',
-            textTransform: 'none',
-            backgroundColor: '#000000',
-            border: '1px solid rgba(255, 255, 255, 0.1)',
-            borderRadius: '8px',
-            padding: '8px 16px',
-            transition: 'all 0.2s',
-            '&:hover': {
-              color: '#ffffff',
-              backgroundColor: 'rgba(0, 0, 0, 0.8)',
-              borderColor: 'rgba(255, 255, 255, 0.2)',
-            },
-          },
-        },
-      ],
     },
     MuiCard: {
       defaultProps: {
