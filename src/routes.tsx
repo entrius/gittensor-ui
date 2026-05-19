@@ -1,7 +1,7 @@
 import React from 'react';
 import { Navigate, matchPath, type PathRouteProps } from 'react-router-dom';
 
-export type AppRoute = Omit<PathRouteProps, 'path'> & {
+type AppRoute = Omit<PathRouteProps, 'path'> & {
   name: string;
   path: string;
   showGlobalSearch?: boolean;
@@ -16,7 +16,6 @@ const DashboardPage = React.lazy(
 const IssuesPage = React.lazy(() => import('./pages/IssuesPage'));
 const SearchPage = React.lazy(() => import('./pages/search/SearchPage'));
 const IssueDetailsPage = React.lazy(() => import('./pages/IssueDetailsPage'));
-const TopMinersPage = React.lazy(() => import('./pages/TopMinersPage'));
 const RepositoriesPage = React.lazy(() => import('./pages/RepositoriesPage'));
 const MinerDetailsPage = React.lazy(() => import('./pages/MinerDetailsPage'));
 const RepositoryDetailsPage = React.lazy(
@@ -56,13 +55,12 @@ const routesArray: AppRoute[] = [
   {
     name: 'discoveries-redirect',
     path: '/discoveries',
-    element: <Navigate to="/top-miners?timeline=discoveries" replace />,
+    element: <Navigate to="/repositories" replace />,
   },
   {
-    name: 'leaderboard',
+    name: 'top-miners-redirect',
     path: '/top-miners',
-    element: <TopMinersPage />,
-    showGlobalSearch: true,
+    element: <Navigate to="/repositories" replace />,
   },
   {
     name: 'watchlist',

@@ -9,9 +9,8 @@ export type KeyboardShortcut = {
   path?: string;
 };
 
-export const keyboardShortcuts: KeyboardShortcut[] = [
+const keyboardShortcuts: KeyboardShortcut[] = [
   { keys: ['g', 'd'], label: 'Dashboard', path: '/dashboard' },
-  { keys: ['g', 'l'], label: 'Top Miners', path: '/top-miners' },
   { keys: ['g', 'r'], label: 'Repositories', path: '/repositories' },
   { keys: ['g', 'b'], label: 'Bounties', path: '/bounties' },
   { keys: ['g', 'w'], label: 'Watchlist', path: '/watchlist' },

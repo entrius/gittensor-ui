@@ -1,7 +1,7 @@
 export type IssuesViewMode = 'cards' | 'list';
 
 export const ISSUES_VIEW_QUERY_PARAM = 'view';
-export const ISSUES_VIEW_STORAGE_KEY = 'issues:viewMode';
+const ISSUES_VIEW_STORAGE_KEY = 'issues:viewMode';
 
 export const readStoredIssuesViewMode = (): IssuesViewMode => {
   try {
@@ -34,10 +34,6 @@ export const getIssuesViewModeFromQuery = (
 // the last row of cards is never partial.
 export const ISSUES_LIST_ROWS = [10, 25, 50] as const;
 export const ISSUES_CARD_ROWS = [12, 24, 48] as const;
-export const ISSUES_VALID_ROWS: readonly number[] = [
-  ...ISSUES_LIST_ROWS,
-  ...ISSUES_CARD_ROWS,
-];
 export const ISSUES_DEFAULT_LIST_ROWS = 10;
 export const ISSUES_DEFAULT_CARD_ROWS = 12;
 
