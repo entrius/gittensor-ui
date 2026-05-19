@@ -25,6 +25,7 @@ import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
 import { MinerCard } from './MinerCard';
 import { MinersList } from './MinersList';
+import { MinerSearchInput } from './MinerSearchInput';
 import theme, { STATUS_COLORS } from '../../theme';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
 import {
@@ -298,6 +299,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       ? MINERS_PAGE_SIZE
       : storedVisibleCount;
 
+  const handleSearchChange = useCallback(
+    (value: string) => setFilter('search', value),
+    [setFilter],
+  );
+
   const handleViewModeChange = useCallback(
     (nextMode: ViewMode) => {
       // Persist the user's choice BEFORE updating the URL. When the serializer
@@ -495,35 +501,49 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
   const usePortal = portalTarget && isLargeScreen;
 
+  const searchInput = (
+    <MinerSearchInput
+      initialValue={searchQuery}
+      onChange={handleSearchChange}
+    />
+  );
+
   return (
     <Box sx={{ pt: 2 }}>
       {/* On large screens: render controls expanded in the sidebar */}
       {usePortal ? (
-        <Portal container={portalTarget}>
-          <ToolbarSidebarPanel
-            sortOption={sortOption}
-            sortDirection={sortDirection}
-            onSortChange={handleSortChange}
-            variant={variant}
-            viewMode={viewMode}
-            onViewModeChange={handleViewModeChange}
-            eligibleOssFilter={eligibleOssFilter}
-            eligibleDiscoveryFilter={eligibleDiscoveryFilter}
-            onEligibleOssChange={handleEligibleOssChange}
-            onEligibleDiscoveryChange={handleEligibleDiscoveryChange}
-            open={filtersOpen}
-            onOpenChange={handleFiltersOpenChange}
-          />
-        </Portal>
+        <>
+          <Portal container={portalTarget}>
+            <ToolbarSidebarPanel
+              sortOption={sortOption}
+              sortDirection={sortDirection}
+              onSortChange={handleSortChange}
+              variant={variant}
+              viewMode={viewMode}
+              onViewModeChange={handleViewModeChange}
+              eligibleOssFilter={eligibleOssFilter}
+              eligibleDiscoveryFilter={eligibleDiscoveryFilter}
+              onEligibleOssChange={handleEligibleOssChange}
+              onEligibleDiscoveryChange={handleEligibleDiscoveryChange}
+              open={filtersOpen}
+              onOpenChange={handleFiltersOpenChange}
+            />
+          </Portal>
+          <Box sx={{ mb: 1.5, px: 2 }}>{searchInput}</Box>
+        </>
       ) : (
         <Box
           sx={{
             mb: 1.5,
             px: 2,
             display: 'flex',
-            justifyContent: 'flex-end',
+            alignItems: 'center',
+            gap: 1.5,
+            flexWrap: 'wrap',
+            justifyContent: 'space-between',
           }}
         >
+          {searchInput}
           <ToolbarPopover
             sortOption={sortOption}
             sortDirection={sortDirection}
