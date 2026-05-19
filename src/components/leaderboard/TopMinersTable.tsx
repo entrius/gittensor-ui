@@ -17,12 +17,15 @@ import {
   Portal,
   useMediaQuery,
   TablePagination,
+  TextField,
+  InputAdornment,
 } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import TuneOutlinedIcon from '@mui/icons-material/TuneOutlined';
 import KeyboardArrowDownIcon from '@mui/icons-material/KeyboardArrowDown';
 import ViewModuleIcon from '@mui/icons-material/ViewModule';
 import ViewListIcon from '@mui/icons-material/ViewList';
+import SearchIcon from '@mui/icons-material/Search';
 import { MinerCard } from './MinerCard';
 import { MinersList } from './MinersList';
 import theme, { STATUS_COLORS } from '../../theme';
@@ -331,6 +334,11 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     [setFilter],
   );
 
+  const handleSearchChange = useCallback(
+    (e: React.ChangeEvent<HTMLInputElement>) => setFilter('search', e.target.value),
+    [setFilter],
+  );
+
   // Rank is column-specific: it's the position when sorted by the active
   // metric, descending. Switching ASC just reverses the list (so the last-
   // place miner ends up at the top with their actual last-place rank, not
@@ -521,9 +529,25 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
             mb: 1.5,
             px: 2,
             display: 'flex',
-            justifyContent: 'flex-end',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 1,
           }}
         >
+          <TextField
+            size="small"
+            placeholder="Search by GitHub ID"
+            value={searchQuery}
+            onChange={handleSearchChange}
+            sx={{ minWidth: 220 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
+                </InputAdornment>
+              ),
+            }}
+          />
           <ToolbarPopover
             sortOption={sortOption}
             sortDirection={sortDirection}
