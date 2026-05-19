@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   useRef,
@@ -26,6 +27,11 @@ import { MinerCard } from './MinerCard';
 import { MinersList } from './MinersList';
 import theme, { STATUS_COLORS } from '../../theme';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
+import {
+  FILTERS_PANEL_QUERY_PARAM,
+  parseFiltersPanelOpen,
+  serializeFiltersPanelOpen,
+} from '../../hooks/useFiltersPanelUrlState';
 import { useWatchlist } from '../../hooks/useWatchlist';
 import { type SortOrder } from '../../utils/ExplorerUtils';
 import { compareByWatchlist } from '../../utils/watchlistSort';
@@ -38,9 +44,6 @@ import {
 
 type ViewMode = 'cards' | 'list';
 
-// Re-export MinerStats for backward compatibility
-export type { MinerStats } from './types';
-
 const MINERS_PAGE_SIZE = 60;
 const ELIGIBLE_QUERY_PARAM = 'eligible';
 /** Watchlist: separate URL params so OSS and discovery eligibility filters are independent. */
@@ -49,7 +52,6 @@ const DISC_ELIGIBLE_QUERY_PARAM = 'discElig';
 const VIEW_QUERY_PARAM = 'view';
 const SEARCH_QUERY_PARAM = 'search';
 const VISIBLE_QUERY_PARAM = 'visible';
-const FILTERS_PANEL_QUERY_PARAM = 'filters';
 const VIEW_STORAGE_KEY_LEADERBOARD = 'leaderboard:viewMode';
 const VIEW_STORAGE_KEY_WATCHLIST = 'watchlist:viewMode';
 
@@ -245,9 +247,8 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
       },
       filtersOpen: {
         paramKey: FILTERS_PANEL_QUERY_PARAM,
-        parse: (raw: string | null): boolean =>
-          raw === 'open' || raw === 'true',
-        serialize: (value: boolean): string | null => (value ? 'open' : null),
+        parse: parseFiltersPanelOpen,
+        serialize: serializeFiltersPanelOpen,
         resetPageOnChange: false,
       },
       eligible:
@@ -330,15 +331,17 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     [setFilter],
   );
 
-  // Rank is computed on the full sorted leaderboard so each miner keeps their
-  // true position regardless of filters. Filtering (search / eligibility) then
-  // only hides rows without renumbering the ones that remain. Sort direction
-  // is included so the list view's asc/desc toggle ranks consistently.
+  // Rank is column-specific: it's the position when sorted by the active
+  // metric, descending. Switching ASC just reverses the list (so the last-
+  // place miner ends up at the top with their actual last-place rank, not
+  // "1"). Filters apply downstream and never renumber the rows they keep.
   const rankedMiners = useMemo(() => {
-    const dir = sortDirection === 'asc' ? 1 : -1;
-    return [...miners]
-      .sort((a, b) => compareMiners(a, b, sortOption, isWatched) * dir)
+    const canonicalDesc = [...miners]
+      .sort((a, b) => -compareMiners(a, b, sortOption, isWatched))
       .map((miner, index) => ({ ...miner, rank: index + 1 }));
+    return sortDirection === 'desc'
+      ? canonicalDesc
+      : canonicalDesc.slice().reverse();
   }, [miners, sortOption, sortDirection, isWatched]);
 
   const filteredMiners = useMemo(() => {
@@ -378,7 +381,12 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   }, [filteredMiners.length, visibleCount, setVisibleCount]);
 
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
-  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
+  // Resolve the sidebar portal target synchronously so a tab switch (which
+  // remounts this table) renders straight into the sidebar instead of
+  // flashing the toolbar inline for one frame.
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(() =>
+    document.getElementById('tabs-options-portal'),
+  );
   const observerTarget = useRef<HTMLDivElement>(null);
   const [stackedLayoutPage, setStackedLayoutPage] = useState(0);
 
@@ -441,7 +449,9 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
     />
   ) : null;
 
-  useEffect(() => {
+  // On the very first page load the portal node is committed after this
+  // table's first render — pick it up before paint to avoid a flash.
+  useLayoutEffect(() => {
     setPortalTarget(document.getElementById('tabs-options-portal'));
   }, []);
 

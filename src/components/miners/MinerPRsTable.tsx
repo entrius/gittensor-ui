@@ -1,10 +1,17 @@
-import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 import {
   Avatar,
   Box,
   Card,
   Chip,
   CircularProgress,
+  Collapse,
   InputAdornment,
   TextField,
   Tooltip,
@@ -12,8 +19,12 @@ import {
   alpha,
   useTheme,
 } from '@mui/material';
-import { Search as SearchIcon } from '@mui/icons-material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import {
+  ExpandLess as ExpandLessIcon,
+  ExpandMore as ExpandMoreIcon,
+  Search as SearchIcon,
+} from '@mui/icons-material';
+import { useSearchParams } from 'react-router-dom';
 import { useMinerPRs, type CommitLog } from '../../api';
 import {
   filterPrs,
@@ -29,12 +40,25 @@ import {
 } from '../../components/common/DataTable';
 import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import { WatchlistButton } from '../../components/common';
-import { serializePRKey } from '../../hooks/useWatchlist';
+import {
+  comparePRsByWatchlist,
+  serializePRKey,
+  useWatchlist,
+} from '../../hooks/useWatchlist';
 import TablePagination from '../common/TablePagination';
+import { formatDate } from '../../utils/format';
 import { tooltipSlotProps } from '../../theme';
+import MinerPrScoreDetail from './MinerPrScoreDetail';
 
-type PrSortField = 'number' | 'repository' | 'score' | 'lines' | 'date';
+type PrSortField =
+  | 'number'
+  | 'repository'
+  | 'score'
+  | 'lines'
+  | 'date'
+  | 'watch';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
@@ -54,6 +78,7 @@ const DEFAULT_SORT_DIR: Record<PrSortField, SortDir> = {
   score: 'desc',
   lines: 'desc',
   date: 'desc',
+  watch: 'desc',
 };
 
 // Mirrors the Score cell's render logic so clicking the Score header
@@ -81,19 +106,27 @@ const getScoreTooltip = (pr: CommitLog): string | null => {
 const isPrStatusFilter = (value: string | null): value is PrStatusFilter =>
   value !== null && (PR_STATUS_FILTERS as readonly string[]).includes(value);
 
+// Stable per-PR key — shared by the DataTable row key and the expanded-row
+// tracking set so the two never drift.
+const prRowKey = (pr: CommitLog): string =>
+  `${pr.repository}-${pr.pullRequestNumber}-${pr.prCreatedAt ?? ''}`;
+
 interface MinerPRsTableProps {
   githubId: string;
 }
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
-  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
+  const { isWatched } = useWatchlist('prs');
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [expandedKeys, setExpandedKeys] = useState<Set<string>>(
+    () => new Set(),
+  );
   const prStatusParam = searchParams.get('prStatus');
   const statusFilter: PrStatusFilter = isPrStatusFilter(prStatusParam)
     ? prStatusParam
@@ -104,6 +137,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     setSearchQuery('');
     setSortField('date');
     setSortDir('desc');
+    setExpandedKeys(new Set());
   }, [githubId]);
 
   const page = parseInt(searchParams.get('prPage') || '0', 10);
@@ -121,6 +155,24 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       );
     },
     [page, setSearchParams],
+  );
+
+  // Ref lets the callback read the latest searchQuery without closing over
+  // it (which would re-fire the wrapper's debounce effect on every commit).
+  const searchQueryRef = useRef(searchQuery);
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  });
+
+  // Skip when the wrapper fires with the already-committed value (mount + the
+  // [githubId] reset above) so a deep-linked `?prPage=N` survives.
+  const handleDebouncedSearch = useCallback(
+    (next: string) => {
+      if (next === searchQueryRef.current) return;
+      setSearchQuery(next);
+      setPage(0);
+    },
+    [setPage],
   );
 
   const setStatusFilter = useCallback(
@@ -187,11 +239,14 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           cmp = da.localeCompare(db);
           break;
         }
+        case 'watch':
+          cmp = comparePRsByWatchlist(a, b, isWatched);
+          break;
       }
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return sorted;
-  }, [filteredPRs, sortField, sortDir]);
+  }, [filteredPRs, sortField, sortDir, isWatched]);
 
   const pagedPRs = useMemo(
     () => paginateItems(sortedPRs, page, PAGE_SIZE),
@@ -200,50 +255,63 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
 
   const totalPages = Math.ceil(sortedPRs.length / PAGE_SIZE);
 
+  // Count over the search + author scope (excluding the active status filter)
+  // so each button reflects what the user would see if they clicked it.
   const statusCounts = useMemo(() => {
     if (!prs) return { all: 0, open: 0, merged: 0, closed: 0 };
-    return getPrStatusCounts(prs);
-  }, [prs]);
+    const scope = filterPrs(prs, {
+      author: selectedAuthor,
+      includeNumber: true,
+      searchQuery,
+      statusFilter: 'all',
+    });
+    return getPrStatusCounts(scope);
+  }, [prs, selectedAuthor, searchQuery]);
 
   const hasFilters =
     Boolean(selectedAuthor) ||
     statusFilter !== 'all' ||
     searchQuery.trim() !== '';
 
-  const handleRowClick = useCallback(
-    (pr: CommitLog) => {
-      navigate(
-        `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-        { state: { backLabel: `Back to ${prs?.[0]?.author || githubId}` } },
-      );
-    },
-    [navigate, prs, githubId],
-  );
+  // Row click toggles the in-place score breakdown — the navigate-to-PR
+  // affordance moved into the expanded panel ("PR Details" button).
+  const toggleExpanded = useCallback((pr: CommitLog) => {
+    setExpandedKeys((prev) => {
+      const next = new Set(prev);
+      const key = prRowKey(pr);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  }, []);
 
   const columns: DataTableColumn<CommitLog, PrSortField>[] = [
+    {
+      key: 'expand',
+      header: '',
+      width: 44,
+      align: 'center',
+      renderCell: (pr) =>
+        expandedKeys.has(prRowKey(pr)) ? (
+          <ExpandLessIcon
+            sx={{ fontSize: '1.15rem', color: 'text.tertiary' }}
+          />
+        ) : (
+          <ExpandMoreIcon
+            sx={{ fontSize: '1.15rem', color: 'text.tertiary' }}
+          />
+        ),
+    },
     {
       key: 'number',
       header: 'PR #',
       width: '10%',
       sortKey: 'number',
       headerSx: { whiteSpace: 'nowrap' },
-      cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
-      renderCell: (pr) => (
-        // Native <a> to GitHub — `onRowClick` (no row-as-anchor) keeps this valid HTML.
-        <a
-          href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{
-            color: 'inherit',
-            textDecoration: 'none',
-            fontWeight: 500,
-          }}
-          onClick={(e) => e.stopPropagation()}
-        >
-          #{pr.pullRequestNumber}
-        </a>
-      ),
+      // Plain label — the row click owns the interaction (toggles the
+      // breakdown accordion); GitHub / PR-detail links live inside it.
+      cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' }, fontWeight: 500 },
+      renderCell: (pr) => `#${pr.pullRequestNumber}`,
     },
     {
       key: 'title',
@@ -416,7 +484,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       },
       renderCell: (pr) =>
         pr.mergedAt
-          ? new Date(pr.mergedAt).toLocaleDateString()
+          ? formatDate(pr.mergedAt)
           : pr.prState === 'CLOSED'
             ? 'Closed'
             : 'Open',
@@ -426,6 +494,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       header: '★',
       width: '8%',
       align: 'center',
+      sortKey: 'watch',
       renderCell: (pr) => (
         <WatchlistButton
           category="prs"
@@ -547,51 +616,52 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         </Box>
       </Box>
 
-      <TextField
-        size="small"
-        placeholder="Search by title, repo, or PR number..."
-        value={searchQuery}
-        onChange={(e) => {
-          setSearchQuery(e.target.value);
-          setPage(0);
-        }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon
-                sx={{
-                  color: (t) => alpha(t.palette.text.primary, 0.3),
-                  fontSize: '1rem',
-                }}
-              />
-            </InputAdornment>
-          ),
-          endAdornment: (
-            <ClearSearchAdornment
-              visible={Boolean(searchQuery)}
-              onClear={() => {
-                setSearchQuery('');
-                setPage(0);
-              }}
-            />
-          ),
-        }}
-        sx={{
-          mt: 2,
-          width: { xs: '100%', sm: 'auto' },
-          maxWidth: { xs: '100%', sm: 400 },
-          minWidth: { xs: 0, sm: 350 },
-          '& .MuiOutlinedInput-root': {
-            fontSize: '0.8rem',
-            color: 'text.primary',
-            backgroundColor: 'surface.subtle',
-            borderRadius: 2,
-            '& fieldset': { borderColor: 'border.light' },
-            '&:hover fieldset': { borderColor: 'border.medium' },
-            '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-          },
-        }}
-      />
+      <DebouncedSearchInput
+        initialDraft={searchQuery}
+        onDebouncedChange={handleDebouncedSearch}
+      >
+        {({ draftValue, setDraftValue }) => (
+          <TextField
+            size="small"
+            placeholder="Search by title, repo, or PR number..."
+            value={draftValue}
+            onChange={(e) => setDraftValue(e.target.value)}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon
+                    sx={{
+                      color: (t) => alpha(t.palette.text.primary, 0.3),
+                      fontSize: '1rem',
+                    }}
+                  />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <ClearSearchAdornment
+                  visible={Boolean(draftValue)}
+                  onClear={() => setDraftValue('')}
+                />
+              ),
+            }}
+            sx={{
+              mt: 2,
+              width: { xs: '100%', sm: 'auto' },
+              maxWidth: { xs: '100%', sm: 400 },
+              minWidth: { xs: 0, sm: 350 },
+              '& .MuiOutlinedInput-root': {
+                fontSize: '0.8rem',
+                color: 'text.primary',
+                backgroundColor: 'surface.subtle',
+                borderRadius: 2,
+                '& fieldset': { borderColor: 'border.light' },
+                '&:hover fieldset': { borderColor: 'border.medium' },
+                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+              },
+            }}
+          />
+        )}
+      </DebouncedSearchInput>
     </Box>
   );
 
@@ -613,10 +683,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       <DataTable<CommitLog, PrSortField>
         columns={columns}
         rows={pagedPRs}
-        getRowKey={(pr) =>
-          `${pr.repository}-${pr.pullRequestNumber}-${pr.prCreatedAt ?? ''}`
-        }
-        minWidth="700px"
+        getRowKey={prRowKey}
+        minWidth="760px"
         stickyHeader
         size="medium"
         header={headerToolbar}
@@ -632,12 +700,24 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             </Typography>
           </Box>
         }
-        onRowClick={handleRowClick}
-        getRowSx={(pr) =>
-          pr.mergedAt && isOutsideScoringWindow(pr.mergedAt)
-            ? { opacity: 0.4, filter: 'grayscale(0.5)' }
-            : {}
-        }
+        onRowClick={toggleExpanded}
+        renderExpandedRow={(pr) => {
+          const open = expandedKeys.has(prRowKey(pr));
+          return (
+            <Collapse in={open} timeout="auto" unmountOnExit>
+              <MinerPrScoreDetail pr={pr} expanded={open} />
+            </Collapse>
+          );
+        }}
+        getRowSx={(pr) => {
+          if (pr.mergedAt && isOutsideScoringWindow(pr.mergedAt)) {
+            return { opacity: 0.4, filter: 'grayscale(0.5)' };
+          }
+          if (expandedKeys.has(prRowKey(pr))) {
+            return { backgroundColor: 'surface.subtle' };
+          }
+          return {};
+        }}
         sort={{
           field: sortField,
           order: sortDir,

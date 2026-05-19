@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
-import { useGeneralConfig } from '../../api';
+import { useGeneralConfig, useRepositoryConfig } from '../../api';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import {
   echartsAxisTooltipChrome,
@@ -11,7 +11,6 @@ import {
   echartsTransparentBackground,
 } from '../../utils/echarts/gittensorChartTheme';
 import {
-  PR_LOOKBACK_DAYS,
   buildDecayCurve,
   buildDecayProjection,
   buildDecaySubline,
@@ -21,6 +20,8 @@ import {
 } from './prTimeDecayModel';
 
 interface PRTimeDecayChartProps {
+  /** Full repo name (`owner/repo`) — drives the per-repo decay hyperparameters. */
+  repository: string;
   mergedAt: string | null;
   prState: string;
   timeDecayMultiplier?: string | number | null;
@@ -113,11 +114,20 @@ function formatTooltipBody(
   mutedHex: string,
 ): string {
   const header = `<div style="font-weight:600;margin-bottom:2px">Day ${day.toFixed(1)}</div>`;
-  const multiplierLine = `<div><span style="color:${mutedHex}">Multiplier</span> <b>${multiplier.toFixed(2)}×</b></div>`;
-  if (preDecayScore == null) return header + multiplierLine;
-  const score = preDecayScore * multiplier;
-  const scoreLine = `<div style="margin-top:2px"><span style="color:${mutedHex}">Score</span> <b>${score.toFixed(2)}</b></div>`;
-  return header + multiplierLine + scoreLine;
+  const multVal = `${multiplier.toFixed(2)}×`;
+  const metricRow = (label: string, value: string, topPad: boolean) =>
+    '<tr>' +
+    `<td style="color:${mutedHex};padding:${topPad ? '4px' : '0'} 10px 0 0;vertical-align:baseline;white-space:nowrap">${label}</td>` +
+    `<td style="text-align:right;font-weight:600;padding:${topPad ? '4px' : '0'} 0 0 0;vertical-align:baseline;white-space:nowrap">${value}</td>` +
+    '</tr>';
+  const table =
+    '<table style="border-collapse:collapse;margin-top:2px;width:100%">' +
+    metricRow('Multiplier', multVal, false) +
+    (preDecayScore == null
+      ? ''
+      : metricRow('Score', (preDecayScore * multiplier).toFixed(2), true)) +
+    '</table>';
+  return header + table;
 }
 
 function buildTooltipFormatter(preDecayScore: number | null, mutedHex: string) {
@@ -143,11 +153,15 @@ function buildTooltip(
   };
 }
 
-function buildXAxis(axis: CartesianAxisColors, fontFamily: string) {
+function buildXAxis(
+  axis: CartesianAxisColors,
+  fontFamily: string,
+  lookbackDays: number,
+) {
   return {
     type: 'value',
     min: 0,
-    max: PR_LOOKBACK_DAYS,
+    max: lookbackDays,
     name: 'days since merge',
     nameLocation: 'middle',
     nameGap: 22,
@@ -243,13 +257,14 @@ function buildChartOption(
     ...echartsTransparentBackground(),
     grid: { left: 44, right: 16, top: 28, bottom: 36 },
     tooltip: buildTooltip(theme, projection.preDecayScore, mutedHex),
-    xAxis: buildXAxis(axis, fontFamily),
+    xAxis: buildXAxis(axis, fontFamily, params.lookbackDays),
     yAxis: buildYAxis(axis),
     series: [buildSeries(theme, axis, params, seriesData, marker)],
   };
 }
 
 function PRTimeDecayChart({
+  repository,
   mergedAt,
   prState,
   timeDecayMultiplier,
@@ -257,9 +272,10 @@ function PRTimeDecayChart({
 }: PRTimeDecayChartProps) {
   const theme = useTheme();
   const { data: generalConfig } = useGeneralConfig();
+  const { data: repoData } = useRepositoryConfig(repository);
   const params = useMemo(
-    () => resolveDecayParams(generalConfig),
-    [generalConfig],
+    () => resolveDecayParams(generalConfig, repoData?.config),
+    [generalConfig, repoData],
   );
   const projection = useMemo(
     () =>

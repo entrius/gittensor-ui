@@ -48,7 +48,6 @@ export interface RepoStats {
   uniqueMiners: Set<string>;
   weight: number;
   rank?: number;
-  inactiveAt?: string | null;
   mirrorEnabled?: boolean;
   /** Issue discovery track score (UI: "Issue score"; miner stats + merged multiplier PRs). */
   discoveryScore: number;
@@ -59,6 +58,12 @@ export interface RepoStats {
   discoveryIssues: number;
   /** Identities with non-zero pro-rated discovery score/issues in this repo. */
   discoveryContributors: Set<string>;
+  /** Fraction of the repo allocation reserved for issue discovery (0-1). */
+  issueDiscoveryShare?: number;
+  /** Labels-as-scoring trust opt-in; surfaced on the card as a badge. */
+  trustedLabelPipeline?: boolean;
+  /** Per-label scoring multipliers, e.g. `{ bug: 1.25, refactor: 0.25 }`. */
+  labelMultipliers?: Record<string, number>;
 }
 
 export type LeaderboardVariant = 'oss' | 'discoveries' | 'watchlist';
@@ -87,29 +92,4 @@ export const getRepositoryOwnerAvatarBackground = (owner: string) => {
   if (owner === 'opentensor') return REPO_OWNER_AVATAR_BACKGROUNDS.opentensor;
   if (owner === 'bitcoin') return REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin;
   return 'transparent';
-};
-
-export const headerCellStyle = {
-  backgroundColor: 'surface.tooltip',
-  backdropFilter: 'blur(8px)',
-  color: 'text.primary',
-  fontFamily: FONTS.mono,
-  fontWeight: 500,
-  fontSize: '0.75rem',
-  borderBottom: '1px solid',
-  borderColor: 'border.light',
-  height: '48px',
-  py: 1,
-  boxSizing: 'border-box' as const,
-};
-
-export const bodyCellStyle = {
-  color: 'text.primary',
-  fontFamily: FONTS.mono,
-  borderBottom: '1px solid',
-  borderColor: 'border.light',
-  fontSize: '0.75rem',
-  py: 0.75,
-  height: '52px',
-  boxSizing: 'border-box' as const,
 };

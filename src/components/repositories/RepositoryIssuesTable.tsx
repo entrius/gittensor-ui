@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import {
   Box,
@@ -24,6 +24,7 @@ import {
   type DataTableColumn,
 } from '../../components/common/DataTable';
 import { formatTokenAmount, getLowerText, type SortOrder } from '../../utils';
+import { formatDate } from '../../utils/format';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import {
   getIssueStatusMeta,
@@ -31,6 +32,7 @@ import {
 } from '../../utils/issueStatus';
 import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
+import TablePagination from '../../components/common/TablePagination';
 
 interface RepositoryIssuesTableProps {
   repositoryFullName: string;
@@ -49,6 +51,8 @@ type RepoIssuesFilter = 'all' | 'open' | 'closed';
 const isRepoIssuesFilter = (v: unknown): v is RepoIssuesFilter =>
   v === 'all' || v === 'open' || v === 'closed';
 
+const ISSUE_PAGE_SIZE = 20;
+
 const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   repositoryFullName,
 }) => {
@@ -62,6 +66,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   );
   const [sortKey, setSortKey] = useState<SortKey>('number');
   const [sortDirection, setSortDirection] = useState<SortOrder>('desc');
+  const [page, setPage] = useState(0);
 
   const counts = useMemo(() => {
     if (!issues) return { total: 0, open: 0, closed: 0 };
@@ -123,6 +128,21 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     return decorated.map((item) => item.issue);
   }, [filteredIssues, sortKey, sortDirection]);
 
+  // Reset to the first page whenever the result set changes underneath us.
+  useEffect(() => {
+    setPage(0);
+  }, [filter, sortKey, sortDirection]);
+
+  const totalPages = Math.ceil(sortedIssues.length / ISSUE_PAGE_SIZE);
+  const pagedIssues = useMemo(
+    () =>
+      sortedIssues.slice(
+        page * ISSUE_PAGE_SIZE,
+        page * ISSUE_PAGE_SIZE + ISSUE_PAGE_SIZE,
+      ),
+    [sortedIssues, page],
+  );
+
   const handleSort = useCallback(
     (key: SortKey) => {
       if (sortKey === key) {
@@ -171,6 +191,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'number',
       header: 'Issue #',
+      width: 112,
       sortKey: 'number',
       renderCell: (issue) => (
         <a
@@ -191,6 +212,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'title',
       header: 'Title',
+      width: 360,
       sortKey: 'title',
       renderCell: (issue) => (
         <ScrollAwareTooltip
@@ -201,7 +223,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         >
           <Box
             sx={{
-              maxWidth: '400px',
+              maxWidth: '100%',
               overflow: 'hidden',
               textOverflow: 'ellipsis',
               whiteSpace: 'nowrap',
@@ -215,6 +237,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'status',
       header: 'Status',
+      width: 128,
       sortKey: 'status',
       renderCell: (issue) => {
         const isOpen = !issue.closedAt;
@@ -235,6 +258,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'linkedPr',
       header: 'Linked PR',
+      width: 128,
       sortKey: 'linkedPr',
       renderCell: (issue) =>
         issue.prNumber ? (
@@ -264,18 +288,18 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     {
       key: 'created',
       header: 'Created',
+      width: 128,
       align: 'right',
       sortKey: 'created',
-      renderCell: (issue) =>
-        issue.createdAt ? new Date(issue.createdAt).toLocaleDateString() : '-',
+      renderCell: (issue) => formatDate(issue.createdAt),
     },
     {
       key: 'closed',
       header: 'Closed',
+      width: 128,
       align: 'right',
       sortKey: 'closed',
-      renderCell: (issue) =>
-        issue.closedAt ? new Date(issue.closedAt).toLocaleDateString() : '-',
+      renderCell: (issue) => formatDate(issue.closedAt),
     },
   ];
 
@@ -297,7 +321,13 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       >
         Issues ({sortedIssues.length})
       </Typography>
-      <Stack direction="row" spacing={1}>
+      <Stack
+        direction="row"
+        spacing={1}
+        flexWrap="wrap"
+        useFlexGap
+        sx={{ rowGap: 1 }}
+      >
         <FilterButton
           label="All"
           isActive={filter === 'all'}
@@ -478,47 +508,23 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
-          // Restructure so only the body scrolls — the header sits above the
-          // scroll area, so the scrollbar never appears next to the header row.
-          '& .MuiTableContainer-root': {
-            overflow: 'visible',
-          },
-          '& .MuiTable-root': {
-            display: 'block',
-          },
-          '& .MuiTableHead-root': {
-            display: 'block',
-            // Reserve space matching the body's scrollbar gutter so columns line up.
-            paddingRight: '8px',
-            backgroundColor: theme.palette.surface.tooltip,
-          },
-          '& .MuiTableHead-root .MuiTableRow-root': {
-            display: 'table',
-            tableLayout: 'fixed',
-            width: '100%',
-          },
-          '& .MuiTableBody-root': {
-            display: 'block',
-            maxHeight: '500px',
-            overflowY: 'auto',
-            scrollbarGutter: 'stable',
-            ...scrollbarSx,
-          },
-          '& .MuiTableBody-root .MuiTableRow-root': {
-            display: 'table',
-            tableLayout: 'fixed',
-            width: '100%',
-          },
         }}
         elevation={0}
       >
         <DataTable<RepositoryIssue, SortKey>
           columns={columns}
-          rows={sortedIssues}
+          rows={pagedIssues}
           getRowKey={(issue) =>
             `${issue.number}-${issue.prNumber}-${issue.repositoryFullName}`
           }
+          minWidth="984px"
           stickyHeader
+          tableContainerSx={{
+            maxHeight: 500,
+            overflow: 'auto',
+            scrollbarGutter: 'stable',
+            ...scrollbarSx,
+          }}
           size="medium"
           header={headerToolbar}
           emptyState={
@@ -542,6 +548,15 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             order: sortDirection,
             onChange: handleSort,
           }}
+          pagination={
+            totalPages > 1 ? (
+              <TablePagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+              />
+            ) : undefined
+          }
         />
       </Card>
     </Box>

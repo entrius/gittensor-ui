@@ -1,7 +1,7 @@
 import type { PullRequestDetails } from '../api/models/Dashboard';
 import { parseNumber } from './ExplorerUtils';
 
-export interface MultiplierPillDef {
+interface MultiplierPillDef {
   key: string;
   label: string;
   value: number;
@@ -10,7 +10,7 @@ export interface MultiplierPillDef {
   tooltipDesc: string;
 }
 
-export interface MultiplierGridEntry {
+interface MultiplierGridEntry {
   label: string;
   value: string;
   isCredibility?: boolean;
@@ -59,13 +59,6 @@ const PILL_CONFIGS: PillConfig[] = [
     field: 'credibilityMultiplier',
     title: 'Credibility',
     desc: 'Based on your PR success rate, scaled to reward consistency.',
-  },
-  {
-    key: 'repoWt',
-    label: 'repo wt',
-    field: 'repoWeightMultiplier',
-    title: 'Repo Weight',
-    desc: 'Based on repository weight and activity.',
   },
   {
     key: 'issue',
@@ -165,12 +158,10 @@ function buildDensityEntry(pr: PullRequestDetails): MultiplierGridEntry | null {
 }
 
 const OPEN_GRID: GridConfig[] = [
-  { label: 'Repo Weight', field: 'repoWeightMultiplier' },
   { label: 'Issue Bonus', field: 'issueMultiplier' },
 ];
 
 const MERGED_GRID: GridConfig[] = [
-  { label: 'Repo Weight', field: 'repoWeightMultiplier' },
   { label: 'Issue Bonus', field: 'issueMultiplier' },
   { label: 'Credibility', field: 'credibilityMultiplier', isCredibility: true },
   { label: 'Review Quality', field: 'reviewQualityMultiplier' },

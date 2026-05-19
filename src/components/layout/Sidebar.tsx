@@ -11,8 +11,6 @@ import {
 } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import GroupsIcon from '@mui/icons-material/Groups';
-
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import FolderCopyIcon from '@mui/icons-material/FolderCopy';
@@ -86,7 +84,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
 
   const navItems = [
     { label: 'dashboard', path: '/dashboard', icon: <DashboardIcon /> },
-    { label: 'leaderboard', path: '/top-miners', icon: <GroupsIcon /> },
+    { label: 'repositories', path: '/repositories', icon: <FolderCopyIcon /> },
     {
       label: 'watchlist',
       path: '/watchlist',
@@ -94,7 +92,6 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
       icon: <VisibilityIcon />,
     },
     { label: 'bounties', path: '/bounties', icon: <BugReportIcon /> },
-    { label: 'repositories', path: '/repositories', icon: <FolderCopyIcon /> },
     { label: 'onboard', path: '/onboard', icon: <SchoolIcon /> },
   ];
 
@@ -356,9 +353,13 @@ const SidebarNavLink: React.FC<{
           display: 'block',
           flexShrink: 0,
         },
-        '&:hover': {
+        '&:hover, &:focus-visible': {
           backgroundColor: 'rgba(255, 255, 255, 0.05)',
           color: 'primary.main',
+        },
+        '&:focus-visible': {
+          outline: 'none',
+          boxShadow: (theme) => `0 0 0 2px ${theme.palette.primary.main}`,
         },
       }}
     >

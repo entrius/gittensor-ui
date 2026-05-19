@@ -1,9 +1,4 @@
-import {
-  type CommitLog,
-  type MinerEvaluation,
-  type Repository,
-  type RepositoryPrScoring,
-} from '../api';
+import { type CommitLog, type MinerEvaluation, type Repository } from '../api';
 import { type IssueBounty } from '../api/models/Issues';
 import { getRepositoryOwnerAvatarSrc } from './avatar';
 import { isMergedPr } from './prStatus';
@@ -31,102 +26,6 @@ export const getPrStatusLabel = (
   return 'Closed';
 };
 
-export const calculateDynamicOpenPrThreshold = (
-  minerStats: MinerEvaluation,
-  prScoring: RepositoryPrScoring | undefined,
-): number => {
-  const baseThreshold = parseNumber(prScoring?.excessivePrPenaltyThreshold, 10);
-  const tokenScorePer = parseNumber(prScoring?.openPrThresholdTokenScore, 300);
-  const maxThreshold = parseNumber(prScoring?.maxOpenPrThreshold, 30);
-
-  if (tokenScorePer <= 0) {
-    return Math.min(baseThreshold, maxThreshold);
-  }
-
-  const tokenScore = parseNumber(minerStats.totalTokenScore);
-  const bonus = Math.floor(tokenScore / tokenScorePer);
-
-  return Math.min(baseThreshold + bonus, maxThreshold);
-};
-
-export const calculateOpenIssueThreshold = (
-  minerStats: MinerEvaluation,
-): number => {
-  const issueTokenScore = parseNumber(minerStats.issueTokenScore);
-  return Math.min(5 + Math.floor(issueTokenScore / 300), 30);
-};
-
-const isMinerEvaluationLike = (value: unknown): value is MinerEvaluation => {
-  if (!value || typeof value !== 'object') return false;
-  return 'githubId' in value;
-};
-
-export const normalizeMinerEvaluations = (
-  payload: unknown,
-): MinerEvaluation[] => {
-  if (Array.isArray(payload)) {
-    return payload.filter(isMinerEvaluationLike);
-  }
-
-  if (!payload || typeof payload !== 'object') return [];
-
-  const record = payload as Record<string, unknown>;
-  const keyedList = ['items', 'miners', 'results', 'data']
-    .map((key) => record[key])
-    .find((value) => Array.isArray(value));
-
-  if (Array.isArray(keyedList)) {
-    return keyedList.filter(isMinerEvaluationLike);
-  }
-
-  const objectValues = Object.values(record);
-  if (objectValues.length > 0 && objectValues.every(isMinerEvaluationLike)) {
-    return objectValues;
-  }
-
-  return [];
-};
-
-const isCommitLogLike = (value: unknown): value is CommitLog => {
-  if (!value || typeof value !== 'object') return false;
-  return 'repository' in value && 'pullRequestNumber' in value;
-};
-
-export const normalizeCommitLogs = (payload: unknown): CommitLog[] => {
-  if (Array.isArray(payload)) {
-    return payload.filter(isCommitLogLike);
-  }
-
-  if (!payload || typeof payload !== 'object') return [];
-
-  const record = payload as Record<string, unknown>;
-  const keyedList = ['items', 'prs', 'results', 'data']
-    .map((key) => record[key])
-    .find((value) => Array.isArray(value));
-
-  if (Array.isArray(keyedList)) {
-    return keyedList.filter(isCommitLogLike);
-  }
-
-  const objectValues = Object.values(record);
-  if (objectValues.length > 0 && objectValues.every(isCommitLogLike)) {
-    return objectValues;
-  }
-
-  return [];
-};
-
-export interface RepoStats {
-  repository: string;
-  prs: number;
-  score: number;
-  tokenScore: number;
-  weight: number;
-  latestPrDate?: string | null;
-  /** Set when subnet repo list marks the repository inactive (miners / enrich layer). */
-  inactiveAt?: string | null;
-}
-
 /** Per-repository stats for Issue Discovery (miner solved bounties via winning PRs). */
 export interface IssueRepoStats {
   repository: string;
@@ -136,102 +35,11 @@ export interface IssueRepoStats {
   bountyEarned: number;
   weight: number;
   latestActivityDate: string | null;
-  inactiveAt?: string | null;
 }
-
-export type RepoSortField =
-  | 'rank'
-  | 'repository'
-  | 'prs'
-  | 'score'
-  | 'tokenScore'
-  | 'weight';
-
-export type IssueRepoSortField =
-  | 'rank'
-  | 'repository'
-  | 'solved'
-  | 'validSolved'
-  | 'issueTokenScore'
-  | 'bountyEarned'
-  | 'weight';
-
-export type MinerRepoTableSortField = RepoSortField | IssueRepoSortField;
 
 export type SortOrder = 'asc' | 'desc';
 
 const VALID_ISSUE_SOLVE_TOKEN_THRESHOLD = 5;
-
-export const sortMinerRepoStats = (
-  stats: RepoStats[],
-  field: RepoSortField,
-  order: SortOrder,
-): RepoStats[] => {
-  const sorted = [...stats];
-  sorted.sort((a, b) => {
-    let compareValue = 0;
-    switch (field) {
-      case 'repository':
-        compareValue = a.repository.localeCompare(b.repository);
-        break;
-      case 'prs':
-        compareValue = a.prs - b.prs;
-        break;
-      case 'score':
-        compareValue = a.score - b.score;
-        break;
-      case 'tokenScore':
-        compareValue = a.tokenScore - b.tokenScore;
-        break;
-      case 'weight':
-        compareValue = a.weight - b.weight;
-        break;
-      case 'rank':
-        compareValue = a.score - b.score;
-        break;
-    }
-    return order === 'asc' ? compareValue : -compareValue;
-  });
-  return sorted;
-};
-
-export const sortIssueRepoStats = (
-  stats: IssueRepoStats[],
-  field: IssueRepoSortField,
-  order: SortOrder,
-): IssueRepoStats[] => {
-  const sorted = [...stats];
-  sorted.sort((a, b) => {
-    let compareValue = 0;
-    switch (field) {
-      case 'repository':
-        compareValue = a.repository.localeCompare(b.repository);
-        break;
-      case 'solved':
-        compareValue = a.solved - b.solved;
-        break;
-      case 'validSolved':
-        compareValue = a.validSolved - b.validSolved;
-        break;
-      case 'issueTokenScore':
-        compareValue = a.issueTokenScore - b.issueTokenScore;
-        break;
-      case 'bountyEarned':
-        compareValue = a.bountyEarned - b.bountyEarned;
-        break;
-      case 'weight':
-        compareValue = a.weight - b.weight;
-        break;
-      case 'rank':
-        compareValue = a.issueTokenScore - b.issueTokenScore;
-        break;
-      default:
-        compareValue = 0;
-    }
-    return order === 'asc' ? compareValue : -compareValue;
-  });
-  return sorted;
-};
 
 // ---------------------------------------------------------------------------
 // Scoring window staleness check
@@ -248,6 +56,14 @@ export const isOutsideScoringWindow = (
   return new Date(date) < cutoff;
 };
 
+/** ISO timestamp for the start of the 35-day scoring window (UTC, suitable for
+ *  GitHub Search `created:>=` qualifier and other since-style filters). */
+export const getScoringWindowStartIso = (): string => {
+  const cutoff = new Date();
+  cutoff.setUTCDate(cutoff.getUTCDate() - SCORING_WINDOW_DAYS);
+  return cutoff.toISOString();
+};
+
 // ---------------------------------------------------------------------------
 // Map builders – extract lookup maps from API data
 // ---------------------------------------------------------------------------
@@ -261,51 +77,11 @@ export const buildRepoWeightsMap = (
     if (repo && repo.fullName) {
       map.set(
         repo.fullName.toLowerCase(),
-        parseFloat(String(repo.config?.weight ?? 0)),
+        parseFloat(String(repo.config?.emissionShare ?? 0)),
       );
     }
   }
   return map;
-};
-
-// ---------------------------------------------------------------------------
-// PR aggregation – builds per-repository stats from commit logs
-// ---------------------------------------------------------------------------
-
-export const aggregatePRsByRepository = (
-  prs: CommitLog[],
-  repoWeights: Map<string, number>,
-): RepoStats[] => {
-  if (!prs || prs.length === 0) return [];
-
-  const statsMap = new Map<string, RepoStats>();
-
-  for (const pr of prs) {
-    if (!pr.repository) continue;
-    const repoKey = pr.repository.toLowerCase();
-    const existing = statsMap.get(repoKey) || {
-      repository: pr.repository,
-      prs: 0,
-      score: 0,
-      tokenScore: 0,
-      weight: repoWeights.get(repoKey) || 0,
-      latestPrDate: null as string | null,
-    };
-    existing.prs += 1;
-    existing.score += parseFloat(pr.score || '0');
-    if (isMergedPr(pr)) {
-      existing.tokenScore += parseFloat(String(pr.tokenScore ?? '0'));
-    }
-    if (
-      pr.mergedAt &&
-      (!existing.latestPrDate || pr.mergedAt > existing.latestPrDate)
-    ) {
-      existing.latestPrDate = pr.mergedAt;
-    }
-    statsMap.set(repoKey, existing);
-  }
-
-  return Array.from(statsMap.values());
 };
 
 /**
@@ -390,7 +166,7 @@ export const isIssueDiscoveryContributionPr = (pr: CommitLog): boolean => {
  * Stricter than {@link isIssueDiscoveryContributionPr}: requires a positive
  * issue or label **multiplier**, not merely any GitHub label.
  */
-export const isIssueDiscoveryMultiplierPr = (pr: CommitLog): boolean => {
+const isIssueDiscoveryMultiplierPr = (pr: CommitLog): boolean => {
   const rawIm = pr.issueMultiplier;
   if (rawIm != null && String(rawIm).trim() !== '') {
     if (parseNumber(rawIm, 0) > 0) return true;
@@ -399,58 +175,12 @@ export const isIssueDiscoveryMultiplierPr = (pr: CommitLog): boolean => {
   return false;
 };
 
-/**
- * Per-repository stats for a miner's issue-discovery repos: **merged** PRs only
- * (aligned with Repositories OSS row), passing {@link isIssueDiscoveryContributionPr}.
- */
-export const aggregateIssueDiscoveryRepos = (
-  prs: CommitLog[] | undefined,
-  repoWeights: Map<string, number>,
-): RepoStats[] => {
-  const filtered = (prs || [])
-    .filter(isIssueDiscoveryContributionPr)
-    .filter(isMergedPr);
-  return aggregatePRsByRepository(filtered, repoWeights);
-};
-
 /** Per-repository rollup for merged PRs that count toward issue discovery. */
-export type MergedIssueDiscoveryRepoRollup = {
+type MergedIssueDiscoveryRepoRollup = {
   discoveryScore: number;
   /** Merged issue-discovery PRs in this repo (proxy when not using miner pro-rating). */
   discoveryIssues: number;
   discoveryContributors: Set<string>;
-};
-
-/**
- * Builds discovery stats per repo from the global PR feed: merged PRs with
- * issue-discovery multipliers ({@link isIssueDiscoveryMultiplierPr}).
- */
-export const buildMergedIssueDiscoveryByRepo = (
-  prs: CommitLog[] | undefined,
-): Map<string, MergedIssueDiscoveryRepoRollup> => {
-  const map = new Map<string, MergedIssueDiscoveryRepoRollup>();
-  if (!prs?.length) return map;
-
-  for (const pr of prs) {
-    if (!pr?.repository) continue;
-    if (!isMergedPr(pr)) continue;
-    if (!isIssueDiscoveryMultiplierPr(pr)) continue;
-
-    const key = pr.repository.toLowerCase();
-    const cur = map.get(key) ?? {
-      discoveryScore: 0,
-      discoveryIssues: 0,
-      discoveryContributors: new Set<string>(),
-    };
-    const token = parseNumber(pr.tokenScore);
-    cur.discoveryScore += token > 0 ? token : parseFloat(pr.score || '0');
-    cur.discoveryIssues += 1;
-    const minerKey = pr.githubId || pr.author;
-    if (minerKey) cur.discoveryContributors.add(String(minerKey));
-    map.set(key, cur);
-  }
-
-  return map;
 };
 
 const discoveryWeightKey = (pr: CommitLog): string | null => {
@@ -465,7 +195,7 @@ const discoveryDisplayContributorKey = (pr: CommitLog): string | null => {
   return null;
 };
 
-export const buildMinerLookupByIdentity = (
+const buildMinerLookupByIdentity = (
   miners: MinerEvaluation[] | undefined,
 ): Map<string, MinerEvaluation> => {
   const map = new Map<string, MinerEvaluation>();
@@ -574,63 +304,4 @@ export const buildRepoDiscoveryRollupFromMiners = (
   }
 
   return out;
-};
-
-export type IssueBountyRepoRollup = {
-  bountyIssuesTotal: number;
-  bountyIssuesActive: number;
-  bountyIssuesCompleted: number;
-};
-
-export const buildIssueBountyRollupByRepo = (
-  issues: IssueBounty[] | undefined,
-): Map<string, IssueBountyRepoRollup> => {
-  const map = new Map<string, IssueBountyRepoRollup>();
-  if (!issues?.length) return map;
-
-  for (const issue of issues) {
-    const name = issue.repositoryFullName?.trim();
-    if (!name) continue;
-    const key = name.toLowerCase();
-    const cur = map.get(key) ?? {
-      bountyIssuesTotal: 0,
-      bountyIssuesActive: 0,
-      bountyIssuesCompleted: 0,
-    };
-    cur.bountyIssuesTotal += 1;
-    const st = (issue.status || '').toLowerCase();
-    if (st === 'active') cur.bountyIssuesActive += 1;
-    if (st === 'completed') cur.bountyIssuesCompleted += 1;
-    map.set(key, cur);
-  }
-
-  return map;
-};
-
-// ---------------------------------------------------------------------------
-// Filter / display helpers
-// ---------------------------------------------------------------------------
-
-export const hasActiveFilters = (searchQuery: string): boolean => {
-  return !!searchQuery.trim();
-};
-
-export const getDisplayCount = (
-  filteredCount: number,
-  totalCount: number,
-  isFiltered: boolean,
-): string => {
-  if (isFiltered) {
-    return `${filteredCount} of ${totalCount}`;
-  }
-  return String(filteredCount);
-};
-
-export const filterBySearch = <T extends { repository: string }>(
-  stats: T[],
-  searchQuery: string,
-): T[] => {
-  const q = searchQuery.trim().toLowerCase();
-  if (!q) return stats;
-  return stats.filter((r) => r.repository.toLowerCase().includes(q));
 };

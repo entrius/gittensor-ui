@@ -6,42 +6,22 @@ import { LinkBox } from '../components/common/linkBehavior';
 import {
   BackButton,
   MinerActivity,
-  MinerInsightsCard,
+  MinerIdentityRail,
   MinerOpenDiscoveryIssuesByRepo,
   MinerPRsTable,
-  MinerRepositoriesTable,
-  MinerScoreBreakdown,
-  MinerScoreCard,
+  MinerRepoStandings,
   SEO,
 } from '../components';
 import { WatchlistButton } from '../components/common';
+import { useMinerStats } from '../api';
 
 type ViewMode = 'prs' | 'issues';
 
-const PR_TABS = [
-  'overview',
-  'activity',
-  'pull-requests',
-  'repositories',
-] as const;
-const ISSUE_TABS = [
-  'overview',
-  'activity',
-  'open-issues',
-  'repositories',
-] as const;
+const PR_TABS = ['pull-requests', 'activity'] as const;
+const ISSUE_TABS = ['open-issues', 'activity'] as const;
 type MinerDetailsTab = (typeof PR_TABS)[number] | (typeof ISSUE_TABS)[number];
 
-/**
- * Align first tab label with Card body content (MinerInsightsCard `p: 3` — same edge as
- * "Insights & Next Actions" and insight row borders, not inner `px: 1.5` text).
- * Padding lives on the tab flex row, not the scroll buttons: with scroll arrows, the
- * first tab was shifted right by the left arrow width.
- */
 const tabsAlignSx = {
-  '& .MuiTabs-flexContainer': {
-    pl: 3,
-  },
   '& .MuiTab-root': {
     color: 'text.secondary',
     textTransform: 'none' as const,
@@ -57,23 +37,26 @@ const MinerDetailsPage: React.FC = () => {
   const location = useLocation();
   const githubId = searchParams.get('githubId');
 
-  const buildModeHref = (mode: ViewMode) => {
-    const p = new URLSearchParams(searchParams);
-    p.set('mode', mode);
-    p.set('tab', 'overview');
-    return `${location.pathname}?${p.toString()}`;
-  };
-
   const modeParam = searchParams.get('mode');
   const viewMode: ViewMode = modeParam === 'issues' ? 'issues' : 'prs';
 
   const tabs = viewMode === 'issues' ? ISSUE_TABS : PR_TABS;
+  const defaultTab: MinerDetailsTab = tabs[0];
+
+  const buildModeHref = (mode: ViewMode) => {
+    const p = new URLSearchParams(searchParams);
+    p.set('mode', mode);
+    // Drop the tab param so the new mode lands on its own first tab —
+    // PR and issue modes have disjoint first tabs.
+    p.delete('tab');
+    return `${location.pathname}?${p.toString()}`;
+  };
 
   const tabParam = searchParams.get('tab');
   const activeTab: MinerDetailsTab =
     tabParam && (tabs as readonly string[]).includes(tabParam)
       ? (tabParam as MinerDetailsTab)
-      : 'overview';
+      : defaultTab;
 
   const handleTabChange = (
     _event: React.SyntheticEvent,
@@ -84,8 +67,15 @@ const MinerDetailsPage: React.FC = () => {
     setSearchParams(p, { replace: true });
   };
 
+  const { data: minerStats, isLoading: isLoadingMinerStats } = useMinerStats(
+    githubId ?? '',
+  );
+  // Only show the star once we've confirmed the miner exists — otherwise
+  // users can pin phantom entries via /miners/details?githubId=<anything>.
+  const minerExists = !isLoadingMinerStats && !!minerStats;
+
   if (!githubId) {
-    return <Navigate to="/top-miners" replace />;
+    return <Navigate to="/repositories" replace />;
   }
 
   return (
@@ -109,134 +99,160 @@ const MinerDetailsPage: React.FC = () => {
             flexDirection: 'column',
             gap: 3,
             width: '100%',
-            maxWidth: 1240,
+            maxWidth: 1320,
             px: { xs: 2, md: 0 },
           }}
         >
+          {/* ── Header: back · mode toggle · watch ─────────────── */}
           <Box
             sx={{
               display: 'flex',
-              alignItems: { xs: 'stretch', sm: 'center' },
+              alignItems: 'center',
               justifyContent: 'space-between',
-              flexDirection: { xs: 'column', sm: 'row' },
-              gap: { xs: 1.25, sm: 0 },
+              gap: 2,
+              flexWrap: 'wrap',
             }}
           >
+            <BackButton to="/repositories" />
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 1,
+                gap: 1.5,
+                flexWrap: 'wrap',
               }}
             >
-              <BackButton to="/top-miners" mb={0} />
-              <WatchlistButton
-                category="miners"
-                itemKey={githubId}
-                size="medium"
-              />
-            </Box>
-            <Box
-              sx={{
-                display: 'flex',
-                width: { xs: '100%', sm: 'auto' },
-                gap: 0.5,
-                backgroundColor: 'surface.subtle',
-                p: 0.5,
-                borderRadius: 2,
-              }}
-            >
-              {(
-                [
-                  { label: 'OSS Contributions', value: 'prs' as const },
-                  { label: 'Issue Discovery', value: 'issues' as const },
-                ] as const
-              ).map((option) => {
-                const isActive = viewMode === option.value;
-                return (
-                  <LinkBox
-                    key={option.value}
-                    href={buildModeHref(option.value)}
-                    replace
-                    sx={{
-                      px: { xs: 1.25, sm: 2 },
-                      py: 0.75,
-                      borderRadius: 1.5,
-                      cursor: 'pointer',
-                      minWidth: 0,
-                      flex: { xs: 1, sm: '0 0 auto' },
-                      backgroundColor: isActive
-                        ? 'surface.elevated'
-                        : 'transparent',
-                      color: isActive
-                        ? 'text.primary'
-                        : (t) => alpha(t.palette.text.primary, 0.5),
-                      transition: 'all 0.2s',
-                      '&:hover': {
-                        backgroundColor: 'surface.elevated',
-                        color: 'text.primary',
-                      },
-                    }}
-                  >
-                    <Typography
+              {/* Mode toggle — a real page-level axis, not a stat */}
+              <Box
+                sx={{
+                  display: 'flex',
+                  gap: 0.5,
+                  backgroundColor: 'surface.subtle',
+                  p: 0.5,
+                  borderRadius: 2,
+                }}
+              >
+                {(
+                  [
+                    { label: 'OSS Contributions', value: 'prs' as const },
+                    { label: 'Issue Discovery', value: 'issues' as const },
+                  ] as const
+                ).map((option) => {
+                  const isActive = viewMode === option.value;
+                  return (
+                    <LinkBox
+                      key={option.value}
+                      href={buildModeHref(option.value)}
+                      replace
                       sx={{
-                        fontSize: { xs: '0.74rem', sm: '0.8rem' },
-                        fontWeight: 600,
-                        textAlign: 'center',
-                        whiteSpace: 'nowrap',
+                        px: 2,
+                        py: 0.75,
+                        borderRadius: 1.5,
+                        cursor: 'pointer',
+                        backgroundColor: isActive
+                          ? 'surface.elevated'
+                          : 'transparent',
+                        color: isActive
+                          ? 'text.primary'
+                          : (t) => alpha(t.palette.text.primary, 0.5),
+                        transition: 'all 0.2s',
+                        '&:hover': {
+                          backgroundColor: 'surface.elevated',
+                          color: 'text.primary',
+                        },
                       }}
                     >
-                      {option.label}
-                    </Typography>
-                  </LinkBox>
-                );
-              })}
+                      <Typography
+                        sx={{
+                          fontSize: '0.8rem',
+                          fontWeight: 600,
+                          textAlign: 'center',
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {option.label}
+                      </Typography>
+                    </LinkBox>
+                  );
+                })}
+              </Box>
+              {minerExists && (
+                <WatchlistButton
+                  category="miners"
+                  itemKey={githubId}
+                  size="medium"
+                />
+              )}
             </Box>
           </Box>
 
-          <MinerScoreCard githubId={githubId} viewMode={viewMode} />
-
-          <Box sx={{ borderBottom: '1px solid', borderColor: 'border.light' }}>
-            <Tabs
-              value={activeTab}
-              onChange={handleTabChange}
-              variant="scrollable"
-              scrollButtons={false}
-              sx={tabsAlignSx}
+          {/* ── Two-column shell: main + sticky identity rail ──── */}
+          <Box
+            sx={{
+              display: 'grid',
+              gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 320px' },
+              gap: 3,
+              alignItems: 'start',
+            }}
+          >
+            {/* Identity rail — right sidebar on desktop (sticky); ordered
+                first on mobile so identity is not buried below the page. */}
+            <Box
+              sx={{
+                order: { md: 2 },
+                position: { md: 'sticky' },
+                top: { md: 24 },
+                minWidth: 0,
+              }}
             >
-              <Tab value="overview" label="Overview" />
-              <Tab value="activity" label="Activity" />
-              {viewMode === 'issues' && (
-                <Tab value="open-issues" label="Open issues" />
-              )}
-              {viewMode === 'prs' && (
-                <Tab value="pull-requests" label="Pull Requests" />
-              )}
-              <Tab value="repositories" label="Repositories" />
-            </Tabs>
-          </Box>
+              <MinerIdentityRail githubId={githubId} viewMode={viewMode} />
+            </Box>
 
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-            {activeTab === 'overview' && (
-              <>
-                <MinerInsightsCard githubId={githubId} viewMode={viewMode} />
-                <MinerScoreBreakdown githubId={githubId} viewMode={viewMode} />
-              </>
-            )}
+            {/* Main column */}
+            <Box
+              sx={{
+                order: { md: 1 },
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 3,
+                minWidth: 0,
+              }}
+            >
+              {/* Centerpiece — per-repository standings */}
+              <MinerRepoStandings githubId={githubId} viewMode={viewMode} />
 
-            {activeTab === 'activity' && (
-              <MinerActivity githubId={githubId} viewMode={viewMode} />
-            )}
-            {activeTab === 'open-issues' && viewMode === 'issues' && (
-              <MinerOpenDiscoveryIssuesByRepo githubId={githubId} />
-            )}
-            {activeTab === 'pull-requests' && (
-              <MinerPRsTable githubId={githubId} />
-            )}
-            {activeTab === 'repositories' && (
-              <MinerRepositoriesTable githubId={githubId} viewMode={viewMode} />
-            )}
+              {/* Reduced detail tabs */}
+              <Box
+                sx={{ borderBottom: '1px solid', borderColor: 'border.light' }}
+              >
+                <Tabs
+                  value={activeTab}
+                  onChange={handleTabChange}
+                  variant="scrollable"
+                  scrollButtons={false}
+                  sx={tabsAlignSx}
+                >
+                  {viewMode === 'issues' ? (
+                    <Tab value="open-issues" label="Open Issues" />
+                  ) : (
+                    <Tab value="pull-requests" label="Pull Requests" />
+                  )}
+                  <Tab value="activity" label="Activity" />
+                </Tabs>
+              </Box>
+
+              <Box>
+                {activeTab === 'pull-requests' && viewMode === 'prs' && (
+                  <MinerPRsTable githubId={githubId} />
+                )}
+                {activeTab === 'open-issues' && viewMode === 'issues' && (
+                  <MinerOpenDiscoveryIssuesByRepo githubId={githubId} />
+                )}
+                {activeTab === 'activity' && (
+                  <MinerActivity githubId={githubId} viewMode={viewMode} />
+                )}
+              </Box>
+            </Box>
           </Box>
         </Box>
       </Box>

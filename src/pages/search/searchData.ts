@@ -14,7 +14,7 @@ import { parseNumber } from '../../utils';
 
 export const MIN_SEARCH_QUERY_LENGTH = 2;
 
-export type SearchMatchMode = 'quick' | 'full';
+type SearchMatchMode = 'quick' | 'full';
 
 export type MinerSearchData = {
   githubId: string;
@@ -116,7 +116,7 @@ const getMinerSearchResults = (
   const results = sortByMatchThenTiebreaker(
     miners,
     query,
-    (miner) => [miner.githubId, miner.githubUsername],
+    (miner) => [miner.githubId, miner.githubUsername, miner.hotkey],
     (miner) => miner.totalScore,
   );
 
@@ -165,7 +165,7 @@ const buildRepoSearchData = (
       return {
         fullName: repo.fullName,
         owner: repo.owner,
-        weight: parseNumber(repo.config?.weight),
+        weight: parseNumber(repo.config?.emissionShare),
         totalScore: stats?.totalScore || 0,
         totalPRs: stats?.totalPRs || 0,
         contributors: stats?.uniqueAuthors.size || 0,

@@ -2,7 +2,7 @@ import { type ContainerProps, Stack } from '@mui/material';
 import React from 'react';
 
 const baseTitle = 'Gittensor';
-export type PageProps = ContainerProps & {
+type PageProps = ContainerProps & {
   title?: string;
 };
 

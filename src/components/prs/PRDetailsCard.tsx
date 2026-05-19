@@ -366,7 +366,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   borderRadius: 1.5,
                   border: `1px solid ${alpha(accent, 0.35)}`,
                   backgroundColor: alpha(accent, 0.1),
-                  cursor: m.isCredibility ? 'help' : 'default',
+                  cursor: m.isCredibility ? 'pointer' : 'default',
                 }}
               >
                 <Typography
@@ -434,6 +434,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
       </Box>
 
       <PRTimeDecayChart
+        repository={repository}
         mergedAt={prDetails.mergedAt}
         prState={prDetails.prState}
         timeDecayMultiplier={prDetails.timeDecayMultiplier}
@@ -506,7 +507,11 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                     slotProps={tooltipSlotProps}
                   >
                     <InfoOutlinedIcon
-                      sx={{ fontSize: '0.75rem', cursor: 'help', opacity: 0.5 }}
+                      sx={{
+                        fontSize: '0.75rem',
+                        cursor: 'pointer',
+                        opacity: 0.5,
+                      }}
                     />
                   </Tooltip>
                 )}
