@@ -7,16 +7,67 @@ export type RepoChanges = {
   emissionShare: string; // bc float
 };
 
+/**
+ * Per-repo overrides for the eligibility / spam gate knobs. Mirrors
+ * gittensor's `RepoEligibilityConfig`. Every field is optional — an absent
+ * field falls back to the global default (see src/utils/repoConfig.ts).
+ *
+ * Keys are snake_case: das-gittensor only camelCases the top-level config
+ * keys, nested objects like this one are passed through verbatim.
+ */
+export type RepoEligibilityConfig = {
+  min_valid_merged_prs?: number;
+  min_credibility?: number;
+  min_token_score_for_base_score?: number;
+  excessive_pr_penalty_base_threshold?: number;
+  open_pr_threshold_token_score?: number;
+  max_open_pr_threshold?: number;
+  min_valid_solved_issues?: number;
+  min_issue_credibility?: number;
+  min_token_score_for_valid_issue?: number;
+  open_issue_spam_base_threshold?: number;
+  open_issue_spam_token_score_per_slot?: number;
+  max_open_issue_threshold?: number;
+};
+
+/** Per-repo overrides for the time-decay curve (nested under `scoring`). */
+type RepoTimeDecayConfig = {
+  grace_period_hours?: number;
+  sigmoid_midpoint_days?: number;
+  sigmoid_steepness?: number;
+  min_multiplier?: number;
+};
+
+/**
+ * Per-repo overrides for the scoring knobs. Mirrors gittensor's
+ * `RepoScoringConfig`. Snake_case keys, same passthrough caveat as
+ * RepoEligibilityConfig.
+ */
+export type RepoScoringConfig = {
+  pr_lookback_days?: number;
+  open_pr_collateral_percent?: number;
+  review_penalty_rate?: number;
+  standard_issue_multiplier?: number;
+  maintainer_issue_multiplier?: number;
+  time_decay?: RepoTimeDecayConfig;
+};
+
 // Raw config blob from das-gittensor /dash/repos and /repos/:repo. Mirrors
 // gittensor's master_repositories.json with shallow camelCase keys; nested
-// object values (e.g. labelMultipliers) keep their inner keys verbatim.
+// object values (labelMultipliers, eligibility, scoring) keep their inner
+// keys verbatim.
 export type RepositoryConfig = {
   emissionShare?: number | string;
   issueDiscoveryShare?: number | string;
+  maintainerCut?: number | string;
+  fixedBaseScore?: number | string;
+  defaultLabelMultiplier?: number;
   additionalAcceptableBranches?: string[] | null;
   mirrorEnabled?: boolean;
   trustedLabelPipeline?: boolean;
   labelMultipliers?: Record<string, number>;
+  eligibility?: RepoEligibilityConfig;
+  scoring?: RepoScoringConfig;
   [key: string]: unknown;
 };
 
@@ -232,6 +283,20 @@ export type MinerRepositoryEvaluation = {
   evaluatedAt: string;
   createdAt: string;
   updatedAt: string;
+};
+
+/**
+ * A per-repository miner evaluation row plus the resolved GitHub login — the
+ * shape returned by `GET /repos/:repo/miners`. One row per active miner that
+ * has a `miner_evaluations` row scoped to the repository.
+ */
+export type RepositoryMiner = MinerRepositoryEvaluation & {
+  githubUsername: string | null;
+  // Miner-wide daily earnings (NOT per-repo) — derived from the metagraph
+  // incentive distribution; the same figure across all of a miner's repos.
+  alphaPerDay?: number;
+  taoPerDay?: number;
+  usdPerDay?: number;
 };
 
 /**

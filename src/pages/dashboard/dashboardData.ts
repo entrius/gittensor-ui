@@ -138,7 +138,7 @@ const toTimestamp = (value?: string | null): number | null => {
 const isWithinWindow = (timestamp: number | null, window: WindowBounds) =>
   timestamp !== null && timestamp >= window.startMs && timestamp < window.endMs;
 
-export const getRangeConfig = (range: PresetTimeRange) => RANGE_CONFIG[range];
+const getRangeConfig = (range: PresetTimeRange) => RANGE_CONFIG[range];
 
 export const getWindowBounds = (
   range: TrendTimeRange,
@@ -153,7 +153,7 @@ export const getWindowBounds = (
   return { startMs: endMs - windowMs, endMs };
 };
 
-export const getPreviousWindowBounds = (
+const getPreviousWindowBounds = (
   range: TrendTimeRange,
   now = new Date(),
 ): WindowBounds | null => {
@@ -173,12 +173,12 @@ export const getPreviousWindowBounds = (
 // The conjunction matters — state_reason alone misses cases where GitHub
 // doesn't set 'completed', and solving_pr.merged_at alone counts not-planned
 // closures with stray PR links.
-export const isResolvedMinerIssue = (issue: MirrorDashboardIssue): boolean =>
+const isResolvedMinerIssue = (issue: MirrorDashboardIssue): boolean =>
   issue.state === 'CLOSED' &&
   issue.state_reason === 'COMPLETED' &&
   !!issue.solving_pr?.merged_at;
 
-export const isResolvedInWindow = (
+const isResolvedInWindow = (
   issue: MirrorDashboardIssue,
   window: WindowBounds,
 ): boolean =>

@@ -14,7 +14,7 @@ import {
   scoreHighlightSx,
 } from './featuredWorkStyles';
 
-export interface FeaturedWorkRepoCardProps {
+interface FeaturedWorkRepoCardProps {
   repo: FeaturedWorkRepo;
   mono: string;
   theme: Theme;

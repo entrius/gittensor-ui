@@ -1,7 +1,7 @@
 // Repository API hooks - uses /repos endpoints
 import { useApiQuery } from './ApiUtils';
 import { type RepositoryMaintainer, type RepositoryIssue } from './models';
-import { type Repository } from './models/Dashboard';
+import { type Repository, type RepositoryMiner } from './models/Dashboard';
 
 /**
  * Helper to create /repos endpoint queries
@@ -47,4 +47,15 @@ export const useRepositoryIssues = (repo: string) =>
   useReposQuery<RepositoryIssue[]>(
     'useRepositoryIssues',
     `/${encodeURIComponent(repo)}/issues`,
+  );
+
+/**
+ * Get the per-repository miner evaluations for a repository — one row per
+ * active miner scored in this repo, with per-repo eligibility/credibility.
+ * @param repo - Full repository name (e.g., "opentensor/btcli")
+ */
+export const useRepositoryMiners = (repo: string) =>
+  useReposQuery<RepositoryMiner[]>(
+    'useRepositoryMiners',
+    `/${encodeURIComponent(repo)}/miners`,
   );

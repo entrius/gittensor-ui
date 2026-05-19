@@ -3,13 +3,13 @@
 // before letting registration submissions through.
 const MIRROR_BASE_URL = import.meta.env.VITE_REACT_APP_MIRROR_BASE_URL;
 
-export interface MirrorHealthRepo {
+interface MirrorHealthRepo {
   repo_full_name: string;
   last_event_at: string | null;
   hours_ago: number | null;
 }
 
-export interface MirrorHealthResponse {
+interface MirrorHealthResponse {
   status: 'ok' | 'error';
   repos?: MirrorHealthRepo[];
 }
@@ -19,7 +19,7 @@ export interface MirrorHealthResponse {
  * non-2xx responses, or network/parse failure so callers can distinguish
  * "couldn't check" from a successful empty result.
  */
-export const fetchMirrorHealth = async (): Promise<MirrorHealthResponse> => {
+const fetchMirrorHealth = async (): Promise<MirrorHealthResponse> => {
   if (!MIRROR_BASE_URL) {
     throw new Error('Mirror base URL is not configured.');
   }

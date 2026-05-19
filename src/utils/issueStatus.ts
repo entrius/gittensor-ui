@@ -1,7 +1,7 @@
 import { alpha } from '@mui/material/styles';
 import { STATUS_COLORS } from '../theme';
 
-export interface IssueStatusMeta {
+interface IssueStatusMeta {
   bgColor: string;
   borderColor: string;
   color: string;
