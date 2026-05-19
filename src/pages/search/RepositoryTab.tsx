@@ -2,7 +2,7 @@ import React from 'react';
 import { Box, Typography } from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
 import { getRankColors } from '../../components/leaderboard/types';
-import { getGithubAvatarSrc } from '../../utils';
+import { formatWeight, getGithubAvatarSrc } from '../../utils';
 import { type DataTableColumn } from '../../components/common/DataTable';
 import SearchResultsCard from './SearchResultsCard';
 import {
@@ -88,7 +88,7 @@ const repositoryColumns: DataTableColumn<RepoSearchData>[] = [
     header: 'Weight',
     width: '14%',
     align: 'right',
-    renderCell: (repo: RepoSearchData) => repo.weight.toFixed(2),
+    renderCell: (repo: RepoSearchData) => formatWeight(repo.weight),
     cellSx: {
       fontWeight: 600,
     },

@@ -15,7 +15,7 @@ import {
   useRepositoryConfig,
 } from '../../api';
 import { RANK_COLORS, STATUS_COLORS } from '../../theme';
-import { formatTokenAmount } from '../../utils/format';
+import { formatTokenAmount, formatWeight } from '../../utils/format';
 import { isMergedPr } from '../../utils/prStatus';
 
 interface RepositoryStatsProps {
@@ -127,7 +127,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
               fontSize: '13px',
             }}
           >
-            {String(repository.config?.emissionShare ?? '')}
+            {formatWeight(repository.config?.emissionShare)}
           </Typography>
         </Box>
 
