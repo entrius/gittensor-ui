@@ -89,3 +89,27 @@ export const credibilityColor = (cred: number): string => {
 
 export const getLowerText = (value: string | null | undefined): string =>
   (value ?? '').toLowerCase();
+
+/**
+ * Format USD per day value with consistent rounding.
+ * Uses toFixed(0) for predictable rounding instead of Math.round()
+ * to avoid inconsistencies between API endpoints.
+ *
+ * @param value - The USD per day value
+ * @param options - Formatting options
+ * @returns Formatted string like "$124/d" or "—"
+ */
+export const formatUsdPerDay = (
+  value: number | undefined,
+  options?: { includeApprox?: boolean; includePeriod?: boolean },
+): string => {
+  const { includeApprox = false, includePeriod = true } = options ?? {};
+
+  if (!value || value <= 0) return '—';
+
+  const rounded = Number(value.toFixed(0));
+  const approx = includeApprox ? '~' : '';
+  const period = includePeriod ? '/d' : '';
+
+  return `${approx}$${rounded.toLocaleString()}${period}`;
+};

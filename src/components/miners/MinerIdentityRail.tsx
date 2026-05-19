@@ -27,6 +27,7 @@ import {
 import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 import { STATUS_COLORS } from '../../theme';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
+import { formatUsdPerDay } from '../../utils/format';
 import MinerInsightsCard from './MinerInsightsCard';
 
 type ViewMode = 'prs' | 'issues';
@@ -434,7 +435,10 @@ const MinerIdentityRail: React.FC<MinerIdentityRailProps> = ({
               color: usdPerDay > 0 ? STATUS_COLORS.success : 'text.primary',
             }}
           >
-            ~${Math.round(usdPerDay).toLocaleString()}
+            {formatUsdPerDay(usdPerDay, {
+              includeApprox: true,
+              includePeriod: false,
+            })}
           </Typography>
           <Typography
             sx={{
@@ -453,8 +457,15 @@ const MinerIdentityRail: React.FC<MinerIdentityRailProps> = ({
             mt: 0.6,
           }}
         >
-          ~${Math.round(usdPerDay * 30).toLocaleString()}/mo · ~$
-          {Math.round(lifetimeUsd).toLocaleString()} lifetime
+          ~$
+          {((usdPerDay || 0) * 30)
+            .toFixed(0)
+            .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+          /mo · ~$
+          {(lifetimeUsd || 0)
+            .toFixed(0)
+            .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}{' '}
+          lifetime
         </Typography>
       </RailCard>
 

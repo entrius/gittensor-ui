@@ -5,6 +5,7 @@ import ReactECharts from 'echarts-for-react';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS, RANK_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
+import { formatUsdPerDay } from '../../utils/format';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import { WatchlistButton } from '../common';
 import { type MinerStats, type LeaderboardVariant, FONTS } from './types';
@@ -61,11 +62,6 @@ const formatScore = (score: number): string =>
         maximumFractionDigits: 2,
       })
     : '0.00';
-
-/** Miner-wide USD/day, shown as a secondary stat. '—' when unavailable —
- *  per-repo views carry no earnings (earnings is a miner-wide figure). */
-const formatUsdPerDay = (usdPerDay: number | undefined): string =>
-  usdPerDay ? `$${Math.round(usdPerDay).toLocaleString()}/d` : '—';
 
 /* ═══════════════════════════════════════════════════════════════════ */
 
@@ -347,7 +343,7 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                     fontFeatureSettings: TABULAR_NUMS,
                   })}
                 >
-                  ${Math.round(miner.usdPerDay || 0).toLocaleString()}
+                  {formatUsdPerDay(miner.usdPerDay, { includePeriod: false })}
                 </Typography>
                 <Typography
                   sx={(theme) => ({
@@ -372,7 +368,11 @@ export const MinerCard: React.FC<MinerCardProps> = ({
                   fontFeatureSettings: TABULAR_NUMS,
                 })}
               >
-                ~${Math.round((miner.usdPerDay || 0) * 30).toLocaleString()}/mo
+                ~$
+                {((miner.usdPerDay || 0) * 30)
+                  .toFixed(0)
+                  .replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
+                /mo
               </Typography>
             </>
           ) : (
@@ -432,7 +432,9 @@ export const MinerCard: React.FC<MinerCardProps> = ({
           scoreLabel={isWatchlist ? 'OSS' : 'Earnings'}
           scoreValue={Number(miner.totalScore)}
           scoreDisplay={
-            isWatchlist ? undefined : formatUsdPerDay(miner.usdPerDay)
+            isWatchlist
+              ? undefined
+              : formatUsdPerDay(miner.usdPerDay, { includePeriod: true })
           }
           isEligible={isDiscoveries ? discoveriesEligible : ossEligible}
           hideScore={isWatchlist}

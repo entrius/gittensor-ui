@@ -3,6 +3,7 @@ import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
 import { useMinerGithubData, useMinerPRs } from '../../api';
 import { CHART_COLORS } from '../../theme';
 import { getGithubAvatarSrc, type SortOrder } from '../../utils/ExplorerUtils';
+import { formatUsdPerDay } from '../../utils/format';
 import { DataTable, type DataTableColumn, WatchlistButton } from '../common';
 import { RankIcon } from './RankIcon';
 import {
@@ -146,7 +147,7 @@ export const MinersList: React.FC<MinersListProps> = ({
               color: earningsHighlighted ? 'status.merged' : 'text.secondary',
             }}
           >
-            ${Math.round(miner.usdPerDay || 0).toLocaleString()}
+            {formatUsdPerDay(miner.usdPerDay, { includePeriod: false })}
           </Typography>
         );
       },
