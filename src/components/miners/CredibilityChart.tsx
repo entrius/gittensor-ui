@@ -31,7 +31,7 @@ const CredibilityChart: React.FC<CredibilityChartProps> = ({
     () => ({
       ...echartsTransparentBackground(),
       title: {
-        text: `${(credibility * 100).toFixed(0)}%`,
+        text: `${(credibility * 100).toFixed(1)}%`,
         subtext: 'Credibility',
         left: 'center',
         top: '38%',
