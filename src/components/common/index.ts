@@ -6,3 +6,4 @@ export * from './DataTable';
 export { default as ConversationTimeline } from './ConversationTimeline';
 export * from './ConversationTimeline';
 export { MarkdownImage } from './MarkdownImage';
+export { ImageLightbox } from './ImageLightbox';

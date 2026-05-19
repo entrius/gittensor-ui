@@ -15,7 +15,7 @@ import rehypeRaw from 'rehype-raw';
 import { formatDate } from '../../utils/format';
 import { getGithubAvatarSrc } from '../../utils/ExplorerUtils';
 import { STATUS_COLORS, scrollbarSx } from '../../theme';
-import { MarkdownImage } from './MarkdownImage';
+import { isImageOnlyLinkChild, MarkdownImage } from './MarkdownImage';
 
 import 'github-markdown-css/github-markdown-dark.css';
 
@@ -23,6 +23,31 @@ const conversationMarkdownComponents = {
   img: (props: React.ImgHTMLAttributes<HTMLImageElement>) => (
     <MarkdownImage {...props} />
   ),
+  a: ({
+    href,
+    children,
+    ...props
+  }: React.AnchorHTMLAttributes<HTMLAnchorElement>) => {
+    if (isImageOnlyLinkChild(children)) {
+      const nodes = React.Children.toArray(children);
+      const only = nodes[0];
+      if (React.isValidElement(only) && only.type === MarkdownImage) {
+        return <>{children}</>;
+      }
+      if (React.isValidElement(only)) {
+        const imgProps =
+          only.props as React.ImgHTMLAttributes<HTMLImageElement>;
+        if (imgProps.src) {
+          return <MarkdownImage src={imgProps.src} alt={imgProps.alt} />;
+        }
+      }
+    }
+    return (
+      <a href={href} target="_blank" rel="noopener noreferrer" {...props}>
+        {children}
+      </a>
+    );
+  },
 };
 
 /** A comment or the body rendered in the conversation timeline. */
