@@ -340,7 +340,7 @@ const PrScoreRow: React.FC<PrScoreRowProps> = memo(({ pr }) => {
                 `tokens ${parseNumber(pr.tokenScore).toFixed(2)}`,
               pr.totalNodesScored != null &&
                 parseNumber(pr.totalNodesScored) > 0 &&
-                `${pr.totalNodesScored} nodes`,
+                `${pr.totalNodesScored} node(s)`,
               pr.structuralCount != null &&
                 parseNumber(pr.structuralCount) > 0 &&
                 `${pr.structuralCount} structural (${parseNumber(pr.structuralScore).toFixed(2)})`,
