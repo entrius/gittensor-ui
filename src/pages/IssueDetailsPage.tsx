@@ -83,7 +83,7 @@ const IssueDetailsPage: React.FC = () => {
           <Typography variant="h6" color="error">
             Issue not found
           </Typography>
-          <BackButton to="/bounties" label="Back to Bounties" />
+          <BackButton to="/bounties" label="Back to Bounties" variant="text" />
         </Box>
       ) : (
         <Box
@@ -101,37 +101,19 @@ const IssueDetailsPage: React.FC = () => {
             <Box
               sx={{
                 display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 1,
-              }}
-            >
-              <BackButton to="/bounties" label="Back to Bounties" mb={0} />
-              <Box sx={{ display: { xs: 'inline-flex', sm: 'none' } }}>
-                <WatchlistButton
-                  category="bounties"
-                  itemKey={String(issue.id)}
-                  size="medium"
-                />
-              </Box>
-            </Box>
-            <Box
-              sx={{
-                display: 'flex',
                 alignItems: 'flex-start',
-                gap: 1,
+                gap: 1.5,
               }}
             >
+              <BackButton to="/bounties" label="Back to Bounties" />
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <IssueHeaderCard issue={issue} />
               </Box>
-              <Box sx={{ display: { xs: 'none', sm: 'inline-flex' } }}>
-                <WatchlistButton
-                  category="bounties"
-                  itemKey={String(issue.id)}
-                  size="medium"
-                />
-              </Box>
+              <WatchlistButton
+                category="bounties"
+                itemKey={String(issue.id)}
+                size="medium"
+              />
             </Box>
 
             {/* Tabs */}

@@ -39,10 +39,10 @@ const PRDetailsPage: React.FC = () => {
     pullRequestNumber ? parseInt(pullRequestNumber) : 0,
   );
 
-  // If no repo or PR number is provided, redirect to OSS contributors (registered route)
+  // If no repo or PR number is provided, redirect to the repositories list
   if (!repository || !pullRequestNumber) {
     if (typeof window !== 'undefined') {
-      navigate('/top-miners', { replace: true });
+      navigate('/repositories', { replace: true });
     }
     return null;
   }
@@ -84,7 +84,11 @@ const PRDetailsPage: React.FC = () => {
           <Typography variant="h6" color="error">
             PR not found
           </Typography>
-          <BackButton to="/repositories" label="Back to Repositories" />
+          <BackButton
+            to="/repositories"
+            label="Back to Repositories"
+            variant="text"
+          />
         </Box>
       ) : (
         <Box
@@ -107,10 +111,9 @@ const PRDetailsPage: React.FC = () => {
               px: { xs: 2, sm: 2, md: 0 },
             }}
           >
-            <BackButton to="/repositories" label="Back to Repositories" />
-
             {/* Header always visible */}
-            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1.5 }}>
+              <BackButton to="/repositories" label="Back to Repositories" />
               <Box sx={{ flex: 1, minWidth: 0 }}>
                 <PRHeader
                   repository={repository}

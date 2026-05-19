@@ -43,11 +43,19 @@ export const useLanguagesAndWeights = () =>
 export const useRepoCommits = () =>
   useDashboardQuery<RepoChanges[]>('useRepoCommits', '/repos/commits');
 
+// das-gittensor's /dash/lines/total responds with `{ linesCommitted }` — and
+// because the value is a SQL SUM it arrives as a string. Consumers unwrap and
+// coerce it (see useDashboardData).
 export const useLinesTotal = (params: { from: string; to: string }) =>
-  useDashboardQuery<number>('useLinesTotal', '/lines/total', undefined, {
-    from: params.from,
-    to: params.to,
-  });
+  useDashboardQuery<{ linesCommitted: number | string }>(
+    'useLinesTotal',
+    '/lines/total',
+    undefined,
+    {
+      from: params.from,
+      to: params.to,
+    },
+  );
 
 export const useInfiniteCommitLog = (options?: {
   refetchInterval?: number;
