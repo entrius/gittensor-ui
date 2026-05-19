@@ -84,7 +84,7 @@ const DashboardFeaturePage: React.FC = () => {
             <DashboardTopContributors
               contributors={featuredContributors}
               isLoading={isLoading}
-              viewAllHref="/top-miners"
+              viewAllHref="/repositories"
             />
 
             <DashboardTopContributors
@@ -92,7 +92,7 @@ const DashboardFeaturePage: React.FC = () => {
               contributors={featuredDiscoveryContributors}
               isLoading={isLoading}
               mode="issues"
-              viewAllHref="/top-miners?timeline=discoveries"
+              viewAllHref="/repositories"
             />
 
             <DashboardFeaturedWorkSection

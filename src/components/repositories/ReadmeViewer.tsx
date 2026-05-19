@@ -26,7 +26,7 @@ interface ReadmeViewerProps {
  * (`.rst`, `.adoc`, `.mediawiki`, `.org`, etc.) and must be inserted as raw
  * HTML — that's the whole point of the fallback (#852).
  */
-export type ReadmeRenderMode = 'markdown' | 'html';
+type ReadmeRenderMode = 'markdown' | 'html';
 
 /**
  * GitHub's "get the README" REST endpoint accepts a plain `Accept` header to
@@ -35,7 +35,7 @@ export type ReadmeRenderMode = 'markdown' | 'html';
  * three formats reported in #852 (`.rst`, `.adoc`, `.mediawiki`) plus the
  * less common `.org`, `.textile`, etc. Centralised so the test pins the URL.
  */
-export function githubReadmeHtmlUrl(repositoryFullName: string): string {
+function githubReadmeHtmlUrl(repositoryFullName: string): string {
   return `https://api.github.com/repos/${repositoryFullName}/readme`;
 }
 
@@ -45,7 +45,7 @@ export function githubReadmeHtmlUrl(repositoryFullName: string): string {
  * fallback only fires when jsDelivr 404s, which means the repo's README is
  * not `.md` or doesn't exist on the requested branch.
  */
-export function jsdelivrReadmeMdUrl(
+function jsdelivrReadmeMdUrl(
   repositoryFullName: string,
   branch: string,
 ): string {

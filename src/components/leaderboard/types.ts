@@ -93,28 +93,3 @@ export const getRepositoryOwnerAvatarBackground = (owner: string) => {
   if (owner === 'bitcoin') return REPO_OWNER_AVATAR_BACKGROUNDS.bitcoin;
   return 'transparent';
 };
-
-export const headerCellStyle = {
-  backgroundColor: 'surface.tooltip',
-  backdropFilter: 'blur(8px)',
-  color: 'text.primary',
-  fontFamily: FONTS.mono,
-  fontWeight: 500,
-  fontSize: '0.75rem',
-  borderBottom: '1px solid',
-  borderColor: 'border.light',
-  height: '48px',
-  py: 1,
-  boxSizing: 'border-box' as const,
-};
-
-export const bodyCellStyle = {
-  color: 'text.primary',
-  fontFamily: FONTS.mono,
-  borderBottom: '1px solid',
-  borderColor: 'border.light',
-  fontSize: '0.75rem',
-  py: 0.75,
-  height: '52px',
-  boxSizing: 'border-box' as const,
-};

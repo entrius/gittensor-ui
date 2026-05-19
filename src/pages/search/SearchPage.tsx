@@ -184,18 +184,17 @@ const SearchPage: React.FC = () => {
         description="Search miners, repositories, PRs, and issues."
       />
       <Box sx={{ px: { xs: 2, md: 3 }, py: 2 }}>
-        <BackButton to="/dashboard" label="Back" mb={2} />
-
-        <Typography
-          variant="h4"
-          sx={(theme) => ({
-            ...theme.typography.sectionTitle,
-            mt: 1,
-            mb: 2,
-          })}
-        >
-          Search
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
+          <BackButton to="/dashboard" label="Back" />
+          <Typography
+            variant="h4"
+            sx={(theme) => ({
+              ...theme.typography.sectionTitle,
+            })}
+          >
+            Search
+          </Typography>
+        </Box>
 
         <GlobalSearchBar />
 
