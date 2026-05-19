@@ -1,4 +1,10 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useRef,
+  useEffect,
+} from 'react';
 import {
   Box,
   Card,
@@ -256,8 +262,17 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
   const [showChart, setShowChart] = useState(false);
   const [useLogScale, setUseLogScale] = useState(true);
 
+  const searchQueryRef = useRef(searchQuery);
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  });
+
   const handleSearchChange = useCallback(
-    (value: string) => setFilter('search', value),
+    (value: string) => {
+      if (value === searchQueryRef.current) return;
+      searchQueryRef.current = value;
+      setFilter('search', value);
+    },
     [setFilter],
   );
 
