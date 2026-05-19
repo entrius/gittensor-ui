@@ -1,7 +1,7 @@
 import type { PullRequestDetails } from '../api/models/Dashboard';
 import { parseNumber } from './ExplorerUtils';
 
-export interface MultiplierPillDef {
+interface MultiplierPillDef {
   key: string;
   label: string;
   value: number;
@@ -10,7 +10,7 @@ export interface MultiplierPillDef {
   tooltipDesc: string;
 }
 
-export interface MultiplierGridEntry {
+interface MultiplierGridEntry {
   label: string;
   value: string;
   isCredibility?: boolean;

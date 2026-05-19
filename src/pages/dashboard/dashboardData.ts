@@ -138,7 +138,7 @@ const toTimestamp = (value?: string | null): number | null => {
 const isWithinWindow = (timestamp: number | null, window: WindowBounds) =>
   timestamp !== null && timestamp >= window.startMs && timestamp < window.endMs;
 
-export const getRangeConfig = (range: PresetTimeRange) => RANGE_CONFIG[range];
+const getRangeConfig = (range: PresetTimeRange) => RANGE_CONFIG[range];
 
 export const getWindowBounds = (
   range: TrendTimeRange,
@@ -153,7 +153,7 @@ export const getWindowBounds = (
   return { startMs: endMs - windowMs, endMs };
 };
 
-export const getPreviousWindowBounds = (
+const getPreviousWindowBounds = (
   range: TrendTimeRange,
   now = new Date(),
 ): WindowBounds | null => {
@@ -173,12 +173,12 @@ export const getPreviousWindowBounds = (
 // The conjunction matters — state_reason alone misses cases where GitHub
 // doesn't set 'completed', and solving_pr.merged_at alone counts not-planned
 // closures with stray PR links.
-export const isResolvedMinerIssue = (issue: MirrorDashboardIssue): boolean =>
+const isResolvedMinerIssue = (issue: MirrorDashboardIssue): boolean =>
   issue.state === 'CLOSED' &&
   issue.state_reason === 'COMPLETED' &&
   !!issue.solving_pr?.merged_at;
 
-export const isResolvedInWindow = (
+const isResolvedInWindow = (
   issue: MirrorDashboardIssue,
   window: WindowBounds,
 ): boolean =>
@@ -339,46 +339,36 @@ export const buildDashboardTrendData = (
   };
 };
 
+// Each PR contributes to exactly one bucket, keyed by its terminal state and
+// the timestamp that produced that state. API does not currently return
+// closedAt for PRs — fall back to prCreatedAt so closed PRs are still windowed.
+const getPrTerminalTimestamp = (
+  pr: CommitLog,
+  status: ReturnType<typeof getPrStatusLabel>,
+): string | null | undefined => {
+  if (status === 'Merged') return pr.mergedAt;
+  if (status === 'Closed') return pr.closedAt ?? pr.prCreatedAt;
+  return pr.prCreatedAt;
+};
+
 const getPrOverviewMetrics = (prs: CommitLog[], window: WindowBounds) => {
-  const statusCounts = {
-    total: 0,
-    merged: 0,
-    open: 0,
-    closed: 0,
-  };
+  const counts = { merged: 0, open: 0, closed: 0 };
 
   prs.forEach((pr) => {
-    const normalizedState = getPrStatusLabel(pr);
-    const createdInWindow = isWithinWindow(toTimestamp(pr.prCreatedAt), window);
-    const mergedInWindow = isWithinWindow(toTimestamp(pr.mergedAt), window);
-    // API does not currently return closedAt for PRs — fall back to
-    // prCreatedAt so closed PRs are still tracked within the window.
-    const closedInWindow = isWithinWindow(
-      toTimestamp(pr.closedAt ?? pr.prCreatedAt),
-      window,
-    );
+    const status = getPrStatusLabel(pr);
+    if (
+      !isWithinWindow(toTimestamp(getPrTerminalTimestamp(pr, status)), window)
+    )
+      return;
 
-    if (createdInWindow) {
-      statusCounts.open += 1;
-      statusCounts.total += 1;
-    }
-
-    if (mergedInWindow) {
-      statusCounts.merged += 1;
-      statusCounts.total += 1;
-    }
-
-    if (normalizedState === 'Closed' && closedInWindow) {
-      statusCounts.closed += 1;
-      statusCounts.total += 1;
-    }
+    if (status === 'Merged') counts.merged += 1;
+    else if (status === 'Closed') counts.closed += 1;
+    else counts.open += 1;
   });
 
   return {
-    total: statusCounts.total,
-    merged: statusCounts.merged,
-    open: statusCounts.open,
-    closed: statusCounts.closed,
+    total: counts.merged + counts.open + counts.closed,
+    ...counts,
   };
 };
 
@@ -790,7 +780,7 @@ const pickTopOssContributor = (
       const mergedPrDiff = (b.totalMergedPrs ?? 0) - (a.totalMergedPrs ?? 0);
       if (mergedPrDiff !== 0) return mergedPrDiff;
 
-      return a.id - b.id;
+      return a.githubId.localeCompare(b.githubId);
     })
     .find(
       (miner) =>
@@ -1013,7 +1003,7 @@ const pickTopDiscoveryMiner = (
     .sort((a, b) => {
       const diff =
         parseNumber(b.issueDiscoveryScore) - parseNumber(a.issueDiscoveryScore);
-      return diff !== 0 ? diff : a.id - b.id;
+      return diff !== 0 ? diff : a.githubId.localeCompare(b.githubId);
     })[0];
 
   if (!top) return undefined;
@@ -1104,7 +1094,7 @@ const pickHighestIssueTokenScoreMiner = (
     .sort((a, b) => {
       const diff =
         parseNumber(b.issueTokenScore) - parseNumber(a.issueTokenScore);
-      return diff !== 0 ? diff : a.id - b.id;
+      return diff !== 0 ? diff : a.githubId.localeCompare(b.githubId);
     })[0];
 
   if (!top) return undefined;

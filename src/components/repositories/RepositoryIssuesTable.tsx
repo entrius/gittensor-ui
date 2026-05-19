@@ -38,6 +38,7 @@ import {
 import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import TablePagination from '../../components/common/TablePagination';
 
 interface RepositoryIssuesTableProps {
   repositoryFullName: string;
@@ -74,6 +75,7 @@ function issueMatchesSearch(
   }
   return false;
 }
+const ISSUE_PAGE_SIZE = 20;
 
 const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
   repositoryFullName,
@@ -96,6 +98,8 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     setSearchQuery('');
     setMobileSearchOpen(false);
   }, [repositoryFullName]);
+
+  const [page, setPage] = useState(0);
 
   const counts = useMemo(() => {
     if (!issues) return { total: 0, open: 0, closed: 0 };
@@ -164,6 +168,21 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     });
     return decorated.map((item) => item.issue);
   }, [searchFilteredIssues, sortKey, sortDirection]);
+
+  // Reset to the first page whenever the result set changes underneath us.
+  useEffect(() => {
+    setPage(0);
+  }, [filter, sortKey, sortDirection]);
+
+  const totalPages = Math.ceil(sortedIssues.length / ISSUE_PAGE_SIZE);
+  const pagedIssues = useMemo(
+    () =>
+      sortedIssues.slice(
+        page * ISSUE_PAGE_SIZE,
+        page * ISSUE_PAGE_SIZE + ISSUE_PAGE_SIZE,
+      ),
+    [sortedIssues, page],
+  );
 
   const handleSort = useCallback(
     (key: SortKey) => {
@@ -632,7 +651,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       >
         <DataTable<RepositoryIssue, SortKey>
           columns={columns}
-          rows={sortedIssues}
+          rows={pagedIssues}
           getRowKey={(issue) =>
             `${issue.number}-${issue.prNumber}-${issue.repositoryFullName}`
           }
@@ -671,6 +690,15 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
             order: sortDirection,
             onChange: handleSort,
           }}
+          pagination={
+            totalPages > 1 ? (
+              <TablePagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+              />
+            ) : undefined
+          }
         />
       </Card>
     </Box>

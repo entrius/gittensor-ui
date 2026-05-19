@@ -14,7 +14,7 @@ import { parseNumber } from '../../utils';
 
 export const MIN_SEARCH_QUERY_LENGTH = 2;
 
-export type SearchMatchMode = 'quick' | 'full';
+type SearchMatchMode = 'quick' | 'full';
 
 export type MinerSearchData = {
   githubId: string;

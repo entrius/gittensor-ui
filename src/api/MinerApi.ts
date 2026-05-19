@@ -1,4 +1,5 @@
 // Miner API hooks - uses /miners endpoints
+import { useMemo } from 'react';
 import {
   useApiQuery,
   useMirrorApiQueries,
@@ -7,6 +8,7 @@ import {
 import {
   type GithubMinerData,
   type MinerEvaluation,
+  type MinerRepositoryEvaluation,
   type CommitLog,
   type MinerIssue,
   type MinerIssuesResponse,
@@ -42,12 +44,63 @@ export const useAllMiners = () =>
 export const getAllMinersQueryKey = () =>
   ['useAllMiners', '/miners', undefined] as const;
 
+// The `miner_evaluations` numeric columns are postgres `numeric`, but the
+// das-gittensor entity types them `float` — TypeORM hands them back as
+// strings on the single-miner endpoint. Coerce the per-repo rows so callers
+// can sort / do arithmetic / call `.toFixed()` without a runtime crash.
+const NUMERIC_REPO_FIELDS: readonly (keyof MinerRepositoryEvaluation)[] = [
+  'id',
+  'uid',
+  'baseTotalScore',
+  'totalScore',
+  'totalCollateralScore',
+  'totalNodesScored',
+  'totalTokenScore',
+  'totalStructuralCount',
+  'totalStructuralScore',
+  'totalLeafCount',
+  'totalLeafScore',
+  'totalOpenPrs',
+  'totalClosedPrs',
+  'totalMergedPrs',
+  'totalPrs',
+  'uniqueReposCount',
+  'credibility',
+  'issueDiscoveryScore',
+  'issueTokenScore',
+  'issueCredibility',
+  'totalSolvedIssues',
+  'totalValidSolvedIssues',
+  'totalClosedIssues',
+  'totalOpenIssues',
+];
+
+const normalizeRepoRow = (
+  row: MinerRepositoryEvaluation,
+): MinerRepositoryEvaluation => {
+  const next = { ...row } as Record<string, unknown>;
+  for (const field of NUMERIC_REPO_FIELDS) {
+    next[field] = Number(row[field]) || 0;
+  }
+  return next as MinerRepositoryEvaluation;
+};
+
 /**
- * Get pre-computed stats for a specific miner
+ * Get pre-computed stats for a specific miner.
  * @param githubId - Numeric GitHub ID (e.g., "583231"), NOT username
  */
-export const useMinerStats = (githubId: string) =>
-  useMinersQuery<MinerEvaluation>('useMinerStats', `/${githubId}`);
+export const useMinerStats = (githubId: string) => {
+  const query = useMinersQuery<MinerEvaluation>(
+    'useMinerStats',
+    `/${githubId}`,
+  );
+  const data = useMemo<MinerEvaluation | undefined>(() => {
+    const raw = query.data;
+    if (!raw?.repositories) return raw;
+    return { ...raw, repositories: raw.repositories.map(normalizeRepoRow) };
+  }, [query.data]);
+  return { ...query, data };
+};
 
 /**
  * Get all pull requests for a specific miner
@@ -84,24 +137,33 @@ export const useMinerGithubData = (githubId: string, enabled?: boolean) =>
  * raw snake_case payload — `select` unwraps `{ issues: [...] }` for callers.
  * @param githubId - Numeric GitHub ID (e.g., "583231"), NOT username
  * @param enabled - Optional flag to enable/disable the query
+ * @param since - Optional ISO timestamp forwarded as `?since=` to the mirror.
+ *                Omit for the mirror's default 35-day window.
  */
-export const useMinerIssues = (githubId: string, enabled?: boolean) =>
+export const useMinerIssues = (
+  githubId: string,
+  enabled?: boolean,
+  since?: string,
+) =>
   useMirrorApiQuery<MinerIssuesResponse, MinerIssue[]>(
     'useMinerIssues',
-    `/miners/${githubId}/issues`,
+    since
+      ? `/miners/${githubId}/issues?since=${encodeURIComponent(since)}`
+      : `/miners/${githubId}/issues`,
     {
       enabled,
       select: (data) => data?.issues ?? [],
     },
   );
 
+/** Subnet-launch `since` (2025-12-01 UTC). Module-level keeps the cache key stable. */
+export const MINER_ISSUES_FULL_HISTORY_SINCE_ISO = new Date(
+  Date.UTC(2025, 11, 1, 0, 0, 0),
+).toISOString();
+
 /**
- * Fan-out variant: one mirror-API call per miner, useful for the watchlist
- * and the dashboard issues-trend aggregation.
- *
- * `since` (ISO timestamp) is forwarded to the mirror as a query param. Omit
- * for the mirror's default 35-day window — this also keeps the cache key
- * stable across callers that don't need a custom range.
+ * One mirror call per miner. ⚠️ Omitting `since` returns OPEN-only rows —
+ * pass `MINER_ISSUES_FULL_HISTORY_SINCE_ISO` to include closed/resolved.
  */
 export const useMinersIssues = (
   githubIds: string[],

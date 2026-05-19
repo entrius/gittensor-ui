@@ -1,6 +1,7 @@
 import React, {
   useCallback,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   useRef,
@@ -72,6 +73,7 @@ import {
   useIssues,
   useAllPrs,
   useMinersIssues,
+  MINER_ISSUES_FULL_HISTORY_SINCE_ISO,
 } from '../api';
 import { useFiltersPanelOpenInUrl } from '../hooks/useFiltersPanelUrlState';
 import type {
@@ -118,7 +120,9 @@ import FilterButton from '../components/FilterButton';
 import {
   FONTS,
   getRepositoryOwnerAvatarBackground,
+  type RepoStats,
 } from '../components/leaderboard/types';
+import { RepositoryCard } from '../components/leaderboard/RepositoryCard';
 import {
   echartsAxisTooltipChrome,
   echartsFontFamily,
@@ -154,9 +158,9 @@ const TAB_DISCOVERY: Record<
   { label: string; path: string; hint: string }
 > = {
   miners: {
-    label: 'leaderboard',
-    path: '/top-miners',
-    hint: 'Browse the leaderboard and star miners you want to track.',
+    label: 'repositories',
+    path: '/repositories',
+    hint: 'Open a repository and star miners you want to track.',
   },
   repos: {
     label: 'repositories',
@@ -174,8 +178,8 @@ const TAB_DISCOVERY: Record<
     hint: 'Star a pull request, miner, or repository to populate this tab.',
   },
   issues: {
-    label: 'leaderboard',
-    path: '/top-miners',
+    label: 'repositories',
+    path: '/repositories',
     hint: 'Star miners to aggregate their issues here.',
   },
 };
@@ -580,10 +584,18 @@ const OptionsLabel: React.FC<{ children: React.ReactNode }> = ({
 
 /* ─── WatchlistPortal: sidebar panel on xl, popover button otherwise ─── */
 const WatchlistPortal: React.FC<WatchlistOptionsButtonProps> = (props) => {
-  const [target, setTarget] = useState<HTMLElement | null>(null);
+  // Resolve the sidebar portal target synchronously. A tab switch remounts
+  // this component; without the lazy initializer `target` is null on the
+  // first render, so the options flash inline at the top of the content
+  // before the effect moves them into the sidebar.
+  const [target, setTarget] = useState<HTMLElement | null>(() =>
+    document.getElementById('tabs-options-portal'),
+  );
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
 
-  useEffect(() => {
+  // On the very first page load the portal node is committed after this
+  // component's first render — pick it up before paint to avoid a flash.
+  useLayoutEffect(() => {
     setTarget(document.getElementById('tabs-options-portal'));
   }, []);
 
@@ -1405,218 +1417,26 @@ const ReposViewModeToggle: React.FC<{
 const formatRepoMetric = (value: number, decimals = 0): string =>
   value > 0 ? (decimals > 0 ? value.toFixed(decimals) : String(value)) : '-';
 
-const RepoMetricCell: React.FC<{ label: string; value: string }> = ({
-  label,
-  value,
-}) => (
-  <Box
-    sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'flex-start',
-      minWidth: 0,
-    }}
-  >
-    <Typography
-      sx={(theme) => ({
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.65rem',
-        color: theme.palette.text.tertiary,
-        textTransform: 'uppercase',
-        letterSpacing: '0.04em',
-        whiteSpace: 'nowrap',
-      })}
-    >
-      {label}
-    </Typography>
-    <Typography
-      sx={{
-        fontFamily: '"JetBrains Mono", monospace',
-        fontSize: '0.9rem',
-        fontWeight: 600,
-        color: value === '-' ? 'text.secondary' : 'text.primary',
-        lineHeight: 1.2,
-      }}
-    >
-      {value}
-    </Typography>
-  </Box>
-);
-
-const RepoCard: React.FC<{ repo: WatchedRepoStats; maxWeight: number }> = ({
-  repo,
-  maxWeight,
-}) => {
-  const owner = repo.fullName.split('/')[0] || '';
-  const weight = parseFloat(String(repo.config?.emissionShare ?? 0));
-  const weightPct =
-    maxWeight > 0 ? Math.max(0, Math.min(100, (weight / maxWeight) * 100)) : 0;
-
-  return (
-    <Card
-      elevation={0}
-      sx={(theme) => ({
-        p: 2,
-        height: '100%',
-        borderRadius: 2,
-        border: '1px solid',
-        borderColor: theme.palette.border.light,
-        backgroundColor: theme.palette.surface.transparent,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 1.5,
-        cursor: 'pointer',
-        transition: 'all 0.2s',
-        '&:hover': {
-          backgroundColor: theme.palette.surface.light,
-          borderColor: theme.palette.border.medium,
-        },
-      })}
-    >
-      {/* Header: avatar + full name + status pill + star */}
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}>
-        <Avatar
-          src={getRepositoryOwnerAvatarSrc(owner)}
-          alt={owner}
-          sx={(theme) => ({
-            width: 28,
-            height: 28,
-            flexShrink: 0,
-            border: '1px solid',
-            borderColor: theme.palette.border.medium,
-            backgroundColor: getRepositoryOwnerAvatarBackground(owner),
-          })}
-        />
-        <LinkBox
-          href={getRepoHref(repo)}
-          linkState={{ backLabel: 'Back to Watchlist' }}
-          sx={{ flex: 1, minWidth: 0, display: 'block' }}
-        >
-          <Tooltip title={repo.fullName} placement="top" arrow>
-            <Typography
-              sx={{
-                fontFamily: '"JetBrains Mono", monospace',
-                fontSize: '0.85rem',
-                fontWeight: 500,
-                color: 'text.primary',
-                overflow: 'hidden',
-                textOverflow: 'ellipsis',
-                whiteSpace: 'nowrap',
-              }}
-            >
-              {repo.fullName}
-            </Typography>
-          </Tooltip>
-        </LinkBox>
-        <WatchlistButton
-          category="repos"
-          itemKey={repo.fullName}
-          size="small"
-        />
-      </Box>
-
-      {/* Weight + progress bar */}
-      <Box>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            mb: 0.5,
-          }}
-        >
-          <Typography
-            sx={(theme) => ({
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '0.65rem',
-              color: theme.palette.text.tertiary,
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-            })}
-          >
-            Weight
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: '"JetBrains Mono", monospace',
-              fontSize: '0.75rem',
-              fontWeight: 600,
-              color: 'text.primary',
-            }}
-          >
-            {weight.toFixed(2)}
-          </Typography>
-        </Box>
-        <Box
-          aria-hidden="true"
-          sx={(theme) => ({
-            position: 'relative',
-            height: 4,
-            borderRadius: 2,
-            backgroundColor: alpha(theme.palette.text.primary, 0.08),
-            overflow: 'hidden',
-          })}
-        >
-          <Box
-            sx={(theme) => ({
-              position: 'absolute',
-              inset: 0,
-              width: `${weightPct}%`,
-              backgroundColor: theme.palette.primary.main,
-              borderRadius: 2,
-              transition: 'width 0.3s ease',
-            })}
-          />
-        </Box>
-      </Box>
-
-      {/* OSS + Issue discovery metrics — two rows separated by a subtle divider */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', pt: 0.5 }}>
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-            gap: 1.5,
-          }}
-        >
-          <RepoMetricCell
-            label="OSS Score"
-            value={formatRepoMetric(repo.totalScore, 2)}
-          />
-          <RepoMetricCell label="PRs" value={formatRepoMetric(repo.totalPRs)} />
-          <RepoMetricCell
-            label="Contributors"
-            value={formatRepoMetric(repo.uniqueMiners.size)}
-          />
-        </Box>
-        <Box
-          sx={(theme) => ({
-            borderTop: '1px solid',
-            borderColor: theme.palette.border.subtle,
-            mt: 1.25,
-            pt: 1.25,
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3, minmax(0, 1fr))',
-            gap: 1.5,
-          })}
-        >
-          <RepoMetricCell
-            label="Issue score"
-            value={formatRepoMetric(repo.discoveryScore, 2)}
-          />
-          <RepoMetricCell
-            label="Issues"
-            value={formatRepoMetric(repo.discoveryIssues)}
-          />
-          <RepoMetricCell
-            label="Contributors"
-            value={formatRepoMetric(repo.discoveryContributors.size)}
-          />
-        </Box>
-      </Box>
-    </Card>
-  );
-};
+/** Adapt a watched repo row to the shared {@link RepositoryCard} `RepoStats` shape. */
+const watchedRepoToStats = (
+  repo: WatchedRepoStats,
+  rank: number,
+): RepoStats => ({
+  repository: repo.fullName,
+  totalScore: repo.totalScore,
+  totalPRs: repo.totalPRs,
+  uniqueMiners: repo.uniqueMiners,
+  weight: parseFloat(String(repo.config?.emissionShare ?? 0)) || 0,
+  rank,
+  mirrorEnabled: repo.config?.mirrorEnabled,
+  discoveryScore: repo.discoveryScore,
+  discoveryIssues: repo.discoveryIssues,
+  discoveryContributors: repo.discoveryContributors,
+  issueDiscoveryShare:
+    parseFloat(String(repo.config?.issueDiscoveryShare ?? 0)) || 0,
+  trustedLabelPipeline: repo.config?.trustedLabelPipeline,
+  labelMultipliers: repo.config?.labelMultipliers,
+});
 
 const ROWS_PER_PAGE = 60; // If we set this to 50, tile mode displays 2 cards with an empty slot in the last row.
 
@@ -1988,16 +1808,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   }, [paged, useLogScale, theme, repoRankByKey]);
 
   return (
-    <Card
-      elevation={0}
-      sx={{
-        borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'border.light',
-        backgroundColor: 'transparent',
-        overflow: 'hidden',
-      }}
-    >
+    <Box sx={{ width: '100%' }}>
       <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
         {({ draftValue, setDraftValue }) => (
           <WatchlistPortal
@@ -2177,7 +1988,15 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                   sx={{ display: 'flex' }}
                 >
                   <Box sx={{ width: '100%' }}>
-                    <RepoCard repo={repo} maxWeight={maxWeight} />
+                    <RepositoryCard
+                      repo={watchedRepoToStats(
+                        repo,
+                        repoRankByKey.get(repo.fullName.toLowerCase()) ?? 0,
+                      )}
+                      maxWeight={maxWeight}
+                      href={getRepoHref(repo)}
+                      linkState={{ backLabel: 'Back to Watchlist' }}
+                    />
                   </Box>
                 </Grid>
               ))}
@@ -2220,7 +2039,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           onPageChange={setPage}
         />
       ) : null}
-    </Card>
+    </Box>
   );
 };
 
@@ -2647,17 +2466,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   }, [sidebarFixedRight, page, filtered.length]);
 
   return (
-    <Card
-      elevation={0}
-      sx={{
-        borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'border.light',
-        backgroundColor: 'transparent',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
+    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
       <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
         {({ draftValue, setDraftValue }) => (
           <WatchlistPortal
@@ -2891,7 +2700,7 @@ const BountiesList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           onPageChange={setPage}
         />
       ) : null}
-    </Card>
+    </Box>
   );
 };
 
@@ -3559,17 +3368,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   }, [sidebarFixedRight, page, filtered.length]);
 
   return (
-    <Card
-      elevation={0}
-      sx={{
-        borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'border.light',
-        backgroundColor: 'transparent',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
+    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Compact Options trigger */}
       <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
         {({ draftValue, setDraftValue }) => (
@@ -3783,7 +3582,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
           onPageChange={setPage}
         />
       ) : null}
-    </Card>
+    </Box>
   );
 };
 
@@ -4302,7 +4101,11 @@ const IssueCard: React.FC<{
 };
 
 const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
-  const issueQueries = useMinersIssues(minerIds, minerIds.length > 0);
+  const issueQueries = useMinersIssues(
+    minerIds,
+    minerIds.length > 0,
+    MINER_ISSUES_FULL_HISTORY_SINCE_ISO,
+  );
   const sidebarFixedRight = useWatchlistSidebarFixedRight();
 
   const { ids: starredIssueIds } = useWatchlist('issues');
@@ -4500,17 +4303,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
   }, [sidebarFixedRight, page, filtered.length]);
 
   return (
-    <Card
-      elevation={0}
-      sx={{
-        borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'border.light',
-        backgroundColor: 'transparent',
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
+    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
       {/* Compact Options trigger */}
       <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
         {({ draftValue, setDraftValue }) => (
@@ -4671,7 +4464,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
           onPageChange={setPage}
         />
       ) : null}
-    </Card>
+    </Box>
   );
 };
 

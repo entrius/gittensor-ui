@@ -1,4 +1,4 @@
-export interface PrStatusLike {
+interface PrStatusLike {
   mergedAt?: string | null;
   prState?: string | null;
 }

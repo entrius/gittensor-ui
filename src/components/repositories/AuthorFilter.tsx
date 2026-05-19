@@ -30,7 +30,7 @@ interface AuthorOption {
   status: AuthorStatus;
 }
 
-export interface AuthorFilterProps<T> {
+interface AuthorFilterProps<T> {
   items: T[];
   getAuthor: (item: T) => string | null | undefined;
   getGithubId: (item: T) => string | null | undefined;

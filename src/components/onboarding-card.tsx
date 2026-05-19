@@ -4,7 +4,7 @@ import { alpha, SxProps, Theme } from '@mui/material/styles';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import { useLinkBehavior } from './common/linkBehavior';
 
-export type OnboardingCardContent = {
+type OnboardingCardContent = {
   kicker: string;
   headline: React.ReactNode;
   body: React.ReactNode;

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
-import { useGeneralConfig } from '../../api';
+import { useGeneralConfig, useRepositoryConfig } from '../../api';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import {
   echartsAxisTooltipChrome,
@@ -11,7 +11,6 @@ import {
   echartsTransparentBackground,
 } from '../../utils/echarts/gittensorChartTheme';
 import {
-  PR_LOOKBACK_DAYS,
   buildDecayCurve,
   buildDecayProjection,
   buildDecaySubline,
@@ -21,6 +20,8 @@ import {
 } from './prTimeDecayModel';
 
 interface PRTimeDecayChartProps {
+  /** Full repo name (`owner/repo`) — drives the per-repo decay hyperparameters. */
+  repository: string;
   mergedAt: string | null;
   prState: string;
   timeDecayMultiplier?: string | number | null;
@@ -152,11 +153,15 @@ function buildTooltip(
   };
 }
 
-function buildXAxis(axis: CartesianAxisColors, fontFamily: string) {
+function buildXAxis(
+  axis: CartesianAxisColors,
+  fontFamily: string,
+  lookbackDays: number,
+) {
   return {
     type: 'value',
     min: 0,
-    max: PR_LOOKBACK_DAYS,
+    max: lookbackDays,
     name: 'days since merge',
     nameLocation: 'middle',
     nameGap: 22,
@@ -252,13 +257,14 @@ function buildChartOption(
     ...echartsTransparentBackground(),
     grid: { left: 44, right: 16, top: 28, bottom: 36 },
     tooltip: buildTooltip(theme, projection.preDecayScore, mutedHex),
-    xAxis: buildXAxis(axis, fontFamily),
+    xAxis: buildXAxis(axis, fontFamily, params.lookbackDays),
     yAxis: buildYAxis(axis),
     series: [buildSeries(theme, axis, params, seriesData, marker)],
   };
 }
 
 function PRTimeDecayChart({
+  repository,
   mergedAt,
   prState,
   timeDecayMultiplier,
@@ -266,9 +272,10 @@ function PRTimeDecayChart({
 }: PRTimeDecayChartProps) {
   const theme = useTheme();
   const { data: generalConfig } = useGeneralConfig();
+  const { data: repoData } = useRepositoryConfig(repository);
   const params = useMemo(
-    () => resolveDecayParams(generalConfig),
-    [generalConfig],
+    () => resolveDecayParams(generalConfig, repoData?.config),
+    [generalConfig, repoData],
   );
   const projection = useMemo(
     () =>
