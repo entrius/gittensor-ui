@@ -495,8 +495,9 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         }}
         sx={{
           mt: 2,
-          width: { xs: '100%', sm: 'auto' },
-          maxWidth: { xs: '100%', sm: 400 },
+          mx: { xs: -2, sm: 0 },
+          width: { xs: 'calc(100% + 32px)', sm: 'auto' },
+          maxWidth: { xs: 'calc(100% + 32px)', sm: 400 },
           minWidth: { xs: 0, sm: 350 },
           '& .MuiOutlinedInput-root': {
             fontSize: '0.8rem',
