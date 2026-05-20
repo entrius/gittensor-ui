@@ -106,7 +106,7 @@ import {
 } from '../utils/prStatus';
 import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
-import { formatDate, formatTokenAmount } from '../utils/format';
+import { formatDate, formatTokenAmount, formatWeight } from '../utils/format';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import theme, {
   CHART_COLORS,
@@ -1191,7 +1191,7 @@ const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
     cellSx: repoCellSx,
     renderCell: (repo) => (
       <Typography sx={{ fontSize: '0.75rem', fontWeight: 600 }}>
-        {parseFloat(String(repo.config?.emissionShare ?? 0)).toFixed(2)}
+        {formatWeight(repo.config?.emissionShare)}
       </Typography>
     ),
   },
@@ -1752,7 +1752,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 ${statRow('Issue score:', item.discoveryScore.toFixed(2))}
                 ${statRow('Issues:', String(item.discoveryIssues))}
                 ${statRow('Issue contributors:', String(item.discoveryContributors))}
-                ${statRow('Weight:', item.weight.toFixed(2))}
+                ${statRow('Weight:', formatWeight(item.weight))}
               </div>
             </div>
           `;
@@ -1789,7 +1789,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
         axisLabel: {
           color: textColor,
           fontSize: 11,
-          formatter: (value: number) => value.toFixed(2),
+          formatter: (value: number) => formatWeight(value),
         },
         splitLine: {
           lineStyle: { color: gridColor, type: 'dashed', opacity: 0.5 },

@@ -23,6 +23,21 @@ export const formatTokenAmount = (
 };
 
 /**
+ * Format a weight/share value: round to at most `maxDecimals` decimal places
+ * and trim trailing zeros (e.g. 0.00350 → "0.0035", 1.0 → "1", 1.5 → "1.5").
+ */
+export const formatWeight = (
+  value: string | number | null | undefined,
+  maxDecimals: number = 5,
+): string => {
+  if (value === null || value === undefined) return '0';
+  const num = typeof value === 'string' ? parseFloat(value) : value;
+  if (!Number.isFinite(num)) return '0';
+  const fixed = num.toFixed(maxDecimals);
+  return fixed.includes('.') ? fixed.replace(/\.?0+$/, '') : fixed;
+};
+
+/**
  * Format a USD estimate value for display.
  *
  * @param value - The USD value to format

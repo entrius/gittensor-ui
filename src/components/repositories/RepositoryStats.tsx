@@ -14,7 +14,7 @@ import {
   useRepoBountySummary,
   useRepositoryConfig,
 } from '../../api';
-import { formatTokenAmount } from '../../utils/format';
+import { formatTokenAmount, formatWeight } from '../../utils/format';
 import { isMergedPr } from '../../utils/prStatus';
 
 interface RepositoryStatsProps {
@@ -126,7 +126,7 @@ const RepositoryStats: React.FC<RepositoryStatsProps> = ({
               fontSize: '13px',
             }}
           >
-            {String(repository.config?.emissionShare ?? '')}
+            {formatWeight(repository.config?.emissionShare)}
           </Typography>
         </Box>
 
