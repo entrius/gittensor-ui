@@ -15,6 +15,7 @@ import VisibilityIcon from '@mui/icons-material/Visibility';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import FolderCopyIcon from '@mui/icons-material/FolderCopy';
 import SchoolIcon from '@mui/icons-material/School';
+import PublicIcon from '@mui/icons-material/Public';
 import { useLinkBehavior } from '../common/linkBehavior';
 import { useWatchlistTotalCount } from '../../hooks/useWatchlist';
 
@@ -85,6 +86,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
   const navItems = [
     { label: 'dashboard', path: '/dashboard', icon: <DashboardIcon /> },
     { label: 'repositories', path: '/repositories', icon: <FolderCopyIcon /> },
+    { label: 'ecosystem', path: '/ecosystem', icon: <PublicIcon /> },
     {
       label: 'watchlist',
       path: '/watchlist',

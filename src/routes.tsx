@@ -28,6 +28,7 @@ const WatchlistPage = React.lazy(() => import('./pages/WatchlistPage'));
 const RepositoryRegistrationPage = React.lazy(
   () => import('./pages/RepositoryRegistrationPage'),
 );
+const EcosystemPage = React.lazy(() => import('./pages/EcosystemPage'));
 
 // 404 page
 const NotFoundPage = React.lazy(() => import('./pages/NotFoundPage'));
@@ -108,6 +109,11 @@ const routesArray: AppRoute[] = [
     name: 'repository-registration',
     path: '/repository-registration',
     element: <RepositoryRegistrationPage />,
+  },
+  {
+    name: 'ecosystem',
+    path: '/ecosystem',
+    element: <EcosystemPage />,
   },
 
   // 404 catch-all route (must be last)
