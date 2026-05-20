@@ -111,6 +111,12 @@ const isPrStatusFilter = (value: string | null): value is PrStatusFilter =>
 const prRowKey = (pr: CommitLog): string =>
   `${pr.repository}-${pr.pullRequestNumber}-${pr.prCreatedAt ?? ''}`;
 
+const getPrDateLabel = (pr: CommitLog): string => {
+  if (pr.mergedAt) return formatDate(pr.mergedAt);
+  if (pr.prState === 'CLOSED') return formatDate(pr.closedAt || pr.prCreatedAt);
+  return formatDate(pr.prCreatedAt);
+};
+
 interface MinerPRsTableProps {
   githubId: string;
 }
@@ -482,12 +488,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         fontSize: { xs: '0.75rem', sm: '0.85rem' },
         color: (theme) => alpha(theme.palette.text.primary, 0.7),
       },
-      renderCell: (pr) =>
-        pr.mergedAt
-          ? formatDate(pr.mergedAt)
-          : pr.prState === 'CLOSED'
-            ? 'Closed'
-            : 'Open',
+      renderCell: (pr) => getPrDateLabel(pr),
     },
     {
       key: 'watch',
