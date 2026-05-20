@@ -55,6 +55,7 @@ import {
 import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import {
   compareByWatchlist,
+  formatWeight,
   getRepositoryOwnerAvatarSrc,
   truncateText,
 } from '../../utils';
@@ -585,7 +586,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 ${statRow('Issue score:', item.discoveryScore.toFixed(2))}
                 ${statRow('Issues:', String(item.discoveryIssues))}
                 ${statRow('Issue contributors:', String(item.discoveryContributors))}
-                ${statRow('Weight:', item.weight.toFixed(2))}
+                ${statRow('Weight:', formatWeight(item.weight))}
               </div>
             </div>
           `;
@@ -641,7 +642,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
           fontSize: 11,
           formatter: (value: number) => {
             if (value >= 1000) return `${(value / 1000).toFixed(1)}k`;
-            if (sortColumn === 'weight') return value.toFixed(2);
+            if (sortColumn === 'weight') return formatWeight(value);
             if (
               sortColumn === 'totalPRs' ||
               sortColumn === 'contributors' ||
@@ -973,23 +974,21 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             >
               {(owner[0] || '?').toUpperCase()}
             </Avatar>
-            <Tooltip title={repo.repository || ''} placement="top">
-              <Typography
-                component="span"
-                sx={{
-                  color: 'text.primary',
-                  fontWeight: 500,
-                  transition: 'color 0.2s',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  maxWidth: '100%',
-                  display: 'inline-block',
-                }}
-              >
-                {truncateText(repo.repository || '', 40)}
-              </Typography>
-            </Tooltip>
+            <Typography
+              component="span"
+              sx={{
+                color: 'text.primary',
+                fontWeight: 500,
+                transition: 'color 0.2s',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                maxWidth: '100%',
+                display: 'inline-block',
+              }}
+            >
+              {truncateText(repo.repository || '', 40)}
+            </Typography>
           </Box>
         );
       },
@@ -1009,7 +1008,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
             color: 'text.primary',
           }}
         >
-          {repo.weight.toFixed(2)}
+          {formatWeight(repo.weight)}
         </Typography>
       ),
     },

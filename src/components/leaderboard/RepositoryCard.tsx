@@ -4,7 +4,7 @@ import { Avatar, Box, Card, Divider, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import { WatchlistButton } from '../common';
-import { getRepositoryOwnerAvatarSrc } from '../../utils';
+import { formatWeight, getRepositoryOwnerAvatarSrc } from '../../utils';
 import { RankIcon } from './RankIcon';
 import {
   FONTS,
@@ -220,7 +220,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
       <ConfigBar
         label="Weight"
         value={repo.weight}
-        display={repo.weight.toFixed(2)}
+        display={formatWeight(repo.weight)}
         pct={weightPct}
         accent="primary"
       />
@@ -228,7 +228,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
       <ConfigBar
         label="Issue Discovery"
         value={repo.issueDiscoveryShare ?? 0}
-        display={(repo.issueDiscoveryShare ?? 0).toFixed(2)}
+        display={formatWeight(repo.issueDiscoveryShare ?? 0)}
         pct={Math.max(0, Math.min(100, (repo.issueDiscoveryShare ?? 0) * 100))}
         accent="discovery"
       />
