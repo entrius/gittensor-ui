@@ -111,10 +111,14 @@ const isPrStatusFilter = (value: string | null): value is PrStatusFilter =>
 const prRowKey = (pr: CommitLog): string =>
   `${pr.repository}-${pr.pullRequestNumber}-${pr.prCreatedAt ?? ''}`;
 
+const getPrDateValue = (pr: CommitLog): string => {
+  if (pr.mergedAt) return pr.mergedAt;
+  if (pr.prState === 'CLOSED') return pr.closedAt || pr.prCreatedAt || '';
+  return pr.prCreatedAt || '';
+};
+
 const getPrDateLabel = (pr: CommitLog): string => {
-  if (pr.mergedAt) return formatDate(pr.mergedAt);
-  if (pr.prState === 'CLOSED') return formatDate(pr.closedAt || pr.prCreatedAt);
-  return formatDate(pr.prCreatedAt);
+  return formatDate(getPrDateValue(pr));
 };
 
 interface MinerPRsTableProps {
@@ -240,8 +244,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           cmp = a.additions + a.deletions - (b.additions + b.deletions);
           break;
         case 'date': {
-          const da = a.mergedAt || a.prCreatedAt || '';
-          const db = b.mergedAt || b.prCreatedAt || '';
+          const da = getPrDateValue(a);
+          const db = getPrDateValue(b);
           cmp = da.localeCompare(db);
           break;
         }
