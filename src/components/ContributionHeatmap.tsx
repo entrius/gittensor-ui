@@ -15,7 +15,7 @@ interface ContributionData {
 
 interface ContributionHeatmapProps {
   data: ContributionData[];
-  contributionsLast30Days: number;
+  contributionsShown: number;
   totalDaysShown: number;
   subtitle?: string;
   footerText?: string;
@@ -28,9 +28,9 @@ interface ContributionHeatmapProps {
 
 const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
   data,
-  contributionsLast30Days,
+  contributionsShown,
   totalDaysShown,
-  subtitle = 'network contribution(s) in the last 30 days',
+  subtitle = `network contribution(s) in the last ${totalDaysShown} day(s)`,
   footerText,
   emptyTitle = 'No contributions yet',
   emptySubtitle = 'Activity will appear here once PRs are merged',
@@ -55,7 +55,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
             lineHeight: 1,
           }}
         >
-          {contributionsLast30Days.toLocaleString()}
+          {contributionsShown.toLocaleString()}
         </Typography>
         <Typography
           variant="body2"

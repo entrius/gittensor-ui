@@ -356,12 +356,12 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
   };
 
   // Calculate contribution heatmap data
-  const { contributionData, contributionsLast30Days, totalDaysShown } =
+  const { contributionData, contributionsShown, totalDaysShown } =
     useMemo(() => {
       if (!prs || prs.length === 0) {
         return {
           contributionData: [],
-          contributionsLast30Days: 0,
+          contributionsShown: 0,
           totalDaysShown: 0,
         };
       }
@@ -385,9 +385,6 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
         dataMap.set(format(subDays(today, i), 'yyyy-MM-dd'), 0);
       }
 
-      let last30Count = 0;
-      const thirtyDaysAgo = subDays(today, 30);
-
       prs.forEach((pr) => {
         if (!pr.mergedAt) return;
         const date = new Date(pr.mergedAt);
@@ -397,8 +394,12 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
         if (dataMap.has(dateStr)) {
           dataMap.set(dateStr, (dataMap.get(dateStr) || 0) + 1);
         }
-        if (date >= thirtyDaysAgo) last30Count++;
       });
+
+      const shownCount = Array.from(dataMap.values()).reduce(
+        (total, count) => total + count,
+        0
+      );
 
       const data = Array.from(dataMap.entries())
         .map(([date, count]) => {
@@ -413,7 +414,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
 
       return {
         contributionData: data,
-        contributionsLast30Days: last30Count,
+        contributionsShown: shownCount,
         totalDaysShown: daysToShow,
       };
     }, [prs]);
@@ -660,9 +661,9 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
             >
               <ContributionHeatmap
                 data={contributionData}
-                contributionsLast30Days={contributionsLast30Days}
+                contributionsShown={contributionsShown}
                 totalDaysShown={totalDaysShown}
-                subtitle="contribution(s) in the last 30 days"
+                subtitle={`contribution(s) in the last ${totalDaysShown} day(s)`}
                 footerText="* Activity based on merged PRs in Gittensor-tracked repositories"
                 bare
                 selectedDate={selectedDate}
