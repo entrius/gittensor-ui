@@ -36,7 +36,7 @@ import TuneIcon from '@mui/icons-material/Tune';
 import GroupsIcon from '@mui/icons-material/Groups';
 import { RANK_COLORS, STATUS_COLORS } from '../theme';
 import { Page } from '../components/layout';
-import { useReposAndWeights, useRepoBountySummary } from '../api';
+import { useAllPrs, useReposAndWeights, useRepoBountySummary } from '../api';
 import {
   RepositoryPRsTable,
   RepositoryIssuesTable,
@@ -46,6 +46,7 @@ import {
   ReadmeViewer,
   RepositoryStats,
   RepositoryPrActivityChart,
+  MinerActivityTrendChart,
   ContributingViewer,
   RepositoryMaintainers,
   RepositoryCheckTab,
@@ -213,6 +214,7 @@ const RepositoryDetailsPage: React.FC = () => {
   const repo = searchParams.get('name');
   const tabValue = tabIndexFromSearchParam(searchParams.get('tab'));
   const { data: repos, isLoading: isLoadingRepos } = useReposAndWeights();
+  const { data: allPrs, isLoading: isLoadingPrs } = useAllPrs();
   const { data: bountySummary } = useRepoBountySummary(repo || '');
   const trackedRepo = repos?.find(
     (r) => r.fullName.toLowerCase() === (repo ?? '').toLowerCase(),
@@ -648,6 +650,15 @@ const RepositoryDetailsPage: React.FC = () => {
               <Box sx={{ pt: 0 }}>
                 {/* Repository Stats */}
                 <RepositoryStats repositoryFullName={repo} />
+
+                {tabValue === 2 && repo ? (
+                  <MinerActivityTrendChart
+                    variant="sidebar"
+                    prs={allPrs}
+                    isLoading={isLoadingPrs}
+                    repositoryFullName={repo}
+                  />
+                ) : null}
 
                 {tabValue === 4 || tabValue === 5 ? (
                   <RepositoryPrActivityChart

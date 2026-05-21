@@ -58,6 +58,7 @@ import { useSessionStoredState } from '../hooks/useSessionStoredState';
 import {
   TopMinersTable,
   ActivitySidebarCards,
+  MinerActivityTrendChart,
   SEO,
   WatchlistButton,
 } from '../components';
@@ -460,8 +461,11 @@ export const WatchlistContent: React.FC = () => {
 };
 
 const WatchlistPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const activeTab = tabFromParam(searchParams.get('tab'));
   const { ids: minerIds } = useWatchlist('miners');
   const { data: allMinersData } = useAllMiners();
+  const { data: allPrs, isLoading: isLoadingPrs } = useAllPrs();
 
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
@@ -471,15 +475,16 @@ const WatchlistPage: React.FC = () => {
 
   const stickySidebarRef = useTwitterStickySidebar();
 
+  const watchedGithubIds = useMemo(() => new Set(minerIds), [minerIds]);
+
   const minerStats = useMemo(() => {
-    const watchedSet = new Set(minerIds);
     return mapAllMinersToStats(allMinersData ?? [])
-      .filter((m) => watchedSet.has(m.githubId))
+      .filter((m) => watchedGithubIds.has(m.githubId))
       .map((m) => ({
         ...m,
         isEligible: Boolean(m.ossIsEligible || m.discoveriesIsEligible),
       }));
-  }, [allMinersData, minerIds]);
+  }, [allMinersData, watchedGithubIds]);
 
   return (
     <Page title="Watchlist">
@@ -540,21 +545,33 @@ const WatchlistPage: React.FC = () => {
             miners={minerStats}
             defaultFilter="all"
             insertAfterFirstCard={
-              <Box
-                id="tabs-options-portal"
-                sx={{
-                  display: 'none',
-                  '@media (min-width: 1536px)': {
-                    display: 'flex',
-                    flexDirection: 'column',
-                    p: 2,
-                    borderRadius: 3,
-                    border: '1px solid',
-                    borderColor: 'border.light',
-                    backgroundColor: 'background.default',
-                  },
-                }}
-              />
+              <>
+                {activeTab === 'miners' ? (
+                  <MinerActivityTrendChart
+                    variant="sidebar"
+                    prs={allPrs}
+                    isLoading={isLoadingPrs}
+                    minerGithubIds={
+                      watchedGithubIds.size > 0 ? watchedGithubIds : undefined
+                    }
+                  />
+                ) : null}
+                <Box
+                  id="tabs-options-portal"
+                  sx={{
+                    display: 'none',
+                    '@media (min-width: 1536px)': {
+                      display: 'flex',
+                      flexDirection: 'column',
+                      p: 2,
+                      borderRadius: 3,
+                      border: '1px solid',
+                      borderColor: 'border.light',
+                      backgroundColor: 'background.default',
+                    },
+                  }}
+                />
+              </>
             }
           />
         </Box>
