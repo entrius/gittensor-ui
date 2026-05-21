@@ -47,6 +47,7 @@ import {
   RepositoryStats,
   RepositoryPrActivityChart,
   ContributingViewer,
+  ContributionHealthCard,
   RepositoryMaintainers,
   RepositoryCheckTab,
   RepositoryHyperparametersTab,
@@ -654,6 +655,10 @@ const RepositoryDetailsPage: React.FC = () => {
                     repositoryFullName={repo}
                     viewMode={tabValue === 4 ? 'issues' : 'prs'}
                   />
+                ) : null}
+
+                {tabValue === 6 ? (
+                  <ContributionHealthCard repositoryFullName={repo} />
                 ) : null}
 
                 {/* Maintainers */}

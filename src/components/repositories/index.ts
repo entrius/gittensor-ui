@@ -2,6 +2,7 @@ export { default as LanguageWeightsTable } from './LanguageWeightsTable';
 export { default as RepositoryStats } from './RepositoryStats';
 export { default as RepositoryPrActivityChart } from './RepositoryPrActivityChart';
 export { default as ContributingViewer } from './ContributingViewer';
+export { default as ContributionHealthCard } from './ContributionHealthCard';
 export { default as RepositoryPRsTable } from './RepositoryPRsTable';
 export { default as RepositoryIssuesTable } from './RepositoryIssuesTable';
 export { default as ReadmeViewer } from './ReadmeViewer';
