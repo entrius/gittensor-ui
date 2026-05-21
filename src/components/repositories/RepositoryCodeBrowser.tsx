@@ -797,11 +797,13 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
             })}
           </Breadcrumbs>
         </Box>
-        <GoToFileSearch
-          pathEntries={goToPathEntries}
-          treeTruncated={treeQuery.data?.truncated === true}
-          onNavigate={handleNavigate}
-        />
+        {!isFile && (
+          <GoToFileSearch
+            pathEntries={goToPathEntries}
+            treeTruncated={treeQuery.data?.truncated === true}
+            onNavigate={handleNavigate}
+          />
+        )}
       </Box>
 
       {/* Latest Commit Header (GitHub style blue/gray bar) */}
