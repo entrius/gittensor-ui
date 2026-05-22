@@ -14,6 +14,7 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import type { Theme } from '@mui/material/styles';
 import {
   ArrowDownward as ArrowDownwardIcon,
   ArrowUpward as ArrowUpwardIcon,
@@ -43,6 +44,33 @@ type StandingsSortKey =
   | 'solved'
   | 'valid'
   | 'discoveryScore';
+type EligibilityFilter = 'all' | 'eligible' | 'ineligible';
+
+const ELIGIBILITY_FILTER_OPTIONS: Array<{
+  value: EligibilityFilter;
+  label: string;
+}> = [
+  { value: 'all', label: 'All' },
+  { value: 'eligible', label: 'Eligible' },
+  { value: 'ineligible', label: 'Ineligible' },
+];
+
+const repoTrackEligible = (
+  repo: MinerRepositoryEvaluation,
+  isIssueMode: boolean,
+): boolean => (isIssueMode ? repo.isIssueEligible : repo.isEligible);
+
+const filterReposByEligibility = (
+  repos: MinerRepositoryEvaluation[],
+  filter: EligibilityFilter,
+  isIssueMode: boolean,
+): MinerRepositoryEvaluation[] => {
+  if (filter === 'all') return repos;
+  if (filter === 'eligible') {
+    return repos.filter((r) => repoTrackEligible(r, isIssueMode));
+  }
+  return repos.filter((r) => !repoTrackEligible(r, isIssueMode));
+};
 
 interface MinerRepoStandingsProps {
   githubId: string;
@@ -145,6 +173,8 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
 }) => {
   const { data: minerStats, isLoading } = useMinerStats(githubId);
   const [view, setView] = useState<StandingsView>('cards');
+  const [eligibilityFilter, setEligibilityFilter] =
+    useState<EligibilityFilter>('all');
   const isIssueMode = viewMode === 'issues';
   const [sortField, setSortField] = useState<StandingsSortKey>(
     isIssueMode ? 'discoveryScore' : 'score',
@@ -157,7 +187,7 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
     setSortOrder('desc');
   }, [isIssueMode]);
 
-  const baseRows = useMemo(() => {
+  const allRows = useMemo(() => {
     // Pre-migration placeholder rows carry an empty repo name — drop them.
     const repos = (minerStats?.repositories ?? []).filter(
       (r) => r.repositoryFullName.trim().length > 0,
@@ -165,8 +195,13 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
     return repos.slice();
   }, [minerStats]);
 
+  const filteredRows = useMemo(
+    () => filterReposByEligibility(allRows, eligibilityFilter, isIssueMode),
+    [allRows, eligibilityFilter, isIssueMode],
+  );
+
   const rows = useMemo(() => {
-    const sorted = baseRows.slice().sort((a, b) => {
+    const sorted = filteredRows.slice().sort((a, b) => {
       let comparison = 0;
       switch (sortField) {
         case 'repository':
@@ -203,7 +238,7 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
       return sortOrder === 'asc' ? comparison : -comparison;
     });
     return sorted;
-  }, [baseRows, sortField, sortOrder]);
+  }, [filteredRows, sortField, sortOrder]);
 
   const handleSortChange = (nextField: StandingsSortKey) => {
     if (nextField === sortField) {
@@ -233,8 +268,8 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
         { value: 'repository' as const, label: 'Repository' },
       ];
 
-  const eligibleCount = rows.filter((r) =>
-    isIssueMode ? r.isIssueEligible : r.isEligible,
+  const eligibleCount = allRows.filter((r) =>
+    repoTrackEligible(r, isIssueMode),
   ).length;
 
   const prColumns: DataTableColumn<
@@ -344,6 +379,38 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
     if (next) setView(next);
   };
 
+  const handleEligibilityFilterChange = (
+    _event: React.MouseEvent<HTMLElement>,
+    next: EligibilityFilter | null,
+  ) => {
+    if (next) setEligibilityFilter(next);
+  };
+
+  const toggleGroupSx = {
+    '& .MuiToggleButton-root': {
+      color: 'text.secondary',
+      borderColor: 'border.light',
+      height: 32,
+      minHeight: 32,
+      px: 1.25,
+      py: 0,
+      lineHeight: 1,
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      textTransform: 'none',
+      '&.Mui-selected': {
+        color: 'primary.main',
+        backgroundColor: (theme: Theme) =>
+          alpha(theme.palette.primary.main, 0.12),
+        '&:hover': {
+          backgroundColor: (theme: Theme) =>
+            alpha(theme.palette.primary.main, 0.18),
+        },
+      },
+    },
+  };
+
   return (
     <Card
       sx={{
@@ -379,10 +446,14 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
                 fontSize: '0.75rem',
               }}
             >
-              ({rows.length})
+              ({rows.length}
+              {eligibilityFilter !== 'all' && allRows.length !== rows.length
+                ? ` of ${allRows.length}`
+                : ''}
+              )
             </Typography>
           </Box>
-          {rows.length > 0 && (
+          {allRows.length > 0 && (
             <Typography sx={{ fontSize: '0.75rem', color: 'text.secondary' }}>
               {isIssueMode ? 'Issue-discovery eligible' : 'PR eligible'} in{' '}
               <Box
@@ -395,15 +466,36 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
                   fontWeight: 600,
                 }}
               >
-                {eligibleCount}/{rows.length}
+                {eligibleCount}/{allRows.length}
               </Box>{' '}
-              {rows.length === 1 ? 'repository' : 'repositories'}
+              {allRows.length === 1 ? 'repository' : 'repositories'}
             </Typography>
           )}
         </Box>
 
-        {rows.length > 0 && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+        {allRows.length > 0 && (
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              flexWrap: 'wrap',
+            }}
+          >
+            <ToggleButtonGroup
+              value={eligibilityFilter}
+              exclusive
+              onChange={handleEligibilityFilterChange}
+              size="small"
+              aria-label="Repository eligibility"
+              sx={toggleGroupSx}
+            >
+              {ELIGIBILITY_FILTER_OPTIONS.map((option) => (
+                <ToggleButton key={option.value} value={option.value}>
+                  {option.label}
+                </ToggleButton>
+              ))}
+            </ToggleButtonGroup>
             {view === 'cards' && (
               <>
                 <Typography
@@ -519,22 +611,7 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
               onChange={handleViewChange}
               size="small"
               aria-label="Standings view"
-              sx={{
-                '& .MuiToggleButton-root': {
-                  color: 'text.secondary',
-                  borderColor: 'border.light',
-                  px: 1.25,
-                  py: 0.5,
-                  '&.Mui-selected': {
-                    color: 'primary.main',
-                    backgroundColor: (t) => alpha(t.palette.primary.main, 0.12),
-                    '&:hover': {
-                      backgroundColor: (t) =>
-                        alpha(t.palette.primary.main, 0.18),
-                    },
-                  },
-                },
-              }}
+              sx={toggleGroupSx}
             >
               <ToggleButton value="cards" aria-label="Card grid">
                 <GridViewIcon sx={{ fontSize: '1.05rem' }} />
@@ -551,8 +628,12 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
           <CircularProgress size={36} sx={{ color: 'primary.main' }} />
         </Box>
-      ) : rows.length === 0 ? (
+      ) : allRows.length === 0 ? (
         <EmptyStateMessage message="No per-repository evaluations for this miner yet." />
+      ) : rows.length === 0 ? (
+        <EmptyStateMessage
+          message={`No ${eligibilityFilter === 'eligible' ? 'eligible' : 'ineligible'} repositories for this miner.`}
+        />
       ) : view === 'cards' ? (
         <Box
           sx={{
