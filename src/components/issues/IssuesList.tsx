@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useLayoutEffect,
+  useMemo,
+  useState,
+} from 'react';
 import {
   DebouncedSearchInput,
   useDebouncedSearchDraft,
@@ -272,8 +278,15 @@ const IssuesList: React.FC<IssuesListProps> = ({
   );
 
   const isLargeScreen = useMediaQuery(theme.breakpoints.up('xl'));
-  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(null);
-  useEffect(() => {
+  // Resolve the sidebar portal target synchronously so a tab switch (which
+  // remounts this list) renders straight into the sidebar instead of
+  // flashing the toolbar inline for one frame.
+  const [portalTarget, setPortalTarget] = useState<HTMLElement | null>(() =>
+    document.getElementById('tabs-options-portal'),
+  );
+  // On the very first page load the portal node is committed after this
+  // list's first render — pick it up before paint to avoid a flash.
+  useLayoutEffect(() => {
     setPortalTarget(document.getElementById('tabs-options-portal'));
   }, []);
 

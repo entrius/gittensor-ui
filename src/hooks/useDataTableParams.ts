@@ -288,9 +288,14 @@ export const useDataTableParams = <
         (prev) => {
           const next = new URLSearchParams(prev);
           const serialized = config.serialize(value);
+          const previous = prev.get(filterParamKey);
+          const valueChanged = previous !== (serialized ?? null);
           if (serialized === null) next.delete(filterParamKey);
           else next.set(filterParamKey, serialized);
-          if (resetPage) next.delete(paramKeys.page);
+          // Only reset the page slot when the filter value actually changed,
+          // so transient re-emissions (e.g. effect deps churning when other
+          // URL params update) don't clobber the user's current page.
+          if (resetPage && valueChanged) next.delete(paramKeys.page);
           return next;
         },
         { replace: true },
