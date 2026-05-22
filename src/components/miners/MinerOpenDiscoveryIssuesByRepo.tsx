@@ -493,21 +493,32 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
             />
           ),
         }}
-        sx={{
-          mt: 2,
-          mx: { xs: -2, sm: 0 },
-          width: { xs: 'calc(100% + 32px)', sm: 'auto' },
-          maxWidth: { xs: 'calc(100% + 32px)', sm: 400 },
-          minWidth: { xs: 0, sm: 350 },
-          '& .MuiOutlinedInput-root': {
-            fontSize: '0.8rem',
-            color: 'text.primary',
-            backgroundColor: 'surface.subtle',
-            borderRadius: 2,
-            '& fieldset': { borderColor: 'border.light' },
-            '&:hover fieldset': { borderColor: 'border.medium' },
-            '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-          },
+        sx={(theme) => {
+          const mobileSearchOffset = theme.spacing(-2);
+          const mobileSearchWidthOffset = theme.spacing(4);
+
+          return {
+            mt: 2,
+            mx: { xs: mobileSearchOffset, sm: 0 },
+            width: {
+              xs: `calc(100% + ${mobileSearchWidthOffset})`,
+              sm: 'auto',
+            },
+            maxWidth: {
+              xs: `calc(100% + ${mobileSearchWidthOffset})`,
+              sm: 400,
+            },
+            minWidth: { xs: 0, sm: 350 },
+            '& .MuiOutlinedInput-root': {
+              fontSize: '0.8rem',
+              color: 'text.primary',
+              backgroundColor: 'surface.subtle',
+              borderRadius: 2,
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            },
+          };
         }}
       />
     </Box>
