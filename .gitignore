@@ -10,3 +10,6 @@ yarn.lock
 *.log
 *.tsbuildinfo
 .wrangler
+
+# macOS metadata
+.DS_Store
