@@ -1,8 +1,7 @@
 /**
- * Miner list pagination: URL-backed page/rows (`minerPage` / `minerRows`),
+ * Miner PRs table pagination: URL-backed page/rows (`prPage` / `prRows`),
  * paging helpers, `useMinerExplorerPagination`, and the shared page bar
- * (Prev / numbers / Next). Overview Score Breakdown uses `scorePage` /
- * `scoreRows` separately.
+ * (Prev / numbers / Next).
  */
 
 import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
@@ -27,11 +26,8 @@ const PAGE_SIZE_WHITELIST = new Set<number>(MINER_PAGE_SIZES);
 
 export const DEFAULT_MINER_EXPLORER_ROWS: MinerExplorerRowsOption = 10;
 
-export const MINER_EXPLORER_PAGE_PARAM = 'minerPage';
-export const MINER_EXPLORER_ROWS_PARAM = 'minerRows';
-
-/** @deprecated Old PR tab param — migrated to `minerPage` */
-export const LEGACY_MINER_PAGE_PARAMS = ['prPage'] as const;
+export const MINER_EXPLORER_PAGE_PARAM = 'prPage';
+export const MINER_EXPLORER_ROWS_PARAM = 'prRows';
 
 export const MINER_EXPLORER_ROWS_SELECT_SX = {
   color: 'text.primary',
@@ -90,12 +86,6 @@ export function getMinerExplorerPaging<T>(
   return { totalPages, safePage, slice, showPageNav, pageSize, rankOffset };
 }
 
-export function stripLegacyMinerPaginationParams(
-  params: URLSearchParams,
-): void {
-  params.delete('prPage');
-}
-
 // --- Hook -------------------------------------------------------------------
 
 type UseMinerExplorerPaginationOptions = {
@@ -115,36 +105,22 @@ export function useMinerExplorerPagination({
     [searchParams],
   );
 
-  const page = useMemo(() => {
-    const primary = searchParams.get(MINER_EXPLORER_PAGE_PARAM);
-    if (primary !== null) return parseMinerExplorerPageParam(primary);
-    for (const key of LEGACY_MINER_PAGE_PARAMS) {
-      const v = searchParams.get(key);
-      if (v !== null) return parseMinerExplorerPageParam(v);
-    }
-    return 0;
-  }, [searchParams]);
+  const page = useMemo(
+    () =>
+      parseMinerExplorerPageParam(searchParams.get(MINER_EXPLORER_PAGE_PARAM)),
+    [searchParams],
+  );
 
   const setPage = useCallback(
     (updater: number | ((prev: number) => number)) => {
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
-          let current = parseMinerExplorerPageParam(
+          const current = parseMinerExplorerPageParam(
             next.get(MINER_EXPLORER_PAGE_PARAM),
           );
-          if (next.get(MINER_EXPLORER_PAGE_PARAM) === null) {
-            for (const key of LEGACY_MINER_PAGE_PARAMS) {
-              const v = next.get(key);
-              if (v !== null) {
-                current = parseMinerExplorerPageParam(v);
-                break;
-              }
-            }
-          }
           const resolved =
             typeof updater === 'function' ? updater(current) : updater;
-          stripLegacyMinerPaginationParams(next);
           if (resolved <= 0) next.delete(MINER_EXPLORER_PAGE_PARAM);
           else next.set(MINER_EXPLORER_PAGE_PARAM, String(resolved));
           return next;
@@ -163,7 +139,6 @@ export function useMinerExplorerPagination({
       setSearchParams(
         (prev) => {
           const p = new URLSearchParams(prev);
-          stripLegacyMinerPaginationParams(p);
           p.delete(MINER_EXPLORER_PAGE_PARAM);
           if (nextRows === DEFAULT_MINER_EXPLORER_ROWS)
             p.delete(MINER_EXPLORER_ROWS_PARAM);

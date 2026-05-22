@@ -49,7 +49,6 @@ import {
 import MinerTableRowsSelect from './MinerTableRowsSelect';
 import TablePagination, {
   getMinerExplorerPaging,
-  stripLegacyMinerPaginationParams,
   MINER_EXPLORER_PAGE_PARAM,
   useMinerExplorerPagination,
 } from '../common/TablePagination';
@@ -150,7 +149,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           const p = new URLSearchParams(prev);
           if (next === 'all') p.delete('prStatus');
           else p.set('prStatus', next);
-          stripLegacyMinerPaginationParams(p);
           p.delete(MINER_EXPLORER_PAGE_PARAM);
           return p;
         },
