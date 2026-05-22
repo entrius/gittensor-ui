@@ -84,6 +84,10 @@ import type {
 import type { IssueBounty } from '../api/models/Issues';
 import { usePrices } from '../hooks/usePrices';
 import { DebouncedSearchInput } from '../components/common/DebouncedSearchInput';
+import {
+  AuthorChecklistFilter,
+  type AuthorChecklistOption,
+} from '../components/common/AuthorChecklistFilter';
 import { BountyCard } from '../components/issues/BountyCard';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import {
@@ -695,6 +699,7 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
   Omit<WatchlistOptionsButtonProps, 'hasActiveFilter'>
 > = ({
   filterContent,
+  authorContent,
   sortContent,
   extraContent,
   searchValue,
@@ -708,6 +713,13 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
       <OptionsLabel>Filter</OptionsLabel>
       {filterContent}
     </Box>
+
+    {authorContent != null ? (
+      <Box>
+        <OptionsLabel>Author</OptionsLabel>
+        {authorContent}
+      </Box>
+    ) : null}
 
     {sortContent != null ? (
       <Box>
@@ -767,6 +779,8 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
 /* ─── WatchlistOptionsButton: reusable compact popover for all watchlist list toolbars ─── */
 interface WatchlistOptionsButtonProps {
   filterContent: React.ReactNode;
+  /** Multi-select author checklist (PRs / Issues tabs). */
+  authorContent?: React.ReactNode;
   /** Shown under Filter when set (e.g. repositories card view). */
   sortContent?: React.ReactNode;
   extraContent?: React.ReactNode;
@@ -781,6 +795,7 @@ interface WatchlistOptionsButtonProps {
 
 const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
   filterContent,
+  authorContent,
   sortContent,
   extraContent,
   searchValue,
@@ -877,6 +892,13 @@ const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
           <OptionsLabel>Filter</OptionsLabel>
           {filterContent}
         </Box>
+
+        {authorContent != null ? (
+          <Box>
+            <OptionsLabel>Author</OptionsLabel>
+            {authorContent}
+          </Box>
+        ) : null}
 
         {sortContent != null ? (
           <Box>
@@ -1026,6 +1048,34 @@ type WatchedRepoStats = Repository & {
 
 const isPrStatusFilterStored = (v: unknown): v is PrStatusFilter =>
   v === 'all' || v === 'open' || v === 'merged' || v === 'closed';
+
+const isStringArrayStored = (v: unknown): v is string[] =>
+  Array.isArray(v) && v.every((x) => typeof x === 'string');
+
+const buildPrAuthorOptions = (prs: CommitLog[]): AuthorChecklistOption[] => {
+  const counts = new Map<string, number>();
+  for (const pr of prs) {
+    if (!pr.author) continue;
+    counts.set(pr.author, (counts.get(pr.author) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([author, count]) => ({ id: author, label: author, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+};
+
+const buildIssueAuthorOptions = (
+  issues: MinerIssue[],
+): AuthorChecklistOption[] => {
+  const counts = new Map<string, number>();
+  for (const issue of issues) {
+    const login = issue.author_login;
+    if (!login) continue;
+    counts.set(login, (counts.get(login) ?? 0) + 1);
+  }
+  return Array.from(counts.entries())
+    .map(([login, count]) => ({ id: login, label: login, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label));
+};
 
 type RepoSortKey =
   | 'name'
@@ -3235,6 +3285,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     'all',
     isPrStatusFilterStored,
   );
+  const [selectedAuthors, setSelectedAuthors] = useSessionStoredState<string[]>(
+    'watchlist:prs:authors',
+    [],
+    isStringArrayStored,
+  );
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -3252,6 +3307,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   }, [
     statusFilter,
     searchQuery,
+    selectedAuthors,
     sortField,
     sortOrder,
     viewMode,
@@ -3296,13 +3352,19 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
 
   const counts = useMemo(() => getPrStatusCounts(scopedItems), [scopedItems]);
 
+  const authorOptions = useMemo(
+    () => buildPrAuthorOptions(scopedItems),
+    [scopedItems],
+  );
+
   const filtered = useMemo(() => {
     return filterPrs(scopedItems, {
       statusFilter,
       searchQuery,
       includeNumber: true,
+      authors: selectedAuthors.length > 0 ? selectedAuthors : undefined,
     });
-  }, [scopedItems, statusFilter, searchQuery]);
+  }, [scopedItems, statusFilter, searchQuery, selectedAuthors]);
 
   const sorted = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -3441,6 +3503,18 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 />
               </Box>
             }
+            authorContent={
+              authorOptions.length > 1 ? (
+                <AuthorChecklistFilter
+                  options={authorOptions}
+                  selected={selectedAuthors}
+                  onChange={(next) => {
+                    setSelectedAuthors([...next]);
+                    setPage(0);
+                  }}
+                />
+              ) : undefined
+            }
             searchValue={draftValue}
             searchPlaceholder="Search PRs..."
             onSearchChange={setDraftValue}
@@ -3458,7 +3532,11 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                 }}
               />
             }
-            hasActiveFilter={statusFilter !== 'all' || !sourcesAllOn}
+            hasActiveFilter={
+              statusFilter !== 'all' ||
+              !sourcesAllOn ||
+              selectedAuthors.length > 0
+            }
           />
         )}
       </DebouncedSearchInput>
@@ -3678,12 +3756,22 @@ const issueStatusColor = (s: IssueStatusFilter): string => {
 
 const filterIssues = (
   items: MinerIssue[],
-  opts: { statusFilter: IssueStatusFilter; searchQuery: string },
+  opts: {
+    statusFilter: IssueStatusFilter;
+    searchQuery: string;
+    authors?: readonly string[];
+  },
 ): MinerIssue[] => {
   const q = opts.searchQuery.trim().toLowerCase();
+  const authorSet =
+    opts.authors && opts.authors.length > 0 ? new Set(opts.authors) : null;
   return items.filter((i) => {
     if (opts.statusFilter !== 'all' && issueState(i) !== opts.statusFilter)
       return false;
+    if (authorSet) {
+      const login = i.author_login;
+      if (!login || !authorSet.has(login)) return false;
+    }
     if (!q) return true;
     return (
       (i.title || '').toLowerCase().includes(q) ||
@@ -4210,6 +4298,11 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatusFilter>('all');
+  const [selectedAuthors, setSelectedAuthors] = useSessionStoredState<string[]>(
+    'watchlist:issues:authors',
+    [],
+    isStringArrayStored,
+  );
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);
   const observerTarget = useRef<HTMLDivElement>(null);
@@ -4224,7 +4317,14 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
 
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
+  }, [
+    statusFilter,
+    searchQuery,
+    selectedAuthors,
+    sortField,
+    sortOrder,
+    viewMode,
+  ]);
 
   const handleSort = (field: IssueSortKey) => {
     if (sortField === field) {
@@ -4238,9 +4338,16 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
 
   const counts = useMemo(() => getIssueCounts(items), [items]);
 
+  const authorOptions = useMemo(() => buildIssueAuthorOptions(items), [items]);
+
   const filtered = useMemo(
-    () => filterIssues(items, { statusFilter, searchQuery }),
-    [items, statusFilter, searchQuery],
+    () =>
+      filterIssues(items, {
+        statusFilter,
+        searchQuery,
+        authors: selectedAuthors.length > 0 ? selectedAuthors : undefined,
+      }),
+    [items, statusFilter, searchQuery, selectedAuthors],
   );
 
   const sorted = useMemo(() => {
@@ -4329,6 +4436,18 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
                 ))}
               </Box>
             }
+            authorContent={
+              authorOptions.length > 1 ? (
+                <AuthorChecklistFilter
+                  options={authorOptions}
+                  selected={selectedAuthors}
+                  onChange={(next) => {
+                    setSelectedAuthors([...next]);
+                    setPage(0);
+                  }}
+                />
+              ) : undefined
+            }
             searchValue={draftValue}
             searchPlaceholder="Search issues..."
             onSearchChange={setDraftValue}
@@ -4346,7 +4465,9 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
                 }}
               />
             }
-            hasActiveFilter={statusFilter !== 'all'}
+            hasActiveFilter={
+              statusFilter !== 'all' || selectedAuthors.length > 0
+            }
           />
         )}
       </DebouncedSearchInput>

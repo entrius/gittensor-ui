@@ -5,6 +5,8 @@ export type PrStatusFilter = 'all' | 'open' | 'merged' | 'closed';
 
 interface FilterPrsOptions {
   author?: string | null;
+  /** When non-empty, only PRs whose author is in this list are kept. */
+  authors?: readonly string[];
   includeNumber?: boolean;
   searchQuery?: string;
   statusFilter?: PrStatusFilter;
@@ -14,6 +16,7 @@ export const filterPrs = <T extends CommitLog>(
   prs: T[],
   {
     author,
+    authors,
     includeNumber = false,
     searchQuery = '',
     statusFilter = 'all',
@@ -21,7 +24,10 @@ export const filterPrs = <T extends CommitLog>(
 ) => {
   let filtered = prs;
 
-  if (author) {
+  if (authors && authors.length > 0) {
+    const set = new Set(authors);
+    filtered = filtered.filter((pr) => pr.author != null && set.has(pr.author));
+  } else if (author) {
     filtered = filtered.filter((pr) => pr.author === author);
   }
 
