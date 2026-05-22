@@ -7,17 +7,12 @@ import {
   CardContent,
   CircularProgress,
   Stack,
-  Tooltip,
   Typography,
   useMediaQuery,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import { ActivityCalendar } from 'react-activity-calendar';
-import {
-  CONTRIBUTION_HEATMAP_SCALE,
-  scrollbarSx,
-  TEXT_OPACITY,
-} from '../../../theme';
+import ContributionHeatmap from '../../../components/ContributionHeatmap';
+import { CONTRIBUTION_HEATMAP_SCALE, TEXT_OPACITY } from '../../../theme';
 import { type DashboardContributionCalendar } from '../dashboardData';
 
 interface ContributionCalendarProps {
@@ -25,24 +20,15 @@ interface ContributionCalendarProps {
   isLoading?: boolean;
 }
 
-/** GitHub-style fixed cells — never shrink to fit (enables horizontal swipe on mobile). */
 const CALENDAR_BLOCK = {
   mobile: { size: 10, margin: 3, fontSize: 10 },
   desktop: { size: 11, margin: 3, fontSize: 11 },
 } as const;
 
-const formatActivityDateLabel = (dateKey: string) => {
-  const [year, month, day] = dateKey.split('-').map(Number);
-  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-};
-
 const ContributionCalendarLegend: React.FC = () => {
   const theme = useTheme();
   const monoFontFamily = theme.typography.fontFamily;
+  const legendColor = alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary);
 
   return (
     <Stack
@@ -58,7 +44,7 @@ const ContributionCalendarLegend: React.FC = () => {
         sx={{
           fontFamily: monoFontFamily,
           fontSize: { xs: '0.62rem', sm: '0.65rem' },
-          color: alpha(theme.palette.text.primary, 0.45),
+          color: legendColor,
         }}
       >
         Less
@@ -80,7 +66,7 @@ const ContributionCalendarLegend: React.FC = () => {
         sx={{
           fontFamily: monoFontFamily,
           fontSize: { xs: '0.62rem', sm: '0.65rem' },
-          color: alpha(theme.palette.text.primary, 0.45),
+          color: legendColor,
         }}
       >
         More
@@ -98,8 +84,6 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const scrollRef = useRef<HTMLDivElement>(null);
 
-  const heatmapLevels = [...CONTRIBUTION_HEATMAP_SCALE];
-  const heatmapTheme = { light: heatmapLevels, dark: heatmapLevels };
   const isEmpty = calendar.days.every((day) => day.count === 0);
   const totalContributions = useMemo(
     () => calendar.days.reduce((sum, day) => sum + day.count, 0),
@@ -107,6 +91,27 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
   );
 
   const blockConfig = isMobile ? CALENDAR_BLOCK.mobile : CALENDAR_BLOCK.desktop;
+
+  const heatmapScrollSx = useMemo(
+    () => ({
+      WebkitOverflowScrolling: 'touch',
+      touchAction: 'pan-x',
+      pb: 0.5,
+      '& .react-activity-calendar': {
+        display: 'inline-block',
+        width: 'max-content',
+        minWidth: 'max-content',
+      },
+      '& .react-activity-calendar svg': {
+        display: 'block',
+      },
+      '& .react-activity-calendar text': {
+        fill: alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary),
+        fontFamily: monoFontFamily,
+      },
+    }),
+    [monoFontFamily, theme.palette.text.primary],
+  );
 
   useEffect(() => {
     const el = scrollRef.current;
@@ -203,148 +208,6 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
     </Box>
   );
 
-  const heatmapPanel = (
-    <Box
-      sx={{
-        flex: 1,
-        minWidth: 0,
-        display: 'flex',
-        flexDirection: 'column',
-      }}
-    >
-      <Box
-        ref={scrollRef}
-        sx={{
-          width: '100%',
-          maxWidth: '100%',
-          overflowX: 'auto',
-          overflowY: 'hidden',
-          WebkitOverflowScrolling: 'touch',
-          touchAction: 'pan-x',
-          pb: 0.5,
-          ...scrollbarSx,
-          '& .react-activity-calendar': {
-            display: 'inline-block',
-            width: 'max-content',
-            minWidth: 'max-content',
-          },
-          '& .react-activity-calendar svg': {
-            display: 'block',
-          },
-          '& .react-activity-calendar text': {
-            fill: alpha(theme.palette.text.primary, 0.45),
-            fontFamily: monoFontFamily,
-          },
-        }}
-      >
-        {isEmpty ? (
-          <Box
-            sx={{
-              py: 4,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              minHeight: 120,
-              width: '100%',
-            }}
-          >
-            <Typography
-              sx={{
-                color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
-                fontSize: '0.85rem',
-                textAlign: 'center',
-              }}
-            >
-              No contributions yet
-            </Typography>
-            <Typography
-              sx={{
-                color: alpha(theme.palette.text.primary, TEXT_OPACITY.ghost),
-                fontSize: '0.75rem',
-                textAlign: 'center',
-                mt: 0.5,
-              }}
-            >
-              Activity will appear here once PRs merge and issues resolve
-            </Typography>
-          </Box>
-        ) : (
-          <ActivityCalendar
-            data={calendar.days}
-            theme={heatmapTheme}
-            labels={{
-              legend: { less: 'Less', more: 'More' },
-              months: [
-                'Jan',
-                'Feb',
-                'Mar',
-                'Apr',
-                'May',
-                'Jun',
-                'Jul',
-                'Aug',
-                'Sep',
-                'Oct',
-                'Nov',
-                'Dec',
-              ],
-              totalCount: `{{count}} contribution(s) in the last ${calendar.totalDaysShown} day(s)`,
-              weekdays: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
-            }}
-            blockSize={blockConfig.size}
-            blockMargin={blockConfig.margin}
-            fontSize={blockConfig.fontSize}
-            style={{ color: theme.palette.text.primary }}
-            weekStart={0}
-            showWeekdayLabels={['mon', 'wed', 'fri']}
-            showTotalCount={false}
-            showColorLegend={false}
-            renderBlock={(block, activity) => (
-              <Tooltip
-                title={`${activity.count} contribution${activity.count !== 1 ? 's' : ''} on ${formatActivityDateLabel(activity.date)}`}
-                arrow
-                placement="top"
-                enterDelay={0}
-                enterNextDelay={0}
-                leaveDelay={0}
-                disableInteractive
-              >
-                {block}
-              </Tooltip>
-            )}
-          />
-        )}
-      </Box>
-
-      <Box
-        sx={{
-          mt: 1,
-          pt: 1,
-          borderTop: `1px solid ${theme.palette.border.light}`,
-          display: 'flex',
-          flexDirection: { xs: 'column', sm: 'row' },
-          alignItems: { xs: 'flex-start', sm: 'center' },
-          justifyContent: 'space-between',
-          gap: 1,
-        }}
-      >
-        <Typography
-          sx={{
-            fontFamily: monoFontFamily,
-            fontSize: { xs: '0.62rem', sm: '0.65rem' },
-            color: alpha(theme.palette.text.primary, 0.4),
-            lineHeight: 1.35,
-          }}
-        >
-          {totalContributions.toLocaleString()} contribution
-          {totalContributions === 1 ? '' : 's'} in the last year
-        </Typography>
-        {!isEmpty && <ContributionCalendarLegend />}
-      </Box>
-    </Box>
-  );
-
   return (
     <Box
       sx={{
@@ -399,7 +262,60 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
               alignItems="stretch"
               sx={{ minWidth: 0 }}
             >
-              {heatmapPanel}
+              <Box
+                sx={{
+                  flex: 1,
+                  minWidth: 0,
+                  display: 'flex',
+                  flexDirection: 'column',
+                }}
+              >
+                <ContributionHeatmap
+                  bare
+                  showHeader={false}
+                  data={calendar.days}
+                  contributionsLast30Days={calendar.thisWeekCount}
+                  totalDaysShown={calendar.totalDaysShown}
+                  emptySubtitle="Activity will appear here once PRs merge and issues resolve"
+                  blockSize={blockConfig.size}
+                  blockMargin={blockConfig.margin}
+                  fontSize={blockConfig.fontSize}
+                  weekStart={0}
+                  showWeekdayLabels={['mon', 'wed', 'fri']}
+                  showTotalCount={false}
+                  showColorLegend={false}
+                  scrollContainerRef={scrollRef}
+                  scrollContainerSx={heatmapScrollSx}
+                />
+                <Box
+                  sx={{
+                    mt: 1,
+                    pt: 1,
+                    borderTop: `1px solid ${theme.palette.border.light}`,
+                    display: 'flex',
+                    flexDirection: { xs: 'column', sm: 'row' },
+                    alignItems: { xs: 'flex-start', sm: 'center' },
+                    justifyContent: 'space-between',
+                    gap: 1,
+                  }}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: monoFontFamily,
+                      fontSize: { xs: '0.62rem', sm: '0.65rem' },
+                      color: alpha(
+                        theme.palette.text.primary,
+                        TEXT_OPACITY.muted,
+                      ),
+                      lineHeight: 1.35,
+                    }}
+                  >
+                    {totalContributions.toLocaleString()} contribution
+                    {totalContributions === 1 ? '' : 's'} in the last year
+                  </Typography>
+                  {!isEmpty && <ContributionCalendarLegend />}
+                </Box>
+              </Box>
               {weekSummaryCard}
             </Stack>
           )}

@@ -163,10 +163,7 @@ const useDashboardData = (range: TrendTimeRange) => {
     [datasets.prs.data],
   );
 
-  const totalLinesCommitted = useMemo(
-    () => Number(linesTotalQuery.data?.linesCommitted) || 0,
-    [linesTotalQuery.data],
-  );
+  const totalLinesCommitted = Number(linesTotalQuery.data?.linesCommitted) || 0;
 
   const kpis = useMemo(
     () =>
