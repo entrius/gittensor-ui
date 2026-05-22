@@ -58,6 +58,20 @@ For security vulnerabilities, **do not create a public issue**. Report them priv
 
 - Assign `anderdc` and `landyndev` to your PR for review
 
+## Automatic Closures
+
+The maintainer bot enforces these rules without manual review. Contributions that violate them are closed automatically.
+
+### Open item limits
+
+Each contributor may have at most **2 open PRs** and **2 open issues** in this repository at any time. Submitting a 3rd of either type while at the cap closes the new one on submission. The limits apply independently — you can have 2 open PRs and 2 open issues at the same time.
+
+### UI/UX changes require before/after media
+
+PRs that change visual layout, components, styling, animations, or any rendered UI must include both **before** and **after** screenshots or screen recordings in the PR body. UI/UX PRs submitted without before/after media are liable to be closed without review.
+
+This applies to anything a user sees on the page: layout shifts, color/spacing changes, new or removed UI elements, hover/focus states, responsive behavior. Pure logic changes (data fetching, utilities, types) are exempt.
+
 ## PR Labels
 
 Apply appropriate labels to help categorize and track your contribution:
