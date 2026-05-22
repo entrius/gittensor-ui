@@ -84,6 +84,12 @@ import type {
 import type { IssueBounty } from '../api/models/Issues';
 import { usePrices } from '../hooks/usePrices';
 import { DebouncedSearchInput } from '../components/common/DebouncedSearchInput';
+import { WatchlistTokenSearchField } from '../components/common/WatchlistTokenSearch';
+import {
+  useWatchlistFiltersSearchSlot,
+  WatchlistFiltersSearchProvider,
+} from '../contexts/WatchlistFiltersSearchContext';
+import { matchesAllSearchTerms } from '../utils/watchlistSearch';
 import { BountyCard } from '../components/issues/BountyCard';
 import { mapAllMinersToStats } from '../utils/minerMapper';
 import {
@@ -601,7 +607,7 @@ const WatchlistPortal: React.FC<WatchlistOptionsButtonProps> = (props) => {
 
   if (target && isLargeScreen) {
     return (
-      <Portal container={target}>
+      <Portal container={target} key={props.portalKey ?? 'watchlist-filters'}>
         <WatchlistOptionsSidebarPanel {...props} />
       </Portal>
     );
@@ -691,12 +697,77 @@ const WatchlistOptionsSidebarPanel: React.FC<
   );
 };
 
+const WatchlistSidebarSearch: React.FC<
+  Pick<
+    WatchlistOptionsButtonProps,
+    | 'onTokenSearchChange'
+    | 'searchPlaceholder'
+    | 'searchValue'
+    | 'onSearchChange'
+  >
+> = ({
+  onTokenSearchChange,
+  searchPlaceholder,
+  searchValue = '',
+  onSearchChange,
+}) => {
+  const searchSlot = useWatchlistFiltersSearchSlot();
+  if (searchSlot) {
+    return <>{searchSlot}</>;
+  }
+
+  if (onTokenSearchChange) {
+    return (
+      <WatchlistTokenSearchField
+        onQueryChange={onTokenSearchChange}
+        placeholder={searchPlaceholder}
+      />
+    );
+  }
+
+  return (
+    <TextField
+      placeholder={searchPlaceholder}
+      size="small"
+      value={searchValue}
+      onChange={(e) => onSearchChange?.(e.target.value)}
+      InputProps={{
+        startAdornment: (
+          <InputAdornment position="start">
+            <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
+          </InputAdornment>
+        ),
+        endAdornment: (
+          <ClearSearchAdornment
+            visible={Boolean(searchValue)}
+            onClear={() => onSearchChange?.('')}
+          />
+        ),
+      }}
+      sx={{
+        width: '100%',
+        '& .MuiOutlinedInput-root': {
+          color: 'text.primary',
+          backgroundColor: 'background.default',
+          fontSize: '0.8rem',
+          height: '34px',
+          borderRadius: 2,
+          '& fieldset': { borderColor: 'border.light' },
+          '&:hover fieldset': { borderColor: 'border.medium' },
+          '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+        },
+      }}
+    />
+  );
+};
+
 const WatchlistOptionsSidebarPanelContent: React.FC<
   Omit<WatchlistOptionsButtonProps, 'hasActiveFilter'>
 > = ({
   filterContent,
   sortContent,
   extraContent,
+  onTokenSearchChange,
   searchValue,
   searchPlaceholder,
   onSearchChange,
@@ -719,37 +790,11 @@ const WatchlistOptionsSidebarPanelContent: React.FC<
     {/* Search */}
     <Box>
       <OptionsLabel>Search</OptionsLabel>
-      <TextField
-        placeholder={searchPlaceholder}
-        size="small"
-        value={searchValue}
-        onChange={(e) => onSearchChange(e.target.value)}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
-            </InputAdornment>
-          ),
-          endAdornment: (
-            <ClearSearchAdornment
-              visible={Boolean(searchValue)}
-              onClear={() => onSearchChange('')}
-            />
-          ),
-        }}
-        sx={{
-          width: '100%',
-          '& .MuiOutlinedInput-root': {
-            color: 'text.primary',
-            backgroundColor: 'background.default',
-            fontSize: '0.8rem',
-            height: '34px',
-            borderRadius: 2,
-            '& fieldset': { borderColor: 'border.light' },
-            '&:hover fieldset': { borderColor: 'border.medium' },
-            '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-          },
-        }}
+      <WatchlistSidebarSearch
+        onTokenSearchChange={onTokenSearchChange}
+        searchPlaceholder={searchPlaceholder}
+        searchValue={searchValue}
+        onSearchChange={onSearchChange}
       />
     </Box>
 
@@ -770,9 +815,13 @@ interface WatchlistOptionsButtonProps {
   /** Shown under Filter when set (e.g. repositories card view). */
   sortContent?: React.ReactNode;
   extraContent?: React.ReactNode;
-  searchValue: string;
+  /** Forces a fresh portal mount when switching watchlist tabs. */
+  portalKey?: string;
+  /** Enter pins terms as chips below the field; multiple terms use AND. */
+  onTokenSearchChange?: (query: string) => void;
+  searchValue?: string;
   searchPlaceholder: string;
-  onSearchChange: (v: string) => void;
+  onSearchChange?: (v: string) => void;
   viewMode: string;
   onViewModeChange: (v: any) => void;
   viewModeToggle: React.ReactNode;
@@ -783,6 +832,7 @@ const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
   filterContent,
   sortContent,
   extraContent,
+  onTokenSearchChange,
   searchValue,
   searchPlaceholder,
   onSearchChange,
@@ -888,39 +938,11 @@ const WatchlistOptionsButton: React.FC<WatchlistOptionsButtonProps> = ({
         {/* Search */}
         <Box>
           <OptionsLabel>Search</OptionsLabel>
-          <TextField
-            placeholder={searchPlaceholder}
-            size="small"
-            value={searchValue}
-            onChange={(e) => onSearchChange(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon
-                    sx={{ color: 'text.tertiary', fontSize: '1rem' }}
-                  />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <ClearSearchAdornment
-                  visible={Boolean(searchValue)}
-                  onClear={() => onSearchChange('')}
-                />
-              ),
-            }}
-            sx={{
-              width: '100%',
-              '& .MuiOutlinedInput-root': {
-                color: 'text.primary',
-                backgroundColor: 'background.default',
-                fontSize: '0.8rem',
-                height: '36px',
-                borderRadius: 2,
-                '& fieldset': { borderColor: 'border.light' },
-                '&:hover fieldset': { borderColor: 'border.medium' },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-              },
-            }}
+          <WatchlistSidebarSearch
+            onTokenSearchChange={onTokenSearchChange}
+            searchPlaceholder={searchPlaceholder}
+            searchValue={searchValue}
+            onSearchChange={onSearchChange}
           />
         </Box>
 
@@ -3367,222 +3389,230 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     return () => observer.disconnect();
   }, [sidebarFixedRight, page, filtered.length]);
 
-  return (
-    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Compact Options trigger */}
-      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
-        {({ draftValue, setDraftValue }) => (
-          <WatchlistPortal
-            filterContent={
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 0.5,
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                }}
-              >
-                <FilterButton
-                  label="All"
-                  count={counts.all}
-                  color={STATUS_COLORS.neutral}
-                  isActive={statusFilter === 'all'}
-                  onClick={() => setStatusFilter('all')}
-                />
-                <FilterButton
-                  label="Open"
-                  count={counts.open}
-                  color={STATUS_COLORS.open}
-                  isActive={statusFilter === 'open'}
-                  onClick={() => setStatusFilter('open')}
-                />
-                <FilterButton
-                  label="Merged"
-                  count={counts.merged}
-                  color={STATUS_COLORS.merged}
-                  isActive={statusFilter === 'merged'}
-                  onClick={() => setStatusFilter('merged')}
-                />
-                <FilterButton
-                  label="Closed"
-                  count={counts.closed}
-                  color={STATUS_COLORS.closed}
-                  isActive={statusFilter === 'closed'}
-                  onClick={() => setStatusFilter('closed')}
-                />
-                <Box
-                  sx={{
-                    width: '1px',
-                    height: 20,
-                    backgroundColor: 'border.light',
-                    mx: 0.5,
-                  }}
-                />
-                <FilterButton
-                  label="Starred"
-                  count={sourceCounts.starred}
-                  color={SOURCE_META.starred.color}
-                  isActive={activeSources.has('starred')}
-                  onClick={() => toggleSource('starred')}
-                />
-                <FilterButton
-                  label="Miner"
-                  count={sourceCounts.miner}
-                  color={SOURCE_META.miner.color}
-                  isActive={activeSources.has('miner')}
-                  onClick={() => toggleSource('miner')}
-                />
-                <FilterButton
-                  label="Repo"
-                  count={sourceCounts.repo}
-                  color={SOURCE_META.repo.color}
-                  isActive={activeSources.has('repo')}
-                  onClick={() => toggleSource('repo')}
-                />
-              </Box>
-            }
-            searchValue={draftValue}
-            searchPlaceholder="Search PRs..."
-            onSearchChange={setDraftValue}
-            viewMode={viewMode}
-            onViewModeChange={(next) => {
-              setViewMode(next);
-              setPage(0);
-            }}
-            viewModeToggle={
-              <PRsViewModeToggle
-                viewMode={viewMode}
-                onChange={(next) => {
-                  setViewMode(next);
-                  setPage(0);
-                }}
-              />
-            }
-            hasActiveFilter={statusFilter !== 'all' || !sourcesAllOn}
-          />
-        )}
-      </DebouncedSearchInput>
+  const tokenSearch = (
+    <WatchlistTokenSearchField
+      onQueryChange={setSearchQuery}
+      placeholder="Search PRs..."
+    />
+  );
 
-      {/* Content */}
-      {viewMode === 'list' ? (
-        <DataTable<CommitLog, PrSortKey>
-          columns={prColumns}
-          rows={paged}
-          getRowKey={(pr) =>
-            serializePRKey(pr.repository, pr.pullRequestNumber)
-          }
-          getRowHref={getPrHref}
-          linkState={{ backLabel: 'Back to Watchlist' }}
-          minWidth="750px"
-          stickyHeader
-          isLoading={isLoading && items.length === 0}
-          emptyLabel="No watched pull requests found."
-          getRowSx={(pr) =>
-            pr.mergedAt && isOutsideScoringWindow(pr.mergedAt)
-              ? { opacity: 0.4, filter: 'grayscale(0.5)' }
-              : {}
-          }
-          sort={{
-            field: sortField,
-            order: sortOrder,
-            onChange: handleSort,
-          }}
-          pagination={
-            !sidebarFixedRight ? (
-              <WatchlistStackedPagination
-                count={filtered.length}
-                page={page}
-                onPageChange={setPage}
-              />
-            ) : undefined
-          }
-        />
-      ) : (
-        <Box
-          sx={{
-            p: 2,
-            flex: 1,
-            minHeight: 0,
-            overflowY: 'auto',
-            ...scrollbarSx,
-          }}
-        >
-          {isLoading && paged.length === 0 ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : paged.length === 0 ? (
-            <Typography
+  return (
+    <WatchlistFiltersSearchProvider value={tokenSearch}>
+      <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+        <WatchlistPortal
+          portalKey="watchlist-prs-filters"
+          filterContent={
+            <Box
               sx={{
-                color: 'text.secondary',
-                textAlign: 'center',
-                py: 4,
-                fontSize: '0.85rem',
+                display: 'flex',
+                gap: 0.5,
+                alignItems: 'center',
+                flexWrap: 'wrap',
               }}
             >
-              No watched pull requests found.
-            </Typography>
-          ) : (
-            <Grid container spacing={2} alignItems="stretch">
-              {paged.map((pr) => (
-                <Grid
-                  item
-                  xs={12}
-                  sm={6}
-                  md={4}
-                  key={serializePRKey(pr.repository, pr.pullRequestNumber)}
-                  sx={{ display: 'flex' }}
-                >
-                  <Box sx={{ width: '100%' }}>
-                    <PRCard
-                      pr={pr}
-                      sources={sourcesByKey.get(
-                        serializePRKey(pr.repository, pr.pullRequestNumber),
-                      )}
-                    />
-                  </Box>
-                </Grid>
-              ))}
-            </Grid>
-          )}
-        </Box>
-      )}
-      {sidebarFixedRight && filtered.length > (page + 1) * ROWS_PER_PAGE && (
-        <Box
-          ref={observerTarget}
-          sx={{
-            height: 60,
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
+              <FilterButton
+                label="All"
+                count={counts.all}
+                color={STATUS_COLORS.neutral}
+                isActive={statusFilter === 'all'}
+                onClick={() => setStatusFilter('all')}
+              />
+              <FilterButton
+                label="Open"
+                count={counts.open}
+                color={STATUS_COLORS.open}
+                isActive={statusFilter === 'open'}
+                onClick={() => setStatusFilter('open')}
+              />
+              <FilterButton
+                label="Merged"
+                count={counts.merged}
+                color={STATUS_COLORS.merged}
+                isActive={statusFilter === 'merged'}
+                onClick={() => setStatusFilter('merged')}
+              />
+              <FilterButton
+                label="Closed"
+                count={counts.closed}
+                color={STATUS_COLORS.closed}
+                isActive={statusFilter === 'closed'}
+                onClick={() => setStatusFilter('closed')}
+              />
+              <Box
+                sx={{
+                  width: '1px',
+                  height: 20,
+                  backgroundColor: 'border.light',
+                  mx: 0.5,
+                }}
+              />
+              <FilterButton
+                label="Starred"
+                count={sourceCounts.starred}
+                color={SOURCE_META.starred.color}
+                isActive={activeSources.has('starred')}
+                onClick={() => toggleSource('starred')}
+              />
+              <FilterButton
+                label="Miner"
+                count={sourceCounts.miner}
+                color={SOURCE_META.miner.color}
+                isActive={activeSources.has('miner')}
+                onClick={() => toggleSource('miner')}
+              />
+              <FilterButton
+                label="Repo"
+                count={sourceCounts.repo}
+                color={SOURCE_META.repo.color}
+                isActive={activeSources.has('repo')}
+                onClick={() => toggleSource('repo')}
+              />
+            </Box>
+          }
+          onTokenSearchChange={setSearchQuery}
+          searchPlaceholder="Search PRs..."
+          viewMode={viewMode}
+          onViewModeChange={(next) => {
+            setViewMode(next);
+            setPage(0);
           }}
-        >
-          {isLoadingMore && (
-            <>
-              <CircularProgress size={20} sx={{ color: 'text.secondary' }} />
+          viewModeToggle={
+            <PRsViewModeToggle
+              viewMode={viewMode}
+              onChange={(next) => {
+                setViewMode(next);
+                setPage(0);
+              }}
+            />
+          }
+          hasActiveFilter={
+            statusFilter !== 'all' ||
+            !sourcesAllOn ||
+            Boolean(searchQuery.trim())
+          }
+        />
+
+        {/* Content */}
+        {viewMode === 'list' ? (
+          <DataTable<CommitLog, PrSortKey>
+            columns={prColumns}
+            rows={paged}
+            getRowKey={(pr) =>
+              serializePRKey(pr.repository, pr.pullRequestNumber)
+            }
+            getRowHref={getPrHref}
+            linkState={{ backLabel: 'Back to Watchlist' }}
+            minWidth="750px"
+            stickyHeader
+            isLoading={isLoading && items.length === 0}
+            emptyLabel="No watched pull requests found."
+            getRowSx={(pr) =>
+              pr.mergedAt && isOutsideScoringWindow(pr.mergedAt)
+                ? { opacity: 0.4, filter: 'grayscale(0.5)' }
+                : {}
+            }
+            sort={{
+              field: sortField,
+              order: sortOrder,
+              onChange: handleSort,
+            }}
+            pagination={
+              !sidebarFixedRight ? (
+                <WatchlistStackedPagination
+                  count={filtered.length}
+                  page={page}
+                  onPageChange={setPage}
+                />
+              ) : undefined
+            }
+          />
+        ) : (
+          <Box
+            sx={{
+              p: 2,
+              flex: 1,
+              minHeight: 0,
+              overflowY: 'auto',
+              ...scrollbarSx,
+            }}
+          >
+            {isLoading && paged.length === 0 ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : paged.length === 0 ? (
               <Typography
                 sx={{
                   color: 'text.secondary',
+                  textAlign: 'center',
+                  py: 4,
                   fontSize: '0.85rem',
-                  fontFamily: '"JetBrains Mono", monospace',
-                  ml: 1.5,
                 }}
               >
-                Loading more...
+                No watched pull requests found.
               </Typography>
-            </>
-          )}
-        </Box>
-      )}
-      {!sidebarFixedRight && viewMode !== 'list' ? (
-        <WatchlistStackedPagination
-          count={filtered.length}
-          page={page}
-          onPageChange={setPage}
-        />
-      ) : null}
-    </Box>
+            ) : (
+              <Grid container spacing={2} alignItems="stretch">
+                {paged.map((pr) => (
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={4}
+                    key={serializePRKey(pr.repository, pr.pullRequestNumber)}
+                    sx={{ display: 'flex' }}
+                  >
+                    <Box sx={{ width: '100%' }}>
+                      <PRCard
+                        pr={pr}
+                        sources={sourcesByKey.get(
+                          serializePRKey(pr.repository, pr.pullRequestNumber),
+                        )}
+                      />
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </Box>
+        )}
+        {sidebarFixedRight && filtered.length > (page + 1) * ROWS_PER_PAGE && (
+          <Box
+            ref={observerTarget}
+            sx={{
+              height: 60,
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            {isLoadingMore && (
+              <>
+                <CircularProgress size={20} sx={{ color: 'text.secondary' }} />
+                <Typography
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: '0.85rem',
+                    fontFamily: '"JetBrains Mono", monospace',
+                    ml: 1.5,
+                  }}
+                >
+                  Loading more...
+                </Typography>
+              </>
+            )}
+          </Box>
+        )}
+        {!sidebarFixedRight && viewMode !== 'list' ? (
+          <WatchlistStackedPagination
+            count={filtered.length}
+            page={page}
+            onPageChange={setPage}
+          />
+        ) : null}
+      </Box>
+    </WatchlistFiltersSearchProvider>
   );
 };
 
@@ -3680,16 +3710,20 @@ const filterIssues = (
   items: MinerIssue[],
   opts: { statusFilter: IssueStatusFilter; searchQuery: string },
 ): MinerIssue[] => {
-  const q = opts.searchQuery.trim().toLowerCase();
   return items.filter((i) => {
     if (opts.statusFilter !== 'all' && issueState(i) !== opts.statusFilter)
       return false;
-    if (!q) return true;
-    return (
-      (i.title || '').toLowerCase().includes(q) ||
-      i.repo_full_name.toLowerCase().includes(q) ||
-      String(i.issue_number).includes(q)
-    );
+    if (!opts.searchQuery.trim()) return true;
+    const haystack = [
+      i.title,
+      i.repo_full_name,
+      i.author_login,
+      String(i.issue_number),
+      `#${i.issue_number}`,
+    ]
+      .filter(Boolean)
+      .join(' ');
+    return matchesAllSearchTerms(haystack, opts.searchQuery);
   });
 };
 
@@ -4302,169 +4336,175 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     return () => observer.disconnect();
   }, [sidebarFixedRight, page, filtered.length]);
 
-  return (
-    <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
-      {/* Compact Options trigger */}
-      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
-        {({ draftValue, setDraftValue }) => (
-          <WatchlistPortal
-            filterContent={
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 0.5,
-                  alignItems: 'center',
-                  flexWrap: 'wrap',
-                }}
-              >
-                {ISSUE_STATUS_FILTERS.map((s) => (
-                  <FilterButton
-                    key={s}
-                    label={ISSUE_FILTER_LABELS[s]}
-                    count={counts[s]}
-                    color={issueStatusColor(s)}
-                    isActive={statusFilter === s}
-                    onClick={() => setStatusFilter(s)}
-                  />
-                ))}
-              </Box>
-            }
-            searchValue={draftValue}
-            searchPlaceholder="Search issues..."
-            onSearchChange={setDraftValue}
-            viewMode={viewMode}
-            onViewModeChange={(next) => {
-              setViewMode(next);
-              setPage(0);
-            }}
-            viewModeToggle={
-              <PRsViewModeToggle
-                viewMode={viewMode}
-                onChange={(next) => {
-                  setViewMode(next);
-                  setPage(0);
-                }}
-              />
-            }
-            hasActiveFilter={statusFilter !== 'all'}
-          />
-        )}
-      </DebouncedSearchInput>
+  const tokenSearch = (
+    <WatchlistTokenSearchField
+      onQueryChange={setSearchQuery}
+      placeholder="Search issues..."
+    />
+  );
 
-      {viewMode === 'list' ? (
-        <DataTable<MinerIssue, IssueSortKey>
-          columns={issueColumns}
-          rows={paged}
-          getRowKey={(i) => issueKey(i)}
-          getRowHref={getIssueHref}
-          minWidth="750px"
-          stickyHeader
-          isLoading={isLoading && items.length === 0}
-          emptyLabel="No issues found for the watched miners."
-          getRowSx={(issue) =>
-            issue.closed_at && isOutsideScoringWindow(issue.closed_at)
-              ? { opacity: 0.4, filter: 'grayscale(0.5)' }
-              : {}
-          }
-          sort={{
-            field: sortField,
-            order: sortOrder,
-            onChange: handleSort,
-          }}
-          pagination={
-            !sidebarFixedRight ? (
-              <WatchlistStackedPagination
-                count={filtered.length}
-                page={page}
-                onPageChange={setPage}
-              />
-            ) : undefined
-          }
-        />
-      ) : (
-        <Box
-          sx={{
-            p: 2,
-            flex: 1,
-            minHeight: 0,
-            overflowY: 'auto',
-            ...scrollbarSx,
-          }}
-        >
-          {isLoading && paged.length === 0 ? (
-            <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-              <CircularProgress size={24} />
-            </Box>
-          ) : paged.length === 0 ? (
-            <Typography
+  return (
+    <WatchlistFiltersSearchProvider value={tokenSearch}>
+      <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column' }}>
+        <WatchlistPortal
+          portalKey="watchlist-issues-filters"
+          filterContent={
+            <Box
               sx={{
-                color: 'text.secondary',
-                textAlign: 'center',
-                py: 4,
-                fontSize: '0.85rem',
+                display: 'flex',
+                gap: 0.5,
+                alignItems: 'center',
+                flexWrap: 'wrap',
               }}
             >
-              No issues found for the watched miners.
-            </Typography>
-          ) : (
-            <Grid container spacing={2} alignItems="stretch">
-              {paged.map((i) => (
-                <Grid
-                  item
-                  xs={12}
-                  sm={6}
-                  md={4}
-                  key={issueKey(i)}
-                  sx={{ display: 'flex' }}
-                >
-                  <Box sx={{ width: '100%' }}>
-                    <IssueCard
-                      issue={i}
-                      sources={sourcesByKey.get(issueKey(i))}
-                    />
-                  </Box>
-                </Grid>
+              {ISSUE_STATUS_FILTERS.map((s) => (
+                <FilterButton
+                  key={s}
+                  label={ISSUE_FILTER_LABELS[s]}
+                  count={counts[s]}
+                  color={issueStatusColor(s)}
+                  isActive={statusFilter === s}
+                  onClick={() => setStatusFilter(s)}
+                />
               ))}
-            </Grid>
-          )}
-        </Box>
-      )}
-      {sidebarFixedRight && filtered.length > (page + 1) * ROWS_PER_PAGE && (
-        <Box
-          ref={observerTarget}
-          sx={{
-            height: 60,
-            width: '100%',
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
+            </Box>
+          }
+          onTokenSearchChange={setSearchQuery}
+          searchPlaceholder="Search issues..."
+          viewMode={viewMode}
+          onViewModeChange={(next) => {
+            setViewMode(next);
+            setPage(0);
           }}
-        >
-          {isLoadingMore && (
-            <>
-              <CircularProgress size={20} sx={{ color: 'text.secondary' }} />
+          viewModeToggle={
+            <PRsViewModeToggle
+              viewMode={viewMode}
+              onChange={(next) => {
+                setViewMode(next);
+                setPage(0);
+              }}
+            />
+          }
+          hasActiveFilter={
+            statusFilter !== 'all' || Boolean(searchQuery.trim())
+          }
+        />
+
+        {viewMode === 'list' ? (
+          <DataTable<MinerIssue, IssueSortKey>
+            columns={issueColumns}
+            rows={paged}
+            getRowKey={(i) => issueKey(i)}
+            getRowHref={getIssueHref}
+            minWidth="750px"
+            stickyHeader
+            isLoading={isLoading && items.length === 0}
+            emptyLabel="No issues found for the watched miners."
+            getRowSx={(issue) =>
+              issue.closed_at && isOutsideScoringWindow(issue.closed_at)
+                ? { opacity: 0.4, filter: 'grayscale(0.5)' }
+                : {}
+            }
+            sort={{
+              field: sortField,
+              order: sortOrder,
+              onChange: handleSort,
+            }}
+            pagination={
+              !sidebarFixedRight ? (
+                <WatchlistStackedPagination
+                  count={filtered.length}
+                  page={page}
+                  onPageChange={setPage}
+                />
+              ) : undefined
+            }
+          />
+        ) : (
+          <Box
+            sx={{
+              p: 2,
+              flex: 1,
+              minHeight: 0,
+              overflowY: 'auto',
+              ...scrollbarSx,
+            }}
+          >
+            {isLoading && paged.length === 0 ? (
+              <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
+                <CircularProgress size={24} />
+              </Box>
+            ) : paged.length === 0 ? (
               <Typography
                 sx={{
                   color: 'text.secondary',
+                  textAlign: 'center',
+                  py: 4,
                   fontSize: '0.85rem',
-                  fontFamily: '"JetBrains Mono", monospace',
-                  ml: 1.5,
                 }}
               >
-                Loading more...
+                No issues found for the watched miners.
               </Typography>
-            </>
-          )}
-        </Box>
-      )}
-      {!sidebarFixedRight && viewMode !== 'list' ? (
-        <WatchlistStackedPagination
-          count={filtered.length}
-          page={page}
-          onPageChange={setPage}
-        />
-      ) : null}
-    </Box>
+            ) : (
+              <Grid container spacing={2} alignItems="stretch">
+                {paged.map((i) => (
+                  <Grid
+                    item
+                    xs={12}
+                    sm={6}
+                    md={4}
+                    key={issueKey(i)}
+                    sx={{ display: 'flex' }}
+                  >
+                    <Box sx={{ width: '100%' }}>
+                      <IssueCard
+                        issue={i}
+                        sources={sourcesByKey.get(issueKey(i))}
+                      />
+                    </Box>
+                  </Grid>
+                ))}
+              </Grid>
+            )}
+          </Box>
+        )}
+        {sidebarFixedRight && filtered.length > (page + 1) * ROWS_PER_PAGE && (
+          <Box
+            ref={observerTarget}
+            sx={{
+              height: 60,
+              width: '100%',
+              display: 'flex',
+              justifyContent: 'center',
+              alignItems: 'center',
+            }}
+          >
+            {isLoadingMore && (
+              <>
+                <CircularProgress size={20} sx={{ color: 'text.secondary' }} />
+                <Typography
+                  sx={{
+                    color: 'text.secondary',
+                    fontSize: '0.85rem',
+                    fontFamily: '"JetBrains Mono", monospace',
+                    ml: 1.5,
+                  }}
+                >
+                  Loading more...
+                </Typography>
+              </>
+            )}
+          </Box>
+        )}
+        {!sidebarFixedRight && viewMode !== 'list' ? (
+          <WatchlistStackedPagination
+            count={filtered.length}
+            page={page}
+            onPageChange={setPage}
+          />
+        ) : null}
+      </Box>
+    </WatchlistFiltersSearchProvider>
   );
 };
 

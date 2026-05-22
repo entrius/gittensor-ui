@@ -1,5 +1,6 @@
 import { type CommitLog } from '../api';
 import { isClosedUnmergedPr, isMergedPr, isOpenPr } from './prStatus';
+import { matchesAllSearchTerms } from './watchlistSearch';
 
 export type PrStatusFilter = 'all' | 'open' | 'merged' | 'closed';
 
@@ -30,19 +31,20 @@ export const filterPrs = <T extends CommitLog>(
   else if (statusFilter === 'closed')
     filtered = filtered.filter(isClosedUnmergedPr);
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
-  if (!normalizedQuery) return filtered;
+  if (!searchQuery.trim()) return filtered;
 
   return filtered.filter((pr) => {
-    if (pr.pullRequestTitle?.toLowerCase().includes(normalizedQuery))
-      return true;
-    if (pr.repository.toLowerCase().includes(normalizedQuery)) return true;
-    if (includeNumber) {
-      const num = String(pr.pullRequestNumber);
-      if (num.includes(normalizedQuery)) return true;
-      if (`#${num}`.includes(normalizedQuery)) return true;
-    }
-    return false;
+    const num = String(pr.pullRequestNumber);
+    const haystack = [
+      pr.pullRequestTitle,
+      pr.repository,
+      pr.author,
+      includeNumber ? num : '',
+      includeNumber ? `#${num}` : '',
+    ]
+      .filter(Boolean)
+      .join(' ');
+    return matchesAllSearchTerms(haystack, searchQuery);
   });
 };
 
