@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Avatar,
   Box,
@@ -33,6 +34,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
   isLoading,
   backLabel,
 }) => {
+  const navigate = useNavigate();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const linkState = backLabel ? { backLabel } : undefined;
@@ -85,20 +87,23 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
       },
       renderCell: (submission) =>
         submission.authorGithubId ? (
-          <LinkBox
-            component={Typography}
-            href={`/miners/details?githubId=${submission.authorGithubId}`}
-            linkState={linkState}
-            onClick={(e: React.MouseEvent) => e.stopPropagation()}
-            sx={{
-              fontSize: '0.85rem',
-              color: STATUS_COLORS.info,
-              cursor: 'pointer',
-              '&:hover': { textDecoration: 'underline' },
-            }}
+          <span
+            onClick={(e) => e.stopPropagation()}
+            onKeyDown={(e) => e.stopPropagation()}
           >
-            {submission.authorLogin}
-          </LinkBox>
+            <LinkBox
+              href={`/miners/details?githubId=${submission.authorGithubId}`}
+              linkState={linkState}
+              sx={{
+                fontSize: '0.85rem',
+                color: STATUS_COLORS.info,
+                cursor: 'pointer',
+                '&:hover': { textDecoration: 'underline' },
+              }}
+            >
+              {submission.authorLogin}
+            </LinkBox>
+          </span>
         ) : (
           <Typography sx={{ fontSize: '0.85rem', color: STATUS_COLORS.info }}>
             {submission.authorLogin}
@@ -361,11 +366,28 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                   />
                   <Box>
                     {winnerSubmission.authorGithubId ? (
-                      <LinkBox
-                        component={Typography}
-                        href={`/miners/details?githubId=${winnerSubmission.authorGithubId}`}
-                        linkState={linkState}
-                        onClick={(e: React.MouseEvent) => e.stopPropagation()}
+                      <Typography
+                        component="span"
+                        tabIndex={0}
+                        role="link"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          e.preventDefault();
+                          navigate(
+                            `/miners/details?githubId=${winnerSubmission.authorGithubId}`,
+                            { state: linkState },
+                          );
+                        }}
+                        onKeyDown={(e) => {
+                          e.stopPropagation();
+                          if (e.key === 'Enter' || e.key === ' ') {
+                            e.preventDefault();
+                            navigate(
+                              `/miners/details?githubId=${winnerSubmission.authorGithubId}`,
+                              { state: linkState },
+                            );
+                          }
+                        }}
                         sx={{
                           fontSize: '0.92rem',
                           color: STATUS_COLORS.info,
@@ -374,7 +396,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                         }}
                       >
                         {winnerSubmission.authorLogin}
-                      </LinkBox>
+                      </Typography>
                     ) : (
                       <Typography
                         sx={{ fontSize: '0.92rem', color: STATUS_COLORS.info }}
@@ -445,10 +467,12 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
             getRowKey={(submission) =>
               `${submission.repositoryFullName}-${submission.number}`
             }
-            getRowHref={(submission) =>
-              `/miners/pr?repo=${encodeURIComponent(submission.repositoryFullName)}&number=${submission.number}`
+            onRowClick={(submission) =>
+              navigate(
+                `/miners/pr?repo=${encodeURIComponent(submission.repositoryFullName)}&number=${submission.number}`,
+                { state: linkState },
+              )
             }
-            linkState={linkState}
           />
         </Card>
       )}
