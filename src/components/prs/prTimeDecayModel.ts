@@ -194,5 +194,5 @@ export function buildDecaySubline(projection: DecayProjection): string {
   if (projection.daysSinceMerge > projection.lookbackDays) {
     return `Outside ${projection.lookbackDays}-day scoring window.`;
   }
-  return `${projection.daysSinceMerge.toFixed(1)} days since merge`;
+  return `${projection.daysSinceMerge.toFixed(1)} day(s) since merge`;
 }
