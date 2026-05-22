@@ -1,6 +1,21 @@
 import { type CommitLog } from '../api';
 import { isClosedUnmergedPr, isMergedPr, isOpenPr } from './prStatus';
 
+/** Substring match against merged timestamp (ISO, locale date/time, year). */
+const mergedAtMatchesSearch = (
+  mergedAt: string | null | undefined,
+  qLower: string,
+): boolean => {
+  if (!mergedAt || !qLower) return false;
+  if (String(mergedAt).toLowerCase().includes(qLower)) return true;
+  const d = new Date(mergedAt);
+  if (Number.isNaN(d.getTime())) return false;
+  if (d.toLocaleDateString().toLowerCase().includes(qLower)) return true;
+  if (d.toLocaleString().toLowerCase().includes(qLower)) return true;
+  if (String(d.getFullYear()).includes(qLower)) return true;
+  return false;
+};
+
 export type PrStatusFilter = 'all' | 'open' | 'merged' | 'closed';
 
 interface FilterPrsOptions {
@@ -15,7 +30,7 @@ export const filterPrs = <T extends CommitLog>(
   {
     author,
     includeNumber = false,
-    searchQuery = '',
+    searchQuery,
     statusFilter = 'all',
   }: FilterPrsOptions = {},
 ) => {
@@ -30,20 +45,18 @@ export const filterPrs = <T extends CommitLog>(
   else if (statusFilter === 'closed')
     filtered = filtered.filter(isClosedUnmergedPr);
 
-  const normalizedQuery = searchQuery.trim().toLowerCase();
+  const normalizedQuery = searchQuery?.trim().toLowerCase() ?? '';
   if (!normalizedQuery) return filtered;
 
-  return filtered.filter((pr) => {
-    if (pr.pullRequestTitle?.toLowerCase().includes(normalizedQuery))
-      return true;
-    if (pr.repository.toLowerCase().includes(normalizedQuery)) return true;
-    if (includeNumber) {
-      const num = String(pr.pullRequestNumber);
-      if (num.includes(normalizedQuery)) return true;
-      if (`#${num}`.includes(normalizedQuery)) return true;
-    }
-    return false;
-  });
+  return filtered.filter(
+    (pr) =>
+      pr.pullRequestTitle?.toLowerCase().includes(normalizedQuery) ||
+      pr.repository.toLowerCase().includes(normalizedQuery) ||
+      (includeNumber &&
+        (String(pr.pullRequestNumber).includes(normalizedQuery) ||
+          `#${pr.pullRequestNumber}`.includes(normalizedQuery))) ||
+      mergedAtMatchesSearch(pr.mergedAt, normalizedQuery),
+  );
 };
 
 export const paginateItems = <T>(items: T[], page: number, pageSize: number) =>

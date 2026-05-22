@@ -6,10 +6,13 @@ import {
   Card,
   Chip,
   CircularProgress,
+  InputAdornment,
   Stack,
+  TextField,
   Typography,
   alpha,
 } from '@mui/material';
+import { Search as SearchIcon } from '@mui/icons-material';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAllPrs, type CommitLog } from '../../api';
 import {
@@ -18,6 +21,7 @@ import {
 } from '../../components/common/DataTable';
 import { WatchlistButton } from '../../components/common';
 import TablePagination from '../../components/common/TablePagination';
+import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import {
   comparePRsByWatchlist,
@@ -68,6 +72,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   const [sortField, setSortField] = useState<PrSortField>('score');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [page, setPage] = useState(0);
+  const [searchQuery, setSearchQuery] = useState('');
   const authorFilter = searchParams.get('prAuthor') ?? AUTHOR_FILTER_ALL;
 
   const setAuthorFilter = useCallback(
@@ -106,16 +111,26 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     );
   }, [allMinerPRs, repositoryFullName]);
 
-  const counts = useMemo(() => {
-    if (!allPRs) return { all: 0, open: 0, merged: 0, closed: 0 };
-    return getPrStatusCounts(allPRs);
-  }, [allPRs]);
+  const tabCounts = useMemo(
+    () =>
+      getPrStatusCounts(
+        filterPrs(allPRs, {
+          author: authorFilter === AUTHOR_FILTER_ALL ? null : authorFilter,
+        }),
+      ),
+    [allPRs, authorFilter],
+  );
 
-  const filteredPRs = useMemo(() => {
-    const byStatus = filterPrs(allPRs ?? [], { statusFilter: filter });
-    if (authorFilter === AUTHOR_FILTER_ALL) return byStatus;
-    return byStatus.filter((pr) => pr.author === authorFilter);
-  }, [allPRs, filter, authorFilter]);
+  const filteredPRs = useMemo(
+    () =>
+      filterPrs(allPRs, {
+        statusFilter: filter,
+        author: authorFilter === AUTHOR_FILTER_ALL ? null : authorFilter,
+        searchQuery,
+        includeNumber: true,
+      }),
+    [allPRs, filter, authorFilter, searchQuery],
+  );
 
   const sortedPRs = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
@@ -162,7 +177,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   // Reset to the first page whenever the result set changes underneath us.
   useEffect(() => {
     setPage(0);
-  }, [filter, authorFilter, sortField, sortOrder]);
+  }, [filter, authorFilter, searchQuery, sortField, sortOrder]);
 
   const totalPages = Math.ceil(sortedPRs.length / PR_PAGE_SIZE);
   const pagedPRs = useMemo(
@@ -193,28 +208,28 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         label="All"
         isActive={filter === 'all'}
         onClick={() => setFilter('all')}
-        count={counts.all}
+        count={tabCounts.all}
         color={theme.palette.status.neutral}
       />
       <FilterButton
         label="Open"
         isActive={filter === 'open'}
         onClick={() => setFilter('open')}
-        count={counts.open}
+        count={tabCounts.open}
         color={theme.palette.status.open}
       />
       <FilterButton
         label="Merged"
         isActive={filter === 'merged'}
         onClick={() => setFilter('merged')}
-        count={counts.merged}
+        count={tabCounts.merged}
         color={theme.palette.status.merged}
       />
       <FilterButton
         label="Closed"
         isActive={filter === 'closed'}
         onClick={() => setFilter('closed')}
-        count={counts.closed}
+        count={tabCounts.closed}
         color={theme.palette.status.closed}
       />
       <AuthorFilter
@@ -418,19 +433,58 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         p: 3,
         borderBottom: `1px solid ${theme.palette.border.light}`,
         display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        flexWrap: 'wrap',
+        flexDirection: 'column',
         gap: 2,
       }}
     >
-      <Typography
-        variant="h6"
-        sx={{ color: 'text.primary', fontSize: '1.1rem', fontWeight: 500 }}
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 2,
+        }}
       >
-        Pull Requests ({sortedPRs.length})
-      </Typography>
-      {filterButtons}
+        <Typography
+          variant="h6"
+          sx={{ color: 'text.primary', fontSize: '1.1rem', fontWeight: 500 }}
+        >
+          Pull Requests ({sortedPRs.length})
+        </Typography>
+        {filterButtons}
+      </Box>
+      <TextField
+        size="small"
+        placeholder="Search title, PR #, merged date…"
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        InputProps={{
+          startAdornment: (
+            <InputAdornment position="start">
+              <SearchIcon sx={{ color: 'text.tertiary', fontSize: '1rem' }} />
+            </InputAdornment>
+          ),
+          endAdornment: (
+            <ClearSearchAdornment
+              visible={Boolean(searchQuery)}
+              onClear={() => setSearchQuery('')}
+            />
+          ),
+        }}
+        sx={{
+          maxWidth: { xs: '100%', sm: 520 },
+          '& .MuiOutlinedInput-root': {
+            fontSize: '0.8rem',
+            color: 'text.primary',
+            backgroundColor: 'surface.subtle',
+            borderRadius: 2,
+            '& fieldset': { borderColor: 'border.light' },
+            '&:hover fieldset': { borderColor: 'border.medium' },
+            '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+          },
+        }}
+      />
     </Box>
   );
 
