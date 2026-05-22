@@ -24,7 +24,7 @@ export const MINER_EXPLORER_ROWS_OPTIONS: readonly MinerExplorerRowsOption[] = [
 
 const PAGE_SIZE_WHITELIST = new Set<number>(MINER_PAGE_SIZES);
 
-export const DEFAULT_MINER_EXPLORER_ROWS: MinerExplorerRowsOption = 10;
+export const DEFAULT_MINER_EXPLORER_ROWS: MinerExplorerRowsOption = 20;
 
 export const MINER_EXPLORER_PAGE_PARAM = 'prPage';
 export const MINER_EXPLORER_ROWS_PARAM = 'prRows';
@@ -70,8 +70,6 @@ export function getMinerExplorerPaging<T>(
   safePage: number;
   slice: T[];
   showPageNav: boolean;
-  pageSize: number;
-  rankOffset: number;
 } {
   const isAll = rows === 'all';
   const pageSize = isAll ? Math.max(items.length, 1) : rows;
@@ -82,8 +80,7 @@ export function getMinerExplorerPaging<T>(
   const start = safePage * pageSize;
   const slice = isAll ? [...items] : items.slice(start, start + pageSize);
   const showPageNav = !isAll && totalPages > 1;
-  const rankOffset = isAll ? 0 : safePage * pageSize;
-  return { totalPages, safePage, slice, showPageNav, pageSize, rankOffset };
+  return { totalPages, safePage, slice, showPageNav };
 }
 
 // --- Hook -------------------------------------------------------------------

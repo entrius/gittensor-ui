@@ -12,7 +12,7 @@ export interface MinerTableRowsSelectProps {
   id?: string;
 }
 
-/** Rows-per-page control for table header toolbars (miner PR / repos tables). */
+/** Rows-per-page control for the Miner PRs table header toolbar. */
 const MinerTableRowsSelect: React.FC<MinerTableRowsSelectProps> = ({
   value,
   onChange,
