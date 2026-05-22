@@ -8,7 +8,6 @@ import {
   CircularProgress,
   Typography,
   alpha,
-  useMediaQuery,
   useTheme,
 } from '@mui/material';
 import CalendarTodayOutlinedIcon from '@mui/icons-material/CalendarTodayOutlined';
@@ -23,6 +22,10 @@ import {
   type DataTableColumn,
 } from '../../components/common/DataTable';
 
+// Sum of the fixed column widths below; keeps the table from compressing
+// into an unreadable layout on narrow viewports (scrolls horizontally instead).
+const SUBMISSIONS_TABLE_MIN_WIDTH = 832;
+
 interface IssueSubmissionsTableProps {
   submissions: IssueSubmission[] | undefined;
   isLoading: boolean;
@@ -36,7 +39,6 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const linkState = backLabel ? { backLabel } : undefined;
   const winnerSubmission =
     submissions?.find((submission) => submission.isWinner) ?? null;
@@ -463,7 +465,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
           <DataTable
             columns={columns}
             rows={otherSubmissions}
-            minWidth={isMobile ? 832 : undefined}
+            minWidth={SUBMISSIONS_TABLE_MIN_WIDTH}
             getRowKey={(submission) =>
               `${submission.repositoryFullName}-${submission.number}`
             }

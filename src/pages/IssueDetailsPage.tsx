@@ -127,6 +127,8 @@ const IssueDetailsPage: React.FC = () => {
                 value={tabValue}
                 onChange={handleTabChange}
                 aria-label="issue details tabs"
+                variant="scrollable"
+                scrollButtons="auto"
                 sx={(theme) => ({
                   '& .MuiTab-root': {
                     color: STATUS_COLORS.open,
@@ -135,7 +137,8 @@ const IssueDetailsPage: React.FC = () => {
                     textTransform: 'none',
                     fontWeight: 500,
                     minHeight: '48px',
-                    fontSize: '14px',
+                    fontSize: { xs: '13px', sm: '14px' },
+                    px: { xs: 1.5, sm: 2 },
                     '&.Mui-selected': {
                       color: theme.palette.text.primary,
                       fontWeight: 600,
