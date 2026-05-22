@@ -362,7 +362,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
         return {
           contributionData: [],
           contributionsShown: 0,
-          totalDaysShown: 0,
+          totalDaysShown: 1,
         };
       }
 
@@ -398,7 +398,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
 
       const shownCount = Array.from(dataMap.values()).reduce(
         (total, count) => total + count,
-        0
+        0,
       );
 
       const data = Array.from(dataMap.entries())
@@ -415,7 +415,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
       return {
         contributionData: data,
         contributionsShown: shownCount,
-        totalDaysShown: daysToShow,
+        totalDaysShown: data.length,
       };
     }, [prs]);
 
