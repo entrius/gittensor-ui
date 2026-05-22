@@ -337,7 +337,12 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   // "1"). Filters apply downstream and never renumber the rows they keep.
   const rankedMiners = useMemo(() => {
     const canonicalDesc = [...miners]
-      .sort((a, b) => -compareMiners(a, b, sortOption, isWatched))
+      .sort((a, b) => {
+        const cmp = compareMiners(a, b, sortOption, isWatched);
+        if (cmp !== 0) return -cmp;
+        // Tie-break so sort order stays stable across header clicks / re-renders.
+        return a.id.localeCompare(b.id);
+      })
       .map((miner, index) => ({ ...miner, rank: index + 1 }));
     return sortDirection === 'desc'
       ? canonicalDesc

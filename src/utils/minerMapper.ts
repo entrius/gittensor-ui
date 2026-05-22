@@ -5,6 +5,37 @@ import {
 import { type MinerStats } from '../components/leaderboard/types';
 import { parseNumber } from './ExplorerUtils';
 
+/** Stable key for collapsing duplicate evaluation rows that share a GitHub id. */
+const repositoryMinerDedupeKey = (row: RepositoryMiner): string => {
+  const githubId = row.githubId?.trim();
+  return githubId ? githubId : `eval:${row.id}`;
+};
+
+/**
+ * The repo miners endpoint can return multiple `miner_evaluations` rows for the
+ * same GitHub identity (e.g. hotkey changes). Keep the strongest row for the
+ * active scoring track so the table shows one entry per miner.
+ */
+const dedupeRepositoryMinerRows = (
+  rows: RepositoryMiner[],
+  score: (row: RepositoryMiner) => number,
+): RepositoryMiner[] => {
+  const bestByKey = new Map<string, RepositoryMiner>();
+  for (const row of rows) {
+    const key = repositoryMinerDedupeKey(row);
+    const existing = bestByKey.get(key);
+    if (!existing) {
+      bestByKey.set(key, row);
+      continue;
+    }
+    const delta = score(row) - score(existing);
+    if (delta > 0 || (delta === 0 && row.id > existing.id)) {
+      bestByKey.set(key, row);
+    }
+  }
+  return [...bestByKey.values()];
+};
+
 export const mapAllMinersToStats = (
   allMinersStats: MinerEvaluation[],
 ): MinerStats[] => {
@@ -69,7 +100,11 @@ export const mapRepositoryMinersToStats = (
       ? parseNumber(row.issueDiscoveryScore)
       : parseNumber(row.totalScore);
 
-  const ranked = [...rows].sort((a, b) => activeScore(b) - activeScore(a));
+  const ranked = dedupeRepositoryMinerRows(rows, activeScore).sort((a, b) => {
+    const byScore = activeScore(b) - activeScore(a);
+    if (byScore !== 0) return byScore;
+    return b.id - a.id;
+  });
 
   return ranked.map((row, index) => {
     const totalSolvedIssues = parseNumber(row.totalSolvedIssues);
@@ -77,7 +112,8 @@ export const mapRepositoryMinersToStats = (
     const totalClosedIssues = parseNumber(row.totalClosedIssues);
 
     return {
-      id: row.githubId || '',
+      // Evaluation row id — unique even when the API returns duplicate githubIds.
+      id: String(row.id),
       githubId: row.githubId || '',
       author: row.githubUsername || undefined,
       totalScore: activeScore(row),
