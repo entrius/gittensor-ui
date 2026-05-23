@@ -1015,6 +1015,8 @@ const IssuesList: React.FC<IssuesListProps> = ({
     </Box>
   );
 
+  const usePortal = !!portalTarget && isLargeScreen;
+
   const optionsPortalFilters = (
     <>
       {sortSection}
@@ -1023,10 +1025,12 @@ const IssuesList: React.FC<IssuesListProps> = ({
         {viewToggle}
       </Box>
       {rowsSection}
-      <Box>
-        <Typography sx={sidebarLabelSx}>Search</Typography>
-        <IssuesListSearchTextField fullWidth />
-      </Box>
+      {usePortal && (
+        <Box>
+          <Typography sx={sidebarLabelSx}>Search</Typography>
+          <IssuesListSearchTextField fullWidth />
+        </Box>
+      )}
       <Box>
         <Typography sx={sidebarLabelSx}>Chart</Typography>
         <Stack direction="row" alignItems="center" spacing={1}>
@@ -1044,8 +1048,6 @@ const IssuesList: React.FC<IssuesListProps> = ({
       </Box>
     </>
   );
-
-  const usePortal = !!portalTarget && isLargeScreen;
 
   const hasActiveOptions = searchQuery.trim() !== '' || showChart;
 
@@ -1151,10 +1153,13 @@ const IssuesList: React.FC<IssuesListProps> = ({
             : `1px solid ${theme.palette.border.light}`,
         display: 'flex',
         alignItems: 'center',
-        gap: 2,
+        gap: 1.5,
       }}
     >
-      {!usePortal && <Box sx={{ ml: 'auto' }}>{optionsButton}</Box>}
+      <Box sx={{ flex: 1, minWidth: 0 }}>
+        <IssuesListSearchTextField fullWidth />
+      </Box>
+      <Box sx={{ flexShrink: 0 }}>{optionsButton}</Box>
     </Box>
   );
 
@@ -1199,76 +1204,74 @@ const IssuesList: React.FC<IssuesListProps> = ({
   );
 
   return (
-    <>
-      <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
-        <>
-          {usePortal && portalTarget && (
-            <Portal container={portalTarget}>
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {optionsPortalFilters}
-              </Box>
-            </Portal>
-          )}
-          {optionsPopover}
-        </>
-      </DebouncedSearchInput>
-      <Card sx={cardSx} elevation={0}>
-        {!usePortal ? inlineToolbar : null}
-        {chartCollapse}
-
-        {viewMode === 'cards' ? (
-          pagedIssues.length > 0 ? (
-            <>
-              <Grid container spacing={2}>
-                {pagedIssues.map((issue) => (
-                  <Grid item xs={12} sm={6} md={4} key={issue.id}>
-                    <BountyCard
-                      issue={issue}
-                      href={getIssueHref ? getIssueHref(issue.id) : undefined}
-                      linkState={linkState}
-                      taoPrice={taoPrice}
-                      alphaPrice={alphaPrice}
-                    />
-                  </Grid>
-                ))}
-              </Grid>
-              {paginationControl}
-            </>
-          ) : (
-            emptyState
-          )
-        ) : (
-          <DataTable<IssueBounty, SortKey>
-            columns={columns}
-            rows={pagedIssues}
-            getRowKey={(issue) => issue.id}
-            getRowHref={
-              getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
-            }
-            linkState={linkState}
-            minWidth={
-              filterType === 'history'
-                ? '1000px'
-                : filterType === 'pending'
-                  ? '900px'
-                  : '750px'
-            }
-            emptyState={emptyState}
-            getRowSx={(issue) =>
-              issue.completedAt && isOutsideScoringWindow(issue.completedAt)
-                ? { opacity: 0.4, filter: 'grayscale(0.5)' }
-                : {}
-            }
-            sort={{
-              field: sortKey,
-              order: sortDirection,
-              onChange: handleSort,
-            }}
-            pagination={paginationControl}
-          />
+    <DebouncedSearchInput onDebouncedChange={setSearchQuery}>
+      <>
+        {usePortal && portalTarget && (
+          <Portal container={portalTarget}>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+              {optionsPortalFilters}
+            </Box>
+          </Portal>
         )}
-      </Card>
-    </>
+        {optionsPopover}
+        <Card sx={cardSx} elevation={0}>
+          {!usePortal ? inlineToolbar : null}
+          {chartCollapse}
+
+          {viewMode === 'cards' ? (
+            pagedIssues.length > 0 ? (
+              <>
+                <Grid container spacing={2}>
+                  {pagedIssues.map((issue) => (
+                    <Grid item xs={12} sm={6} md={4} key={issue.id}>
+                      <BountyCard
+                        issue={issue}
+                        href={getIssueHref ? getIssueHref(issue.id) : undefined}
+                        linkState={linkState}
+                        taoPrice={taoPrice}
+                        alphaPrice={alphaPrice}
+                      />
+                    </Grid>
+                  ))}
+                </Grid>
+                {paginationControl}
+              </>
+            ) : (
+              emptyState
+            )
+          ) : (
+            <DataTable<IssueBounty, SortKey>
+              columns={columns}
+              rows={pagedIssues}
+              getRowKey={(issue) => issue.id}
+              getRowHref={
+                getIssueHref ? (issue) => getIssueHref(issue.id) : undefined
+              }
+              linkState={linkState}
+              minWidth={
+                filterType === 'history'
+                  ? '1000px'
+                  : filterType === 'pending'
+                    ? '900px'
+                    : '750px'
+              }
+              emptyState={emptyState}
+              getRowSx={(issue) =>
+                issue.completedAt && isOutsideScoringWindow(issue.completedAt)
+                  ? { opacity: 0.4, filter: 'grayscale(0.5)' }
+                  : {}
+              }
+              sort={{
+                field: sortKey,
+                order: sortDirection,
+                onChange: handleSort,
+              }}
+              pagination={paginationControl}
+            />
+          )}
+        </Card>
+      </>
+    </DebouncedSearchInput>
   );
 };
 
