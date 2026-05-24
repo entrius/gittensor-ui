@@ -32,6 +32,8 @@ type SortKey =
   | 'totalPRs'
   | 'miners'
   | 'collateral'
+  | 'maintainerCut'
+  | 'issueShare'
   | 'name';
 
 interface EnrichedRepo {
@@ -44,6 +46,12 @@ interface EnrichedRepo {
   openPRs: number;
   pctIncrease: number; // 7d trend %; 0 if no prior baseline
   authorScores: { author: string; score: number; prs: number }[];
+  // Scoring config (from RepositoryConfig)
+  maintainerCut: number; // 0-1
+  issueDiscoveryShare: number; // 0-1
+  defaultLabelMultiplier?: number;
+  labelMultipliers: Record<string, number>;
+  trustedLabelPipeline: boolean;
 }
 
 // ── Helpers ────────────────────────────────────────────────────────────
@@ -92,6 +100,10 @@ const compareRepos = (a: EnrichedRepo, b: EnrichedRepo, k: SortKey): number => {
       return b.uniqueMiners - a.uniqueMiners;
     case 'collateral':
       return b.collateralTotal - a.collateralTotal;
+    case 'maintainerCut':
+      return b.maintainerCut - a.maintainerCut;
+    case 'issueShare':
+      return b.issueDiscoveryShare - a.issueDiscoveryShare;
   }
 };
 
@@ -112,17 +124,19 @@ const KPI_COLUMNS: { sortKey: SortKey; label: string }[] = [
   { sortKey: 'totalPRs', label: 'PRs' },
   { sortKey: 'miners', label: 'Miners' },
   { sortKey: 'collateral', label: 'Open coll.' },
+  { sortKey: 'maintainerCut', label: 'Maint cut' },
+  { sortKey: 'issueShare', label: 'Issue %' },
 ];
 
-const ROW_GAP = { xs: 1.5, md: 2.5 } as const;
+const ROW_GAP = { xs: 1.5, md: 2 } as const;
 const ROW_PX = { xs: 1.5, sm: 2 } as const;
-const IDENTITY_FLEX = { xs: '1 1 100%', md: '0 0 200px' } as const;
+const IDENTITY_FLEX = { xs: '1 1 100%', md: '0 0 170px' } as const;
 const ACTIONS_FLEX = '0 0 auto' as const;
 const KPI_GRID_TEMPLATE = {
-  xs: 'repeat(3, minmax(0, 1fr))',
-  sm: 'repeat(6, minmax(0, 1fr))',
+  xs: 'repeat(4, minmax(0, 1fr))',
+  md: 'repeat(8, minmax(70px, 1fr))',
 } as const;
-const KPI_GAP = { xs: 0.5, sm: 1.5 } as const;
+const KPI_GAP = { xs: 0.5, md: 1.25 } as const;
 
 interface KpiCellProps {
   value: React.ReactNode;
@@ -234,174 +248,320 @@ interface ExpansionBodyProps {
   recentPrs: RecentPr[];
 }
 
+const ScoringConfig: React.FC<{ repo: EnrichedRepo }> = ({ repo }) => {
+  const labelEntries = Object.entries(repo.labelMultipliers);
+  return (
+    <Box>
+      <SectionHeader>Scoring Config</SectionHeader>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 1,
+          mb: labelEntries.length ? 1.25 : 0,
+        }}
+      >
+        <Box
+          component="span"
+          sx={(theme) => ({
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.5,
+            px: 0.75,
+            py: 0.25,
+            borderRadius: 0.75,
+            fontFamily: FONTS.mono,
+            fontSize: '0.7rem',
+            color: theme.palette.text.secondary,
+            backgroundColor: alpha(theme.palette.common.black, 0.3),
+            border: `1px solid ${theme.palette.border.subtle}`,
+          })}
+        >
+          Default multiplier:&nbsp;
+          <Box component="span" sx={{ color: 'text.primary', fontWeight: 600 }}>
+            {`${repo.defaultLabelMultiplier ?? 1}×`}
+          </Box>
+        </Box>
+        <Box
+          component="span"
+          sx={(theme) => ({
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 0.5,
+            px: 0.75,
+            py: 0.25,
+            borderRadius: 0.75,
+            fontFamily: FONTS.mono,
+            fontSize: '0.7rem',
+            fontWeight: 600,
+            color: repo.trustedLabelPipeline
+              ? theme.palette.status.success
+              : theme.palette.text.tertiary,
+            backgroundColor: alpha(
+              repo.trustedLabelPipeline
+                ? theme.palette.status.success
+                : theme.palette.text.primary,
+              0.1,
+            ),
+            border: `1px solid ${alpha(
+              repo.trustedLabelPipeline
+                ? theme.palette.status.success
+                : theme.palette.text.primary,
+              0.2,
+            )}`,
+          })}
+        >
+          Trusted labels: {repo.trustedLabelPipeline ? 'on' : 'off'}
+        </Box>
+      </Box>
+      {labelEntries.length > 0 ? (
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+          {labelEntries.map(([label, mult]) => (
+            <Box
+              key={label}
+              sx={(theme) => ({
+                display: 'inline-flex',
+                alignItems: 'baseline',
+                gap: 0.5,
+                px: 0.75,
+                py: 0.25,
+                borderRadius: 0.75,
+                fontFamily: FONTS.mono,
+                fontSize: '0.7rem',
+                color: theme.palette.text.primary,
+                backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                border: `1px solid ${alpha(theme.palette.primary.main, 0.25)}`,
+              })}
+            >
+              <Box component="span" sx={{ color: 'text.secondary' }}>
+                {label}
+              </Box>
+              <Box component="span" sx={{ fontWeight: 700 }}>
+                {`${mult}×`}
+              </Box>
+            </Box>
+          ))}
+        </Box>
+      ) : (
+        <Typography
+          sx={(theme) => ({
+            fontSize: '0.72rem',
+            color: alpha(theme.palette.text.primary, 0.4),
+            fontStyle: 'italic',
+          })}
+        >
+          No per-label multipliers configured.
+        </Typography>
+      )}
+    </Box>
+  );
+};
+
 const ExpansionBody: React.FC<ExpansionBodyProps> = ({ repo, recentPrs }) => (
   <Box
     sx={(theme) => ({
       pt: 2,
       mt: 2,
       borderTop: `1px solid ${theme.palette.border.subtle}`,
-      display: 'grid',
-      gridTemplateColumns: { xs: '1fr', md: '1.4fr 1fr' },
-      gap: { xs: 2, md: 3 },
+      display: 'flex',
+      flexDirection: 'column',
+      gap: { xs: 2, md: 2.5 },
     })}
   >
-    <Box>
-      <SectionHeader>Recent Merged PRs</SectionHeader>
-      {recentPrs.length === 0 ? (
-        <Typography
-          sx={(theme) => ({
-            fontSize: '0.78rem',
-            color: alpha(theme.palette.text.primary, 0.4),
-            fontStyle: 'italic',
-            p: 1,
-          })}
-        >
-          No merged PRs yet.
-        </Typography>
-      ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-          {recentPrs.map((pr) => (
-            <LinkBox
-              key={pr.number}
-              href={getPrHref(repo.repository, pr.number)}
-              linkState={REPO_LINK_STATE}
-              sx={(theme) => ({
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 1,
-                px: 1,
-                py: 0.75,
-                mx: -1,
-                borderRadius: 1,
-                cursor: 'pointer',
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.text.primary, 0.04),
-                },
-              })}
-            >
-              <Box sx={{ minWidth: 0, flex: 1 }}>
-                <Tooltip
-                  title={pr.title}
-                  arrow
-                  placement="top"
-                  enterDelay={400}
-                >
-                  <Typography
-                    sx={{
-                      fontFamily: FONTS.mono,
-                      fontSize: '0.78rem',
-                      color: 'text.primary',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                    }}
+    <ScoringConfig repo={repo} />
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: '1.4fr 1fr' },
+        gap: { xs: 2, md: 3 },
+      }}
+    >
+      <Box>
+        <SectionHeader>Recent Merged PRs</SectionHeader>
+        {recentPrs.length === 0 ? (
+          <Typography
+            sx={(theme) => ({
+              fontSize: '0.78rem',
+              color: alpha(theme.palette.text.primary, 0.4),
+              fontStyle: 'italic',
+              p: 1,
+            })}
+          >
+            No merged PRs yet.
+          </Typography>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            {recentPrs.map((pr) => (
+              <LinkBox
+                key={pr.number}
+                href={getPrHref(repo.repository, pr.number)}
+                linkState={REPO_LINK_STATE}
+                sx={(theme) => ({
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 1,
+                  px: 1,
+                  py: 0.75,
+                  mx: -1,
+                  borderRadius: 1,
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.text.primary, 0.04),
+                  },
+                })}
+              >
+                <Box sx={{ minWidth: 0, flex: 1 }}>
+                  <Tooltip
+                    title={pr.title}
+                    arrow
+                    placement="top"
+                    enterDelay={400}
                   >
-                    #{pr.number} {pr.title}
+                    <Typography
+                      sx={{
+                        fontFamily: FONTS.mono,
+                        fontSize: '0.78rem',
+                        color: 'text.primary',
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      #{pr.number} {pr.title}
+                    </Typography>
+                  </Tooltip>
+                  <Typography
+                    sx={(theme) => ({
+                      fontFamily: FONTS.mono,
+                      fontSize: '0.66rem',
+                      color: theme.palette.text.tertiary,
+                    })}
+                  >
+                    {pr.author ? `${pr.author} · ` : ''}
+                    {formatRelativeTime(pr.mergedAt)}
                   </Typography>
-                </Tooltip>
+                </Box>
                 <Typography
                   sx={(theme) => ({
                     fontFamily: FONTS.mono,
-                    fontSize: '0.66rem',
-                    color: theme.palette.text.tertiary,
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    color: theme.palette.status.success,
+                    flexShrink: 0,
                   })}
                 >
-                  {pr.author ? `${pr.author} · ` : ''}
-                  {formatRelativeTime(pr.mergedAt)}
+                  {formatScore(pr.score)}
                 </Typography>
-              </Box>
-              <Typography
-                sx={(theme) => ({
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  color: theme.palette.status.success,
-                  flexShrink: 0,
-                })}
-              >
-                {formatScore(pr.score)}
-              </Typography>
-            </LinkBox>
-          ))}
-        </Box>
-      )}
-    </Box>
+              </LinkBox>
+            ))}
+          </Box>
+        )}
+      </Box>
 
-    <Box>
-      <SectionHeader>Top Miners</SectionHeader>
-      {repo.authorScores.length === 0 ? (
-        <Typography
-          sx={(theme) => ({
-            fontSize: '0.78rem',
-            color: alpha(theme.palette.text.primary, 0.4),
-            fontStyle: 'italic',
-            p: 1,
-          })}
-        >
-          No contributors yet.
-        </Typography>
-      ) : (
-        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-          {repo.authorScores.slice(0, 6).map((m) => (
-            <LinkBox
-              key={m.author}
-              href={getMinerHref(m.author)}
-              sx={(theme) => ({
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1,
-                px: 1,
-                py: 0.75,
-                mx: -1,
-                borderRadius: 1,
-                cursor: 'pointer',
-                '&:hover': {
-                  backgroundColor: alpha(theme.palette.text.primary, 0.04),
-                },
-              })}
-            >
-              <Typography
-                sx={{
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.76rem',
-                  color: 'text.primary',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  whiteSpace: 'nowrap',
-                  minWidth: 0,
-                  flex: 1,
-                }}
-              >
-                {m.author}
-              </Typography>
-              <Typography
+      <Box>
+        <SectionHeader>Top Miners</SectionHeader>
+        {repo.authorScores.length === 0 ? (
+          <Typography
+            sx={(theme) => ({
+              fontSize: '0.78rem',
+              color: alpha(theme.palette.text.primary, 0.4),
+              fontStyle: 'italic',
+              p: 1,
+            })}
+          >
+            No contributors yet.
+          </Typography>
+        ) : (
+          <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+            {repo.authorScores.slice(0, 6).map((m) => (
+              <LinkBox
+                key={m.author}
+                href={getMinerHref(m.author)}
                 sx={(theme) => ({
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.7rem',
-                  color: theme.palette.text.tertiary,
-                  flexShrink: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1,
+                  px: 1,
+                  py: 0.75,
+                  mx: -1,
+                  borderRadius: 1,
+                  cursor: 'pointer',
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.text.primary, 0.04),
+                  },
                 })}
               >
-                {m.prs} PR{m.prs === 1 ? '' : 's'}
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: FONTS.mono,
-                  fontSize: '0.78rem',
-                  fontWeight: 600,
-                  color: 'text.primary',
-                  flexShrink: 0,
-                  minWidth: 44,
-                  textAlign: 'right',
-                }}
-              >
-                {formatScore(m.score)}
-              </Typography>
-            </LinkBox>
-          ))}
-        </Box>
-      )}
+                <Typography
+                  sx={{
+                    fontFamily: FONTS.mono,
+                    fontSize: '0.76rem',
+                    color: 'text.primary',
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    whiteSpace: 'nowrap',
+                    minWidth: 0,
+                    flex: 1,
+                  }}
+                >
+                  {m.author}
+                </Typography>
+                <Typography
+                  sx={(theme) => ({
+                    fontFamily: FONTS.mono,
+                    fontSize: '0.7rem',
+                    color: theme.palette.text.tertiary,
+                    flexShrink: 0,
+                  })}
+                >
+                  {m.prs} PR{m.prs === 1 ? '' : 's'}
+                </Typography>
+                <Typography
+                  sx={{
+                    fontFamily: FONTS.mono,
+                    fontSize: '0.78rem',
+                    fontWeight: 600,
+                    color: 'text.primary',
+                    flexShrink: 0,
+                    minWidth: 44,
+                    textAlign: 'right',
+                  }}
+                >
+                  {formatScore(m.score)}
+                </Typography>
+              </LinkBox>
+            ))}
+          </Box>
+        )}
+      </Box>
+    </Box>
+    <Box
+      sx={(theme) => ({
+        display: 'flex',
+        justifyContent: 'flex-end',
+        pt: 1,
+        borderTop: `1px solid ${theme.palette.border.subtle}`,
+      })}
+    >
+      <Box
+        component="a"
+        href={getRepoHref(repo.repository)}
+        sx={(theme) => ({
+          display: 'inline-flex',
+          alignItems: 'center',
+          gap: 0.5,
+          fontFamily: FONTS.mono,
+          fontSize: '0.72rem',
+          fontWeight: 600,
+          color: theme.palette.text.secondary,
+          textDecoration: 'none',
+          '&:hover': { color: theme.palette.text.primary },
+        })}
+      >
+        Open full repository page
+        <LaunchIcon sx={{ fontSize: '0.85rem' }} />
+      </Box>
     </Box>
   </Box>
 );
@@ -540,44 +700,19 @@ const RepoSummaryCard: React.FC<RepoSummaryCardProps> = ({
               repo.collateralTotal > 0 ? repo.collateralTotal.toFixed(1) : '—'
             }
           />
+          <KpiCell value={`${(repo.maintainerCut * 100).toFixed(0)}%`} />
+          <KpiCell value={`${(repo.issueDiscoveryShare * 100).toFixed(0)}%`} />
         </Box>
 
-        {/* Actions */}
+        {/* Actions — just the expand chevron; full-page link lives in the expansion. */}
         <Box
           sx={{
             display: 'flex',
             alignItems: 'center',
-            gap: 1,
             flex: ACTIONS_FLEX,
             ml: { xs: 'auto', md: 0 },
           }}
         >
-          <Tooltip title="Open full details" arrow placement="top">
-            <Box
-              component="a"
-              href={getRepoHref(repo.repository)}
-              onClick={(e) => e.stopPropagation()}
-              sx={(theme) => ({
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: 30,
-                height: 30,
-                borderRadius: 1,
-                border: `1px solid ${theme.palette.border.medium}`,
-                color: theme.palette.text.secondary,
-                cursor: 'pointer',
-                textDecoration: 'none',
-                transition: 'color 0.12s, border-color 0.12s',
-                '&:hover': {
-                  color: theme.palette.text.primary,
-                  borderColor: theme.palette.text.primary,
-                },
-              })}
-            >
-              <LaunchIcon sx={{ fontSize: '0.95rem' }} />
-            </Box>
-          </Tooltip>
           <ExpandMoreIcon
             sx={(theme) => ({
               fontSize: '1.4rem',
@@ -648,8 +783,8 @@ const ColumnHeader: React.FC<ColumnHeaderProps> = ({ sortKey, onSort }) => (
         />
       ))}
     </Box>
-    {/* Actions spacer — matches the launch+chevron width in rows below */}
-    <Box sx={{ flex: ACTIONS_FLEX, width: 30 + 8 + 22 }} aria-hidden />
+    {/* Actions spacer — matches the chevron width in rows below */}
+    <Box sx={{ flex: ACTIONS_FLEX, width: 22 }} aria-hidden />
   </Box>
 );
 
@@ -709,6 +844,12 @@ const RailMetric: React.FC<RailMetricProps> = ({ repo, sortKey }) => {
       break;
     case 'collateral':
       text = repo.collateralTotal > 0 ? repo.collateralTotal.toFixed(1) : '—';
+      break;
+    case 'maintainerCut':
+      text = `${(repo.maintainerCut * 100).toFixed(0)}%`;
+      break;
+    case 'issueShare':
+      text = `${(repo.issueDiscoveryShare * 100).toFixed(0)}%`;
       break;
   }
   return (
@@ -933,16 +1074,23 @@ const RepositoriesPage: React.FC = () => {
       });
     }
 
+    const toNum = (v: unknown): number | undefined => {
+      if (v === null || v === undefined || v === '') return undefined;
+      const n = Number(v);
+      return Number.isFinite(n) ? n : undefined;
+    };
+
     return reposWithWeights
       .map((repo) => {
         const key = repo.fullName.toLowerCase();
         const s = acc.get(key) || empty();
+        const cfg = repo.config ?? {};
         return {
           repository: repo.fullName,
           totalScore: s.totalScore,
           totalPRs: s.totalPRs,
           uniqueMiners: s.uniqueMiners.size,
-          weight: parseFloat(String(repo.config?.emissionShare ?? 0)) || 0,
+          weight: toNum(cfg.emissionShare) ?? 0,
           collateralTotal: s.collateralTotal,
           openPRs: s.openPRs,
           pctIncrease:
@@ -950,6 +1098,11 @@ const RepositoriesPage: React.FC = () => {
           authorScores: Array.from(s.authors.entries())
             .map(([author, v]) => ({ author, score: v.score, prs: v.prs }))
             .sort((a, b) => b.score - a.score),
+          maintainerCut: toNum(cfg.maintainerCut) ?? 0,
+          issueDiscoveryShare: toNum(cfg.issueDiscoveryShare) ?? 0,
+          defaultLabelMultiplier: cfg.defaultLabelMultiplier,
+          labelMultipliers: cfg.labelMultipliers ?? {},
+          trustedLabelPipeline: !!cfg.trustedLabelPipeline,
         } satisfies EnrichedRepo;
       })
       .sort((a, b) => b.totalScore - a.totalScore);
