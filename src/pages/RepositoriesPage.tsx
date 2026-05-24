@@ -1,87 +1,52 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 
-import { Avatar, Box, Button, Card, Tooltip, Typography } from '@mui/material';
+import {
+  Avatar,
+  Box,
+  Card,
+  Collapse,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
-import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
+import LaunchIcon from '@mui/icons-material/Launch';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import TrendingUpIcon from '@mui/icons-material/TrendingUp';
+import TrendingDownIcon from '@mui/icons-material/TrendingDown';
 
 import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
 import { Page } from '../components/layout';
-import { TopRepositoriesTable, SEO } from '../components';
-import { useAllPrs, useAllMiners, useReposAndWeights } from '../api';
+import { SEO } from '../components';
+import { useAllPrs, useReposAndWeights } from '../api';
 import { type CommitLog } from '../api/models/Dashboard';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
-import { buildRepoDiscoveryRollupFromMiners } from '../utils/ExplorerUtils';
 import { isMergedPr } from '../utils/prStatus';
 
 const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
 
-// ── Shared row style ────────────────────────────────────────────────────────
-const ROW_HEIGHT = 40; // px – keeps every row exactly the same across cards
+type SortKey =
+  | 'score'
+  | 'weight'
+  | 'trend'
+  | 'totalPRs'
+  | 'miners'
+  | 'collateral'
+  | 'name';
 
-const HighlightRow: React.FC<{
-  href: string;
-  linkState?: Record<string, unknown>;
-  avatar: string;
-  avatarAlt: string;
-  avatarBg?: (theme: Theme) => string;
-  label: React.ReactNode;
-  right: React.ReactNode;
-}> = ({
-  href,
-  linkState,
-  avatar,
-  avatarAlt,
-  avatarBg = 'transparent',
-  label,
-  right,
-}) => {
-  return (
-    <LinkBox
-      href={href}
-      linkState={linkState}
-      sx={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'space-between',
-        height: ROW_HEIGHT,
-        py: 0,
-        px: 1,
-        borderRadius: 1,
-        cursor: 'pointer',
-        transition: 'background 0.15s',
-        mx: -1,
-        '&:hover': { backgroundColor: 'rgba(255,255,255,0.05)' },
-      }}
-    >
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: { xs: 1, sm: 1.5 },
-          overflow: 'hidden',
-          mr: { xs: 1, sm: 2 },
-          flex: 1,
-          minWidth: 0,
-        }}
-      >
-        <Avatar
-          src={avatar}
-          alt={avatarAlt}
-          sx={{
-            width: 24,
-            height: 24,
-            flexShrink: 0,
-            border: '1px solid rgba(255,255,255,0.1)',
-            backgroundColor: avatarBg,
-          }}
-        />
-        {label}
-      </Box>
-      {right}
-    </LinkBox>
-  );
-};
+interface EnrichedRepo {
+  repository: string;
+  totalScore: number;
+  totalPRs: number;
+  uniqueMiners: number;
+  weight: number; // 0-1
+  collateralTotal: number;
+  openPRs: number;
+  pctIncrease: number; // 7d trend %; 0 if no prior baseline
+  authorScores: { author: string; score: number; prs: number }[];
+}
 
+// ── Helpers ────────────────────────────────────────────────────────────
 const getAvatarBg = (name: string) => {
   const owner = name.split('/')[0];
   if (owner === 'opentensor')
@@ -91,273 +56,989 @@ const getAvatarBg = (name: string) => {
   return (theme: Theme) => theme.palette.surface.transparent;
 };
 
+const formatScore = (n: number) =>
+  n >= 1000 ? `${(n / 1000).toFixed(1)}k` : n.toFixed(0);
+
+const formatRelativeTime = (date: Date) => {
+  const now = new Date();
+  if (date > now) return 'just now';
+  const diffMs = now.getTime() - date.getTime();
+  const mins = Math.floor(diffMs / 60000);
+  const hrs = Math.floor(mins / 60);
+  const days = Math.floor(hrs / 24);
+
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  if (hrs < 24) return `${hrs}h ago`;
+  if (days < 30) return `${days}d ago`;
+  return `${days}d ago`;
+};
+
+const compareRepos = (a: EnrichedRepo, b: EnrichedRepo, k: SortKey): number => {
+  switch (k) {
+    case 'name':
+      return a.repository
+        .toLowerCase()
+        .localeCompare(b.repository.toLowerCase());
+    case 'score':
+      return b.totalScore - a.totalScore;
+    case 'weight':
+      return b.weight - a.weight;
+    case 'trend':
+      return b.pctIncrease - a.pctIncrease;
+    case 'totalPRs':
+      return b.totalPRs - a.totalPRs;
+    case 'miners':
+      return b.uniqueMiners - a.uniqueMiners;
+    case 'collateral':
+      return b.collateralTotal - a.collateralTotal;
+  }
+};
+
+const getRepoHref = (name: string) =>
+  `/miners/repository?name=${encodeURIComponent(name)}`;
+const getPrHref = (name: string, number: number) =>
+  `/miners/pr?repo=${encodeURIComponent(name)}&number=${number}`;
+const getMinerHref = (author: string) =>
+  `/miners/details?author=${encodeURIComponent(author)}`;
+
+const REPO_LINK_STATE = { backLabel: 'Back to Repositories' } as const;
+
+// ── Shared row layout & column metadata ───────────────────────────────
+const KPI_COLUMNS: { sortKey: SortKey; label: string }[] = [
+  { sortKey: 'score', label: 'Score' },
+  { sortKey: 'weight', label: 'Weight' },
+  { sortKey: 'trend', label: '7d Trend' },
+  { sortKey: 'totalPRs', label: 'PRs' },
+  { sortKey: 'miners', label: 'Miners' },
+  { sortKey: 'collateral', label: 'Open coll.' },
+];
+
+const ROW_GAP = { xs: 1.5, md: 2.5 } as const;
+const ROW_PX = { xs: 1.5, sm: 2 } as const;
+const IDENTITY_FLEX = { xs: '1 1 100%', md: '0 0 200px' } as const;
+const ACTIONS_FLEX = '0 0 auto' as const;
+const KPI_GRID_TEMPLATE = {
+  xs: 'repeat(3, minmax(0, 1fr))',
+  sm: 'repeat(6, minmax(0, 1fr))',
+} as const;
+const KPI_GAP = { xs: 0.5, sm: 1.5 } as const;
+
+interface KpiCellProps {
+  value: React.ReactNode;
+  accent?: 'default' | 'positive' | 'negative';
+}
+
+const KpiCell: React.FC<KpiCellProps> = ({ value, accent = 'default' }) => (
+  <Box sx={{ display: 'flex', alignItems: 'center', minWidth: 0 }}>
+    <Typography
+      sx={(theme) => ({
+        fontFamily: FONTS.mono,
+        fontSize: '0.95rem',
+        fontWeight: 700,
+        color:
+          accent === 'positive'
+            ? theme.palette.status.success
+            : accent === 'negative'
+              ? theme.palette.status.error
+              : theme.palette.text.primary,
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+      })}
+    >
+      {value}
+    </Typography>
+  </Box>
+);
+
+interface SortHeaderProps {
+  label: string;
+  sortKey: SortKey;
+  activeSort: SortKey;
+  onSort: (k: SortKey) => void;
+}
+
+const SortHeader: React.FC<SortHeaderProps> = ({
+  label,
+  sortKey,
+  activeSort,
+  onSort,
+}) => {
+  const isActive = sortKey === activeSort;
+  return (
+    <Box
+      onClick={() => onSort(sortKey)}
+      sx={(theme) => ({
+        cursor: 'pointer',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.25,
+        color: isActive
+          ? theme.palette.text.primary
+          : theme.palette.text.tertiary,
+        transition: 'color 0.12s',
+        userSelect: 'none',
+        '&:hover': { color: theme.palette.text.primary },
+      })}
+    >
+      <Typography
+        sx={{
+          fontFamily: FONTS.mono,
+          fontSize: '0.65rem',
+          textTransform: 'uppercase',
+          letterSpacing: '0.06em',
+          fontWeight: isActive ? 700 : 500,
+          color: 'inherit',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {label}
+      </Typography>
+      {isActive ? <ArrowDownwardIcon sx={{ fontSize: '0.75rem' }} /> : null}
+    </Box>
+  );
+};
+
+// ── Recent PRs / Top Miners (expansion body) ───────────────────────────
+interface RecentPr {
+  number: number;
+  title: string;
+  author?: string;
+  mergedAt: Date;
+  score: number;
+}
+
 const SectionHeader: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => (
   <Typography
     sx={(theme) => ({
       fontFamily: FONTS.mono,
-      fontSize: '0.75rem',
+      fontSize: '0.68rem',
       fontWeight: 600,
       color: theme.palette.text.secondary,
       textTransform: 'uppercase',
-      letterSpacing: '0.05em',
-      mb: { xs: 1, sm: 1.5 },
-      pb: { xs: 0.75, sm: 1 },
-      borderBottom: '1px solid',
-      borderColor: theme.palette.border.subtle,
+      letterSpacing: '0.06em',
+      mb: 0.75,
+      pb: 0.5,
+      borderBottom: `1px solid ${theme.palette.border.subtle}`,
     })}
   >
     {children}
   </Typography>
 );
 
-const cardSx = (theme: Theme) => ({
-  p: { xs: 1.5, sm: 2 },
-  borderRadius: 2,
-  border: '1px solid',
-  borderColor: theme.palette.border.light,
-  backgroundColor: theme.palette.surface.transparent,
-  display: 'flex',
-  flexDirection: 'column' as const,
-  transition: 'all 0.2s',
-  '&:hover': {
-    backgroundColor: theme.palette.surface.light,
-    borderColor: theme.palette.border.medium,
-  },
-});
+interface ExpansionBodyProps {
+  repo: EnrichedRepo;
+  recentPrs: RecentPr[];
+}
 
-// ── Page ────────────────────────────────────────────────────────────────────
-const REPO_LINK_STATE = { backLabel: 'Back to Repositories' } as const;
-const getRepoHref = (name: string) =>
-  `/miners/repository?name=${encodeURIComponent(name)}`;
-const getPrHref = (name: string, number: number) =>
-  `/miners/pr?repo=${encodeURIComponent(name)}&number=${number}`;
+const ExpansionBody: React.FC<ExpansionBodyProps> = ({ repo, recentPrs }) => (
+  <Box
+    sx={(theme) => ({
+      pt: 2,
+      mt: 2,
+      borderTop: `1px solid ${theme.palette.border.subtle}`,
+      display: 'grid',
+      gridTemplateColumns: { xs: '1fr', md: '1.4fr 1fr' },
+      gap: { xs: 2, md: 3 },
+    })}
+  >
+    <Box>
+      <SectionHeader>Recent Merged PRs</SectionHeader>
+      {recentPrs.length === 0 ? (
+        <Typography
+          sx={(theme) => ({
+            fontSize: '0.78rem',
+            color: alpha(theme.palette.text.primary, 0.4),
+            fontStyle: 'italic',
+            p: 1,
+          })}
+        >
+          No merged PRs yet.
+        </Typography>
+      ) : (
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          {recentPrs.map((pr) => (
+            <LinkBox
+              key={pr.number}
+              href={getPrHref(repo.repository, pr.number)}
+              linkState={REPO_LINK_STATE}
+              sx={(theme) => ({
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: 1,
+                px: 1,
+                py: 0.75,
+                mx: -1,
+                borderRadius: 1,
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: alpha(theme.palette.text.primary, 0.04),
+                },
+              })}
+            >
+              <Box sx={{ minWidth: 0, flex: 1 }}>
+                <Tooltip
+                  title={pr.title}
+                  arrow
+                  placement="top"
+                  enterDelay={400}
+                >
+                  <Typography
+                    sx={{
+                      fontFamily: FONTS.mono,
+                      fontSize: '0.78rem',
+                      color: 'text.primary',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    #{pr.number} {pr.title}
+                  </Typography>
+                </Tooltip>
+                <Typography
+                  sx={(theme) => ({
+                    fontFamily: FONTS.mono,
+                    fontSize: '0.66rem',
+                    color: theme.palette.text.tertiary,
+                  })}
+                >
+                  {pr.author ? `${pr.author} · ` : ''}
+                  {formatRelativeTime(pr.mergedAt)}
+                </Typography>
+              </Box>
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  color: theme.palette.status.success,
+                  flexShrink: 0,
+                })}
+              >
+                {formatScore(pr.score)}
+              </Typography>
+            </LinkBox>
+          ))}
+        </Box>
+      )}
+    </Box>
 
+    <Box>
+      <SectionHeader>Top Miners</SectionHeader>
+      {repo.authorScores.length === 0 ? (
+        <Typography
+          sx={(theme) => ({
+            fontSize: '0.78rem',
+            color: alpha(theme.palette.text.primary, 0.4),
+            fontStyle: 'italic',
+            p: 1,
+          })}
+        >
+          No contributors yet.
+        </Typography>
+      ) : (
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          {repo.authorScores.slice(0, 6).map((m) => (
+            <LinkBox
+              key={m.author}
+              href={getMinerHref(m.author)}
+              sx={(theme) => ({
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+                px: 1,
+                py: 0.75,
+                mx: -1,
+                borderRadius: 1,
+                cursor: 'pointer',
+                '&:hover': {
+                  backgroundColor: alpha(theme.palette.text.primary, 0.04),
+                },
+              })}
+            >
+              <Typography
+                sx={{
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.76rem',
+                  color: 'text.primary',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                  minWidth: 0,
+                  flex: 1,
+                }}
+              >
+                {m.author}
+              </Typography>
+              <Typography
+                sx={(theme) => ({
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.7rem',
+                  color: theme.palette.text.tertiary,
+                  flexShrink: 0,
+                })}
+              >
+                {m.prs} PR{m.prs === 1 ? '' : 's'}
+              </Typography>
+              <Typography
+                sx={{
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.78rem',
+                  fontWeight: 600,
+                  color: 'text.primary',
+                  flexShrink: 0,
+                  minWidth: 44,
+                  textAlign: 'right',
+                }}
+              >
+                {formatScore(m.score)}
+              </Typography>
+            </LinkBox>
+          ))}
+        </Box>
+      )}
+    </Box>
+  </Box>
+);
+
+// ── Repo summary card (always-on KPIs + click to expand) ───────────────
+interface RepoSummaryCardProps {
+  repo: EnrichedRepo;
+  isExpanded: boolean;
+  onToggle: () => void;
+  recentPrs: RecentPr[];
+}
+
+const RepoSummaryCard: React.FC<RepoSummaryCardProps> = ({
+  repo,
+  isExpanded,
+  onToggle,
+  recentPrs,
+}) => {
+  const trendAccent: 'positive' | 'negative' | 'default' =
+    repo.pctIncrease > 0
+      ? 'positive'
+      : repo.pctIncrease < 0
+        ? 'negative'
+        : 'default';
+
+  const trendValue =
+    repo.pctIncrease === 0 ? (
+      '—'
+    ) : (
+      <Box
+        component="span"
+        sx={{ display: 'inline-flex', alignItems: 'center', gap: 0.25 }}
+      >
+        {repo.pctIncrease > 0 ? (
+          <TrendingUpIcon sx={{ fontSize: '1rem' }} />
+        ) : (
+          <TrendingDownIcon sx={{ fontSize: '1rem' }} />
+        )}
+        {repo.pctIncrease > 0 ? '+' : ''}
+        {repo.pctIncrease.toFixed(0)}%
+      </Box>
+    );
+
+  return (
+    <Card
+      elevation={0}
+      sx={(theme) => ({
+        border: '1px solid',
+        borderColor: isExpanded
+          ? theme.palette.primary.main
+          : theme.palette.border.light,
+        backgroundColor: theme.palette.surface.transparent,
+        borderRadius: 2,
+        transition: 'border-color 0.15s, background 0.15s',
+        '&:hover': {
+          borderColor: isExpanded
+            ? theme.palette.primary.main
+            : theme.palette.border.medium,
+        },
+      })}
+    >
+      {/* Header / KPI row — clickable to toggle */}
+      <Box
+        onClick={onToggle}
+        sx={{
+          py: 1.5,
+          px: ROW_PX,
+          cursor: 'pointer',
+          display: 'flex',
+          alignItems: 'center',
+          gap: ROW_GAP,
+          flexWrap: { xs: 'wrap', md: 'nowrap' },
+        }}
+      >
+        {/* Identity */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1.25,
+            minWidth: 0,
+            flex: IDENTITY_FLEX,
+          }}
+        >
+          <Avatar
+            src={getRepositoryOwnerAvatarSrc(repo.repository.split('/')[0])}
+            alt={repo.repository}
+            sx={(theme) => ({
+              width: 28,
+              height: 28,
+              flexShrink: 0,
+              border: `1px solid ${theme.palette.border.subtle}`,
+              backgroundColor: getAvatarBg(repo.repository),
+            })}
+          />
+          <Tooltip
+            title={repo.repository}
+            arrow
+            placement="top"
+            enterDelay={400}
+          >
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.85rem',
+                fontWeight: 600,
+                color: 'text.primary',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                minWidth: 0,
+              }}
+            >
+              {repo.repository}
+            </Typography>
+          </Tooltip>
+        </Box>
+
+        {/* KPI strip — values only (labels live in the sticky column header) */}
+        <Box
+          sx={{
+            flex: 1,
+            display: 'grid',
+            gridTemplateColumns: KPI_GRID_TEMPLATE,
+            gap: KPI_GAP,
+            minWidth: 0,
+          }}
+        >
+          <KpiCell value={formatScore(repo.totalScore)} />
+          <KpiCell value={`${(repo.weight * 100).toFixed(1)}%`} />
+          <KpiCell value={trendValue} accent={trendAccent} />
+          <KpiCell value={repo.totalPRs.toString()} />
+          <KpiCell value={repo.uniqueMiners.toString()} />
+          <KpiCell
+            value={
+              repo.collateralTotal > 0 ? repo.collateralTotal.toFixed(1) : '—'
+            }
+          />
+        </Box>
+
+        {/* Actions */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            flex: ACTIONS_FLEX,
+            ml: { xs: 'auto', md: 0 },
+          }}
+        >
+          <Tooltip title="Open full details" arrow placement="top">
+            <Box
+              component="a"
+              href={getRepoHref(repo.repository)}
+              onClick={(e) => e.stopPropagation()}
+              sx={(theme) => ({
+                display: 'inline-flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                width: 30,
+                height: 30,
+                borderRadius: 1,
+                border: `1px solid ${theme.palette.border.medium}`,
+                color: theme.palette.text.secondary,
+                cursor: 'pointer',
+                textDecoration: 'none',
+                transition: 'color 0.12s, border-color 0.12s',
+                '&:hover': {
+                  color: theme.palette.text.primary,
+                  borderColor: theme.palette.text.primary,
+                },
+              })}
+            >
+              <LaunchIcon sx={{ fontSize: '0.95rem' }} />
+            </Box>
+          </Tooltip>
+          <ExpandMoreIcon
+            sx={(theme) => ({
+              fontSize: '1.4rem',
+              color: theme.palette.text.tertiary,
+              transition: 'transform 0.2s',
+              transform: isExpanded ? 'rotate(180deg)' : 'rotate(0)',
+            })}
+          />
+        </Box>
+      </Box>
+
+      {/* Expansion */}
+      <Collapse in={isExpanded} unmountOnExit>
+        <Box sx={{ px: ROW_PX, pb: 2 }}>
+          <ExpansionBody repo={repo} recentPrs={recentPrs} />
+        </Box>
+      </Collapse>
+    </Card>
+  );
+};
+
+// ── Sticky column header (aligned to row layout) ──────────────────────
+interface ColumnHeaderProps {
+  sortKey: SortKey;
+  onSort: (k: SortKey) => void;
+}
+
+const ColumnHeader: React.FC<ColumnHeaderProps> = ({ sortKey, onSort }) => (
+  <Box
+    sx={(theme) => ({
+      display: { xs: 'none', md: 'flex' },
+      alignItems: 'center',
+      gap: ROW_GAP,
+      py: 1,
+      px: ROW_PX,
+      borderRadius: 1.5,
+      backgroundColor: alpha(theme.palette.common.black, 0.55),
+      border: `1px solid ${theme.palette.border.subtle}`,
+      backdropFilter: 'blur(4px)',
+    })}
+  >
+    {/* Identity column — sortable by name */}
+    <Box sx={{ flex: IDENTITY_FLEX, minWidth: 0 }}>
+      <SortHeader
+        label="Repository"
+        sortKey="name"
+        activeSort={sortKey}
+        onSort={onSort}
+      />
+    </Box>
+    {/* KPI columns */}
+    <Box
+      sx={{
+        flex: 1,
+        display: 'grid',
+        gridTemplateColumns: KPI_GRID_TEMPLATE,
+        gap: KPI_GAP,
+        minWidth: 0,
+      }}
+    >
+      {KPI_COLUMNS.map((c) => (
+        <SortHeader
+          key={c.sortKey}
+          label={c.label}
+          sortKey={c.sortKey}
+          activeSort={sortKey}
+          onSort={onSort}
+        />
+      ))}
+    </Box>
+    {/* Actions spacer — matches the launch+chevron width in rows below */}
+    <Box sx={{ flex: ACTIONS_FLEX, width: 30 + 8 + 22 }} aria-hidden />
+  </Box>
+);
+
+// ── Navigation rail ────────────────────────────────────────────────────
+interface RailMetricProps {
+  repo: EnrichedRepo;
+  sortKey: SortKey;
+}
+
+const RailMetric: React.FC<RailMetricProps> = ({ repo, sortKey }) => {
+  if (sortKey === 'name') return null;
+  if (sortKey === 'trend') {
+    if (repo.pctIncrease === 0) {
+      return (
+        <Typography
+          sx={(theme) => ({
+            fontFamily: FONTS.mono,
+            fontSize: '0.68rem',
+            color: alpha(theme.palette.text.primary, 0.3),
+          })}
+        >
+          —
+        </Typography>
+      );
+    }
+    const positive = repo.pctIncrease > 0;
+    return (
+      <Typography
+        sx={(theme) => ({
+          fontFamily: FONTS.mono,
+          fontSize: '0.68rem',
+          fontWeight: 600,
+          color: positive
+            ? theme.palette.status.success
+            : theme.palette.status.error,
+          whiteSpace: 'nowrap',
+        })}
+      >
+        {positive ? '+' : ''}
+        {repo.pctIncrease.toFixed(0)}%
+      </Typography>
+    );
+  }
+  let text = '';
+  switch (sortKey) {
+    case 'score':
+      text = formatScore(repo.totalScore);
+      break;
+    case 'weight':
+      text = `${(repo.weight * 100).toFixed(1)}%`;
+      break;
+    case 'totalPRs':
+      text = repo.totalPRs.toString();
+      break;
+    case 'miners':
+      text = repo.uniqueMiners.toString();
+      break;
+    case 'collateral':
+      text = repo.collateralTotal > 0 ? repo.collateralTotal.toFixed(1) : '—';
+      break;
+  }
+  return (
+    <Typography
+      sx={{
+        fontFamily: FONTS.mono,
+        fontSize: '0.7rem',
+        fontWeight: 600,
+        color: 'text.primary',
+        whiteSpace: 'nowrap',
+      }}
+    >
+      {text}
+    </Typography>
+  );
+};
+
+interface NavRailProps {
+  repos: EnrichedRepo[];
+  expandedKey: string | null;
+  sortKey: SortKey;
+  onJump: (key: string) => void;
+  registerLinkProps: React.AnchorHTMLAttributes<HTMLAnchorElement>;
+}
+
+const NavRail: React.FC<NavRailProps> = ({
+  repos,
+  expandedKey,
+  sortKey,
+  onJump,
+  registerLinkProps,
+}) => (
+  <Card
+    elevation={0}
+    sx={(theme) => ({
+      border: `1px solid ${theme.palette.border.light}`,
+      backgroundColor: theme.palette.surface.transparent,
+      borderRadius: 2,
+      overflow: 'hidden',
+      display: 'flex',
+      flexDirection: 'column',
+    })}
+  >
+    <Box
+      sx={(theme) => ({
+        px: 1,
+        py: 0.75,
+        borderBottom: `1px solid ${theme.palette.border.subtle}`,
+      })}
+    >
+      <Box
+        component="a"
+        {...registerLinkProps}
+        sx={(theme) => ({
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: 0.75,
+          width: '100%',
+          py: 0.75,
+          px: 1,
+          borderRadius: 1,
+          textDecoration: 'none',
+          fontFamily: FONTS.mono,
+          fontSize: '0.74rem',
+          fontWeight: 600,
+          color: theme.palette.text.primary,
+          backgroundColor: alpha(theme.palette.primary.main, 0.12),
+          transition: 'background 0.12s',
+          '&:hover': {
+            backgroundColor: alpha(theme.palette.primary.main, 0.2),
+          },
+        })}
+      >
+        + Register a repo
+      </Box>
+    </Box>
+    <Box sx={{ maxHeight: 'calc(100vh - 240px)', overflowY: 'auto' }}>
+      {repos.map((r) => {
+        const isActive = r.repository === expandedKey;
+        return (
+          <Box
+            key={r.repository}
+            onClick={() => onJump(r.repository)}
+            sx={(theme) => ({
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              px: 1.25,
+              py: 0.75,
+              cursor: 'pointer',
+              borderLeft: '3px solid',
+              borderLeftColor: isActive
+                ? theme.palette.primary.main
+                : 'transparent',
+              backgroundColor: isActive
+                ? alpha(theme.palette.primary.main, 0.08)
+                : 'transparent',
+              transition: 'background 0.12s',
+              '&:hover': {
+                backgroundColor: isActive
+                  ? alpha(theme.palette.primary.main, 0.12)
+                  : alpha(theme.palette.text.primary, 0.04),
+              },
+            })}
+          >
+            <Avatar
+              src={getRepositoryOwnerAvatarSrc(r.repository.split('/')[0])}
+              alt={r.repository}
+              sx={(theme) => ({
+                width: 18,
+                height: 18,
+                flexShrink: 0,
+                border: `1px solid ${theme.palette.border.subtle}`,
+                backgroundColor: getAvatarBg(r.repository),
+              })}
+            />
+            <Tooltip
+              title={r.repository}
+              arrow
+              placement="right"
+              enterDelay={400}
+            >
+              <Typography
+                sx={{
+                  flex: 1,
+                  minWidth: 0,
+                  fontFamily: FONTS.mono,
+                  fontSize: '0.72rem',
+                  color: 'text.primary',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                  whiteSpace: 'nowrap',
+                }}
+              >
+                {r.repository}
+              </Typography>
+            </Tooltip>
+            <Box sx={{ flexShrink: 0 }}>
+              <RailMetric repo={r} sortKey={sortKey} />
+            </Box>
+          </Box>
+        );
+      })}
+    </Box>
+  </Card>
+);
+
+// ── Page ───────────────────────────────────────────────────────────────
 const RepositoriesPage: React.FC = () => {
   const registerRepoLink = useLinkBehavior<HTMLAnchorElement>(
     '/repository-registration',
   );
 
-  const formatRelativeTime = (date: Date) => {
-    const now = new Date();
-    if (date > now) return 'just now';
-    const diffMs = now.getTime() - date.getTime();
-    const mins = Math.floor(diffMs / 60000);
-    const hrs = Math.floor(mins / 60);
-    const days = Math.floor(hrs / 24);
-
-    if (mins < 1) return 'just now';
-    if (mins < 60) return `${mins}m ago`;
-    if (hrs < 24) return `${hrs}h ${mins % 60}m ago`;
-    if (days < 30) return `${days}d ${hrs % 24}h ago`;
-    return `${days}d ago`;
-  };
-
   const { data: allPRs, isLoading: isLoadingPRs } = useAllPrs();
-  const { data: allMiners, isLoading: isLoadingMiners } = useAllMiners();
   const { data: reposWithWeights, isLoading: isLoadingRepos } =
     useReposAndWeights();
 
-  const isLoading = isLoadingPRs || isLoadingRepos || isLoadingMiners;
+  const isLoading = isLoadingPRs || isLoadingRepos;
 
-  // ── Main table stats ────────────────────────────────────────────────────
-  const repoStats = useMemo(() => {
+  const enrichedRepos: EnrichedRepo[] = useMemo(() => {
     if (!reposWithWeights) return [];
-
-    const prStatsMap = new Map<
-      string,
-      { totalScore: number; totalPRs: number; uniqueMiners: Set<string> }
-    >();
-
-    if (allPRs) {
-      allPRs.forEach((pr: CommitLog) => {
-        if (!pr?.repository) return;
-        if (!isMergedPr(pr)) return;
-
-        const repoKey = pr.repository.toLowerCase();
-        const cur = prStatsMap.get(repoKey) || {
-          totalScore: 0,
-          totalPRs: 0,
-          uniqueMiners: new Set<string>(),
-        };
-        cur.totalScore += parseFloat(pr.score || '0');
-        cur.totalPRs += 1;
-        if (pr.author) cur.uniqueMiners.add(pr.author);
-        prStatsMap.set(repoKey, cur);
-      });
-    }
-
-    const discoveryByRepo = buildRepoDiscoveryRollupFromMiners(
-      allPRs,
-      allMiners,
-    );
-
-    return reposWithWeights
-      .map((repo) => {
-        const key = repo.fullName.toLowerCase();
-        const s = prStatsMap.get(key);
-        const d = discoveryByRepo.get(key);
-        return {
-          repository: repo.fullName,
-          totalScore: s?.totalScore || 0,
-          totalPRs: s?.totalPRs || 0,
-          uniqueMiners: s?.uniqueMiners || new Set<string>(),
-          weight: parseFloat(String(repo.config?.emissionShare ?? 0)) || 0,
-          mirrorEnabled: repo.config?.mirrorEnabled ?? false,
-          discoveryScore: d?.discoveryScore ?? 0,
-          discoveryIssues: d?.discoveryIssues ?? 0,
-          discoveryContributors: d?.discoveryContributors ?? new Set<string>(),
-          issueDiscoveryShare:
-            parseFloat(String(repo.config?.issueDiscoveryShare ?? 0)) || 0,
-          trustedLabelPipeline: repo.config?.trustedLabelPipeline ?? false,
-          labelMultipliers: repo.config?.labelMultipliers,
-        };
-      })
-      .sort((a, b) => b.totalScore - a.totalScore);
-  }, [allPRs, allMiners, reposWithWeights]);
-
-  // ── Trending: repos with biggest % score increase in the last 7 days ──
-  // Excludes brand-new repos (no prior score) so only genuine growth shows
-  const trendingRepos = useMemo(() => {
-    if (!allPRs || !reposWithWeights) return [];
 
     const cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 7);
 
-    const repoScores = new Map<
-      string,
-      { recentScore: number; priorScore: number; recentPRs: number }
-    >();
+    type Acc = {
+      totalScore: number;
+      totalPRs: number;
+      uniqueMiners: Set<string>;
+      recentScore: number;
+      priorScore: number;
+      collateralTotal: number;
+      openPRs: number;
+      authors: Map<string, { score: number; prs: number }>;
+    };
+    const empty = (): Acc => ({
+      totalScore: 0,
+      totalPRs: 0,
+      uniqueMiners: new Set(),
+      recentScore: 0,
+      priorScore: 0,
+      collateralTotal: 0,
+      openPRs: 0,
+      authors: new Map(),
+    });
 
-    allPRs.forEach((pr: CommitLog) => {
-      const prDate = pr.mergedAt;
-      if (!pr?.repository || !prDate) return;
-      const score = parseFloat(pr.score || '0');
-      const repoKey = pr.repository.toLowerCase();
+    const acc = new Map<string, Acc>();
 
-      const cur = repoScores.get(repoKey) || {
-        recentScore: 0,
-        priorScore: 0,
-        recentPRs: 0,
-      };
+    if (allPRs) {
+      allPRs.forEach((pr: CommitLog) => {
+        if (!pr?.repository) return;
+        const key = pr.repository.toLowerCase();
+        const cur = acc.get(key) || empty();
 
-      if (new Date(prDate) >= cutoff) {
-        cur.recentScore += score;
-        cur.recentPRs += 1;
-      } else {
-        cur.priorScore += score;
+        if (isMergedPr(pr)) {
+          const score = parseFloat(pr.score || '0');
+          cur.totalScore += score;
+          cur.totalPRs += 1;
+          if (pr.author) {
+            cur.uniqueMiners.add(pr.author);
+            const a = cur.authors.get(pr.author) || { score: 0, prs: 0 };
+            a.score += score;
+            a.prs += 1;
+            cur.authors.set(pr.author, a);
+          }
+          if (pr.mergedAt) {
+            if (new Date(pr.mergedAt) >= cutoff) cur.recentScore += score;
+            else cur.priorScore += score;
+          }
+        }
+
+        if (pr.prState === 'OPEN') {
+          const c = parseFloat(pr.collateralScore || '0');
+          if (c > 0) {
+            cur.collateralTotal += c;
+            cur.openPRs += 1;
+          }
+        }
+
+        acc.set(key, cur);
+      });
+    }
+
+    return reposWithWeights
+      .map((repo) => {
+        const key = repo.fullName.toLowerCase();
+        const s = acc.get(key) || empty();
+        return {
+          repository: repo.fullName,
+          totalScore: s.totalScore,
+          totalPRs: s.totalPRs,
+          uniqueMiners: s.uniqueMiners.size,
+          weight: parseFloat(String(repo.config?.emissionShare ?? 0)) || 0,
+          collateralTotal: s.collateralTotal,
+          openPRs: s.openPRs,
+          pctIncrease:
+            s.priorScore > 0 ? (s.recentScore / s.priorScore) * 100 : 0,
+          authorScores: Array.from(s.authors.entries())
+            .map(([author, v]) => ({ author, score: v.score, prs: v.prs }))
+            .sort((a, b) => b.score - a.score),
+        } satisfies EnrichedRepo;
+      })
+      .sort((a, b) => b.totalScore - a.totalScore);
+  }, [allPRs, reposWithWeights]);
+
+  const [sortKey, setSortKey] = useState<SortKey>('score');
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
+
+  // Row refs so we can scroll a chosen repo into view (rail click + expand).
+  const rowRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+
+  // Reserve enough top space for the global search bar (~60px) + sticky
+  // column header (~40px) + buffer when scrolling a row into view.
+  const STICKY_TOP_OFFSET = 120;
+
+  const findScrollParent = (el: HTMLElement): HTMLElement | null => {
+    let cur: HTMLElement | null = el.parentElement;
+    while (cur) {
+      const oy = getComputedStyle(cur).overflowY;
+      if (
+        (oy === 'auto' || oy === 'scroll') &&
+        cur.scrollHeight > cur.clientHeight
+      ) {
+        return cur;
       }
-      repoScores.set(repoKey, cur);
+      cur = cur.parentElement;
+    }
+    return null;
+  };
+
+  // Wait long enough for MUI's Collapse animation (~300ms) to settle, then
+  // scroll the row to sit just below the sticky header instead of behind it.
+  const scrollRowIntoView = (key: string) => {
+    setTimeout(() => {
+      const el = rowRefs.current.get(key);
+      if (!el) return;
+      const parent = findScrollParent(el);
+      if (!parent) return;
+      const rowTop = el.getBoundingClientRect().top;
+      const parentTop = parent.getBoundingClientRect().top;
+      const target =
+        parent.scrollTop + (rowTop - parentTop) - STICKY_TOP_OFFSET;
+      parent.scrollTo({ top: Math.max(0, target), behavior: 'smooth' });
+    }, 360);
+  };
+
+  const handleExpand = (key: string) => {
+    setExpandedKey((prev) => {
+      if (prev === key) return null; // collapse without scroll
+      scrollRowIntoView(key);
+      return key;
     });
+  };
 
-    const repoMap = new Map(
-      reposWithWeights.map((r) => [r.fullName.toLowerCase(), r]),
-    );
+  const handleJump = (key: string) => {
+    setExpandedKey(key);
+    scrollRowIntoView(key);
+  };
 
-    return Array.from(repoScores.entries())
-      .filter(
-        ([key, s]) => repoMap.has(key) && s.recentScore > 0 && s.priorScore > 0,
-      )
-      .map(([key, s]) => ({
-        name: repoMap.get(key)!.fullName,
-        recentScore: s.recentScore,
-        priorScore: s.priorScore,
-        pctIncrease: (s.recentScore / s.priorScore) * 100,
-        prs: s.recentPRs,
-      }))
-      .sort((a, b) => b.pctIncrease - a.pctIncrease)
-      .slice(0, 5);
-  }, [allPRs, reposWithWeights]);
+  const visibleRepos = useMemo(
+    () => [...enrichedRepos].sort((a, b) => compareRepos(a, b, sortKey)),
+    [enrichedRepos, sortKey],
+  );
 
-  // ── Most Collateral Staked: repos with highest total collateral on open PRs ──
-  const topCollateralRepos = useMemo(() => {
-    if (!allPRs || !reposWithWeights) return [];
-
-    const repoMap = new Map(
-      reposWithWeights.map((r) => [r.fullName.toLowerCase(), r]),
-    );
-
-    // Sum collateral from open PRs per repo
-    const repoCollateral = new Map<
-      string,
-      { totalCollateral: number; openPRs: number }
-    >();
-
-    allPRs.forEach((pr: CommitLog) => {
-      if (!pr?.repository || pr.prState !== 'OPEN') return;
-      const repoKey = pr.repository.toLowerCase();
-      if (!repoMap.has(repoKey)) return;
-      const collateral = parseFloat(pr.collateralScore || '0');
-      if (collateral <= 0) return;
-
-      const cur = repoCollateral.get(repoKey) || {
-        totalCollateral: 0,
-        openPRs: 0,
-      };
-      cur.totalCollateral += collateral;
-      cur.openPRs += 1;
-      repoCollateral.set(repoKey, cur);
-    });
-
-    return Array.from(repoCollateral.entries())
-      .map(([key, data]) => ({
-        name: repoMap.get(key)!.fullName,
-        collateral: data.totalCollateral,
-        openPRs: data.openPRs,
-      }))
-      .sort((a, b) => b.collateral - a.collateral)
-      .slice(0, 5);
-  }, [allPRs, reposWithWeights]);
-
-  // ── Recent PRs: highest-scoring merged PRs of the day ───────────────────
-  const recentPrs = useMemo(() => {
-    if (!allPRs || !reposWithWeights) return [];
-
-    const repoMap = new Map(
-      reposWithWeights.map((r) => [r.fullName.toLowerCase(), r]),
-    );
-
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-
+  // Recent PRs only for the currently-expanded repo.
+  const recentPrsForExpanded: RecentPr[] = useMemo(() => {
+    if (!expandedKey || !allPRs) return [];
+    const targetKey = expandedKey.toLowerCase();
     return allPRs
       .filter(
         (pr) =>
-          pr.repository &&
-          pr.mergedAt &&
-          repoMap.has(pr.repository.toLowerCase()) &&
-          new Date(pr.mergedAt) >= today,
+          pr.repository?.toLowerCase() === targetKey &&
+          isMergedPr(pr) &&
+          pr.mergedAt,
       )
-      .sort((a, b) => {
-        const scoreA = parseFloat(a.score || '0');
-        const scoreB = parseFloat(b.score || '0');
-        if (scoreB !== scoreA) return scoreB - scoreA;
-        // Tiebreak by repo weight
-        const weightA = parseFloat(
-          String(
-            repoMap.get(a.repository?.toLowerCase() ?? '')?.config
-              ?.emissionShare ?? 0,
-          ),
-        );
-        const weightB = parseFloat(
-          String(
-            repoMap.get(b.repository?.toLowerCase() ?? '')?.config
-              ?.emissionShare ?? 0,
-          ),
-        );
-        return weightB - weightA;
-      })
-      .slice(0, 5)
+      .sort(
+        (a, b) =>
+          new Date(b.mergedAt!).getTime() - new Date(a.mergedAt!).getTime(),
+      )
+      .slice(0, 8)
       .map((pr) => ({
-        name: pr.repository,
-        title: pr.pullRequestTitle,
-        createdAt: new Date(pr.mergedAt || new Date()),
         number: pr.pullRequestNumber,
+        title: pr.pullRequestTitle ?? `PR #${pr.pullRequestNumber}`,
+        author: pr.author ?? undefined,
+        mergedAt: new Date(pr.mergedAt!),
+        score: parseFloat(pr.score || '0'),
       }));
-  }, [allPRs, reposWithWeights]);
+  }, [expandedKey, allPRs]);
 
-  // ── Render ────────────────────────────────────────────────────────────
   return (
     <Page title="Repositories">
       <SEO
@@ -367,354 +1048,97 @@ const RepositoriesPage: React.FC = () => {
       <Box
         sx={{
           width: '100%',
-          maxWidth: 1440,
+          maxWidth: { xl: 1760 },
           mx: 'auto',
-          py: { xs: 1.5, sm: 3 },
-          px: { xs: 1.25, sm: 3 },
+          py: { xs: 1.5, sm: 2.5 },
+          px: { xs: 1, sm: 2, lg: 3, xl: 2 },
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 2,
         }}
       >
-        {/* ── Highlight Sections ─────────────────────────────────────── */}
-        <Box
-          sx={{
-            display: 'grid',
-            gridTemplateColumns: { xs: '1fr', lg: '1fr 1fr 1fr' },
-            gap: { xs: 1.25, sm: 2 },
-            mb: { xs: 2, sm: 3 },
-            alignItems: 'stretch',
-          }}
-        >
-          {/* Trending This Week */}
-          <Card sx={cardSx}>
-            {isLoading || trendingRepos.length > 0 ? (
-              <>
-                <SectionHeader>Trending This Week</SectionHeader>
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {trendingRepos.length === 0 && !isLoading ? (
-                    <Typography
-                      sx={(theme) => ({
-                        color: alpha(theme.palette.text.primary, 0.3),
-                        fontSize: '0.8rem',
-                        fontStyle: 'italic',
-                        p: 1,
-                      })}
-                    >
-                      No data available
-                    </Typography>
-                  ) : (
-                    trendingRepos.map((repo) => (
-                      <HighlightRow
-                        key={repo.name}
-                        href={getRepoHref(repo.name)}
-                        linkState={REPO_LINK_STATE}
-                        avatar={getRepositoryOwnerAvatarSrc(
-                          repo.name.split('/')[0],
-                        )}
-                        avatarAlt={repo.name}
-                        avatarBg={getAvatarBg(repo.name)}
-                        label={
-                          <Tooltip title={repo.name} arrow placement="top">
-                            <Typography
-                              sx={{
-                                fontFamily: FONTS.mono,
-                                fontSize: '0.82rem',
-                                color: 'text.primary',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {repo.name}
-                            </Typography>
-                          </Tooltip>
-                        }
-                        right={
-                          <Typography
-                            sx={(theme) => ({
-                              fontFamily: FONTS.mono,
-                              fontSize: '0.75rem',
-                              fontWeight: 600,
-                              color: theme.palette.status.success,
-                              flexShrink: 0,
-                              backgroundColor: alpha(
-                                theme.palette.status.success,
-                                0.1,
-                              ),
-                              px: 0.75,
-                              py: 0.25,
-                              borderRadius: '4px',
-                            })}
-                          >
-                            +{repo.pctIncrease.toFixed(0)}%
-                          </Typography>
-                        }
-                      />
-                    ))
-                  )}
-                </Box>
-              </>
-            ) : null}
-          </Card>
+        {/* Nav rail + scrollable list */}
+        <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
+          <Box
+            sx={{
+              flex: '0 0 220px',
+              display: { xs: 'none', md: 'block' },
+              position: 'sticky',
+              top: 64,
+              alignSelf: 'flex-start',
+            }}
+          >
+            <NavRail
+              repos={visibleRepos}
+              expandedKey={expandedKey}
+              sortKey={sortKey}
+              onJump={handleJump}
+              registerLinkProps={registerRepoLink}
+            />
+          </Box>
 
-          {/* Most Collateral Staked */}
-          <Card sx={cardSx}>
-            {isLoading || topCollateralRepos.length > 0 ? (
-              <>
-                <SectionHeader>Most Collateral Staked</SectionHeader>
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {topCollateralRepos.length === 0 && !isLoading ? (
-                    <Typography
-                      sx={(theme) => ({
-                        color: alpha(theme.palette.text.primary, 0.3),
-                        fontSize: '0.8rem',
-                        fontStyle: 'italic',
-                        p: 1,
-                      })}
-                    >
-                      No collateral data available
-                    </Typography>
-                  ) : (
-                    topCollateralRepos.map((repo) => (
-                      <HighlightRow
-                        key={repo.name}
-                        href={getRepoHref(repo.name)}
-                        linkState={REPO_LINK_STATE}
-                        avatar={getRepositoryOwnerAvatarSrc(
-                          repo.name.split('/')[0],
-                        )}
-                        avatarAlt={repo.name}
-                        avatarBg={getAvatarBg(repo.name)}
-                        label={
-                          <Tooltip title={repo.name} arrow placement="top">
-                            <Typography
-                              sx={{
-                                fontFamily: FONTS.mono,
-                                fontSize: '0.82rem',
-                                color: 'text.primary',
-                                overflow: 'hidden',
-                                textOverflow: 'ellipsis',
-                                whiteSpace: 'nowrap',
-                              }}
-                            >
-                              {repo.name}
-                            </Typography>
-                          </Tooltip>
-                        }
-                        right={
-                          <Typography
-                            sx={{
-                              fontFamily: FONTS.mono,
-                              fontSize: '0.72rem',
-                              color: 'text.secondary',
-                              flexShrink: 0,
-                              whiteSpace: 'nowrap',
-                            }}
-                          >
-                            {repo.collateral.toFixed(1)} ({repo.openPRs} PR
-                            {repo.openPRs !== 1 ? 's' : ''})
-                          </Typography>
-                        }
-                      />
-                    ))
-                  )}
-                </Box>
-              </>
-            ) : null}
-          </Card>
+          <Box
+            sx={{
+              flex: 1,
+              minWidth: 0,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1.25,
+            }}
+          >
+            {/* Sticky column header */}
+            <Box
+              sx={{
+                position: 'sticky',
+                top: { xs: 56, md: 64 },
+                zIndex: 5,
+              }}
+            >
+              <ColumnHeader sortKey={sortKey} onSort={setSortKey} />
+            </Box>
 
-          {/* Recent PRs */}
-          <Card sx={cardSx}>
-            {isLoading || recentPrs.length > 0 ? (
-              <>
-                <SectionHeader>Recent Pull Requests</SectionHeader>
-                <Box sx={{ display: 'flex', flexDirection: 'column' }}>
-                  {recentPrs.length === 0 && !isLoading ? (
-                    <Typography
-                      sx={(theme) => ({
-                        color: alpha(theme.palette.text.primary, 0.3),
-                        fontSize: '0.8rem',
-                        fontStyle: 'italic',
-                        p: 1,
-                      })}
-                    >
-                      No data available
-                    </Typography>
-                  ) : (
-                    recentPrs.map((pr) => (
-                      <HighlightRow
-                        key={`${pr.name}-${pr.number}`}
-                        href={getPrHref(pr.name, pr.number)}
-                        linkState={REPO_LINK_STATE}
-                        avatar={getRepositoryOwnerAvatarSrc(
-                          pr.name.split('/')[0],
-                        )}
-                        avatarAlt={pr.name}
-                        avatarBg={getAvatarBg(pr.name)}
-                        label={
-                          <Box
-                            sx={{
-                              minWidth: 0,
-                              display: 'flex',
-                              flexDirection: 'column',
-                              justifyContent: 'center',
-                            }}
-                          >
-                            <Tooltip title={pr.name} arrow placement="top">
-                              <Typography
-                                sx={{
-                                  fontFamily: FONTS.mono,
-                                  fontSize: '0.68rem',
-                                  color: 'text.tertiary',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  lineHeight: 1.2,
-                                }}
-                              >
-                                {pr.name}
-                              </Typography>
-                            </Tooltip>
-                            <Tooltip title={pr.title} arrow placement="top">
-                              <Typography
-                                sx={{
-                                  fontFamily: FONTS.mono,
-                                  fontSize: '0.78rem',
-                                  color: 'text.primary',
-                                  overflow: 'hidden',
-                                  textOverflow: 'ellipsis',
-                                  whiteSpace: 'nowrap',
-                                  lineHeight: 1.3,
-                                }}
-                              >
-                                {pr.title}
-                              </Typography>
-                            </Tooltip>
-                          </Box>
-                        }
-                        right={
-                          <Typography
-                            sx={(theme) => ({
-                              fontFamily: FONTS.mono,
-                              fontSize: '0.68rem',
-                              color: alpha(theme.palette.text.primary, 0.35),
-                              flexShrink: 0,
-                              whiteSpace: 'nowrap',
-                              ml: 1,
-                            })}
-                          >
-                            {formatRelativeTime(pr.createdAt)}
-                          </Typography>
-                        }
-                      />
-                    ))
-                  )}
-                </Box>
-              </>
-            ) : null}
-            {!isLoading && recentPrs.length === 0 ? (
-              <>
-                <SectionHeader>Recent Pull Requests</SectionHeader>
+            {visibleRepos.map((r) => {
+              const isExpanded = expandedKey === r.repository;
+              return (
                 <Box
-                  sx={{
-                    flex: 1,
-                    minHeight: ROW_HEIGHT * 5,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
+                  key={r.repository}
+                  ref={(el: HTMLDivElement | null) => {
+                    if (el) rowRefs.current.set(r.repository, el);
+                    else rowRefs.current.delete(r.repository);
                   }}
                 >
-                  <Typography
-                    sx={(theme) => ({
-                      color: alpha(theme.palette.text.primary, 0.3),
-                      fontSize: '0.8rem',
-                      p: 1,
-                      textAlign: 'center',
-                    })}
-                  >
-                    No merged PRs today
-                  </Typography>
+                  <RepoSummaryCard
+                    repo={r}
+                    isExpanded={isExpanded}
+                    onToggle={() => handleExpand(r.repository)}
+                    recentPrs={isExpanded ? recentPrsForExpanded : []}
+                  />
                 </Box>
-              </>
-            ) : null}
-          </Card>
-        </Box>
-
-        {/* ── Register-a-repo CTA ───────────────────────────────────── */}
-        <Box
-          sx={(theme) => ({
-            mb: 3,
-            p: { xs: 2, sm: 2.5 },
-            borderRadius: 2,
-            border: `1px solid ${theme.palette.border.light}`,
-            backgroundColor: theme.palette.surface.transparent,
-            display: 'flex',
-            flexDirection: { xs: 'column', sm: 'row' },
-            alignItems: { xs: 'flex-start', sm: 'center' },
-            justifyContent: 'space-between',
-            gap: 2,
-          })}
-        >
-          <Box sx={{ minWidth: 0 }}>
-            <Typography
-              sx={(theme) => ({
-                fontFamily: FONTS.mono,
-                fontSize: '0.85rem',
-                fontWeight: 600,
-                color: theme.palette.text.primary,
-                mb: 0.5,
-              })}
-            >
-              Don&apos;t see your repository?
-            </Typography>
-            <Typography
-              sx={(theme) => ({
-                fontSize: '0.78rem',
-                color: theme.palette.text.secondary,
-                lineHeight: 1.5,
-              })}
-            >
-              Maintainers can register a repo to be added to the network.
-            </Typography>
-          </Box>
-          <Button
-            component="a"
-            {...registerRepoLink}
-            variant="contained"
-            endIcon={<ArrowForwardIcon />}
-            sx={(theme) => ({
-              flexShrink: 0,
-              minHeight: 40,
-              borderRadius: 1.5,
-              backgroundColor: theme.palette.status.merged,
-              color: theme.palette.common.black,
-              textTransform: 'none',
-              fontWeight: 800,
-              '&:hover': {
-                backgroundColor: alpha(theme.palette.status.merged, 0.9),
-              },
+              );
             })}
-          >
-            Register a repo
-          </Button>
+            {!isLoading && visibleRepos.length === 0 ? (
+              <Card
+                elevation={0}
+                sx={(theme) => ({
+                  p: 4,
+                  textAlign: 'center',
+                  border: `1px solid ${theme.palette.border.light}`,
+                  backgroundColor: theme.palette.surface.transparent,
+                  borderRadius: 2,
+                })}
+              >
+                <Typography
+                  sx={(theme) => ({
+                    color: alpha(theme.palette.text.primary, 0.4),
+                    fontSize: '0.85rem',
+                  })}
+                >
+                  No repositories match.
+                </Typography>
+              </Card>
+            ) : null}
+          </Box>
         </Box>
-
-        {/* ── Main Table ────────────────────────────────────────────── */}
-        <Card
-          sx={(theme) => ({
-            borderRadius: { xs: 2, sm: 3 },
-            border: '1px solid',
-            borderColor: theme.palette.border.light,
-            backgroundColor: theme.palette.surface.transparent,
-            overflow: 'hidden',
-          })}
-          elevation={0}
-        >
-          <TopRepositoriesTable
-            repositories={repoStats}
-            isLoading={isLoading}
-            getRepositoryHref={getRepoHref}
-            linkState={REPO_LINK_STATE}
-          />
-        </Card>
       </Box>
     </Page>
   );
