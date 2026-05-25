@@ -1,16 +1,9 @@
 import React from 'react';
-import {
-  Card,
-  Box,
-  Typography,
-  CircularProgress,
-  Avatar,
-  alpha,
-  Tooltip,
-} from '@mui/material';
+import { Card, Box, Typography, Avatar, alpha, Tooltip } from '@mui/material';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import ReactECharts from 'echarts-for-react';
 import { usePullRequestDetails } from '../../api';
+import { LoadingCard } from '../common';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import theme, {
   CHART_COLORS,
@@ -43,19 +36,14 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
   );
   if (isDetailsLoading) {
     return (
-      <Card
+      <LoadingCard
         sx={{
           backgroundColor: alpha(theme.palette.common.white, 0.02),
           borderRadius: '8px',
           border: '1px solid',
           borderColor: 'border.subtle',
-          p: 4,
-          textAlign: 'center',
         }}
-        elevation={0}
-      >
-        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
-      </Card>
+      />
     );
   }
 

@@ -3,7 +3,6 @@ import {
   Avatar,
   Box,
   Card,
-  CircularProgress,
   InputAdornment,
   TextField,
   Tooltip,
@@ -27,6 +26,7 @@ import {
 } from '../../components/common/DataTable';
 import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import { LoadingCard } from '../common/LoadingCard';
 import TablePagination from '../common/TablePagination';
 import { tooltipSlotProps } from '../../theme';
 
@@ -365,11 +365,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
   ];
 
   if (isLoading) {
-    return (
-      <Card sx={{ p: 4, textAlign: 'center' }} elevation={0}>
-        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
-      </Card>
-    );
+    return <LoadingCard />;
   }
 
   const headerToolbar = (
