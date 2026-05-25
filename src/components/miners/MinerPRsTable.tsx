@@ -47,6 +47,7 @@ import {
   serializePRKey,
   useWatchlist,
 } from '../../hooks/useWatchlist';
+import { useDataTableParams } from '../../hooks/useDataTableParams';
 import TablePagination from '../common/TablePagination';
 import { formatDate } from '../../utils/format';
 import { tooltipSlotProps } from '../../theme';
@@ -59,9 +60,17 @@ type PrSortField =
   | 'lines'
   | 'date'
   | 'watch';
-type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
+
+const PR_SORT_KEYS: readonly PrSortField[] = [
+  'number',
+  'repository',
+  'score',
+  'lines',
+  'date',
+  'watch',
+];
 
 const PR_STATUS_FILTERS: readonly PrStatusFilter[] = [
   'all',
@@ -69,17 +78,6 @@ const PR_STATUS_FILTERS: readonly PrStatusFilter[] = [
   'merged',
   'closed',
 ];
-
-// Direction applied when a user first clicks a column header — string
-// columns feel natural ascending, numeric/date columns descending.
-const DEFAULT_SORT_DIR: Record<PrSortField, SortDir> = {
-  number: 'desc',
-  repository: 'asc',
-  score: 'desc',
-  lines: 'desc',
-  date: 'desc',
-  watch: 'desc',
-};
 
 // Mirrors the Score cell's render logic so clicking the Score header
 // sorts by what users actually see: merged → score, open → collateral,
@@ -117,45 +115,68 @@ interface MinerPRsTableProps {
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const { isWatched } = useWatchlist('prs');
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<PrSortField>('date');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(
     () => new Set(),
   );
-  const prStatusParam = searchParams.get('prStatus');
-  const statusFilter: PrStatusFilter = isPrStatusFilter(prStatusParam)
-    ? prStatusParam
-    : 'all';
 
+  const filtersConfig = useMemo(
+    () => ({
+      status: {
+        paramKey: 'prStatus',
+        parse: (raw: string | null): PrStatusFilter =>
+          isPrStatusFilter(raw) ? raw : 'all',
+        serialize: (value: PrStatusFilter): string | null =>
+          value === 'all' ? null : value,
+      },
+    }),
+    [],
+  );
+
+  const {
+    sortField,
+    sortOrder: sortDir,
+    setSort: handleSort,
+    page,
+    setPage,
+    filters,
+    setFilter,
+  } = useDataTableParams<PrSortField, { status: PrStatusFilter }>({
+    sortKeys: PR_SORT_KEYS,
+    defaultSortKey: 'date',
+    // String columns feel natural ascending; numeric/date columns descending.
+    defaultOrderOverrides: { repository: 'asc' },
+    paramKeys: { page: 'prPage' },
+    filters: filtersConfig,
+  });
+
+  const statusFilter = filters.status;
+  const setStatusFilter = useCallback(
+    (next: PrStatusFilter) => setFilter('status', next),
+    [setFilter],
+  );
+
+  // Match the legacy behavior: switching miners resets local UI state and
+  // returns the sort to the default. Page and status filter persist across
+  // miners (they did before too — only the local-state slots were cleared).
   useEffect(() => {
     setSelectedAuthor(null);
     setSearchQuery('');
-    setSortField('date');
-    setSortDir('desc');
     setExpandedKeys(new Set());
-  }, [githubId]);
-
-  const page = parseInt(searchParams.get('prPage') || '0', 10);
-  const setPage = useCallback(
-    (updater: number | ((prev: number) => number)) => {
-      const next = typeof updater === 'function' ? updater(page) : updater;
-      setSearchParams(
-        (prev) => {
-          const p = new URLSearchParams(prev);
-          if (next === 0) p.delete('prPage');
-          else p.set('prPage', String(next));
-          return p;
-        },
-        { replace: true },
-      );
-    },
-    [page, setSearchParams],
-  );
+    setSearchParams(
+      (prev) => {
+        const p = new URLSearchParams(prev);
+        p.delete('sort');
+        p.delete('dir');
+        return p;
+      },
+      { replace: true },
+    );
+  }, [githubId, setSearchParams]);
 
   // Ref lets the callback read the latest searchQuery without closing over
   // it (which would re-fire the wrapper's debounce effect on every commit).
@@ -173,35 +194,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       setPage(0);
     },
     [setPage],
-  );
-
-  const setStatusFilter = useCallback(
-    (next: PrStatusFilter) => {
-      setSearchParams(
-        (prev) => {
-          const p = new URLSearchParams(prev);
-          if (next === 'all') p.delete('prStatus');
-          else p.set('prStatus', next);
-          p.delete('prPage');
-          return p;
-        },
-        { replace: true },
-      );
-    },
-    [setSearchParams],
-  );
-
-  const handleSort = useCallback(
-    (field: PrSortField) => {
-      if (sortField === field) {
-        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-      } else {
-        setSortField(field);
-        setSortDir(DEFAULT_SORT_DIR[field]);
-      }
-      setPage(0);
-    },
-    [sortField, setPage],
   );
 
   const filteredPRs = useMemo(

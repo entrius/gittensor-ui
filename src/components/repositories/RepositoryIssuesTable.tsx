@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import {
   Box,
@@ -23,7 +23,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
-import { formatTokenAmount, getLowerText, type SortOrder } from '../../utils';
+import { formatTokenAmount, getLowerText } from '../../utils';
 import { formatDate } from '../../utils/format';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import {
@@ -33,6 +33,7 @@ import {
 import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
 import TablePagination from '../../components/common/TablePagination';
+import { useDataTableParams } from '../../hooks/useDataTableParams';
 
 interface RepositoryIssuesTableProps {
   repositoryFullName: string;
@@ -45,6 +46,15 @@ type SortKey =
   | 'linkedPr'
   | 'created'
   | 'closed';
+
+const ISSUE_SORT_KEYS: readonly SortKey[] = [
+  'number',
+  'title',
+  'status',
+  'linkedPr',
+  'created',
+  'closed',
+];
 
 type RepoIssuesFilter = 'all' | 'open' | 'closed';
 
@@ -64,9 +74,29 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     'all',
     isRepoIssuesFilter,
   );
-  const [sortKey, setSortKey] = useState<SortKey>('number');
-  const [sortDirection, setSortDirection] = useState<SortOrder>('desc');
-  const [page, setPage] = useState(0);
+
+  const {
+    sortField: sortKey,
+    sortOrder: sortDirection,
+    setSort: handleSort,
+    page,
+    setPage,
+  } = useDataTableParams<SortKey>({
+    sortKeys: ISSUE_SORT_KEYS,
+    defaultSortKey: 'number',
+    // String columns (title, status) feel natural ascending; others desc.
+    defaultOrderOverrides: { title: 'asc', status: 'asc' },
+    paramKeys: { sort: 'issueSort', order: 'issueDir', page: 'issuePage' },
+  });
+
+  const handleFilterChange = useCallback(
+    (next: RepoIssuesFilter) => {
+      if (next === filter) return;
+      setFilter(next);
+      setPage(0);
+    },
+    [filter, setFilter, setPage],
+  );
 
   const counts = useMemo(() => {
     if (!issues) return { total: 0, open: 0, closed: 0 };
@@ -128,11 +158,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     return decorated.map((item) => item.issue);
   }, [filteredIssues, sortKey, sortDirection]);
 
-  // Reset to the first page whenever the result set changes underneath us.
-  useEffect(() => {
-    setPage(0);
-  }, [filter, sortKey, sortDirection]);
-
   const totalPages = Math.ceil(sortedIssues.length / ISSUE_PAGE_SIZE);
   const pagedIssues = useMemo(
     () =>
@@ -141,18 +166,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         page * ISSUE_PAGE_SIZE + ISSUE_PAGE_SIZE,
       ),
     [sortedIssues, page],
-  );
-
-  const handleSort = useCallback(
-    (key: SortKey) => {
-      if (sortKey === key) {
-        setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-        return;
-      }
-      setSortKey(key);
-      setSortDirection(key === 'title' || key === 'status' ? 'asc' : 'desc');
-    },
-    [sortKey],
   );
 
   const handleRowClick = useCallback((issue: RepositoryIssue) => {
@@ -331,7 +344,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         <FilterButton
           label="All"
           isActive={filter === 'all'}
-          onClick={() => setFilter('all')}
+          onClick={() => handleFilterChange('all')}
           count={counts.total}
           color={STATUS_COLORS.open}
           activeTextColor="text.primary"
@@ -339,7 +352,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         <FilterButton
           label="Open"
           isActive={filter === 'open'}
-          onClick={() => setFilter('open')}
+          onClick={() => handleFilterChange('open')}
           count={counts.open}
           color={STATUS_COLORS.open}
           activeTextColor="text.primary"
@@ -347,7 +360,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         <FilterButton
           label="Closed"
           isActive={filter === 'closed'}
-          onClick={() => setFilter('closed')}
+          onClick={() => handleFilterChange('closed')}
           count={counts.closed}
           color={STATUS_COLORS.merged}
           activeTextColor="text.primary"

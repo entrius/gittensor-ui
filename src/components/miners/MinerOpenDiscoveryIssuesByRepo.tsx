@@ -29,12 +29,18 @@ import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import TablePagination from '../common/TablePagination';
 import { tooltipSlotProps } from '../../theme';
+import { useDataTableParams } from '../../hooks/useDataTableParams';
 
 type IssueStatusFilter = 'all' | 'open' | 'solved' | 'closed';
 type IssueSortField = 'number' | 'repository' | 'date';
-type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
+
+const ISSUE_SORT_KEYS: readonly IssueSortField[] = [
+  'number',
+  'repository',
+  'date',
+];
 
 const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
   'all',
@@ -42,12 +48,6 @@ const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
   'solved',
   'closed',
 ];
-
-const DEFAULT_SORT_DIR: Record<IssueSortField, SortDir> = {
-  number: 'desc',
-  repository: 'asc',
-  date: 'desc',
-};
 
 const isOpenIssue = (i: MinerIssue) => i.state === 'OPEN';
 const isSolvedIssue = (i: MinerIssue) =>
@@ -101,71 +101,64 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
 > = ({ githubId }) => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [, setSearchParams] = useSearchParams();
   // Pin the `since` cutoff per mount so React Query's cache key stays stable
   // while the component is open. The 35-day scoring window slides on remount.
   const since = useMemo(() => getScoringWindowStartIso(), []);
   const { data: issues, isLoading } = useMinerIssues(githubId, true, since);
   const [searchQuery, setSearchQuery] = useState('');
-  const [sortField, setSortField] = useState<IssueSortField>('date');
-  const [sortDir, setSortDir] = useState<SortDir>('desc');
 
-  const issueStatusParam = searchParams.get('issueStatus');
-  const statusFilter: IssueStatusFilter = isIssueStatusFilter(issueStatusParam)
-    ? issueStatusParam
-    : 'all';
+  const filtersConfig = useMemo(
+    () => ({
+      status: {
+        paramKey: 'issueStatus',
+        parse: (raw: string | null): IssueStatusFilter =>
+          isIssueStatusFilter(raw) ? raw : 'all',
+        serialize: (value: IssueStatusFilter): string | null =>
+          value === 'all' ? null : value,
+      },
+    }),
+    [],
+  );
 
+  const {
+    sortField,
+    sortOrder: sortDir,
+    setSort: handleSort,
+    page,
+    setPage,
+    filters,
+    setFilter,
+  } = useDataTableParams<IssueSortField, { status: IssueStatusFilter }>({
+    sortKeys: ISSUE_SORT_KEYS,
+    defaultSortKey: 'date',
+    // String columns (repository) feel natural ascending; numeric/date desc.
+    defaultOrderOverrides: { repository: 'asc' },
+    paramKeys: { page: 'issuePage' },
+    filters: filtersConfig,
+  });
+
+  const statusFilter = filters.status;
+  const setStatusFilter = useCallback(
+    (next: IssueStatusFilter) => setFilter('status', next),
+    [setFilter],
+  );
+
+  // Match the legacy behavior: switching miners resets local UI state and
+  // returns the sort to the default. Page and status filter persist across
+  // miners (they did before too — only the local-state slots were cleared).
   useEffect(() => {
     setSearchQuery('');
-    setSortField('date');
-    setSortDir('desc');
-  }, [githubId]);
-
-  const page = parseInt(searchParams.get('issuePage') || '0', 10);
-  const setPage = useCallback(
-    (updater: number | ((prev: number) => number)) => {
-      const next = typeof updater === 'function' ? updater(page) : updater;
-      setSearchParams(
-        (prev) => {
-          const p = new URLSearchParams(prev);
-          if (next === 0) p.delete('issuePage');
-          else p.set('issuePage', String(next));
-          return p;
-        },
-        { replace: true },
-      );
-    },
-    [page, setSearchParams],
-  );
-
-  const setStatusFilter = useCallback(
-    (next: IssueStatusFilter) => {
-      setSearchParams(
-        (prev) => {
-          const p = new URLSearchParams(prev);
-          if (next === 'all') p.delete('issueStatus');
-          else p.set('issueStatus', next);
-          p.delete('issuePage');
-          return p;
-        },
-        { replace: true },
-      );
-    },
-    [setSearchParams],
-  );
-
-  const handleSort = useCallback(
-    (field: IssueSortField) => {
-      if (sortField === field) {
-        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-      } else {
-        setSortField(field);
-        setSortDir(DEFAULT_SORT_DIR[field]);
-      }
-      setPage(0);
-    },
-    [sortField, setPage],
-  );
+    setSearchParams(
+      (prev) => {
+        const p = new URLSearchParams(prev);
+        p.delete('sort');
+        p.delete('dir');
+        return p;
+      },
+      { replace: true },
+    );
+  }, [githubId, setSearchParams]);
 
   const filteredIssues = useMemo(
     () => filterIssues(issues ?? [], { statusFilter, searchQuery }),
