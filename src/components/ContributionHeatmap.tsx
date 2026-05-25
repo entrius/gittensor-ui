@@ -6,6 +6,7 @@ import {
   TEXT_OPACITY,
   scrollbarSx,
 } from '../theme';
+import { pluralize } from '../utils/format';
 
 interface ContributionData {
   date: string;
@@ -146,7 +147,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
                   onClick={() => onDayClick?.(activity.date)}
                   style={{ cursor: 'pointer' }}
                   role="button"
-                  aria-label={`View ${activity.count} contribution${activity.count !== 1 ? 's' : ''} on ${activity.date}`}
+                  aria-label={`View ${pluralize(activity.count, 'contribution')} on ${activity.date}`}
                 >
                   {highlighted}
                 </g>
@@ -155,7 +156,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
               );
               return (
                 <Tooltip
-                  title={`${activity.count} contribution${activity.count !== 1 ? 's' : ''} on ${new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}${clickable ? ' — click to view PRs' : ''}`}
+                  title={`${pluralize(activity.count, 'contribution')} on ${new Date(activity.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}${clickable ? ' — click to view PRs' : ''}`}
                   arrow
                   placement="top"
                   enterDelay={0}

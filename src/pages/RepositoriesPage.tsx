@@ -11,6 +11,7 @@ import { useAllPrs, useAllMiners, useReposAndWeights } from '../api';
 import { type CommitLog } from '../api/models/Dashboard';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import { buildRepoDiscoveryRollupFromMiners } from '../utils/ExplorerUtils';
+import { pluralize } from '../utils/format';
 import { isMergedPr } from '../utils/prStatus';
 
 const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
@@ -509,8 +510,8 @@ const RepositoriesPage: React.FC = () => {
                               whiteSpace: 'nowrap',
                             }}
                           >
-                            {repo.collateral.toFixed(1)} ({repo.openPRs} PR
-                            {repo.openPRs !== 1 ? 's' : ''})
+                            {repo.collateral.toFixed(1)} (
+                            {pluralize(repo.openPRs, 'PR')})
                           </Typography>
                         }
                       />
