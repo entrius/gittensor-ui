@@ -12,6 +12,7 @@ import { type CommitLog } from '../api/models/Dashboard';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import { buildRepoDiscoveryRollupFromMiners } from '../utils/ExplorerUtils';
 import { isMergedPr } from '../utils/prStatus';
+import { minerPrPath, minerRepositoryPath } from '../utils';
 
 const FONTS = { mono: '"JetBrains Mono", monospace' } as const;
 
@@ -129,10 +130,8 @@ const cardSx = (theme: Theme) => ({
 
 // ── Page ────────────────────────────────────────────────────────────────────
 const REPO_LINK_STATE = { backLabel: 'Back to Repositories' } as const;
-const getRepoHref = (name: string) =>
-  `/miners/repository?name=${encodeURIComponent(name)}`;
-const getPrHref = (name: string, number: number) =>
-  `/miners/pr?repo=${encodeURIComponent(name)}&number=${number}`;
+const getRepoHref = (name: string) => minerRepositoryPath(name);
+const getPrHref = (name: string, number: number) => minerPrPath(name, number);
 
 const RepositoriesPage: React.FC = () => {
   const registerRepoLink = useLinkBehavior<HTMLAnchorElement>(

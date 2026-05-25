@@ -19,6 +19,7 @@ import {
   getRepositoryOwnerAvatarSrc,
   getScoringWindowStartIso,
   isOutsideScoringWindow,
+  minerPrPath,
   paginateItems,
 } from '../../utils';
 import {
@@ -325,7 +326,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         }
         const repoForPr =
           issue.solving_pr?.repo_full_name ?? issue.repo_full_name;
-        const prHref = `/miners/pr?repo=${encodeURIComponent(repoForPr)}&number=${prNumber}`;
+        const prHref = minerPrPath(repoForPr, prNumber);
         return (
           <a
             href={prHref}

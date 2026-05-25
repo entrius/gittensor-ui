@@ -18,7 +18,11 @@ import theme, {
   TEXT_OPACITY,
   tooltipSlotProps,
 } from '../../theme';
-import { getRepositoryOwnerAvatarSrc, parseNumber } from '../../utils';
+import {
+  getRepositoryOwnerAvatarSrc,
+  minerRepositoryPath,
+  parseNumber,
+} from '../../utils';
 import { buildMultiplierGrid } from '../../utils/multiplierDefs';
 import PRTimeDecayChart from './PRTimeDecayChart';
 
@@ -38,7 +42,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
     usePullRequestDetails(repository, pullRequestNumber);
 
   const repoLinkProps = useLinkBehavior<HTMLAnchorElement>(
-    `/miners/repository?name=${encodeURIComponent(repository)}`,
+    minerRepositoryPath(repository),
     { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
   );
   if (isDetailsLoading) {
