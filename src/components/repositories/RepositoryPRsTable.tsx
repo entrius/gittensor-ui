@@ -29,7 +29,12 @@ import {
   useWatchlist,
 } from '../../hooks/useWatchlist';
 import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
-import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
+import {
+  filterPrs,
+  getPrStatusCounts,
+  isPrStatusFilter,
+  type PrStatusFilter,
+} from '../../utils';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { formatDate } from '../../utils/format';
 import FilterButton from '../FilterButton';
@@ -51,9 +56,6 @@ interface RepositoryPRsTableProps {
   repositoryFullName: string;
   state?: 'open' | 'closed' | 'merged' | 'all';
 }
-
-const isPrStatusFilter = (v: unknown): v is PrStatusFilter =>
-  v === 'all' || v === 'open' || v === 'merged' || v === 'closed';
 
 const PR_PAGE_SIZE = 20;
 

@@ -3,6 +3,19 @@ interface PrStatusLike {
   prState?: string | null;
 }
 
+export type PrStatusFilter = 'all' | 'open' | 'merged' | 'closed';
+
+export const PR_STATUS_FILTERS: readonly PrStatusFilter[] = [
+  'all',
+  'open',
+  'merged',
+  'closed',
+];
+
+export const isPrStatusFilter = (value: unknown): value is PrStatusFilter =>
+  typeof value === 'string' &&
+  (PR_STATUS_FILTERS as readonly string[]).includes(value);
+
 export const isOpenPr = (pr: PrStatusLike): boolean =>
   pr.prState === 'OPEN' || (!pr.prState && !pr.mergedAt);
 

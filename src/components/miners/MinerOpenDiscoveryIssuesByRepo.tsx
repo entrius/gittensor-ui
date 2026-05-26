@@ -18,8 +18,10 @@ import type { MinerIssue } from '../../api/models/Dashboard';
 import {
   getRepositoryOwnerAvatarSrc,
   getScoringWindowStartIso,
+  isIssueStatusFilter,
   isOutsideScoringWindow,
   paginateItems,
+  type IssueStatusFilter,
 } from '../../utils';
 import {
   DataTable,
@@ -30,18 +32,10 @@ import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import TablePagination from '../common/TablePagination';
 import { tooltipSlotProps } from '../../theme';
 
-type IssueStatusFilter = 'all' | 'open' | 'solved' | 'closed';
 type IssueSortField = 'number' | 'repository' | 'date';
 type SortDir = 'asc' | 'desc';
 
 const PAGE_SIZE = 20;
-
-const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
-  'all',
-  'open',
-  'solved',
-  'closed',
-];
 
 const DEFAULT_SORT_DIR: Record<IssueSortField, SortDir> = {
   number: 'desc',
@@ -54,11 +48,6 @@ const isSolvedIssue = (i: MinerIssue) =>
   i.state === 'CLOSED' && !!i.solving_pr?.merged_at;
 const isClosedIssue = (i: MinerIssue) =>
   i.state === 'CLOSED' && !i.solving_pr?.merged_at;
-
-const isIssueStatusFilter = (
-  value: string | null,
-): value is IssueStatusFilter =>
-  value !== null && (ISSUE_STATUS_FILTERS as readonly string[]).includes(value);
 
 const filterIssues = (
   issues: MinerIssue[],

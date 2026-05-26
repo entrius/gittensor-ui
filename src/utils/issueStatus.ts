@@ -1,6 +1,21 @@
 import { alpha } from '@mui/material/styles';
 import { STATUS_COLORS } from '../theme';
 
+export type IssueStatusFilter = 'all' | 'open' | 'solved' | 'closed';
+
+export const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
+  'all',
+  'open',
+  'solved',
+  'closed',
+];
+
+export const isIssueStatusFilter = (
+  value: unknown,
+): value is IssueStatusFilter =>
+  typeof value === 'string' &&
+  (ISSUE_STATUS_FILTERS as readonly string[]).includes(value);
+
 interface IssueStatusMeta {
   bgColor: string;
   borderColor: string;
