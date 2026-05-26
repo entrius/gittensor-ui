@@ -28,6 +28,10 @@ import { credibilityColor } from '../../utils/format';
 import { type SortOrder } from '../../utils/ExplorerUtils';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { DataTable, type DataTableColumn } from '../common';
+import {
+  EligibilityToggle,
+  type EligibilityFilter,
+} from '../leaderboard/EligibilityToggle';
 import EmptyStateMessage from './EmptyStateMessage';
 import MinerRepoStandingCard, { repoMinersHref } from './MinerRepoStandingCard';
 
@@ -44,16 +48,6 @@ type StandingsSortKey =
   | 'solved'
   | 'valid'
   | 'discoveryScore';
-type EligibilityFilter = 'all' | 'eligible' | 'ineligible';
-
-const ELIGIBILITY_FILTER_OPTIONS: Array<{
-  value: EligibilityFilter;
-  label: string;
-}> = [
-  { value: 'all', label: 'All' },
-  { value: 'eligible', label: 'Eligible' },
-  { value: 'ineligible', label: 'Ineligible' },
-];
 
 const repoTrackEligible = (
   repo: MinerRepositoryEvaluation,
@@ -379,16 +373,9 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
     if (next) setView(next);
   };
 
-  const handleEligibilityFilterChange = (
-    _event: React.MouseEvent<HTMLElement>,
-    next: EligibilityFilter | null,
-  ) => {
-    if (next) setEligibilityFilter(next);
-  };
-
-  const toggleGroupSx = {
+  const viewToggleGroupSx = {
     '& .MuiToggleButton-root': {
-      color: 'text.secondary',
+      color: 'text.tertiary',
       borderColor: 'border.light',
       height: 32,
       minHeight: 32,
@@ -398,15 +385,19 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
       display: 'inline-flex',
       alignItems: 'center',
       justifyContent: 'center',
-      textTransform: 'none',
       '&.Mui-selected': {
-        color: 'primary.main',
+        color: 'text.primary',
         backgroundColor: (theme: Theme) =>
-          alpha(theme.palette.primary.main, 0.12),
+          alpha(theme.palette.text.primary, 0.15),
         '&:hover': {
           backgroundColor: (theme: Theme) =>
-            alpha(theme.palette.primary.main, 0.18),
+            alpha(theme.palette.text.primary, 0.1),
         },
+      },
+      '&:hover': {
+        backgroundColor: (theme: Theme) =>
+          alpha(theme.palette.text.primary, 0.1),
+        color: 'text.primary',
       },
     },
   };
@@ -482,20 +473,10 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
               flexWrap: 'wrap',
             }}
           >
-            <ToggleButtonGroup
+            <EligibilityToggle
               value={eligibilityFilter}
-              exclusive
-              onChange={handleEligibilityFilterChange}
-              size="small"
-              aria-label="Repository eligibility"
-              sx={toggleGroupSx}
-            >
-              {ELIGIBILITY_FILTER_OPTIONS.map((option) => (
-                <ToggleButton key={option.value} value={option.value}>
-                  {option.label}
-                </ToggleButton>
-              ))}
-            </ToggleButtonGroup>
+              onChange={setEligibilityFilter}
+            />
             {view === 'cards' && (
               <>
                 <Typography
@@ -611,7 +592,7 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
               onChange={handleViewChange}
               size="small"
               aria-label="Standings view"
-              sx={toggleGroupSx}
+              sx={viewToggleGroupSx}
             >
               <ToggleButton value="cards" aria-label="Card grid">
                 <GridViewIcon sx={{ fontSize: '1.05rem' }} />
