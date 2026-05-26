@@ -1655,7 +1655,7 @@ const ReposList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
     const chartFont = echartsFontFamily(theme);
 
     const chartData = paged.map((repo) => {
-      const weight = parseFloat(String(repo.config?.weight ?? 0));
+      const weight = Number(repo.weight) || 0;
       const ossScore = repo.totalScore || 0;
       const prs = repo.totalPRs || 0;
       const contributors = repo.uniqueMiners?.size || 0;
