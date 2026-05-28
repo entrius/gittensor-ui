@@ -10,6 +10,7 @@ export type KeyboardShortcut = {
 };
 
 const keyboardShortcuts: KeyboardShortcut[] = [
+  { keys: ['g', 'h'], label: 'Home', path: '/' },
   { keys: ['g', 'd'], label: 'Dashboard', path: '/dashboard' },
   { keys: ['g', 'r'], label: 'Repositories', path: '/repositories' },
   { keys: ['g', 'b'], label: 'Bounties', path: '/bounties' },
