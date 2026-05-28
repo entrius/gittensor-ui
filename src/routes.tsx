@@ -17,6 +17,7 @@ const IssuesPage = React.lazy(() => import('./pages/IssuesPage'));
 const SearchPage = React.lazy(() => import('./pages/search/SearchPage'));
 const IssueDetailsPage = React.lazy(() => import('./pages/IssueDetailsPage'));
 const RepositoriesPage = React.lazy(() => import('./pages/RepositoriesPage'));
+const LeaderboardPage = React.lazy(() => import('./pages/LeaderboardPage'));
 const MinerDetailsPage = React.lazy(() => import('./pages/MinerDetailsPage'));
 const RepositoryDetailsPage = React.lazy(
   () => import('./pages/RepositoryDetailsPage'),
@@ -58,9 +59,15 @@ const routesArray: AppRoute[] = [
     element: <Navigate to="/repositories" replace />,
   },
   {
+    name: 'leaderboard',
+    path: '/leaderboard',
+    element: <LeaderboardPage />,
+    showGlobalSearch: true,
+  },
+  {
     name: 'top-miners-redirect',
     path: '/top-miners',
-    element: <Navigate to="/repositories" replace />,
+    element: <Navigate to="/leaderboard" replace />,
   },
   {
     name: 'watchlist',

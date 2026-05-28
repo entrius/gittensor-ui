@@ -43,6 +43,30 @@ export const CREDIBILITY_COLORS = {
   poor: '#f87171', // Red - below 30%
 } as const;
 
+export const TOOLTIP_TONE_COLORS = {
+  positive: '#86efac',
+  caution: '#fcd34d',
+  negative: '#fca5a5',
+} as const;
+
+export const LEADERBOARD_TRACK_COLORS = {
+  oss: '#3fb950',
+  discovery: '#58a6ff',
+  dual: '#a371f7',
+} as const;
+
+// Keep in sync with `MinerStatusKind` in leaderboard/MinerStatus.tsx.
+export const MINER_STATUS_COLORS = {
+  penalized: '#ff7b72',
+  hot: '#ff7b72',
+  climbing: '#a78bfa',
+  rising: '#58a6ff',
+  dormant: 'rgba(255, 255, 255, 0.4)',
+  cooling: '#7dd3fc',
+  specialist: '#f59e0b',
+  dual: '#4ade80',
+} as const;
+
 const RISK_COLORS = {
   exceeded: 'rgba(248, 113, 113, 0.9)', // Red - threshold exceeded
   critical: 'rgba(251, 146, 60, 0.9)', // Orange - 1 away
@@ -247,7 +271,7 @@ export const tooltipSlotProps = {
       borderRadius: '6px',
       border: '1px solid',
       borderColor: 'border.light',
-      maxWidth: 220,
+      maxWidth: { xs: 'calc(100vw - 24px)', sm: 280 },
       width: 'max-content',
       minWidth: 0,
       lineHeight: 1.45,
@@ -257,6 +281,17 @@ export const tooltipSlotProps = {
     },
   },
   arrow: { sx: { color: 'surface.tooltip' } },
+  // `flip` alone doesn't clamp to the viewport; preventOverflow keeps long bodies on-screen.
+  popper: {
+    modifiers: [
+      {
+        name: 'preventOverflow',
+        enabled: true,
+        options: { boundary: 'viewport', padding: 8 },
+      },
+      { name: 'flip', enabled: true, options: { padding: 8 } },
+    ],
+  },
 };
 
 // Module Augmentation for Custom Theme Properties
@@ -570,7 +605,7 @@ const theme = createTheme({
     MuiTooltip: {
       defaultProps: {
         enterTouchDelay: 0,
-        leaveTouchDelay: 15000,
+        leaveTouchDelay: 1500,
       },
     },
     MuiAppBar: {
