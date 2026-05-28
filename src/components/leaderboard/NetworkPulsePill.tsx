@@ -1,6 +1,6 @@
 import React from 'react';
 import { Box, Tooltip, alpha } from '@mui/material';
-import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
+import theme, { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import { useMinerActivityIndex } from './useMinerActivityIndex';
 
 export const NetworkPulsePill: React.FC = () => {
@@ -16,7 +16,7 @@ export const NetworkPulsePill: React.FC = () => {
     color = STATUS_COLORS.success;
   } else if (lowSample) {
     label = `${last7}/${prior7} PRs · last vs prior 7d`;
-    color = alpha('#fff', 0.5);
+    color = alpha(theme.palette.common.white, 0.5);
   } else {
     const delta = last7 - prior7;
     const pct = Math.round((Math.abs(delta) / prior7) * 100);
@@ -27,7 +27,7 @@ export const NetworkPulsePill: React.FC = () => {
         ? STATUS_COLORS.success
         : delta < 0
           ? STATUS_COLORS.warningOrange
-          : alpha('#fff', 0.5);
+          : alpha(theme.palette.common.white, 0.5);
   }
   return (
     <Tooltip

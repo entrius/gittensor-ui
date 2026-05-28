@@ -23,7 +23,6 @@ import {
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { parseNumber } from '../../utils/ExplorerUtils';
 import { LinkBox } from '../common/linkBehavior';
-import { usePrices } from '../../hooks/usePrices';
 import type { MinerEvaluation } from '../../api';
 import {
   useMinerActivityIndex,
@@ -138,7 +137,14 @@ const ZoneTitle: React.FC<{ icon: React.ReactNode; label: string }> = ({
   label,
 }) => (
   <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75, mb: 1.25 }}>
-    <Box sx={{ color: alpha('#fff', 0.4), display: 'flex' }}>{icon}</Box>
+    <Box
+      sx={(t) => ({
+        color: alpha(t.palette.text.primary, 0.4),
+        display: 'flex',
+      })}
+    >
+      {icon}
+    </Box>
     <Typography variant="statLabel">{label}</Typography>
   </Box>
 );
@@ -185,92 +191,6 @@ const Zone: React.FC<{
     </Box>
   );
 };
-
-const fmtPrice = (n: number): string => {
-  if (n <= 0) return '—';
-  if (n >= 100) return `$${n.toFixed(2)}`;
-  if (n >= 1) return `$${n.toFixed(2)}`;
-  return `$${n.toFixed(3)}`;
-};
-
-const TokenTickerRow: React.FC<{
-  symbol: string;
-  symbolColor: string;
-  tip: string;
-  price: number;
-  loading: boolean;
-}> = ({ symbol, symbolColor, tip, price, loading }) => (
-  <Tooltip title={tip} arrow placement="top" slotProps={tooltipSlotProps}>
-    <Box
-      sx={{
-        display: 'inline-grid',
-        gridTemplateColumns: '32px auto',
-        alignItems: 'baseline',
-        columnGap: '6px',
-        cursor: 'help',
-        fontFamily: '"JetBrains Mono", monospace',
-      }}
-    >
-      <Typography
-        component="span"
-        sx={{
-          fontFamily: 'inherit',
-          fontSize: '0.62rem',
-          fontWeight: 700,
-          color: symbolColor,
-          letterSpacing: '0.3px',
-          textAlign: 'left',
-        }}
-      >
-        {symbol}
-      </Typography>
-      <Typography
-        component="span"
-        sx={{
-          fontFamily: 'inherit',
-          fontSize: '0.8rem',
-          fontWeight: 700,
-          color: loading ? alpha('#fff', 0.35) : 'text.primary',
-          letterSpacing: '-0.01em',
-          lineHeight: 1.05,
-        }}
-      >
-        {loading ? '—' : fmtPrice(price)}
-      </Typography>
-    </Box>
-  </Tooltip>
-);
-
-const TokenTicker: React.FC<{
-  taoPrice: number;
-  alphaPrice: number;
-  hasPrices: boolean;
-}> = ({ taoPrice, alphaPrice, hasPrices }) => (
-  <Box
-    sx={{
-      display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'flex-start',
-      gap: '4px',
-      pt: '4px',
-    }}
-  >
-    <TokenTickerRow
-      symbol="TAO"
-      symbolColor="#5eead4"
-      tip="TAO spot price — drives the USD value of every miner emission."
-      price={taoPrice}
-      loading={!hasPrices}
-    />
-    <TokenTickerRow
-      symbol="α74"
-      symbolColor={STATUS_COLORS.warning}
-      tip="Subnet 74 alpha token spot price — the gittensor reward token."
-      price={alphaPrice}
-      loading={!hasPrices}
-    />
-  </Box>
-);
 
 const EmissionSplitBar: React.FC<{ pool: number }> = ({ pool }) => {
   const contribShare = CONTRIB_EMISSION_SHARE;
@@ -346,7 +266,10 @@ const EmissionSplitBar: React.FC<{ pool: number }> = ({ pool }) => {
             />
             <Box
               component="span"
-              sx={{ color: alpha('#fff', 0.55), fontWeight: 500 }}
+              sx={(t) => ({
+                color: alpha(t.palette.text.primary, 0.55),
+                fontWeight: 500,
+              })}
             >
               Miners
             </Box>
@@ -358,7 +281,10 @@ const EmissionSplitBar: React.FC<{ pool: number }> = ({ pool }) => {
             </Box>
             <Box
               component="span"
-              sx={{ color: alpha('#fff', 0.4), fontSize: '0.6rem' }}
+              sx={(t) => ({
+                color: alpha(t.palette.text.primary, 0.4),
+                fontSize: '0.6rem',
+              })}
             >
               {Math.round(contribShare * 100)}%
             </Box>
@@ -377,7 +303,10 @@ const EmissionSplitBar: React.FC<{ pool: number }> = ({ pool }) => {
             />
             <Box
               component="span"
-              sx={{ color: alpha('#fff', 0.55), fontWeight: 500 }}
+              sx={(t) => ({
+                color: alpha(t.palette.text.primary, 0.55),
+                fontWeight: 500,
+              })}
             >
               Treasury
             </Box>
@@ -389,7 +318,10 @@ const EmissionSplitBar: React.FC<{ pool: number }> = ({ pool }) => {
             </Box>
             <Box
               component="span"
-              sx={{ color: alpha('#fff', 0.4), fontSize: '0.6rem' }}
+              sx={(t) => ({
+                color: alpha(t.palette.text.primary, 0.4),
+                fontSize: '0.6rem',
+              })}
             >
               {Math.round(treasuryShare * 100)}%
             </Box>
@@ -404,7 +336,6 @@ const DailyPoolZone: React.FC<{
   pool: number;
   earners: EarnerLite[];
 }> = ({ pool, earners }) => {
-  const { taoPrice, alphaPrice, hasPrices } = usePrices();
   return (
     <Zone position={1}>
       <ZoneTitle
@@ -414,51 +345,45 @@ const DailyPoolZone: React.FC<{
       <Box
         sx={(t) => ({
           display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'space-between',
-          flexWrap: 'wrap',
-          rowGap: 1,
-          columnGap: 1.5,
+          alignItems: 'baseline',
+          gap: 0.5,
           pb: 0.75,
           borderBottom: `1px dashed ${t.palette.border.light}`,
         })}
       >
-        <Box sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
-          <Typography
-            sx={{
-              fontSize: { xs: '1.85rem', md: '2.2rem' },
-              fontWeight: 700,
-              lineHeight: 1,
-              fontFamily: '"JetBrains Mono", monospace',
-              color: pool > 0 ? STATUS_COLORS.success : 'text.primary',
-              letterSpacing: '-0.02em',
-            }}
-          >
-            {fmtUsd(pool)}
-          </Typography>
-          <Typography
-            sx={{ fontSize: '0.88rem', color: alpha('#fff', 0.45), ml: 0.25 }}
-          >
-            /day
-          </Typography>
-        </Box>
-        <TokenTicker
-          taoPrice={taoPrice}
-          alphaPrice={alphaPrice}
-          hasPrices={hasPrices}
-        />
+        <Typography
+          sx={{
+            fontSize: { xs: '1.85rem', md: '2.2rem' },
+            fontWeight: 700,
+            lineHeight: 1,
+            fontFamily: '"JetBrains Mono", monospace',
+            color: pool > 0 ? STATUS_COLORS.success : 'text.primary',
+            letterSpacing: '-0.02em',
+          }}
+        >
+          {fmtUsd(pool)}
+        </Typography>
+        <Typography
+          sx={(t) => ({
+            fontSize: '0.88rem',
+            color: alpha(t.palette.text.primary, 0.45),
+            ml: 0.25,
+          })}
+        >
+          /day
+        </Typography>
       </Box>
       {pool > 0 && <EmissionSplitBar pool={pool} />}
       {earners.length > 0 && (
         <Box sx={{ mt: 'auto', pt: 2 }}>
           <Typography
-            sx={{
+            sx={(t) => ({
               fontSize: '0.62rem',
-              color: alpha('#fff', 0.4),
+              color: alpha(t.palette.text.primary, 0.4),
               textTransform: 'uppercase',
               letterSpacing: '0.6px',
               mb: 0.75,
-            }}
+            })}
           >
             Top earners
           </Typography>
@@ -655,7 +580,7 @@ const CompositionZone: React.FC<{
                       : `Filter to ${s.label} cohort`
                     : undefined
                 }
-                sx={{
+                sx={(t) => ({
                   width: `${widthPct}%`,
                   backgroundColor: s.color,
                   border: 'none',
@@ -663,18 +588,18 @@ const CompositionZone: React.FC<{
                   cursor: handle ? 'pointer' : 'help',
                   opacity: dimmed ? 0.35 : 1,
                   boxShadow: isActive
-                    ? `inset 0 0 0 2px ${alpha('#fff', 0.85)}`
+                    ? `inset 0 0 0 2px ${alpha(t.palette.text.primary, 0.85)}`
                     : 'none',
                   transition: 'opacity 0.15s, box-shadow 0.15s',
                   '&:hover': handle
                     ? {
                         opacity: 1,
                         boxShadow: isActive
-                          ? `inset 0 0 0 2px ${alpha('#fff', 0.95)}`
-                          : `inset 0 0 0 1px ${alpha('#fff', 0.55)}`,
+                          ? `inset 0 0 0 2px ${alpha(t.palette.text.primary, 0.95)}`
+                          : `inset 0 0 0 1px ${alpha(t.palette.text.primary, 0.55)}`,
                       }
                     : { opacity: dimmed ? 0.45 : 0.85 },
-                }}
+                })}
               />
             </Tooltip>
           );
@@ -750,26 +675,31 @@ const CompositionZone: React.FC<{
                   }}
                 />
                 <Typography
-                  sx={{
+                  sx={(t) => ({
                     fontSize: '0.72rem',
-                    color: isActive ? 'text.primary' : alpha('#fff', 0.6),
+                    color: isActive
+                      ? t.palette.text.primary
+                      : alpha(t.palette.text.primary, 0.6),
                     fontWeight: isActive ? 600 : 400,
                     flex: 1,
                     minWidth: 0,
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
-                  }}
+                  })}
                 >
                   {s.label}
                 </Typography>
                 <Typography
-                  sx={{
+                  sx={(t) => ({
                     fontSize: '0.72rem',
                     fontWeight: 700,
-                    color: s.count === 0 ? alpha('#fff', 0.3) : 'text.primary',
+                    color:
+                      s.count === 0
+                        ? alpha(t.palette.text.primary, 0.3)
+                        : t.palette.text.primary,
                     fontFamily: '"JetBrains Mono", monospace',
-                  }}
+                  })}
                 >
                   {s.count}
                 </Typography>
@@ -787,7 +717,6 @@ const PODIUM_COLOR = [
   RANK_COLORS.second,
   RANK_COLORS.third,
 ] as const;
-const PODIUM_MEDAL = ['🥇', '🥈', '🥉'] as const;
 
 const PodiumZone: React.FC<{
   rows: PodiumRow[];
@@ -799,7 +728,12 @@ const PodiumZone: React.FC<{
       label="Top scorers"
     />
     {rows.length === 0 ? (
-      <Typography sx={{ fontSize: '0.78rem', color: alpha('#fff', 0.45) }}>
+      <Typography
+        sx={(t) => ({
+          fontSize: '0.78rem',
+          color: alpha(t.palette.text.primary, 0.45),
+        })}
+      >
         No scored miners yet
       </Typography>
     ) : (
@@ -814,7 +748,6 @@ const PodiumZone: React.FC<{
       >
         {rows.map((row, idx) => {
           const color = PODIUM_COLOR[idx];
-          const medal = PODIUM_MEDAL[idx];
           return (
             <LinkBox
               key={row.githubId}
@@ -849,13 +782,16 @@ const PodiumZone: React.FC<{
               <Typography
                 aria-hidden
                 sx={{
-                  fontSize: '1.1rem',
+                  fontFamily: '"JetBrains Mono", monospace',
+                  fontSize: '0.95rem',
+                  fontWeight: 700,
+                  color,
                   lineHeight: 1,
                   textAlign: 'center',
                   minWidth: 22,
                 }}
               >
-                {medal}
+                {idx + 1}
               </Typography>
               <Avatar
                 src={getRepositoryOwnerAvatarSrc(row.username)}
@@ -869,28 +805,28 @@ const PodiumZone: React.FC<{
               <Box sx={{ minWidth: 0 }}>
                 <Typography
                   className="podium-name"
-                  sx={{
+                  sx={(t) => ({
                     fontSize: '0.85rem',
                     fontWeight: 600,
-                    color: alpha('#fff', 0.9),
+                    color: alpha(t.palette.text.primary, 0.9),
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
                     whiteSpace: 'nowrap',
                     transition: 'color 0.15s',
                     letterSpacing: '-0.005em',
-                  }}
+                  })}
                 >
                   {row.username}
                 </Typography>
                 <Typography
-                  sx={{
+                  sx={(t) => ({
                     fontSize: '0.65rem',
                     color:
                       row.usdPerDay > 0
-                        ? alpha('#fff', 0.55)
-                        : alpha('#fff', 0.35),
+                        ? alpha(t.palette.text.primary, 0.55)
+                        : alpha(t.palette.text.primary, 0.35),
                     fontFamily: '"JetBrains Mono", monospace',
-                  }}
+                  })}
                 >
                   {row.usdPerDay > 0
                     ? `${fmtUsd(row.usdPerDay)}/day`
@@ -911,14 +847,14 @@ const PodiumZone: React.FC<{
                   {row.combinedScore.toFixed(0)}
                 </Typography>
                 <Typography
-                  sx={{
+                  sx={(t) => ({
                     fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.55rem',
-                    color: alpha('#fff', 0.4),
+                    color: alpha(t.palette.text.primary, 0.4),
                     letterSpacing: '0.4px',
                     textTransform: 'uppercase',
                     mt: '2px',
-                  }}
+                  })}
                 >
                   score
                 </Typography>
@@ -989,7 +925,12 @@ const HotRepoZone: React.FC<{
           icon={<HotRepoIcon sx={{ fontSize: '0.9rem' }} />}
           label={`Hottest repos · ${lookbackLabel}`}
         />
-        <Typography sx={{ fontSize: '0.78rem', color: alpha('#fff', 0.45) }}>
+        <Typography
+          sx={(t) => ({
+            fontSize: '0.78rem',
+            color: alpha(t.palette.text.primary, 0.45),
+          })}
+        >
           No merged PRs yet in this window
         </Typography>
       </Zone>
@@ -1118,14 +1059,14 @@ const HotRepoZone: React.FC<{
               {heroCount.toLocaleString()}
             </Typography>
             <Typography
-              sx={{
+              sx={(t) => ({
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.6rem',
-                color: alpha('#fff', 0.45),
+                color: alpha(t.palette.text.primary, 0.45),
                 letterSpacing: '0.4px',
                 textTransform: 'uppercase',
                 lineHeight: 1,
-              }}
+              })}
             >
               PR{heroCount === 1 ? '' : 's'}
             </Typography>
@@ -1135,13 +1076,13 @@ const HotRepoZone: React.FC<{
       {runnersUp.length > 0 && (
         <Box sx={{ mt: 'auto', pt: 1.75 }}>
           <Typography
-            sx={{
+            sx={(t) => ({
               fontSize: '0.62rem',
-              color: alpha('#fff', 0.4),
+              color: alpha(t.palette.text.primary, 0.4),
               textTransform: 'uppercase',
               letterSpacing: '0.6px',
               mb: 0.75,
-            }}
+            })}
           >
             Runners-up
           </Typography>
@@ -1198,7 +1139,12 @@ const HotRepoZone: React.FC<{
                       width: '100%',
                       transition: 'background-color 0.15s',
                       '&:hover': onSelectRepo
-                        ? { backgroundColor: alpha('#fff', 0.04) }
+                        ? {
+                            backgroundColor: alpha(
+                              t.palette.text.primary,
+                              0.04,
+                            ),
+                          }
                         : undefined,
                     })}
                   >
@@ -1213,29 +1159,29 @@ const HotRepoZone: React.FC<{
                       })}
                     />
                     <Typography
-                      sx={{
+                      sx={(t) => ({
                         fontSize: '0.74rem',
                         fontFamily: '"JetBrains Mono", monospace',
                         color: isSelected
-                          ? 'primary.main'
-                          : alpha('#fff', 0.78),
+                          ? t.palette.primary.main
+                          : alpha(t.palette.text.primary, 0.78),
                         fontWeight: isSelected ? 700 : 600,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
-                      }}
+                      })}
                     >
                       {short}
                     </Typography>
                     <Typography
-                      sx={{
+                      sx={(t) => ({
                         fontSize: '0.7rem',
                         fontFamily: '"JetBrains Mono", monospace',
                         fontWeight: 700,
                         color: isSelected
-                          ? 'primary.main'
-                          : alpha('#fff', 0.55),
-                      }}
+                          ? t.palette.primary.main
+                          : alpha(t.palette.text.primary, 0.55),
+                      })}
                     >
                       {r.count}
                     </Typography>
@@ -1291,18 +1237,18 @@ const LeaderboardInsights: React.FC<LeaderboardInsightsProps> = ({
             t.palette.text.primary,
             0.07,
           )} 0%, ${alpha(t.palette.text.primary, 0)} 55%),
-          linear-gradient(180deg, ${alpha('#000', 0)} 60%, ${alpha(
-            '#000',
+          linear-gradient(180deg, ${alpha(t.palette.common.black, 0)} 60%, ${alpha(
+            t.palette.common.black,
             0.3,
           )} 100%)
         `,
         borderColor: t.palette.border.medium,
         boxShadow: [
           `inset 0 1px 0 ${alpha(t.palette.text.primary, 0.09)}`,
-          `inset 0 -1px 0 ${alpha('#000', 0.4)}`,
+          `inset 0 -1px 0 ${alpha(t.palette.common.black, 0.4)}`,
           `0 1px 0 ${alpha(t.palette.text.primary, 0.02)}`,
-          `0 12px 36px -8px ${alpha('#000', 0.6)}`,
-          `0 4px 12px -4px ${alpha('#000', 0.4)}`,
+          `0 12px 36px -8px ${alpha(t.palette.common.black, 0.6)}`,
+          `0 4px 12px -4px ${alpha(t.palette.common.black, 0.4)}`,
         ].join(', '),
       })}
     >

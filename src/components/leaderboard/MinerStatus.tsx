@@ -1,5 +1,16 @@
 import React from 'react';
 import { Box, Tooltip, Typography, alpha } from '@mui/material';
+import {
+  ReportProblemOutlined,
+  LocalFireDepartmentOutlined,
+  KeyboardDoubleArrowUp,
+  TrendingUp,
+  BedtimeOutlined,
+  TrendingDown,
+  GpsFixed,
+  Balance,
+  type SvgIconComponent,
+} from '@mui/icons-material';
 import type { MinerEvaluation } from '../../api';
 import { MINER_STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import { parseNumber } from '../../utils/ExplorerUtils';
@@ -18,7 +29,7 @@ export type MinerStatusKind =
 
 export interface MinerStatus {
   kind: MinerStatusKind;
-  icon: string;
+  Icon: SvgIconComponent | null;
   label: string;
   hint: string;
 }
@@ -28,42 +39,42 @@ const REGISTRY: Record<
   Omit<MinerStatus, 'kind'>
 > = {
   penalized: {
-    icon: '⚠️',
+    Icon: ReportProblemOutlined,
     label: 'Penalized',
     hint: 'Validator flagged this miner — see the details page for the failed_reason',
   },
   hot: {
-    icon: '🔥',
+    Icon: LocalFireDepartmentOutlined,
     label: 'Hot',
     hint: '≥3 merged PRs in the last 3 days',
   },
   climbing: {
-    icon: '🚀',
+    Icon: KeyboardDoubleArrowUp,
     label: 'Climbing',
     hint: 'Up ≥3 ranks since yesterday',
   },
   rising: {
-    icon: '📈',
+    Icon: TrendingUp,
     label: 'Rising',
     hint: 'Merged PRs up ≥50% this week vs the prior week',
   },
   dormant: {
-    icon: '💤',
+    Icon: BedtimeOutlined,
     label: 'Dormant',
     hint: 'No merged PRs in the last 14 days',
   },
   cooling: {
-    icon: '🌙',
+    Icon: TrendingDown,
     label: 'Cooling',
     hint: 'No merged PRs this week (was active last week)',
   },
   specialist: {
-    icon: '🎯',
+    Icon: GpsFixed,
     label: 'Specialist',
     hint: '≤2 unique repos with ≥5 merged PRs (deep focus)',
   },
   dual: {
-    icon: '⚖️',
+    Icon: Balance,
     label: 'Dual',
     hint: 'Eligible in both OSS and Discovery in at least one repo',
   },
@@ -76,7 +87,7 @@ const TONE: Record<
 
 export const STATUS_NONE: MinerStatus = {
   kind: 'none',
-  icon: '',
+  Icon: null,
   label: '',
   hint: '',
 };
@@ -136,6 +147,7 @@ export const deriveMinerStatus = (
 export const StatusBadge: React.FC<{ status: MinerStatus }> = ({ status }) => {
   if (status.kind === 'none') return null;
   const color = TONE[status.kind];
+  const Icon = status.Icon;
   return (
     <Tooltip
       title={`${status.label} · ${status.hint}`}
@@ -162,9 +174,9 @@ export const StatusBadge: React.FC<{ status: MinerStatus }> = ({ status }) => {
           whiteSpace: 'nowrap',
         }}
       >
-        <Box component="span" aria-hidden sx={{ fontSize: '0.7rem' }}>
-          {status.icon}
-        </Box>
+        {Icon && (
+          <Icon aria-hidden sx={{ fontSize: '0.8rem', color: 'inherit' }} />
+        )}
         <Typography
           component="span"
           sx={{

@@ -56,15 +56,17 @@ export const LEADERBOARD_TRACK_COLORS = {
 } as const;
 
 // Keep in sync with `MinerStatusKind` in leaderboard/MinerStatus.tsx.
+// Collapsed onto a restrained, shared palette: positive momentum (green),
+// penalty (red), idle (grey), and descriptive traits (blue).
 export const MINER_STATUS_COLORS = {
-  penalized: '#ff7b72',
-  hot: '#ff7b72',
-  climbing: '#a78bfa',
-  rising: '#58a6ff',
-  dormant: 'rgba(255, 255, 255, 0.4)',
-  cooling: '#7dd3fc',
-  specialist: '#f59e0b',
-  dual: '#4ade80',
+  penalized: STATUS_COLORS.closed,
+  hot: STATUS_COLORS.merged,
+  climbing: STATUS_COLORS.merged,
+  rising: STATUS_COLORS.merged,
+  dormant: STATUS_COLORS.neutral,
+  cooling: STATUS_COLORS.neutral,
+  specialist: STATUS_COLORS.info,
+  dual: STATUS_COLORS.info,
 } as const;
 
 const RISK_COLORS = {

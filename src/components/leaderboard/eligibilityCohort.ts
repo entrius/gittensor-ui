@@ -1,5 +1,5 @@
 import { alpha } from '@mui/material/styles';
-import { LEADERBOARD_TRACK_COLORS, STATUS_COLORS } from '../../theme';
+import theme, { LEADERBOARD_TRACK_COLORS, STATUS_COLORS } from '../../theme';
 import { parseNumber } from '../../utils/ExplorerUtils';
 import type { MinerEvaluation } from '../../api';
 
@@ -34,7 +34,7 @@ export const COHORT_COLORS: Record<CohortKey, string> = {
   ossOnly: LEADERBOARD_TRACK_COLORS.oss,
   discoveryOnly: LEADERBOARD_TRACK_COLORS.discovery,
   activeOnly: STATUS_COLORS.warning,
-  inactive: alpha('#fff', 0.22),
+  inactive: alpha(theme.palette.common.white, 0.22),
 };
 
 export const COHORT_DESCRIPTIONS: Record<CohortKey, string> = {

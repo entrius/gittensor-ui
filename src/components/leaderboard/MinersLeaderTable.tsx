@@ -36,7 +36,7 @@ import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import TablePagination from '../common/TablePagination';
 import { WatchlistButton } from '../common/WatchlistButton';
-import {
+import theme, {
   LEADERBOARD_TRACK_COLORS,
   STATUS_COLORS,
   TOOLTIP_TONE_COLORS,
@@ -332,7 +332,7 @@ const TooltipSplitBar: React.FC<{
           height: 5,
           borderRadius: 999,
           overflow: 'hidden',
-          backgroundColor: alpha('#fff', 0.08),
+          backgroundColor: alpha(theme.palette.common.white, 0.08),
         }}
       >
         {segments.map((s) => {
@@ -352,7 +352,7 @@ const TooltipSplitBar: React.FC<{
           justifyContent: 'space-between',
           mt: '3px',
           fontSize: '0.62rem',
-          color: alpha('#fff', 0.5),
+          color: alpha(theme.palette.common.white, 0.5),
         }}
       >
         {segments.map((s) => {
@@ -435,7 +435,7 @@ const MovementGlyph: React.FC<{
         sx={{
           fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.6rem',
-          color: alpha('#fff', 0.18),
+          color: alpha(theme.palette.common.white, 0.18),
           lineHeight: 1,
         }}
       >
@@ -460,7 +460,7 @@ const MovementGlyph: React.FC<{
           sx={{
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.6rem',
-            color: alpha('#fff', 0.3),
+            color: alpha(theme.palette.common.white, 0.3),
             lineHeight: 1,
             cursor: 'help',
           }}
@@ -488,7 +488,7 @@ const MovementGlyph: React.FC<{
           sx={{
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.65rem',
-            color: alpha('#fff', 0.3),
+            color: alpha(theme.palette.common.white, 0.3),
             lineHeight: 1,
             cursor: 'help',
           }}
@@ -561,7 +561,7 @@ const RankCell: React.FC<{
           fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.85rem',
           fontWeight: 600,
-          color: alpha('#fff', 0.7),
+          color: alpha(theme.palette.common.white, 0.7),
           lineHeight: 1,
           letterSpacing: '-0.02em',
           textAlign: 'center',
@@ -769,7 +769,7 @@ const ContributionStatsRow: React.FC<{
           fontSize: '0.82rem',
           fontWeight: 600,
           fontFamily: '"JetBrains Mono", monospace',
-          color: alpha('#fff', count > 0 ? 0.38 : 0.18),
+          color: alpha(theme.palette.common.white, count > 0 ? 0.38 : 0.18),
           lineHeight: 1.2,
           textAlign: 'right',
           fontVariantNumeric: 'tabular-nums',
@@ -784,7 +784,7 @@ const ContributionStatsRow: React.FC<{
         sx={{
           fontFamily: '"JetBrains Mono", monospace',
           fontSize: '0.7rem',
-          color: alpha('#fff', 0.38),
+          color: alpha(theme.palette.common.white, 0.38),
           fontWeight: 500,
           lineHeight: 1,
           letterSpacing: '-0.01em',
@@ -800,7 +800,7 @@ const ContributionStatsRow: React.FC<{
           fontSize: '0.82rem',
           fontWeight: 700,
           fontFamily: '"JetBrains Mono", monospace',
-          color: alpha('#fff', score > 0 ? 0.38 : 0.18),
+          color: alpha(theme.palette.common.white, score > 0 ? 0.38 : 0.18),
           lineHeight: 1.2,
           letterSpacing: '-0.02em',
           textAlign: 'right',
@@ -881,7 +881,7 @@ const EligibilityCell: React.FC<{ miner: MinerEvaluation }> = ({ miner }) => {
           sx={{
             fontFamily: '"JetBrains Mono", monospace',
             fontSize: '0.75rem',
-            color: alpha('#fff', 0.28),
+            color: alpha(theme.palette.common.white, 0.28),
             cursor: 'help',
           }}
         >
@@ -1031,7 +1031,7 @@ const RepoChip: React.FC<{
           component="span"
           sx={{
             fontSize: '0.65rem',
-            color: alpha('#fff', 0.4),
+            color: alpha(theme.palette.common.white, 0.4),
             fontWeight: 500,
             flexShrink: 0,
             textAlign: 'right',
@@ -1054,7 +1054,7 @@ const TopReposCell: React.FC<{
       <Typography
         sx={{
           fontSize: '0.7rem',
-          color: alpha('#fff', 0.3),
+          color: alpha(theme.palette.common.white, 0.3),
           fontFamily: '"JetBrains Mono", monospace',
         }}
       >
@@ -1132,7 +1132,7 @@ const StatTile: React.FC<{
       <Typography
         sx={{
           fontSize: '0.55rem',
-          color: alpha('#fff', 0.5),
+          color: alpha(theme.palette.common.white, 0.5),
           textTransform: 'uppercase',
           letterSpacing: '0.8px',
           fontWeight: 700,
@@ -1185,7 +1185,7 @@ const StatTile: React.FC<{
             sx={{
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.68rem',
-              color: alpha('#fff', 0.4),
+              color: alpha(theme.palette.common.white, 0.4),
               fontWeight: 500,
               flexShrink: 0,
             }}
@@ -1202,7 +1202,7 @@ const StatTile: React.FC<{
               gap: '4px',
               fontFamily: '"JetBrains Mono", monospace',
               fontSize: '0.78rem',
-              color: alpha('#fff', 0.55),
+              color: alpha(theme.palette.common.white, 0.55),
               fontWeight: 600,
               fontVariantNumeric: 'tabular-nums',
               flexShrink: 0,
@@ -1214,7 +1214,7 @@ const StatTile: React.FC<{
               aria-hidden
               sx={{
                 fontSize: '0.7rem',
-                color: alpha('#fff', 0.3),
+                color: alpha(theme.palette.common.white, 0.3),
                 fontWeight: 500,
               }}
             >
@@ -1252,7 +1252,7 @@ const MobileMinerCard: React.FC<{
       : ratio >= 0.5
         ? STATUS_COLORS.warningOrange
         : open === 0
-          ? alpha('#fff', 0.55)
+          ? alpha(theme.palette.common.white, 0.55)
           : STATUS_COLORS.success;
   const hits = row.activity.reviewHits;
   const mergedTotal = parseNumber(row.miner.totalMergedPrs);
@@ -1263,14 +1263,14 @@ const MobileMinerCard: React.FC<{
     hits === 0 ? (mergedTotal > 0 ? '·' : '—') : String(hits);
   const reviewsColor =
     hits === 0
-      ? alpha('#fff', mergedTotal > 0 ? 0.32 : 0.25)
+      ? alpha(theme.palette.common.white, mergedTotal > 0 ? 0.32 : 0.25)
       : hits >= 5
         ? STATUS_COLORS.closed
         : STATUS_COLORS.warningOrange;
   const lastActiveLabel = formatLastActive(row.activity.lastActiveAt);
   const lastActiveColor = row.activity.lastActiveAt
-    ? alpha('#fff', 0.75)
-    : alpha('#fff', 0.3);
+    ? alpha(theme.palette.common.white, 0.75)
+    : alpha(theme.palette.common.white, 0.3);
   const topRepos = row.activity.topRepos.slice(0, 2);
   const isEligibleAny = isAnyEligibleNow(row.miner);
   const accentColor = resolveMinerAccentColor(row.miner);
@@ -1421,7 +1421,7 @@ const MobileMinerCard: React.FC<{
           <Typography
             sx={{
               fontSize: '0.55rem',
-              color: alpha('#fff', 0.5),
+              color: alpha(theme.palette.common.white, 0.5),
               textTransform: 'uppercase',
               letterSpacing: '0.8px',
               fontWeight: 700,
@@ -1487,7 +1487,11 @@ const MobileMinerCard: React.FC<{
               ? displayedCombinedScore(row.miner).toFixed(1)
               : '—'
           }
-          valueColor={row.combined > 0 ? 'text.primary' : alpha('#fff', 0.3)}
+          valueColor={
+            row.combined > 0
+              ? 'text.primary'
+              : alpha(theme.palette.common.white, 0.3)
+          }
           tooltip={
             <RowTooltipContent
               title={`Combined score · ${row.combined.toFixed(2)}`}
@@ -1534,7 +1538,11 @@ const MobileMinerCard: React.FC<{
               </Box>
             )
           }
-          valueColor={usd > 0 ? STATUS_COLORS.success : alpha('#fff', 0.32)}
+          valueColor={
+            usd > 0
+              ? STATUS_COLORS.success
+              : alpha(theme.palette.common.white, 0.32)
+          }
           tooltip={
             usd > 0 ? undefined : (
               <RowTooltipContent
@@ -1584,7 +1592,10 @@ const MobileMinerCard: React.FC<{
           value={mergedTotal > 0 ? mergedTotal.toLocaleString() : '—'}
           valueSize="0.82rem"
           valueWeight={600}
-          valueColor={alpha('#fff', mergedTotal > 0 ? 0.38 : 0.18)}
+          valueColor={alpha(
+            theme.palette.common.white,
+            mergedTotal > 0 ? 0.38 : 0.18,
+          )}
           icon={
             <GhPrIcon
               size={13}
@@ -1602,7 +1613,10 @@ const MobileMinerCard: React.FC<{
           value={solvedTotal > 0 ? solvedTotal.toLocaleString() : '—'}
           valueSize="0.82rem"
           valueWeight={600}
-          valueColor={alpha('#fff', solvedTotal > 0 ? 0.38 : 0.18)}
+          valueColor={alpha(
+            theme.palette.common.white,
+            solvedTotal > 0 ? 0.38 : 0.18,
+          )}
           icon={
             <GhIssueIcon
               size={13}
@@ -1686,7 +1700,7 @@ const MobileMinerCard: React.FC<{
                   sx={{
                     fontFamily: '"JetBrains Mono", monospace',
                     fontSize: '0.72rem',
-                    color: alpha('#fff', 0.22),
+                    color: alpha(theme.palette.common.white, 0.22),
                     lineHeight: 1.3,
                   }}
                 >
@@ -1992,7 +2006,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
             sx={{
               fontSize: '0.72rem',
               fontWeight: 600,
-              color: alpha('#fff', 0.7),
+              color: alpha(theme.palette.common.white, 0.7),
               fontFamily: '"JetBrains Mono", monospace',
               whiteSpace: 'nowrap',
               lineHeight: 1.1,
@@ -2004,7 +2018,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
             <Typography
               sx={{
                 fontSize: '0.62rem',
-                color: alpha('#fff', 0.4),
+                color: alpha(theme.palette.common.white, 0.4),
                 fontFamily: '"JetBrains Mono", monospace',
                 whiteSpace: 'nowrap',
                 lineHeight: 1.1,
@@ -2069,7 +2083,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
                     sx={{
                       fontSize: '0.95rem',
                       mr: 0.75,
-                      color: alpha('#fff', 0.4),
+                      color: alpha(theme.palette.common.white, 0.4),
                     }}
                   />
                 }
@@ -2112,7 +2126,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
                         backgroundColor: t.palette.surface.elevated,
                         backgroundImage: 'none',
                         border: `1px solid ${t.palette.border.light}`,
-                        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.55)',
+                        boxShadow: `0 12px 32px ${alpha(theme.palette.common.black, 0.55)}`,
                       }),
                     },
                   },
@@ -2207,7 +2221,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
                     component="span"
                     sx={{
                       fontSize: '0.6rem',
-                      color: alpha('#fff', 0.5),
+                      color: alpha(theme.palette.common.white, 0.5),
                       textTransform: 'uppercase',
                       letterSpacing: '0.4px',
                       fontWeight: 700,
@@ -2239,7 +2253,7 @@ const Toolbar: React.FC<ToolbarProps> = ({
                       backgroundColor: t.palette.surface.elevated,
                       backgroundImage: 'none',
                       border: `1px solid ${t.palette.border.light}`,
-                      boxShadow: '0 12px 32px rgba(0, 0, 0, 0.55)',
+                      boxShadow: `0 12px 32px ${alpha(theme.palette.common.black, 0.55)}`,
                     }),
                   },
                 },
@@ -2417,7 +2431,10 @@ const Toolbar: React.FC<ToolbarProps> = ({
             startAdornment: (
               <InputAdornment position="start">
                 <SearchIcon
-                  sx={{ fontSize: '1rem', color: alpha('#fff', 0.4) }}
+                  sx={{
+                    fontSize: '1rem',
+                    color: alpha(theme.palette.common.white, 0.4),
+                  }}
                 />
               </InputAdornment>
             ),
@@ -2943,7 +2960,10 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
                   fontFamily: '"JetBrains Mono", monospace',
                   fontSize: '0.9rem',
                   fontWeight: 700,
-                  color: row.combined > 0 ? 'text.primary' : alpha('#fff', 0.3),
+                  color:
+                    row.combined > 0
+                      ? 'text.primary'
+                      : alpha(theme.palette.common.white, 0.3),
                   fontVariantNumeric: 'tabular-nums',
                   lineHeight: 1,
                 }}
@@ -3026,7 +3046,10 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.85rem',
                 fontWeight: usd > 0 ? 700 : 500,
-                color: usd > 0 ? STATUS_COLORS.success : alpha('#fff', 0.3),
+                color:
+                  usd > 0
+                    ? STATUS_COLORS.success
+                    : alpha(theme.palette.common.white, 0.3),
                 cursor: 'help',
               }}
             >
@@ -3129,7 +3152,7 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
                 fontWeight: hits > 0 ? 700 : 500,
                 color:
                   hits === 0
-                    ? alpha('#fff', merged > 0 ? 0.28 : 0.2)
+                    ? alpha(theme.palette.common.white, merged > 0 ? 0.28 : 0.2)
                     : hits >= 5
                       ? STATUS_COLORS.closed
                       : STATUS_COLORS.warningOrange,
@@ -3201,7 +3224,7 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
               ? STATUS_COLORS.warningOrange
               : tone === 'positive'
                 ? STATUS_COLORS.success
-                : alpha('#fff', 0.3);
+                : alpha(theme.palette.common.white, 0.3);
         const tooltipNode = (() => {
           if (open === 0) {
             return (
@@ -3286,7 +3309,8 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.82rem',
                 fontWeight: open > 0 ? 700 : 500,
-                color: open > 0 ? color : alpha('#fff', 0.3),
+                color:
+                  open > 0 ? color : alpha(theme.palette.common.white, 0.3),
                 lineHeight: 1,
                 cursor: 'help',
                 whiteSpace: 'nowrap',
@@ -3297,7 +3321,7 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
                 component="span"
                 sx={{
                   fontSize: '0.66rem',
-                  color: alpha('#fff', 0.45),
+                  color: alpha(theme.palette.common.white, 0.45),
                   fontWeight: 500,
                   ml: '2px',
                 }}
@@ -3376,7 +3400,9 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
                 fontFamily: '"JetBrains Mono", monospace',
                 fontSize: '0.74rem',
                 whiteSpace: 'nowrap',
-                color: iso ? alpha('#fff', 0.65) : alpha('#fff', 0.3),
+                color: iso
+                  ? alpha(theme.palette.common.white, 0.65)
+                  : alpha(theme.palette.common.white, 0.3),
                 cursor: 'help',
               }}
             >
@@ -3439,7 +3465,12 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
 
   const emptyState = (
     <Box sx={{ textAlign: 'center', py: 6 }}>
-      <Typography sx={{ fontSize: '0.85rem', color: alpha('#fff', 0.5) }}>
+      <Typography
+        sx={{
+          fontSize: '0.85rem',
+          color: alpha(theme.palette.common.white, 0.5),
+        }}
+      >
         {miners.length === 0
           ? 'No miners registered yet.'
           : 'No miners match these filters.'}
@@ -3512,7 +3543,7 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
             cursor: 'pointer',
             ...(ineligible && {
               filter: 'brightness(0.88) saturate(0.92)',
-              '& td': { color: 'rgba(255, 255, 255, 0.82)' },
+              '& td': { color: alpha(theme.palette.common.white, 0.82) },
             }),
             '& > td:first-of-type': {
               boxShadow: `inset 3px 0 0 0 ${accent}`,
@@ -3526,7 +3557,7 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
               outline: '2px solid',
               outlineColor: 'primary.main',
               outlineOffset: -2,
-              backgroundColor: 'rgba(29, 55, 252, 0.08)',
+              backgroundColor: alpha(theme.palette.primary.main, 0.08),
             },
           };
         }}
