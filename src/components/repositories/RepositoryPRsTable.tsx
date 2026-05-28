@@ -106,16 +106,20 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     );
   }, [allMinerPRs, repositoryFullName]);
 
-  const counts = useMemo(() => {
-    if (!allPRs) return { all: 0, open: 0, merged: 0, closed: 0 };
-    return getPrStatusCounts(allPRs);
-  }, [allPRs]);
+  const authorScopedPRs = useMemo(() => {
+    if (authorFilter === AUTHOR_FILTER_ALL) return allPRs;
+    return allPRs.filter((pr) => pr.author === authorFilter);
+  }, [allPRs, authorFilter]);
 
-  const filteredPRs = useMemo(() => {
-    const byStatus = filterPrs(allPRs ?? [], { statusFilter: filter });
-    if (authorFilter === AUTHOR_FILTER_ALL) return byStatus;
-    return byStatus.filter((pr) => pr.author === authorFilter);
-  }, [allPRs, filter, authorFilter]);
+  const counts = useMemo(
+    () => getPrStatusCounts(authorScopedPRs),
+    [authorScopedPRs],
+  );
+
+  const filteredPRs = useMemo(
+    () => filterPrs(authorScopedPRs, { statusFilter: filter }),
+    [authorScopedPRs, filter],
+  );
 
   const sortedPRs = useMemo(() => {
     const dir = sortOrder === 'asc' ? 1 : -1;
