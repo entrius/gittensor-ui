@@ -94,7 +94,7 @@ const DashboardFeaturePage: React.FC = () => {
               contributors={featuredDiscoveryContributors}
               isLoading={isLoading}
               mode="issues"
-              viewAllHref="/repositories"
+              viewAllHref="/leaderboard?cohort=discoveryOnly"
             />
 
             <DashboardFeaturedWorkSection
