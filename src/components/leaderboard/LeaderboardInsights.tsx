@@ -754,7 +754,7 @@ const PodiumZone: React.FC<{
               href={`/miners/details?githubId=${row.githubId}`}
               sx={(t) => ({
                 display: 'grid',
-                gridTemplateColumns: '3px auto 28px minmax(0, 1fr) auto',
+                gridTemplateColumns: '28px minmax(0, 1fr) auto',
                 alignItems: 'center',
                 gap: 1.1,
                 px: 0,
@@ -763,36 +763,8 @@ const PodiumZone: React.FC<{
                 transition: 'transform 0.15s',
                 '&:hover': { transform: 'translateX(2px)' },
                 '&:hover .podium-name': { color: t.palette.text.primary },
-                '&:hover .podium-rail': {
-                  boxShadow: `0 0 0 1px ${alpha(color, 0.4)}`,
-                },
               })}
             >
-              <Box
-                className="podium-rail"
-                aria-hidden
-                sx={{
-                  width: 3,
-                  height: 28,
-                  borderRadius: 999,
-                  backgroundColor: color,
-                  transition: 'box-shadow 0.15s',
-                }}
-              />
-              <Typography
-                aria-hidden
-                sx={{
-                  fontFamily: '"JetBrains Mono", monospace',
-                  fontSize: '0.95rem',
-                  fontWeight: 700,
-                  color,
-                  lineHeight: 1,
-                  textAlign: 'center',
-                  minWidth: 22,
-                }}
-              >
-                {idx + 1}
-              </Typography>
               <Avatar
                 src={getRepositoryOwnerAvatarSrc(row.username)}
                 alt={row.username}
@@ -1173,18 +1145,39 @@ const HotRepoZone: React.FC<{
                     >
                       {short}
                     </Typography>
-                    <Typography
-                      sx={(t) => ({
-                        fontSize: '0.7rem',
-                        fontFamily: '"JetBrains Mono", monospace',
-                        fontWeight: 700,
-                        color: isSelected
-                          ? t.palette.primary.main
-                          : alpha(t.palette.text.primary, 0.55),
-                      })}
+                    <Box
+                      sx={{
+                        display: 'inline-flex',
+                        alignItems: 'baseline',
+                        gap: '4px',
+                        justifySelf: 'end',
+                      }}
                     >
-                      {r.count}
-                    </Typography>
+                      <Typography
+                        sx={(t) => ({
+                          fontSize: '0.7rem',
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontWeight: 700,
+                          color: isSelected
+                            ? t.palette.primary.main
+                            : alpha(t.palette.text.primary, 0.55),
+                        })}
+                      >
+                        {r.count}
+                      </Typography>
+                      <Typography
+                        sx={(t) => ({
+                          fontFamily: '"JetBrains Mono", monospace',
+                          fontSize: '0.55rem',
+                          color: alpha(t.palette.text.primary, 0.4),
+                          letterSpacing: '0.4px',
+                          textTransform: 'uppercase',
+                          lineHeight: 1,
+                        })}
+                      >
+                        PR{r.count === 1 ? '' : 's'}
+                      </Typography>
+                    </Box>
                   </Box>
                 </Tooltip>
               );
