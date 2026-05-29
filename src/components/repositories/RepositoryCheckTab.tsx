@@ -327,6 +327,12 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
     return Math.round((passed / checks.length) * 100);
   }, [checks]);
 
+  const hasContributing = useMemo(
+    () =>
+      checks.find((c) => c.name === 'Contributing Guidelines')?.passed ?? false,
+    [checks],
+  );
+
   // Loading is gated on the two critical calls (repo + tree); community profile
   // and issue counts are best-effort and render fallbacks when missing.
   const loading =
@@ -592,9 +598,39 @@ const RepositoryCheckTab: React.FC<RepositoryCheckTabProps> = ({
                   lineHeight: 1.6,
                 }}
               >
-                To start contributing, fork the repository, clone it locally,
-                and check the <b>CONTRIBUTING.md</b> file for setup
-                instructions.
+                {hasContributing ? (
+                  <>
+                    To start contributing, fork the repository, clone it
+                    locally, and check the{' '}
+                    <Box
+                      component="a"
+                      href={`https://github.com/${repositoryFullName}/blob/${branch}/CONTRIBUTING.md`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{ color: 'text.primary', fontWeight: 600 }}
+                    >
+                      CONTRIBUTING.md
+                    </Box>{' '}
+                    file for setup instructions.
+                  </>
+                ) : (
+                  <>
+                    To start contributing, fork the repository and clone it
+                    locally. This repository does not have a{' '}
+                    <b>CONTRIBUTING.md</b> yet — refer to the{' '}
+                    <Box
+                      component="a"
+                      href={`https://github.com/${repositoryFullName}#readme`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      sx={{ color: 'text.primary', fontWeight: 600 }}
+                    >
+                      README
+                    </Box>{' '}
+                    for setup instructions, or consider opening a PR to add
+                    contributing guidelines.
+                  </>
+                )}
               </Typography>
             </Card>
           </Box>
