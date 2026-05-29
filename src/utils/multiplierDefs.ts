@@ -95,14 +95,6 @@ const PILL_CONFIGS: PillConfig[] = [
     title: 'Label Multiplier',
     desc: 'Adjusts score based on PR classification.',
   },
-  {
-    key: 'density',
-    label: 'density',
-    field: 'codeDensity',
-    title: 'Code Density',
-    desc: 'Ratio of meaningful code changes to total diff size.',
-    format: 'value',
-  },
 ];
 
 export function buildMergedPillDefs(
@@ -149,14 +141,6 @@ function buildGridEntry(
   };
 }
 
-function buildDensityEntry(pr: PullRequestDetails): MultiplierGridEntry | null {
-  if (pr.codeDensity == null) return null;
-  return {
-    label: 'Code Density',
-    value: parseNumber(pr.codeDensity).toFixed(2),
-  };
-}
-
 const OPEN_GRID: GridConfig[] = [
   { label: 'Issue Bonus', field: 'issueMultiplier' },
 ];
@@ -176,8 +160,6 @@ function appendOptionalEntries(
     entries.push(
       buildGridEntry(pr, { label: 'Label', field: 'labelMultiplier' }),
     );
-  const density = buildDensityEntry(pr);
-  if (density) entries.push(density);
   return entries;
 }
 

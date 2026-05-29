@@ -26,14 +26,21 @@ const FilterButton: React.FC<FilterButtonProps> = ({
     onClick={onClick}
     fullWidth={fullWidth}
     sx={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 0.75,
+      lineHeight: 1.2,
       color: isActive ? activeTextColor : (t) => t.palette.text.secondary,
       backgroundColor: isActive ? 'surface.light' : 'surface.transparent',
       borderRadius: '6px',
-      px: { xs: 1, sm: 1.5 },
-      py: { xs: 0.5, sm: 0.75 },
+      px: { xs: 1.25, sm: 1.5 },
+      py: { xs: 0.5, sm: 0.65 },
+      minHeight: 32,
       minWidth: fullWidth ? 0 : 'auto',
       textTransform: 'none',
-      fontSize: { xs: '0.65rem', sm: '0.75rem' },
+      fontSize: { xs: '0.7rem', sm: '0.75rem' },
+      fontWeight: isActive ? 600 : 500,
       border: isActive ? `1px solid ${color}` : '1px solid transparent',
       whiteSpace: 'nowrap',
       '&:hover': {
@@ -41,14 +48,19 @@ const FilterButton: React.FC<FilterButtonProps> = ({
       },
     }}
   >
-    {label}{' '}
+    <Box component="span" sx={{ display: 'inline-flex', alignItems: 'center' }}>
+      {label}
+    </Box>
     {count !== undefined && (
       <Box
         component="span"
         sx={{
-          opacity: 0.6,
-          ml: '6px',
-          fontSize: { xs: '0.6rem', sm: '0.7rem' },
+          display: 'inline-flex',
+          alignItems: 'center',
+          opacity: 0.72,
+          fontWeight: 600,
+          fontVariantNumeric: 'tabular-nums',
+          fontSize: 'inherit',
         }}
       >
         {count}

@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import {
   Avatar,
@@ -13,7 +13,7 @@ import {
   alpha,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useAllPrs, type CommitLog } from '../../api';
 import {
   DataTable,
@@ -28,11 +28,13 @@ import {
   serializePRKey,
   useWatchlist,
 } from '../../hooks/useWatchlist';
+import { useDataTableParams } from '../../hooks/useDataTableParams';
 import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import {
   filterPrs,
   getPrStatusCounts,
   isPrStatusFilter,
+  minerPrPath,
   type PrStatusFilter,
 } from '../../utils';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
@@ -50,7 +52,18 @@ type PrSortField =
   | 'status'
   | 'mergedAt'
   | 'watch';
-type SortOrder = 'asc' | 'desc';
+
+const PR_SORT_KEYS: readonly PrSortField[] = [
+  'pullRequestNumber',
+  'pullRequestTitle',
+  'author',
+  'commitCount',
+  'lines',
+  'score',
+  'status',
+  'mergedAt',
+  'watch',
+];
 
 interface RepositoryPRsTableProps {
   repositoryFullName: string;
@@ -64,44 +77,69 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
   state = 'all',
 }) => {
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { isWatched } = useWatchlist('prs');
   const [filter, setFilter] = useSessionStoredState<PrStatusFilter>(
     'repository:prs:statusFilter',
     state,
     isPrStatusFilter,
   );
-  const [sortField, setSortField] = useState<PrSortField>('score');
-  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
-  const [page, setPage] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const authorFilter = searchParams.get('prAuthor') ?? AUTHOR_FILTER_ALL;
 
-  const setAuthorFilter = useCallback(
-    (nextAuthor: string) => {
-      setSearchParams(
-        (prev) => {
-          const nextParams = new URLSearchParams(prev);
-          if (nextAuthor === AUTHOR_FILTER_ALL) nextParams.delete('prAuthor');
-          else nextParams.set('prAuthor', nextAuthor);
-          return nextParams;
-        },
-        { replace: true },
-      );
-    },
-    [setSearchParams],
+  const filtersConfig = useMemo(
+    () => ({
+      author: {
+        paramKey: 'prAuthor',
+        parse: (raw: string | null): string => raw ?? AUTHOR_FILTER_ALL,
+        serialize: (value: string): string | null =>
+          value === AUTHOR_FILTER_ALL ? null : value,
+      },
+    }),
+    [],
   );
 
-  const handleSort = (field: PrSortField) => {
-    if (sortField === field) {
-      setSortOrder((o) => (o === 'asc' ? 'desc' : 'asc'));
-    } else {
-      setSortField(field);
-      setSortOrder(
-        field === 'pullRequestTitle' || field === 'author' ? 'asc' : 'desc',
-      );
-    }
-  };
+  const {
+    sortField,
+    sortOrder,
+    setSort: handleSort,
+    page,
+    setPage,
+    filters,
+    setFilter: setUrlFilter,
+  } = useDataTableParams<PrSortField, { author: string }>({
+    sortKeys: PR_SORT_KEYS,
+    defaultSortKey: 'score',
+    // String columns feel natural ascending; numeric/score columns descending.
+    defaultOrderOverrides: { pullRequestTitle: 'asc', author: 'asc' },
+    paramKeys: { sort: 'prSort', order: 'prDir', page: 'prPage' },
+    filters: filtersConfig,
+  });
+
+  const authorFilter = filters.author;
+  const setAuthorFilter = useCallback(
+    (nextAuthor: string) => setUrlFilter('author', nextAuthor),
+    [setUrlFilter],
+  );
+
+  // Filter/search are local (session/state); the hook handles page reset
+  // for URL-backed slots automatically. Reset page here when the local
+  // status or search filter changes.
+  const handleFilterChange = useCallback(
+    (next: PrStatusFilter) => {
+      if (next === filter) return;
+      setFilter(next);
+      setPage(0);
+    },
+    [filter, setFilter, setPage],
+  );
+
+  const handleSearchChange = useCallback(
+    (next: string) => {
+      if (next === searchQuery) return;
+      setSearchQuery(next);
+      setPage(0);
+    },
+    [searchQuery, setPage],
+  );
 
   // Fetch ALL PRs at once for instant client-side filtering + accurate counts.
   const { data: allMinerPRs, isLoading } = useAllPrs();
@@ -176,11 +214,6 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
     });
   }, [filteredPRs, sortField, sortOrder, isWatched]);
 
-  // Reset to the first page whenever the result set changes underneath us.
-  useEffect(() => {
-    setPage(0);
-  }, [filter, authorFilter, searchQuery, sortField, sortOrder]);
-
   const totalPages = Math.ceil(sortedPRs.length / PR_PAGE_SIZE);
   const pagedPRs = useMemo(
     () =>
@@ -190,10 +223,9 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 
   const handleRowClick = useCallback(
     (pr: CommitLog) => {
-      navigate(
-        `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-        { state: { backLabel: `Back to ${repositoryFullName}` } },
-      );
+      navigate(minerPrPath(pr.repository, pr.pullRequestNumber), {
+        state: { backLabel: `Back to ${repositoryFullName}` },
+      });
     },
     [navigate, repositoryFullName],
   );
@@ -209,28 +241,28 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       <FilterButton
         label="All"
         isActive={filter === 'all'}
-        onClick={() => setFilter('all')}
+        onClick={() => handleFilterChange('all')}
         count={tabCounts.all}
         color={theme.palette.status.neutral}
       />
       <FilterButton
         label="Open"
         isActive={filter === 'open'}
-        onClick={() => setFilter('open')}
+        onClick={() => handleFilterChange('open')}
         count={tabCounts.open}
         color={theme.palette.status.open}
       />
       <FilterButton
         label="Merged"
         isActive={filter === 'merged'}
-        onClick={() => setFilter('merged')}
+        onClick={() => handleFilterChange('merged')}
         count={tabCounts.merged}
         color={theme.palette.status.merged}
       />
       <FilterButton
         label="Closed"
         isActive={filter === 'closed'}
-        onClick={() => setFilter('closed')}
+        onClick={() => handleFilterChange('closed')}
         count={tabCounts.closed}
         color={theme.palette.status.closed}
       />
@@ -460,7 +492,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
         size="small"
         placeholder="Search title, PR #, merged date…"
         value={searchQuery}
-        onChange={(e) => setSearchQuery(e.target.value)}
+        onChange={(e) => handleSearchChange(e.target.value)}
         InputProps={{
           startAdornment: (
             <InputAdornment position="start">
@@ -470,7 +502,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
           endAdornment: (
             <ClearSearchAdornment
               visible={Boolean(searchQuery)}
-              onClear={() => setSearchQuery('')}
+              onClear={() => handleSearchChange('')}
             />
           ),
         }}

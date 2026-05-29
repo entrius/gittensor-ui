@@ -7,3 +7,4 @@ export * from './multiplierDefs';
 export * from './watchlistSort';
 export * from './avatar';
 export * from './githubRepoUrl';
+export * from './paths';

@@ -12,7 +12,7 @@ import {
   useTheme,
 } from '@mui/material';
 import { Search as SearchIcon } from '@mui/icons-material';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import { useMinerIssues } from '../../api';
 import type { MinerIssue } from '../../api/models/Dashboard';
 import {
@@ -20,6 +20,7 @@ import {
   getScoringWindowStartIso,
   isIssueStatusFilter,
   isOutsideScoringWindow,
+  minerPrPath,
   paginateItems,
   type IssueStatusFilter,
 } from '../../utils';
@@ -31,6 +32,7 @@ import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import TablePagination from '../common/TablePagination';
 import { tooltipSlotProps } from '../../theme';
+import { useDataTableParams } from '../../hooks/useDataTableParams';
 
 type IssueSortField = 'number' | 'repository' | 'date';
 type SortDir = 'asc' | 'desc';
@@ -90,7 +92,6 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
 > = ({ githubId }) => {
   const theme = useTheme();
   const navigate = useNavigate();
-  const [searchParams, setSearchParams] = useSearchParams();
   // Pin the `since` cutoff per mount so React Query's cache key stays stable
   // while the component is open. The 35-day scoring window slides on remount.
   const since = useMemo(() => getScoringWindowStartIso(), []);
@@ -99,48 +100,35 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
   const [sortField, setSortField] = useState<IssueSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
 
-  const issueStatusParam = searchParams.get('issueStatus');
-  const statusFilter: IssueStatusFilter = isIssueStatusFilter(issueStatusParam)
-    ? issueStatusParam
-    : 'all';
-
-  useEffect(() => {
-    setSearchQuery('');
-    setSortField('date');
-    setSortDir('desc');
-  }, [githubId]);
-
-  const page = parseInt(searchParams.get('issuePage') || '0', 10);
-  const setPage = useCallback(
-    (updater: number | ((prev: number) => number)) => {
-      const next = typeof updater === 'function' ? updater(page) : updater;
-      setSearchParams(
-        (prev) => {
-          const p = new URLSearchParams(prev);
-          if (next === 0) p.delete('issuePage');
-          else p.set('issuePage', String(next));
-          return p;
-        },
-        { replace: true },
-      );
-    },
-    [page, setSearchParams],
+  const filtersConfig = useMemo(
+    () => ({
+      status: {
+        paramKey: 'issueStatus',
+        parse: (raw: string | null): IssueStatusFilter =>
+          isIssueStatusFilter(raw) ? raw : 'all',
+        serialize: (value: IssueStatusFilter): string | null =>
+          value === 'all' ? null : value,
+      },
+    }),
+    [],
   );
 
+  // Status filter and page are URL-backed via the shared hook (`issueStatus`
+  // and `issuePage`). Sort stays local on miner tables.
+  const { page, setPage, filters, setFilter } = useDataTableParams<
+    IssueSortField,
+    { status: IssueStatusFilter }
+  >({
+    sortKeys: [],
+    defaultSortKey: 'date',
+    paramKeys: { page: 'issuePage' },
+    filters: filtersConfig,
+  });
+
+  const statusFilter = filters.status;
   const setStatusFilter = useCallback(
-    (next: IssueStatusFilter) => {
-      setSearchParams(
-        (prev) => {
-          const p = new URLSearchParams(prev);
-          if (next === 'all') p.delete('issueStatus');
-          else p.set('issueStatus', next);
-          p.delete('issuePage');
-          return p;
-        },
-        { replace: true },
-      );
-    },
-    [setSearchParams],
+    (next: IssueStatusFilter) => setFilter('status', next),
+    [setFilter],
   );
 
   const handleSort = useCallback(
@@ -155,6 +143,12 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
     },
     [sortField, setPage],
   );
+
+  useEffect(() => {
+    setSearchQuery('');
+    setSortField('date');
+    setSortDir('desc');
+  }, [githubId]);
 
   const filteredIssues = useMemo(
     () => filterIssues(issues ?? [], { statusFilter, searchQuery }),
@@ -314,7 +308,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
         }
         const repoForPr =
           issue.solving_pr?.repo_full_name ?? issue.repo_full_name;
-        const prHref = `/miners/pr?repo=${encodeURIComponent(repoForPr)}&number=${prNumber}`;
+        const prHref = minerPrPath(repoForPr, prNumber);
         return (
           <a
             href={prHref}

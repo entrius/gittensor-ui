@@ -1,46 +1,88 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover"
+    />
+    <meta name="theme-color" content="#000000" />
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+    <!-- Favicons -->
+    <link rel="icon" type="image/png" href="/gt-logo-white.png" />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="192x192"
+      href="/icons/icon-192.png"
+    />
+    <link
+      rel="icon"
+      type="image/png"
+      sizes="512x512"
+      href="/icons/icon-512.png"
+    />
+    <link rel="apple-touch-icon" href="/icons/apple-touch-icon.png" />
 
-  <!-- Favicons -->
-  <link rel="icon" type="image/png" href="/gt-logo-white.png" />
-  <link rel="apple-touch-icon" href="/gt-logo-white.png" />
+    <!-- PWA: with the manifest below, "Add to Home Screen" pins the app
+       in standalone mode (no URL bar, no scroll-up search popup). -->
+    <link rel="manifest" href="/manifest.webmanifest" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
+    <meta name="apple-mobile-web-app-title" content="Gittensor" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="Gittensor" />
 
-  <!-- Fonts -->
-  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link
-    href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
-    rel="stylesheet" />
+    <!-- Fonts -->
+    <link
+      href="https://fonts.googleapis.com/icon?family=Material+Icons"
+      rel="stylesheet"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
 
-  <!-- Primary Meta Tags -->
-  <title>Gittensor</title>
-  <meta name="title" content="Gittensor | Autonomous Software Development" />
-  <meta name="description"
-    content="The workforce for open source. Compete for rewards by contributing quality code to open source repositories." />
+    <!-- Primary Meta Tags -->
+    <title>Gittensor</title>
+    <meta name="title" content="Gittensor | Autonomous Software Development" />
+    <meta
+      name="description"
+      content="The workforce for open source. Compete for rewards by contributing quality code to open source repositories."
+    />
 
-  <!-- Open Graph / Facebook -->
-  <meta property="og:type" content="website" />
-  <meta property="og:title" content="Gittensor | Autonomous Software Development" />
-  <meta property="og:description"
-    content="The workforce for open source. Compete for rewards by contributing quality code to open source repositories." />
-  <meta property="og:image" content="/gittensor-og.jpg" />
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website" />
+    <meta
+      property="og:title"
+      content="Gittensor | Autonomous Software Development"
+    />
+    <meta
+      property="og:description"
+      content="The workforce for open source. Compete for rewards by contributing quality code to open source repositories."
+    />
+    <meta property="og:image" content="/gittensor-og.jpg" />
 
-  <!-- X (Twitter) -->
-  <meta property="twitter:card" content="summary_large_image" />
-  <meta property="twitter:title" content="Gittensor | Autonomous Software Development" />
-  <meta property="twitter:description"
-    content="The workforce for open source. Compete for rewards by contributing quality code to open source repositories." />
-  <meta property="twitter:image" content="/gittensor-og.jpg" />
-</head>
+    <!-- X (Twitter) -->
+    <meta property="twitter:card" content="summary_large_image" />
+    <meta
+      property="twitter:title"
+      content="Gittensor | Autonomous Software Development"
+    />
+    <meta
+      property="twitter:description"
+      content="The workforce for open source. Compete for rewards by contributing quality code to open source repositories."
+    />
+    <meta property="twitter:image" content="/gittensor-og.jpg" />
+  </head>
 
-<body style="margin: 0; background-color: #000000">
-  <div id="root"></div>
-  <script type="module" src="/src/main.tsx"></script>
-</body>
-
+  <body style="margin: 0; background-color: #000000">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
 </html>

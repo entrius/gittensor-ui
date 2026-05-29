@@ -10,6 +10,7 @@ import {
   sectionContainerSx,
   sectionTitleSx,
 } from './featuredWorkStyles';
+import { minerPrPath, minerRepositoryPath } from '../../../utils';
 
 interface DashboardFeaturedWorkProps {
   items: FeaturedWorkRepo[];
@@ -23,12 +24,6 @@ const FEATURED_WORK_EMPTY_MESSAGE = 'No merged PRs in the last 24 hours.';
 const FEATURED_WORK_TITLE = 'Featured Work';
 const MAX_COLUMNS_SM = 2;
 const MAX_COLUMNS_LG = 3;
-
-const buildPrDetailUrl = (repo: string, prNumber: number): string =>
-  `/miners/pr?repo=${encodeURIComponent(repo)}&number=${encodeURIComponent(String(prNumber))}`;
-
-const buildRepoDetailUrl = (repo: string): string =>
-  `/miners/repository?name=${encodeURIComponent(repo)}`;
 
 const computeGridColumns = (
   itemCount: number,
@@ -48,14 +43,14 @@ const DashboardFeaturedWorkSection: React.FC<DashboardFeaturedWorkProps> = ({
 
   const navigateToRepo: NavigateToRepoFn = useCallback(
     (repoName: string): void => {
-      navigate(buildRepoDetailUrl(repoName));
+      navigate(minerRepositoryPath(repoName));
     },
     [navigate],
   );
 
   const navigateToPr: NavigateToPrFn = useCallback(
     (repoName: string, pr: FeaturedWorkPr): void => {
-      navigate(buildPrDetailUrl(repoName, pr.prNumber));
+      navigate(minerPrPath(repoName, pr.prNumber));
     },
     [navigate],
   );

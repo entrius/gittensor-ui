@@ -110,6 +110,7 @@ import { filterPrs } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatDate, formatTokenAmount, formatWeight } from '../utils/format';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
+import { minerPrPath, minerRepositoryPath } from '../utils';
 import theme, {
   CHART_COLORS,
   LABEL_COLORS,
@@ -1148,8 +1149,7 @@ const repoHeaderStack = (
   </Box>
 );
 
-const getRepoHref = (repo: Repository) =>
-  `/miners/repository?name=${encodeURIComponent(repo.fullName)}`;
+const getRepoHref = (repo: Repository) => minerRepositoryPath(repo.fullName);
 
 const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   {
@@ -3037,7 +3037,7 @@ const PRsViewModeToggle: React.FC<{
 };
 
 const getPrHref = (pr: CommitLog) =>
-  `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`;
+  minerPrPath(pr.repository, pr.pullRequestNumber);
 
 const PRCard: React.FC<{
   pr: CommitLog;
@@ -4212,6 +4212,12 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
 
   const isLoading = issueQueries.some((q) => q.isLoading);
 
+  const {
+    active: issueActiveSources,
+    toggle: toggleIssueSource,
+    isAllOn: issueSourcesAllOn,
+  } = usePrSourceFilter();
+
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<IssueStatusFilter>('all');
   const [viewMode, setViewMode] = useWatchlistViewMode();
@@ -4228,7 +4234,14 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
 
   useEffect(() => {
     setPage(0);
-  }, [statusFilter, searchQuery, sortField, sortOrder, viewMode]);
+  }, [
+    statusFilter,
+    searchQuery,
+    sortField,
+    sortOrder,
+    viewMode,
+    issueActiveSources,
+  ]);
 
   const handleSort = (field: IssueSortKey) => {
     if (sortField === field) {
@@ -4240,11 +4253,28 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
     setPage(0);
   };
 
-  const counts = useMemo(() => getIssueCounts(items), [items]);
+  const issueSourceCounts = useMemo(() => {
+    const tally = { starred: 0, miner: 0, repo: 0 };
+    for (const issue of items) {
+      const sources = sourcesByKey.get(issueKey(issue));
+      if (!sources) continue;
+      for (const s of sources) tally[s] += 1;
+    }
+    return tally;
+  }, [items, sourcesByKey]);
+
+  const scopedItems = useMemo(() => {
+    if (issueSourcesAllOn) return items;
+    return items.filter((issue) =>
+      sourcesByKey.get(issueKey(issue))?.some((s) => issueActiveSources.has(s)),
+    );
+  }, [items, sourcesByKey, issueActiveSources, issueSourcesAllOn]);
+
+  const counts = useMemo(() => getIssueCounts(scopedItems), [scopedItems]);
 
   const filtered = useMemo(
-    () => filterIssues(items, { statusFilter, searchQuery }),
-    [items, statusFilter, searchQuery],
+    () => filterIssues(scopedItems, { statusFilter, searchQuery }),
+    [scopedItems, statusFilter, searchQuery],
   );
 
   const sorted = useMemo(() => {
@@ -4331,6 +4361,35 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
                     onClick={() => setStatusFilter(s)}
                   />
                 ))}
+                <Box
+                  sx={{
+                    width: '1px',
+                    height: 20,
+                    backgroundColor: 'border.light',
+                    mx: 0.5,
+                  }}
+                />
+                <FilterButton
+                  label="Starred"
+                  count={issueSourceCounts.starred}
+                  color={SOURCE_META.starred.color}
+                  isActive={issueActiveSources.has('starred')}
+                  onClick={() => toggleIssueSource('starred')}
+                />
+                <FilterButton
+                  label="Miner"
+                  count={issueSourceCounts.miner}
+                  color={SOURCE_META.miner.color}
+                  isActive={issueActiveSources.has('miner')}
+                  onClick={() => toggleIssueSource('miner')}
+                />
+                <FilterButton
+                  label="Repo"
+                  count={issueSourceCounts.repo}
+                  color={SOURCE_META.repo.color}
+                  isActive={issueActiveSources.has('repo')}
+                  onClick={() => toggleIssueSource('repo')}
+                />
               </Box>
             }
             searchValue={draftValue}
@@ -4350,7 +4409,7 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
                 }}
               />
             }
-            hasActiveFilter={statusFilter !== 'all'}
+            hasActiveFilter={statusFilter !== 'all' || !issueSourcesAllOn}
           />
         )}
       </DebouncedSearchInput>

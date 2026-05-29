@@ -8,6 +8,7 @@ import {
   formatDate,
   formatUsdEstimate,
   getRepositoryOwnerAvatarSrc,
+  minerRepositoryPath,
 } from '../../utils';
 import { type PullRequestDetails } from '../../api/models/Dashboard';
 import { STATUS_COLORS } from '../../theme';
@@ -25,7 +26,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
 }) => {
   const [owner] = repository.split('/');
   const repoLinkProps = useLinkBehavior<HTMLAnchorElement>(
-    `/miners/repository?name=${encodeURIComponent(repository)}`,
+    minerRepositoryPath(repository),
     { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
   );
   const authorLinkProps = useLinkBehavior<HTMLAnchorElement>(
