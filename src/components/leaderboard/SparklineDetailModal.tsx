@@ -168,10 +168,10 @@ const capsuleToggleSx = (theme: Theme, count: number, index: number) => ({
     left: 3,
     width: `calc((100% - 6px) / ${count})`,
     borderRadius: 999,
-    backgroundColor: alpha(theme.palette.primary.main, 0.92),
-    boxShadow: `0 6px 16px ${alpha(theme.palette.primary.main, 0.22)}`,
+    backgroundColor: alpha(theme.palette.text.primary, 0.14),
+    boxShadow: 'none',
     transform: `translateX(${index * 100}%)`,
-    transition: 'transform 0.22s ease, box-shadow 0.22s ease',
+    transition: 'transform 0.22s ease',
   },
   '& .MuiToggleButtonGroup-grouped': {
     zIndex: 1,
@@ -187,7 +187,7 @@ const capsuleToggleSx = (theme: Theme, count: number, index: number) => ({
     letterSpacing: '0.04em',
     textTransform: 'uppercase',
     '&.Mui-selected, &.Mui-selected:hover': {
-      color: theme.palette.background.paper,
+      color: theme.palette.text.primary,
       backgroundColor: 'transparent',
     },
     '&:hover': {
@@ -486,8 +486,8 @@ const SparklineDetailModal: React.FC<SparklineDetailModalProps> = ({
       onClick={(e) => e.stopPropagation()}
       PaperProps={{
         sx: (t) => ({
-          backgroundColor: t.palette.background.paper,
-          backgroundImage: `radial-gradient(ellipse 120% 60% at 50% -10%, ${alpha(t.palette.text.primary, 0.05)} 0%, transparent 55%)`,
+          backgroundColor: t.palette.background.default,
+          backgroundImage: 'none',
           border: `1px solid ${t.palette.border.light}`,
           borderRadius: 2.5,
         }),

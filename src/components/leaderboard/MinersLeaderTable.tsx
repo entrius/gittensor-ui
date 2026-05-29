@@ -32,6 +32,7 @@ import {
   ViewModule as ViewModuleIcon,
 } from '@mui/icons-material';
 import { GhIssueIcon, GhPrIcon } from './GhIcons';
+import { RankIcon } from './RankIcon';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import TablePagination from '../common/TablePagination';
@@ -79,7 +80,6 @@ import { NetworkPulsePill } from './NetworkPulsePill';
 import { useRankSnapshot } from './useRankSnapshot';
 import {
   cohortOf,
-  COHORT_COLORS,
   COHORT_DESCRIPTIONS,
   COHORT_LABELS,
   isAnyEligibleNow,
@@ -556,19 +556,7 @@ const RankCell: React.FC<{
         gap: '3px',
       }}
     >
-      <Typography
-        sx={{
-          fontFamily: '"JetBrains Mono", monospace',
-          fontSize: '0.85rem',
-          fontWeight: 600,
-          color: alpha(theme.palette.common.white, 0.7),
-          lineHeight: 1,
-          letterSpacing: '-0.02em',
-          textAlign: 'center',
-        }}
-      >
-        {globalRank}
-      </Typography>
+      <RankIcon rank={globalRank} />
       <MovementGlyph
         globalRank={globalRank}
         previousRank={previousRank}
@@ -729,12 +717,6 @@ const EligibilityPill: React.FC<{
       </Box>
     </Box>
   );
-};
-
-// Always returns a color so every row/card carries a rail matching its cohort.
-const resolveMinerAccentColor = (m: MinerEvaluation): string => {
-  if ((m.failedReason ?? '').trim()) return STATUS_COLORS.closed;
-  return COHORT_COLORS[cohortOf(m)];
 };
 
 const ContributionStatsRow: React.FC<{
@@ -1273,7 +1255,6 @@ const MobileMinerCard: React.FC<{
     : alpha(theme.palette.common.white, 0.3);
   const topRepos = row.activity.topRepos.slice(0, 2);
   const isEligibleAny = isAnyEligibleNow(row.miner);
-  const accentColor = resolveMinerAccentColor(row.miner);
 
   return (
     <Box
@@ -1297,20 +1278,10 @@ const MobileMinerCard: React.FC<{
         pl: { xs: 1.75, sm: 2 },
         pr: { xs: 1.5, sm: 1.75 },
         py: 1.5,
-        backgroundColor: t.palette.surface.subtle,
-        border: `1px solid ${alpha(accentColor, isEligibleAny ? 0.45 : 0.25)}`,
+        backgroundColor: t.palette.surface.transparent,
+        border: `1px solid ${t.palette.border.light}`,
         borderRadius: 2,
         filter: isEligibleAny ? 'none' : 'brightness(0.88) saturate(0.92)',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          bottom: 0,
-          width: 3,
-          backgroundColor: accentColor,
-          boxShadow: `0 0 8px 0 ${alpha(accentColor, isEligibleAny ? 0.45 : 0.2)}`,
-        },
         transition:
           'background-color 0.15s, border-color 0.15s, transform 0.15s, filter 0.15s',
         '&:hover': {
@@ -1814,18 +1785,6 @@ const EligibilitySegmentedControl: React.FC<{
             boxShadow: active
               ? `inset 0 0 0 1px ${alpha(t.palette.text.primary, 0.1)}`
               : 'none',
-            '&::after': active
-              ? {
-                  content: '""',
-                  position: 'absolute',
-                  left: '20%',
-                  right: '20%',
-                  bottom: 3,
-                  height: 2,
-                  borderRadius: 999,
-                  backgroundColor: t.palette.primary.main,
-                }
-              : undefined,
             '&:hover': {
               backgroundColor: active
                 ? alpha(t.palette.text.primary, 0.1)
@@ -2800,7 +2759,7 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
       key: 'trend',
       header: 'Trend',
       width: 172,
-      headerSx: { display: tierMd },
+      headerSx: { display: tierMd, textAlign: 'center' },
       cellSx: { display: tierMd },
       renderCell: (row) => (
         <Box
@@ -2824,6 +2783,7 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
             height={32}
             primaryLabel="OSS"
             secondaryLabel="Discovery"
+            emphasis
           />
         </Box>
       ),
@@ -3489,7 +3449,16 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
 
   if (effectiveViewMode === 'cards') {
     return (
-      <Card sx={{ p: 0, overflow: 'hidden' }}>
+      <Card
+        sx={{
+          p: 0,
+          overflow: 'hidden',
+          borderRadius: 3,
+          border: '1px solid',
+          borderColor: 'border.light',
+          backgroundColor: 'background.default',
+        }}
+      >
         {toolbar}
         {showInitialLoading ? (
           <Box sx={{ py: 6, textAlign: 'center', color: 'text.secondary' }}>
@@ -3528,7 +3497,16 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
   }
 
   return (
-    <Card sx={{ p: 0, overflow: 'hidden' }}>
+    <Card
+      sx={{
+        p: 0,
+        overflow: 'hidden',
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'border.light',
+        backgroundColor: 'transparent',
+      }}
+    >
       <DataTable<RankedMiner, SortField>
         columns={columns}
         rows={paged}
@@ -3538,17 +3516,17 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
         }
         getRowSx={(row) => {
           const ineligible = !isAnyEligibleNow(row.miner);
-          const accent = resolveMinerAccentColor(row.miner);
           return {
             cursor: 'pointer',
+            transition: 'all 0.2s',
+            borderBottom: '1px solid',
+            borderColor: 'surface.light',
             ...(ineligible && {
               filter: 'brightness(0.88) saturate(0.92)',
               '& td': { color: alpha(theme.palette.common.white, 0.82) },
             }),
-            '& > td:first-of-type': {
-              boxShadow: `inset 3px 0 0 0 ${accent}`,
-            },
             '&:hover': {
+              backgroundColor: 'border.subtle',
               filter: ineligible
                 ? 'brightness(0.98) saturate(0.98)'
                 : undefined,

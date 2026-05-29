@@ -1227,30 +1227,15 @@ const LeaderboardInsights: React.FC<LeaderboardInsightsProps> = ({
 
   return (
     <Card
-      sx={(t) => ({
+      sx={{
         p: 0,
         overflow: 'hidden',
         position: 'relative',
-        backgroundColor: t.palette.background.paper,
-        backgroundImage: `
-          radial-gradient(ellipse 120% 70% at 50% -10%, ${alpha(
-            t.palette.text.primary,
-            0.07,
-          )} 0%, ${alpha(t.palette.text.primary, 0)} 55%),
-          linear-gradient(180deg, ${alpha(t.palette.common.black, 0)} 60%, ${alpha(
-            t.palette.common.black,
-            0.3,
-          )} 100%)
-        `,
-        borderColor: t.palette.border.medium,
-        boxShadow: [
-          `inset 0 1px 0 ${alpha(t.palette.text.primary, 0.09)}`,
-          `inset 0 -1px 0 ${alpha(t.palette.common.black, 0.4)}`,
-          `0 1px 0 ${alpha(t.palette.text.primary, 0.02)}`,
-          `0 12px 36px -8px ${alpha(t.palette.common.black, 0.6)}`,
-          `0 4px 12px -4px ${alpha(t.palette.common.black, 0.4)}`,
-        ].join(', '),
-      })}
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'border.light',
+        backgroundColor: 'background.default',
+      }}
     >
       <Box
         sx={{
