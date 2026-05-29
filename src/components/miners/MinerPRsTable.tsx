@@ -24,7 +24,6 @@ import {
   ExpandMore as ExpandMoreIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
-import { useSearchParams } from 'react-router-dom';
 import { useMinerPRs, type CommitLog } from '../../api';
 import {
   filterPrs,
@@ -64,15 +63,7 @@ type PrSortField =
   | 'lines'
   | 'date'
   | 'watch';
-
-const PR_SORT_KEYS: readonly PrSortField[] = [
-  'number',
-  'repository',
-  'score',
-  'lines',
-  'date',
-  'watch',
-];
+type SortDir = 'asc' | 'desc';
 
 const PR_STATUS_FILTERS: readonly PrStatusFilter[] = [
   'all',
@@ -80,6 +71,17 @@ const PR_STATUS_FILTERS: readonly PrStatusFilter[] = [
   'merged',
   'closed',
 ];
+
+// Direction applied when a user first clicks a column header — string
+// columns feel natural ascending, numeric/date columns descending.
+const DEFAULT_SORT_DIR: Record<PrSortField, SortDir> = {
+  number: 'desc',
+  repository: 'asc',
+  score: 'desc',
+  lines: 'desc',
+  date: 'desc',
+  watch: 'desc',
+};
 
 // Mirrors the Score cell's render logic so clicking the Score header
 // sorts by what users actually see: merged → score, open → collateral,
@@ -117,11 +119,12 @@ interface MinerPRsTableProps {
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
-  const [, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const { isWatched } = useWatchlist('prs');
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [sortField, setSortField] = useState<PrSortField>('date');
+  const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(
     () => new Set(),
   );
@@ -139,22 +142,16 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     [],
   );
 
-  // Sort and status filter are URL-backed via the shared hook; pagination
-  // is owned by `useMinerExplorerPagination` below so this table can offer
-  // the rows-per-page selector and `all` option. Wiring `paramKeys.page`
-  // to `MINER_EXPLORER_PAGE_PARAM` lets the hook clear the same page slot
-  // when sort or filter changes.
-  const {
-    sortField,
-    sortOrder: sortDir,
-    setSort: handleSort,
-    filters,
-    setFilter,
-  } = useDataTableParams<PrSortField, { status: PrStatusFilter }>({
-    sortKeys: PR_SORT_KEYS,
+  // Status filter is URL-backed (`prStatus`); pagination is owned by
+  // `useMinerExplorerPagination` below. Wiring `paramKeys.page` to
+  // `MINER_EXPLORER_PAGE_PARAM` lets the hook clear the same page slot
+  // when the filter changes.
+  const { filters, setFilter } = useDataTableParams<
+    PrSortField,
+    { status: PrStatusFilter }
+  >({
+    sortKeys: [],
     defaultSortKey: 'date',
-    // String columns feel natural ascending; numeric/date columns descending.
-    defaultOrderOverrides: { repository: 'asc' },
     paramKeys: { page: MINER_EXPLORER_PAGE_PARAM },
     filters: filtersConfig,
   });
@@ -165,23 +162,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     [setFilter],
   );
 
-  // Switching miners clears local UI state and resets the URL sort slot to
-  // the default; the pagination hook owns its own reset on `[githubId]` via
-  // `resetKey`, so this effect deliberately doesn't touch the page param.
   useEffect(() => {
     setSelectedAuthor(null);
     setSearchQuery('');
+    setSortField('date');
+    setSortDir('desc');
     setExpandedKeys(new Set());
-    setSearchParams(
-      (prev) => {
-        const p = new URLSearchParams(prev);
-        p.delete('sort');
-        p.delete('dir');
-        return p;
-      },
-      { replace: true },
-    );
-  }, [githubId, setSearchParams]);
+  }, [githubId]);
 
   const filteredPRs = useMemo(
     () =>
@@ -252,6 +239,19 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       setPage(0);
     },
     [setPage],
+  );
+
+  const handleSort = useCallback(
+    (field: PrSortField) => {
+      if (sortField === field) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortField(field);
+        setSortDir(DEFAULT_SORT_DIR[field]);
+      }
+      setPage(0);
+    },
+    [sortField, setPage],
   );
 
   // Count over the search + author scope (excluding the active status filter)
