@@ -10,6 +10,7 @@
  * to the default below.
  */
 import type { RepositoryConfig } from '../api/models/Dashboard';
+import { pluralize } from './format';
 
 type RepoConfigFormat =
   | 'integer'
@@ -349,9 +350,9 @@ export function formatRepoConfigValue(
     case 'multiplier':
       return `${value}×`;
     case 'days':
-      return `${value} ${value === 1 ? 'day' : 'days'}`;
+      return pluralize(value, 'day');
     case 'hours':
-      return `${value} ${value === 1 ? 'hr' : 'hrs'}`;
+      return pluralize(value, 'hr');
     case 'integer':
     case 'score':
     case 'decimal':

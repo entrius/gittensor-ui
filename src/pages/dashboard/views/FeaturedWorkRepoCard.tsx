@@ -3,6 +3,7 @@ import GitHubIcon from '@mui/icons-material/GitHub';
 import { Avatar, Box, Stack, Tooltip, Typography } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
 import { getGithubAvatarSrc } from '../../../utils';
+import { pluralize } from '../../../utils/format';
 import { type FeaturedWorkRepo, type FeaturedWorkPr } from '../dashboardData';
 import FeaturedWorkPrRow from './FeaturedWorkPrRow';
 import {
@@ -25,8 +26,7 @@ interface FeaturedWorkRepoCardProps {
 const extractOwner = (repository: string): string =>
   repository.split('/')[0] || '';
 
-const formatPrCount = (count: number): string =>
-  `${count} PR${count !== 1 ? 's' : ''}`;
+const formatPrCount = (count: number): string => pluralize(count, 'PR');
 
 const formatTotalScore = (score: number): string => score.toFixed(1);
 

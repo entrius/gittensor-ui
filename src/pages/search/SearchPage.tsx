@@ -3,6 +3,7 @@ import { Alert, Box, Stack, Tab, Tabs, Typography } from '@mui/material';
 import { useLocation, useSearchParams } from 'react-router-dom';
 import { BackButton, SEO } from '../../components';
 import { GlobalSearchBar, Page } from '../../components/layout';
+import { pluralize } from '../../utils/format';
 import IssuesTab from './IssuesTab';
 import MinerTab from './MinerTab';
 import PullRequestsTab from './PullRequestsTab';
@@ -209,7 +210,7 @@ const SearchPage: React.FC = () => {
             <Typography variant="body2" color="text.secondary">
               {isAnySectionLoading && totalResults === 0
                 ? `Loading search results for "${query}"...`
-                : `${activeResultCount} result${activeResultCount === 1 ? '' : 's'} in ${activeTabLabel} for "${query}"`}
+                : `${pluralize(activeResultCount, 'result')} in ${activeTabLabel} for "${query}"`}
             </Typography>
 
             <Box
