@@ -1723,7 +1723,7 @@ const TopActiveReposPanel: React.FC<{
               return (
                 <LinkBox
                   key={`${row.repository}-${index}`}
-                  href={`/repositories/details?repo=${encodeURIComponent(row.repository)}`}
+                  href={`/miners/repository?name=${encodeURIComponent(row.repository)}`}
                   linkState={{ backLabel: 'Back to Home' }}
                   sx={(theme) => ({
                     display: 'grid',
