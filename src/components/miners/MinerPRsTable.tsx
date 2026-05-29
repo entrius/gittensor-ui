@@ -24,7 +24,6 @@ import {
   ExpandMore as ExpandMoreIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
-import { useSearchParams } from 'react-router-dom';
 import { useMinerPRs, type CommitLog } from '../../api';
 import {
   filterPrs,
@@ -46,6 +45,7 @@ import {
   serializePRKey,
   useWatchlist,
 } from '../../hooks/useWatchlist';
+import { useDataTableParams } from '../../hooks/useDataTableParams';
 import MinerTableRowsSelect from './MinerTableRowsSelect';
 import TablePagination, {
   getMinerExplorerPaging,
@@ -119,7 +119,6 @@ interface MinerPRsTableProps {
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const { isWatched } = useWatchlist('prs');
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
@@ -129,10 +128,39 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(
     () => new Set(),
   );
-  const prStatusParam = searchParams.get('prStatus');
-  const statusFilter: PrStatusFilter = isPrStatusFilter(prStatusParam)
-    ? prStatusParam
-    : 'all';
+
+  const filtersConfig = useMemo(
+    () => ({
+      status: {
+        paramKey: 'prStatus',
+        parse: (raw: string | null): PrStatusFilter =>
+          isPrStatusFilter(raw) ? raw : 'all',
+        serialize: (value: PrStatusFilter): string | null =>
+          value === 'all' ? null : value,
+      },
+    }),
+    [],
+  );
+
+  // Status filter is URL-backed (`prStatus`); pagination is owned by
+  // `useMinerExplorerPagination` below. Wiring `paramKeys.page` to
+  // `MINER_EXPLORER_PAGE_PARAM` lets the hook clear the same page slot
+  // when the filter changes.
+  const { filters, setFilter } = useDataTableParams<
+    PrSortField,
+    { status: PrStatusFilter }
+  >({
+    sortKeys: [],
+    defaultSortKey: 'date',
+    paramKeys: { page: MINER_EXPLORER_PAGE_PARAM },
+    filters: filtersConfig,
+  });
+
+  const statusFilter = filters.status;
+  const setStatusFilter = useCallback(
+    (next: PrStatusFilter) => setFilter('status', next),
+    [setFilter],
+  );
 
   useEffect(() => {
     setSelectedAuthor(null);
@@ -141,22 +169,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     setSortDir('desc');
     setExpandedKeys(new Set());
   }, [githubId]);
-
-  const setStatusFilter = useCallback(
-    (next: PrStatusFilter) => {
-      setSearchParams(
-        (prev) => {
-          const p = new URLSearchParams(prev);
-          if (next === 'all') p.delete('prStatus');
-          else p.set('prStatus', next);
-          p.delete(MINER_EXPLORER_PAGE_PARAM);
-          return p;
-        },
-        { replace: true },
-      );
-    },
-    [setSearchParams],
-  );
 
   const filteredPRs = useMemo(
     () =>

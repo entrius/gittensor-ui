@@ -8,6 +8,7 @@ import React, {
 } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
+import { pluralize } from '../utils/format';
 import {
   Alert,
   Box,
@@ -272,7 +273,7 @@ const RepositoryDetailsPage: React.FC = () => {
               lineHeight: 1.4,
             }}
           >
-            {openBounties} {openBounties === 1 ? 'bounty' : 'bounties'}
+            {pluralize(openBounties, 'bounty', 'bounties')}
           </Box>
         ) : null}
       </Box>

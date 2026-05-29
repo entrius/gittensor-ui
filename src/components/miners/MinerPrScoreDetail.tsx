@@ -13,6 +13,7 @@ import {
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
+import { pluralize } from '../../utils/format';
 import { usePullRequestDetails, type CommitLog } from '../../api';
 import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import { parseNumber } from '../../utils/ExplorerUtils';
@@ -201,7 +202,7 @@ const MinerPrScoreDetail: React.FC<MinerPrScoreDetailProps> = ({
         {[
           baseScore > 0 && `base ${baseScore.toFixed(2)}`,
           `+${pr.additions} / -${pr.deletions}`,
-          `${pr.commitCount} commit${pr.commitCount !== 1 ? 's' : ''}`,
+          pluralize(pr.commitCount, 'commit'),
           pr.tokenScore != null &&
             `tokens ${parseNumber(pr.tokenScore).toFixed(2)}`,
           pr.totalNodesScored != null &&
