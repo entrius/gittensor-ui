@@ -27,7 +27,7 @@ import {
 } from '../../components/common/DataTable';
 import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
-import { LoadingCard } from '../common/LoadingCard';
+import { LoadingCard } from '../common';
 import TablePagination from '../common/TablePagination';
 import { tooltipSlotProps } from '../../theme';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
