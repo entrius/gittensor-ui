@@ -40,6 +40,7 @@ import {
   type SortOption,
   type LeaderboardVariant,
   FONTS,
+  minerSortName,
 } from './types';
 
 type ViewMode = 'cards' | 'list';
@@ -97,7 +98,14 @@ interface TopMinersTableProps {
 
 const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] => {
   if (variant === 'discoveries')
-    return ['totalScore', 'usdPerDay', 'totalIssues', 'credibility', 'watch'];
+    return [
+      'totalScore',
+      'usdPerDay',
+      'totalIssues',
+      'credibility',
+      'username',
+      'watch',
+    ];
   if (variant === 'watchlist')
     return [
       'totalScore',
@@ -106,9 +114,17 @@ const getAllowedSortOptions = (variant: LeaderboardVariant): SortOption[] => {
       'totalIssues',
       'issueDiscoveryScore',
       'credibility',
+      'username',
       'watch',
     ];
-  return ['totalScore', 'usdPerDay', 'totalPRs', 'credibility', 'watch'];
+  return [
+    'totalScore',
+    'usdPerDay',
+    'totalPRs',
+    'credibility',
+    'username',
+    'watch',
+  ];
 };
 
 type EligibilityFilter = 'all' | 'eligible' | 'ineligible';
@@ -198,6 +214,8 @@ const compareMiners = (
       );
     case 'credibility':
       return (a.credibility ?? 0) - (b.credibility ?? 0);
+    case 'username':
+      return minerSortName(a).localeCompare(minerSortName(b));
     case 'watch':
       return compareByWatchlist(a, b, (m) => m.githubId, isWatched);
     default:
@@ -278,6 +296,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
   } = useDataTableParams<SortOption, TopMinersUrlFilters>({
     sortKeys: allowedSortKeys,
     defaultSortKey: 'totalScore',
+    defaultOrderOverrides: { username: 'asc' },
     // Reuse the hook's `page` slot for our "show more" count — setSort and
     // filter changes reset it, which is the behavior we want.
     paramKeys: { page: VISIBLE_QUERY_PARAM },
@@ -354,11 +373,7 @@ const TopMinersTable: React.FC<TopMinersTableProps> = ({
 
     if (searchQuery) {
       const lowerQuery = searchQuery.toLowerCase();
-      result = result.filter(
-        (m) =>
-          m.githubId?.toLowerCase().includes(lowerQuery) ||
-          m.author?.toLowerCase().includes(lowerQuery),
-      );
+      result = result.filter((m) => minerSortName(m).includes(lowerQuery));
     }
 
     result = result.filter((m) => {
@@ -621,14 +636,15 @@ const getSortButtonOptions = (
   };
   const credibility = { label: 'Credibility', value: 'credibility' as const };
   const score = { label: scoreLabel, value: 'totalScore' as const };
+  const name = { label: 'Name', value: 'username' as const };
 
   if (variant === 'watchlist') {
-    return [score, discovery, earnings, prs, issues, credibility];
+    return [score, discovery, earnings, prs, issues, credibility, name];
   }
   if (variant === 'discoveries') {
-    return [score, earnings, issues, credibility];
+    return [score, earnings, issues, credibility, name];
   }
-  return [score, earnings, prs, credibility];
+  return [score, earnings, prs, credibility, name];
 };
 
 const SortButtons: React.FC<SortButtonsProps> = ({

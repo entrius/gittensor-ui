@@ -64,9 +64,17 @@ export function DebouncedSearchInput({
     setDraftValue(initialDraft);
   }, [initialDraft]);
 
+  // Latest-ref so the debounced fire only depends on `debounced` — callers
+  // routed through React Router's `setSearchParams` get a new callback
+  // identity per URL change, which would otherwise re-apply the stale value.
+  const onDebouncedChangeRef = useRef(onDebouncedChange);
   useEffect(() => {
-    onDebouncedChange(debounced);
-  }, [debounced, onDebouncedChange]);
+    onDebouncedChangeRef.current = onDebouncedChange;
+  }, [onDebouncedChange]);
+
+  useEffect(() => {
+    onDebouncedChangeRef.current(debounced);
+  }, [debounced]);
 
   const draftBag = useMemo(
     () => ({ draftValue, setDraftValue }),

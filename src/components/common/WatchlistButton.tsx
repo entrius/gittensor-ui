@@ -37,10 +37,16 @@ export const WatchlistButton: React.FC<WatchlistButtonProps> = ({
         aria-pressed={watched}
         sx={{
           color: watched ? 'warning.main' : 'text.tertiary',
-          transition: 'color 0.15s, transform 0.15s',
+          transition: 'color 0.15s, transform 0.15s, outline-color 0.15s',
           '&:hover': {
             color: 'warning.light',
             transform: 'scale(1.08)',
+            backgroundColor: 'rgba(255,255,255,0.06)',
+          },
+          '&:focus-visible': {
+            outline: '2px solid',
+            outlineColor: 'primary.main',
+            outlineOffset: 2,
             backgroundColor: 'rgba(255,255,255,0.06)',
           },
           ...sx,

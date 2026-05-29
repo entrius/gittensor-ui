@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useSessionStoredState } from '../../hooks/useSessionStoredState';
 import {
   Box,
@@ -34,6 +34,7 @@ import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
 import TablePagination from '../../components/common/TablePagination';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
+import { TableSearchFilter } from './TableSearchFilter';
 
 interface RepositoryIssuesTableProps {
   repositoryFullName: string;
@@ -61,6 +62,24 @@ type RepoIssuesFilter = 'all' | 'open' | 'closed';
 const isRepoIssuesFilter = (v: unknown): v is RepoIssuesFilter =>
   v === 'all' || v === 'open' || v === 'closed';
 
+function issueMatchesSearch(
+  issue: RepositoryIssue,
+  searchQuery: string,
+): boolean {
+  const q = searchQuery.trim().toLowerCase();
+  if (!q) return true;
+  const title = getLowerText(issue.title);
+  if (title.includes(q)) return true;
+  const author = (issue.authorLogin || issue.author || '').toLowerCase();
+  if (author.includes(q)) return true;
+  const numStr = String(issue.number);
+  if (numStr.includes(q)) return true;
+  if (q.startsWith('#')) {
+    const rest = q.slice(1).trim();
+    if (rest && numStr.includes(rest)) return true;
+  }
+  return false;
+}
 const ISSUE_PAGE_SIZE = 20;
 
 const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
@@ -74,6 +93,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     'all',
     isRepoIssuesFilter,
   );
+  const [searchQuery, setSearchQuery] = useState('');
 
   const {
     sortField: sortKey,
@@ -89,6 +109,15 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     paramKeys: { sort: 'issueSort', order: 'issueDir', page: 'issuePage' },
   });
 
+  // Search resets when navigating between repositories so the input does
+  // not leak across detail pages.
+  useEffect(() => {
+    setSearchQuery('');
+  }, [repositoryFullName]);
+
+  // Filter and search are local; the hook handles page reset for URL-backed
+  // sort changes. Reset page here when the local status or search filter
+  // changes, gated on actual value change to avoid clobbering deep links.
   const handleFilterChange = useCallback(
     (next: RepoIssuesFilter) => {
       if (next === filter) return;
@@ -98,14 +127,25 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     [filter, setFilter, setPage],
   );
 
+  const handleSearchChange = useCallback(
+    (next: string) => {
+      if (next === searchQuery) return;
+      setSearchQuery(next);
+      setPage(0);
+    },
+    [searchQuery, setPage],
+  );
+
   const counts = useMemo(() => {
     if (!issues) return { total: 0, open: 0, closed: 0 };
+    const match = (issue: RepositoryIssue) =>
+      issueMatchesSearch(issue, searchQuery);
     return {
-      total: issues.length,
-      open: issues.filter((issue) => !issue.closedAt).length,
-      closed: issues.filter((issue) => issue.closedAt).length,
+      total: issues.filter(match).length,
+      open: issues.filter((issue) => !issue.closedAt).filter(match).length,
+      closed: issues.filter((issue) => issue.closedAt).filter(match).length,
     };
-  }, [issues]);
+  }, [issues, searchQuery]);
 
   const filteredIssues = useMemo(() => {
     if (!issues) return [];
@@ -114,13 +154,19 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     return issues;
   }, [issues, filter]);
 
+  const searchFilteredIssues = useMemo(() => {
+    return filteredIssues.filter((issue) =>
+      issueMatchesSearch(issue, searchQuery),
+    );
+  }, [filteredIssues, searchQuery]);
+
   const sortedIssues = useMemo(() => {
     const directionFactor = sortDirection === 'asc' ? 1 : -1;
     const collator = new Intl.Collator(undefined, {
       sensitivity: 'base',
       numeric: true,
     });
-    const decorated = filteredIssues.map((issue) => {
+    const decorated = searchFilteredIssues.map((issue) => {
       let value: number | string;
       switch (sortKey) {
         case 'number':
@@ -156,7 +202,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       );
     });
     return decorated.map((item) => item.issue);
-  }, [filteredIssues, sortKey, sortDirection]);
+  }, [searchFilteredIssues, sortKey, sortDirection]);
 
   const totalPages = Math.ceil(sortedIssues.length / ISSUE_PAGE_SIZE);
   const pagedIssues = useMemo(
@@ -316,6 +362,48 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     },
   ];
 
+  const filterButtons = (
+    <Stack
+      direction="row"
+      spacing={1}
+      alignItems="center"
+      flexWrap="wrap"
+      useFlexGap
+      sx={{ rowGap: 1 }}
+    >
+      <FilterButton
+        label="All"
+        isActive={filter === 'all'}
+        onClick={() => handleFilterChange('all')}
+        count={counts.total}
+        color={STATUS_COLORS.open}
+        activeTextColor="text.primary"
+      />
+      <FilterButton
+        label="Open"
+        isActive={filter === 'open'}
+        onClick={() => handleFilterChange('open')}
+        count={counts.open}
+        color={STATUS_COLORS.open}
+        activeTextColor="text.primary"
+      />
+      <FilterButton
+        label="Closed"
+        isActive={filter === 'closed'}
+        onClick={() => handleFilterChange('closed')}
+        count={counts.closed}
+        color={STATUS_COLORS.merged}
+        activeTextColor="text.primary"
+      />
+      <TableSearchFilter
+        value={searchQuery}
+        onChange={handleSearchChange}
+        popoverTitle="Search issues"
+        placeholder="Search (#, title, author)…"
+      />
+    </Stack>
+  );
+
   const headerToolbar = (
     <Box
       sx={{
@@ -334,38 +422,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       >
         Issues ({sortedIssues.length})
       </Typography>
-      <Stack
-        direction="row"
-        spacing={1}
-        flexWrap="wrap"
-        useFlexGap
-        sx={{ rowGap: 1 }}
-      >
-        <FilterButton
-          label="All"
-          isActive={filter === 'all'}
-          onClick={() => handleFilterChange('all')}
-          count={counts.total}
-          color={STATUS_COLORS.open}
-          activeTextColor="text.primary"
-        />
-        <FilterButton
-          label="Open"
-          isActive={filter === 'open'}
-          onClick={() => handleFilterChange('open')}
-          count={counts.open}
-          color={STATUS_COLORS.open}
-          activeTextColor="text.primary"
-        />
-        <FilterButton
-          label="Closed"
-          isActive={filter === 'closed'}
-          onClick={() => handleFilterChange('closed')}
-          count={counts.closed}
-          color={STATUS_COLORS.merged}
-          activeTextColor="text.primary"
-        />
-      </Stack>
+      {filterButtons}
     </Box>
   );
 
@@ -551,7 +608,11 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
                   fontSize: '0.9rem',
                 }}
               >
-                No issues found
+                {searchQuery.trim() &&
+                sortedIssues.length === 0 &&
+                filteredIssues.length > 0
+                  ? 'No issues match your search.'
+                  : 'No issues found'}
               </Typography>
             </Box>
           }
