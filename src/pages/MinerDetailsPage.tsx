@@ -6,10 +6,13 @@ import { LinkBox } from '../components/common/linkBehavior';
 import {
   BackButton,
   MinerActivity,
-  MinerIdentityRail,
+  MinerInsightsCard,
   MinerOpenDiscoveryIssuesByRepo,
+  MinerOpenPrRisk,
   MinerPRsTable,
-  MinerRepoStandings,
+  MinerProfileHero,
+  MinerRepositoryPanel,
+  MinerStatBand,
   SEO,
 } from '../components';
 import { WatchlistButton } from '../components/common';
@@ -82,7 +85,7 @@ const MinerDetailsPage: React.FC = () => {
     <Page title="Miner Dashboard">
       <SEO
         title={`Miner Dashboard - ${githubId}`}
-        description={`Track earnings, contribution quality, and performance for miner ${githubId}.`}
+        description={`Track earnings, unlock progress, contribution quality, and performance for miner ${githubId}.`}
         type="website"
       />
       <Box
@@ -97,7 +100,7 @@ const MinerDetailsPage: React.FC = () => {
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 3,
+            gap: 2.5,
             width: '100%',
             maxWidth: 1320,
             px: { xs: 2, md: 0 },
@@ -186,73 +189,49 @@ const MinerDetailsPage: React.FC = () => {
             </Box>
           </Box>
 
-          {/* ── Two-column shell: main + sticky identity rail ──── */}
-          <Box
-            sx={{
-              display: 'grid',
-              gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 320px' },
-              gap: 3,
-              alignItems: 'start',
-            }}
-          >
-            {/* Identity rail — right sidebar on desktop (sticky); ordered
-                first on mobile so identity is not buried below the page. */}
-            <Box
-              sx={{
-                order: { md: 2 },
-                position: { md: 'sticky' },
-                top: { md: 24 },
-                minWidth: 0,
-              }}
+          {/* ── Identity header ──────────────────────────────────── */}
+          <MinerProfileHero githubId={githubId} />
+
+          {/* ── Headline performance band ────────────────────────── */}
+          <MinerStatBand githubId={githubId} />
+
+          {/* ── Open PR risk (renders only when open PRs > 0) ────── */}
+          <MinerOpenPrRisk githubId={githubId} />
+
+          {/* ── Repositories — standing + unlock progress ────────── */}
+          <MinerRepositoryPanel githubId={githubId} viewMode={viewMode} />
+
+          {/* ── Insights & next actions ──────────────────────────── */}
+          <MinerInsightsCard githubId={githubId} viewMode={viewMode} />
+
+          {/* ── Contribution detail ──────────────────────────────── */}
+          <Box sx={{ borderBottom: '1px solid', borderColor: 'border.light' }}>
+            <Tabs
+              value={activeTab}
+              onChange={handleTabChange}
+              variant="scrollable"
+              scrollButtons={false}
+              sx={tabsAlignSx}
             >
-              <MinerIdentityRail githubId={githubId} viewMode={viewMode} />
-            </Box>
+              {viewMode === 'issues' ? (
+                <Tab value="open-issues" label="Open Issues" />
+              ) : (
+                <Tab value="pull-requests" label="Pull Requests" />
+              )}
+              <Tab value="activity" label="Activity" />
+            </Tabs>
+          </Box>
 
-            {/* Main column */}
-            <Box
-              sx={{
-                order: { md: 1 },
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 3,
-                minWidth: 0,
-              }}
-            >
-              {/* Centerpiece — per-repository standings */}
-              <MinerRepoStandings githubId={githubId} viewMode={viewMode} />
-
-              {/* Reduced detail tabs */}
-              <Box
-                sx={{ borderBottom: '1px solid', borderColor: 'border.light' }}
-              >
-                <Tabs
-                  value={activeTab}
-                  onChange={handleTabChange}
-                  variant="scrollable"
-                  scrollButtons={false}
-                  sx={tabsAlignSx}
-                >
-                  {viewMode === 'issues' ? (
-                    <Tab value="open-issues" label="Open Issues" />
-                  ) : (
-                    <Tab value="pull-requests" label="Pull Requests" />
-                  )}
-                  <Tab value="activity" label="Activity" />
-                </Tabs>
-              </Box>
-
-              <Box>
-                {activeTab === 'pull-requests' && viewMode === 'prs' && (
-                  <MinerPRsTable githubId={githubId} />
-                )}
-                {activeTab === 'open-issues' && viewMode === 'issues' && (
-                  <MinerOpenDiscoveryIssuesByRepo githubId={githubId} />
-                )}
-                {activeTab === 'activity' && (
-                  <MinerActivity githubId={githubId} viewMode={viewMode} />
-                )}
-              </Box>
-            </Box>
+          <Box>
+            {activeTab === 'pull-requests' && viewMode === 'prs' && (
+              <MinerPRsTable githubId={githubId} />
+            )}
+            {activeTab === 'open-issues' && viewMode === 'issues' && (
+              <MinerOpenDiscoveryIssuesByRepo githubId={githubId} />
+            )}
+            {activeTab === 'activity' && (
+              <MinerActivity githubId={githubId} viewMode={viewMode} />
+            )}
           </Box>
         </Box>
       </Box>

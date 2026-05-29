@@ -363,6 +363,14 @@ export type MinerEvaluation = {
   lifetimeAlpha?: number;
   lifetimeTao?: number;
   lifetimeUsd?: number;
+  // Metagraph standing — present on the leaderboard list (`GET /miners`); used
+  // to surface a miner's authoritative subnet rank. Absent on the single-miner
+  // endpoint, so always optional.
+  metagraphRank?: number;
+  metagraphTrust?: number;
+  metagraphConsensus?: number;
+  metagraphIncentive?: number;
+  metagraphEmission?: number;
 };
 
 export type GithubMinerData = {
