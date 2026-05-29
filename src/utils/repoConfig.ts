@@ -163,14 +163,6 @@ export const ELIGIBILITY_FIELD_DEFS: RepoConfigFieldDef[] = [
     format: 'percent',
   },
   {
-    key: 'min_token_score_for_base_score',
-    label: 'Min token score (PR)',
-    description: 'Token score a PR needs to receive any base score.',
-    default: 5,
-    min: 0,
-    format: 'score',
-  },
-  {
     key: 'excessive_pr_penalty_base_threshold',
     label: 'Excessive-PR penalty threshold',
     description:

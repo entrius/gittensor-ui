@@ -18,7 +18,6 @@ export type RepoChanges = {
 export type RepoEligibilityConfig = {
   min_valid_merged_prs?: number;
   min_credibility?: number;
-  min_token_score_for_base_score?: number;
   excessive_pr_penalty_base_threshold?: number;
   open_pr_threshold_token_score?: number;
   max_open_pr_threshold?: number;
@@ -228,7 +227,6 @@ export type CommitLog = {
   // Label scoring
   labelMultiplier?: number;
   label?: string;
-  codeDensity?: number;
 
   // Payout predictions
   potentialScore?: number;
@@ -414,7 +412,6 @@ export type PullRequestDetails = {
   reviewQualityMultiplier?: string; // float returned as string
   labelMultiplier: number;
   label: string | null;
-  codeDensity: number;
   earnedScore: string; // float returned as string
   collateralScore: string; // float returned as string
   additions: number;

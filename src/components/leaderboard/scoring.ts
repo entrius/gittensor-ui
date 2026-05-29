@@ -9,7 +9,6 @@ const DEFAULT_THRESHOLDS: Record<string, number> = Object.fromEntries(
 export interface RepoThresholds {
   minValidMergedPrs: number;
   minCredibility: number;
-  minTokenScoreForBaseScore: number;
   minValidSolvedIssues: number;
   minIssueCredibility: number;
   openPrSlotBase: number;
@@ -35,9 +34,6 @@ export const resolveRepoThresholds = (
       DEFAULT_THRESHOLDS.min_valid_merged_prs,
     minCredibility:
       pickNumber(e, 'min_credibility') ?? DEFAULT_THRESHOLDS.min_credibility,
-    minTokenScoreForBaseScore:
-      pickNumber(e, 'min_token_score_for_base_score') ??
-      DEFAULT_THRESHOLDS.min_token_score_for_base_score,
     minValidSolvedIssues:
       pickNumber(e, 'min_valid_solved_issues') ??
       DEFAULT_THRESHOLDS.min_valid_solved_issues,
