@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   alpha,
   Avatar,
@@ -6,12 +6,17 @@ import {
   Card,
   Chip,
   CircularProgress,
+  IconButton,
+  MenuItem,
+  Select,
   ToggleButton,
   ToggleButtonGroup,
   Tooltip,
   Typography,
 } from '@mui/material';
 import {
+  ArrowDownward as ArrowDownwardIcon,
+  ArrowUpward as ArrowUpwardIcon,
   GridView as GridViewIcon,
   TableRows as TableRowsIcon,
 } from '@mui/icons-material';
@@ -19,6 +24,7 @@ import { useMinerStats } from '../../api';
 import type { MinerRepositoryEvaluation } from '../../api/models/Dashboard';
 import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import { credibilityColor } from '../../utils/format';
+import { type SortOrder } from '../../utils/ExplorerUtils';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { DataTable, type DataTableColumn } from '../common';
 import EmptyStateMessage from './EmptyStateMessage';
@@ -26,6 +32,17 @@ import MinerRepoStandingCard, { repoMinersHref } from './MinerRepoStandingCard';
 
 type ViewMode = 'prs' | 'issues';
 type StandingsView = 'cards' | 'table';
+type StandingsSortKey =
+  | 'repository'
+  | 'eligible'
+  | 'credibility'
+  | 'merged'
+  | 'score'
+  | 'issueEligible'
+  | 'issueCredibility'
+  | 'solved'
+  | 'valid'
+  | 'discoveryScore';
 
 interface MinerRepoStandingsProps {
   githubId: string;
@@ -129,36 +146,113 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
   const { data: minerStats, isLoading } = useMinerStats(githubId);
   const [view, setView] = useState<StandingsView>('cards');
   const isIssueMode = viewMode === 'issues';
+  const [sortField, setSortField] = useState<StandingsSortKey>(
+    isIssueMode ? 'discoveryScore' : 'score',
+  );
+  const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
 
-  const rows = useMemo(() => {
+  useEffect(() => {
+    setSortField(isIssueMode ? 'discoveryScore' : 'score');
+    setSortOrder('desc');
+  }, [isIssueMode]);
+
+  const baseRows = useMemo(() => {
     // Pre-migration placeholder rows carry an empty repo name — drop them.
     const repos = (minerStats?.repositories ?? []).filter(
       (r) => r.repositoryFullName.trim().length > 0,
     );
-    return repos
-      .slice()
-      .sort((a, b) =>
-        isIssueMode
-          ? b.issueDiscoveryScore - a.issueDiscoveryScore
-          : b.totalScore - a.totalScore,
-      );
-  }, [minerStats, isIssueMode]);
+    return repos.slice();
+  }, [minerStats]);
+
+  const rows = useMemo(() => {
+    const sorted = baseRows.slice().sort((a, b) => {
+      let comparison = 0;
+      switch (sortField) {
+        case 'repository':
+          comparison = a.repositoryFullName.localeCompare(b.repositoryFullName);
+          break;
+        case 'eligible':
+          comparison = Number(a.isEligible) - Number(b.isEligible);
+          break;
+        case 'credibility':
+          comparison = a.credibility - b.credibility;
+          break;
+        case 'merged':
+          comparison = a.totalMergedPrs - b.totalMergedPrs;
+          break;
+        case 'score':
+          comparison = a.totalScore - b.totalScore;
+          break;
+        case 'issueEligible':
+          comparison = Number(a.isIssueEligible) - Number(b.isIssueEligible);
+          break;
+        case 'issueCredibility':
+          comparison = a.issueCredibility - b.issueCredibility;
+          break;
+        case 'solved':
+          comparison = a.totalSolvedIssues - b.totalSolvedIssues;
+          break;
+        case 'valid':
+          comparison = a.totalValidSolvedIssues - b.totalValidSolvedIssues;
+          break;
+        case 'discoveryScore':
+          comparison = a.issueDiscoveryScore - b.issueDiscoveryScore;
+          break;
+      }
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+    return sorted;
+  }, [baseRows, sortField, sortOrder]);
+
+  const handleSortChange = (nextField: StandingsSortKey) => {
+    if (nextField === sortField) {
+      setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+      return;
+    }
+    setSortField(nextField);
+    setSortOrder('desc');
+  };
+  const toggleSortOrder = () =>
+    setSortOrder((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+
+  const cardSortOptions = isIssueMode
+    ? [
+        { value: 'discoveryScore' as const, label: 'Discovery score' },
+        { value: 'issueCredibility' as const, label: 'Credibility' },
+        { value: 'solved' as const, label: 'Solved' },
+        { value: 'valid' as const, label: 'Valid' },
+        { value: 'issueEligible' as const, label: 'Eligibility' },
+        { value: 'repository' as const, label: 'Repository' },
+      ]
+    : [
+        { value: 'score' as const, label: 'Repo score' },
+        { value: 'credibility' as const, label: 'Credibility' },
+        { value: 'merged' as const, label: 'Merged PRs' },
+        { value: 'eligible' as const, label: 'Eligibility' },
+        { value: 'repository' as const, label: 'Repository' },
+      ];
 
   const eligibleCount = rows.filter((r) =>
     isIssueMode ? r.isIssueEligible : r.isEligible,
   ).length;
 
-  const prColumns: DataTableColumn<MinerRepositoryEvaluation>[] = [
+  const prColumns: DataTableColumn<
+    MinerRepositoryEvaluation,
+    StandingsSortKey
+  >[] = [
     {
       key: 'repository',
       header: 'Repository',
       width: '40%',
+      sortKey: 'repository',
       renderCell: (r) => <RepositoryCell repository={r.repositoryFullName} />,
     },
     {
       key: 'eligible',
       header: 'PR eligibility',
       width: '18%',
+      sortKey: 'eligible',
       renderCell: (r) => (
         <EligibilityChip eligible={r.isEligible} reason={r.failedReason} />
       ),
@@ -168,6 +262,7 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
       header: 'Credibility',
       width: '14%',
       align: 'right',
+      sortKey: 'credibility',
       renderCell: (r) => <CredibilityValue value={r.credibility} />,
     },
     {
@@ -175,6 +270,7 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
       header: 'Merged PRs',
       width: '14%',
       align: 'right',
+      sortKey: 'merged',
       renderCell: (r) => r.totalMergedPrs,
     },
     {
@@ -182,21 +278,27 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
       header: 'Repo score',
       width: '14%',
       align: 'right',
+      sortKey: 'score',
       renderCell: (r) => r.totalScore.toFixed(2),
     },
   ];
 
-  const issueColumns: DataTableColumn<MinerRepositoryEvaluation>[] = [
+  const issueColumns: DataTableColumn<
+    MinerRepositoryEvaluation,
+    StandingsSortKey
+  >[] = [
     {
       key: 'repository',
       header: 'Repository',
       width: '34%',
+      sortKey: 'repository',
       renderCell: (r) => <RepositoryCell repository={r.repositoryFullName} />,
     },
     {
       key: 'issueEligible',
       header: 'Issue eligibility',
       width: '18%',
+      sortKey: 'issueEligible',
       renderCell: (r) => (
         <EligibilityChip eligible={r.isIssueEligible} reason={r.failedReason} />
       ),
@@ -206,6 +308,7 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
       header: 'Issue credibility',
       width: '16%',
       align: 'right',
+      sortKey: 'issueCredibility',
       renderCell: (r) => <CredibilityValue value={r.issueCredibility} />,
     },
     {
@@ -213,6 +316,7 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
       header: 'Solved',
       width: '10%',
       align: 'right',
+      sortKey: 'solved',
       renderCell: (r) => r.totalSolvedIssues,
     },
     {
@@ -220,6 +324,7 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
       header: 'Valid',
       width: '10%',
       align: 'right',
+      sortKey: 'valid',
       renderCell: (r) => r.totalValidSolvedIssues,
     },
     {
@@ -227,6 +332,7 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
       header: 'Discovery score',
       width: '12%',
       align: 'right',
+      sortKey: 'discoveryScore',
       renderCell: (r) => r.issueDiscoveryScore.toFixed(2),
     },
   ];
@@ -291,42 +397,153 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
               >
                 {eligibleCount}/{rows.length}
               </Box>{' '}
-              {rows.length === 1 ? 'repository' : 'repositories'} · sorted by
-              score
+              {rows.length === 1 ? 'repository' : 'repositories'}
             </Typography>
           )}
         </Box>
 
         {rows.length > 0 && (
-          <ToggleButtonGroup
-            value={view}
-            exclusive
-            onChange={handleViewChange}
-            size="small"
-            aria-label="Standings view"
-            sx={{
-              '& .MuiToggleButton-root': {
-                color: 'text.secondary',
-                borderColor: 'border.light',
-                px: 1.25,
-                py: 0.5,
-                '&.Mui-selected': {
-                  color: 'primary.main',
-                  backgroundColor: (t) => alpha(t.palette.primary.main, 0.12),
-                  '&:hover': {
-                    backgroundColor: (t) => alpha(t.palette.primary.main, 0.18),
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            {view === 'cards' && (
+              <>
+                <Typography
+                  sx={{ fontSize: '0.92rem', color: 'text.secondary' }}
+                >
+                  Sort:
+                </Typography>
+                <Select
+                  size="small"
+                  value={sortField}
+                  onOpen={() => setIsSortMenuOpen(true)}
+                  onClose={() => setIsSortMenuOpen(false)}
+                  onChange={(e) =>
+                    handleSortChange(e.target.value as StandingsSortKey)
+                  }
+                  MenuProps={{
+                    PaperProps: {
+                      sx: (theme) => ({
+                        mt: 0.75,
+                        borderRadius: 2,
+                        border: `1px solid ${theme.palette.border.light}`,
+                        backgroundColor: theme.palette.background.default,
+                        backgroundImage: 'none',
+                        boxShadow: `0 12px 28px ${alpha(theme.palette.common.black, 0.45)}`,
+                        '& .MuiMenuItem-root': {
+                          fontSize: '0.8rem',
+                          minHeight: 36,
+                          color: theme.palette.text.secondary,
+                          '&.Mui-selected': {
+                            color: theme.palette.text.primary,
+                            backgroundColor: alpha(
+                              theme.palette.text.primary,
+                              0.1,
+                            ),
+                            '&:hover': {
+                              backgroundColor: alpha(
+                                theme.palette.text.primary,
+                                0.14,
+                              ),
+                            },
+                          },
+                          '&:hover': {
+                            backgroundColor: theme.palette.surface.light,
+                            color: theme.palette.text.primary,
+                          },
+                        },
+                      }),
+                    },
+                  }}
+                  sx={{
+                    color: 'text.primary',
+                    backgroundColor: isSortMenuOpen
+                      ? (t) => alpha(t.palette.text.primary, 0.06)
+                      : 'background.default',
+                    fontSize: '0.8rem',
+                    height: 32,
+                    minWidth: 156,
+                    borderRadius: 2,
+                    '& .MuiOutlinedInput-notchedOutline': {
+                      borderColor: isSortMenuOpen
+                        ? 'border.medium'
+                        : 'border.light',
+                    },
+                    '&:hover .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'border.medium',
+                    },
+                    '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                      borderColor: 'border.medium',
+                    },
+                    '& .MuiSelect-icon': { color: 'text.secondary' },
+                    '& .MuiSelect-select': {
+                      py: 0.5,
+                      fontWeight: 600,
+                    },
+                  }}
+                >
+                  {cardSortOptions.map((opt) => (
+                    <MenuItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </MenuItem>
+                  ))}
+                </Select>
+                <IconButton
+                  onClick={toggleSortOrder}
+                  size="small"
+                  aria-label={
+                    sortOrder === 'asc' ? 'Sort descending' : 'Sort ascending'
+                  }
+                  sx={{
+                    color: 'text.primary',
+                    border: '1px solid',
+                    borderColor: 'border.light',
+                    borderRadius: 2,
+                    width: 32,
+                    height: 32,
+                    '&:hover': {
+                      backgroundColor: 'surface.light',
+                      borderColor: 'border.medium',
+                    },
+                  }}
+                >
+                  {sortOrder === 'asc' ? (
+                    <ArrowUpwardIcon sx={{ fontSize: '1rem' }} />
+                  ) : (
+                    <ArrowDownwardIcon sx={{ fontSize: '1rem' }} />
+                  )}
+                </IconButton>
+              </>
+            )}
+            <ToggleButtonGroup
+              value={view}
+              exclusive
+              onChange={handleViewChange}
+              size="small"
+              aria-label="Standings view"
+              sx={{
+                '& .MuiToggleButton-root': {
+                  color: 'text.secondary',
+                  borderColor: 'border.light',
+                  px: 1.25,
+                  py: 0.5,
+                  '&.Mui-selected': {
+                    color: 'primary.main',
+                    backgroundColor: (t) => alpha(t.palette.primary.main, 0.12),
+                    '&:hover': {
+                      backgroundColor: (t) =>
+                        alpha(t.palette.primary.main, 0.18),
+                    },
                   },
                 },
-              },
-            }}
-          >
-            <ToggleButton value="cards" aria-label="Card grid">
-              <GridViewIcon sx={{ fontSize: '1.05rem' }} />
-            </ToggleButton>
-            <ToggleButton value="table" aria-label="Table">
-              <TableRowsIcon sx={{ fontSize: '1.05rem' }} />
-            </ToggleButton>
-          </ToggleButtonGroup>
+              }}
+            >
+              <ToggleButton value="cards" aria-label="Card grid">
+                <GridViewIcon sx={{ fontSize: '1.05rem' }} />
+              </ToggleButton>
+              <ToggleButton value="table" aria-label="Table">
+                <TableRowsIcon sx={{ fontSize: '1.05rem' }} />
+              </ToggleButton>
+            </ToggleButtonGroup>
+          </Box>
         )}
       </Box>
 
@@ -358,12 +575,17 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
           ))}
         </Box>
       ) : (
-        <DataTable<MinerRepositoryEvaluation>
+        <DataTable<MinerRepositoryEvaluation, StandingsSortKey>
           columns={isIssueMode ? issueColumns : prColumns}
           rows={rows}
           getRowKey={(r) => r.repositoryFullName}
           getRowHref={(r) => repoMinersHref(r.repositoryFullName)}
           minWidth="640px"
+          sort={{
+            field: sortField,
+            order: sortOrder,
+            onChange: handleSortChange,
+          }}
         />
       )}
     </Card>

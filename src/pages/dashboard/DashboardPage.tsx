@@ -22,6 +22,7 @@ const DashboardFeaturePage: React.FC = () => {
     overview,
     trendLabels,
     trendSeries,
+    contributionCalendar,
     featuredWork,
     isFeaturedWorkLoading,
     featuredContributors,
@@ -75,6 +76,7 @@ const DashboardFeaturePage: React.FC = () => {
               range={range}
               trendLabels={trendLabels}
               trendSeries={trendSeries}
+              contributionCalendar={contributionCalendar}
               sections={overview}
               kpis={kpis}
               isLoading={isLoading}

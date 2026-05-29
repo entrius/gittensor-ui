@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
+import LeaderboardIcon from '@mui/icons-material/Leaderboard';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import BugReportIcon from '@mui/icons-material/BugReport';
 import FolderCopyIcon from '@mui/icons-material/FolderCopy';
@@ -84,6 +85,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
 
   const navItems = [
     { label: 'dashboard', path: '/dashboard', icon: <DashboardIcon /> },
+    { label: 'leaderboard', path: '/leaderboard', icon: <LeaderboardIcon /> },
     { label: 'repositories', path: '/repositories', icon: <FolderCopyIcon /> },
     {
       label: 'watchlist',
