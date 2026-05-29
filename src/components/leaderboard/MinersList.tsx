@@ -127,6 +127,7 @@ export const MinersList: React.FC<MinersListProps> = ({
       header: 'Miner',
       width: '25%',
       cellSx: { pl: 1.5 },
+      sortKey: 'username',
       renderCell: (miner) => <MinerIdentityCell miner={miner} />,
     },
     {

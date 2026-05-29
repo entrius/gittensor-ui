@@ -4,6 +4,7 @@ import type { MinerRepositoryEvaluation } from '../../api/models/Dashboard';
 import { tooltipSlotProps } from '../../theme';
 import { credibilityColor } from '../../utils/format';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
+import { minerRepositoryPath } from '../../utils';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 
 type ViewMode = 'prs' | 'issues';
@@ -19,7 +20,7 @@ const INACTIVE_OPACITY = 0.42;
 
 /** Build the link to a repository's Miners tab. */
 const repoMinersHref = (repositoryFullName: string): string =>
-  `/miners/repository?name=${encodeURIComponent(repositoryFullName)}&tab=miners`;
+  minerRepositoryPath(repositoryFullName, { tab: 'miners' });
 
 /* ── Eligibility marker — dot + word, echoes leaderboard MinerCard ─── */
 const EligibilityLabel: React.FC<{ eligible: boolean }> = ({ eligible }) => (

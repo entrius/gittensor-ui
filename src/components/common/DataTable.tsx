@@ -120,9 +120,10 @@ const tableSx = {
 
 const clickableRowSx: SxProps<Theme> = (theme) => ({
   cursor: 'pointer',
-  transition: 'background-color 0.2s',
+  transition: 'all 0.2s',
+  borderBottom: `1px solid ${theme.palette.surface.light}`,
   '&:hover': {
-    backgroundColor: theme.palette.surface.subtle,
+    backgroundColor: theme.palette.border.subtle,
   },
 });
 

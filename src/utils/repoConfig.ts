@@ -10,6 +10,7 @@
  * to the default below.
  */
 import type { RepositoryConfig } from '../api/models/Dashboard';
+import { pluralize } from './format';
 
 type RepoConfigFormat =
   | 'integer'
@@ -86,6 +87,16 @@ export const SCORING_FIELD_DEFS: RepoConfigFieldDef[] = [
     max: 5,
     format: 'multiplier',
   },
+  {
+    key: 'src_tok_saturation_scale',
+    label: 'Source-token saturation scale',
+    description:
+      'Source token score at which base score reaches ~63% of its max — higher values make the curve rise more slowly.',
+    default: 58,
+    min: 10,
+    max: 500,
+    format: 'score',
+  },
 ];
 
 // --- Time-decay curve (nested scoring.time_decay) ---------------------------
@@ -151,14 +162,6 @@ export const ELIGIBILITY_FIELD_DEFS: RepoConfigFieldDef[] = [
     min: 0,
     max: 1,
     format: 'percent',
-  },
-  {
-    key: 'min_token_score_for_base_score',
-    label: 'Min token score (PR)',
-    description: 'Token score a PR needs to receive any base score.',
-    default: 5,
-    min: 0,
-    format: 'score',
   },
   {
     key: 'excessive_pr_penalty_base_threshold',
@@ -347,9 +350,9 @@ export function formatRepoConfigValue(
     case 'multiplier':
       return `${value}×`;
     case 'days':
-      return `${value} ${value === 1 ? 'day' : 'days'}`;
+      return pluralize(value, 'day');
     case 'hours':
-      return `${value} ${value === 1 ? 'hr' : 'hrs'}`;
+      return pluralize(value, 'hr');
     case 'integer':
     case 'score':
     case 'decimal':

@@ -104,3 +104,14 @@ export const credibilityColor = (cred: number): string => {
 
 export const getLowerText = (value: string | null | undefined): string =>
   (value ?? '').toLowerCase();
+
+/**
+ * `1 issue` / `2 issues`. Pass an explicit `plural` for irregular forms,
+ * e.g. `pluralize(n, 'repository', 'repositories')`.
+ */
+export const pluralize = (
+  count: number,
+  singular: string,
+  plural?: string,
+): string =>
+  count === 1 ? `${count} ${singular}` : `${count} ${plural ?? `${singular}s`}`;

@@ -159,6 +159,9 @@ const CommitLogItem: React.FC<{
 
   const content = (
     <LinkBox
+      // TODO: convert to minerPrPath(entry.repository, entry.pullRequestNumber).
+      // Left inline here to preserve current byte-level URL (repository is not encoded
+      // today, so swapping in the helper would change the URL string); fix in a follow-up.
       href={`/miners/pr?repo=${entry.repository}&number=${entry.pullRequestNumber}`}
       linkState={{ backLabel: 'Back to Dashboard' }}
       ref={innerRef}

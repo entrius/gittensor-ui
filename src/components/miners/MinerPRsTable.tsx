@@ -23,14 +23,12 @@ import {
   ExpandMore as ExpandMoreIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
-import { useSearchParams } from 'react-router-dom';
 import { useMinerPRs, type CommitLog } from '../../api';
 import {
   filterPrs,
   getRepositoryOwnerAvatarSrc,
   getPrStatusCounts,
   isOutsideScoringWindow,
-  paginateItems,
   type PrStatusFilter,
 } from '../../utils';
 import {
@@ -46,7 +44,13 @@ import {
   serializePRKey,
   useWatchlist,
 } from '../../hooks/useWatchlist';
-import TablePagination from '../common/TablePagination';
+import { useDataTableParams } from '../../hooks/useDataTableParams';
+import MinerTableRowsSelect from './MinerTableRowsSelect';
+import TablePagination, {
+  getMinerExplorerPaging,
+  MINER_EXPLORER_PAGE_PARAM,
+  useMinerExplorerPagination,
+} from '../common/TablePagination';
 import { formatDate } from '../../utils/format';
 import { tooltipSlotProps } from '../../theme';
 import MinerPrScoreDetail from './MinerPrScoreDetail';
@@ -59,8 +63,6 @@ type PrSortField =
   | 'date'
   | 'watch';
 type SortDir = 'asc' | 'desc';
-
-const PAGE_SIZE = 20;
 
 const PR_STATUS_FILTERS: readonly PrStatusFilter[] = [
   'all',
@@ -116,7 +118,6 @@ interface MinerPRsTableProps {
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
-  const [searchParams, setSearchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const { isWatched } = useWatchlist('prs');
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
@@ -126,10 +127,39 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(
     () => new Set(),
   );
-  const prStatusParam = searchParams.get('prStatus');
-  const statusFilter: PrStatusFilter = isPrStatusFilter(prStatusParam)
-    ? prStatusParam
-    : 'all';
+
+  const filtersConfig = useMemo(
+    () => ({
+      status: {
+        paramKey: 'prStatus',
+        parse: (raw: string | null): PrStatusFilter =>
+          isPrStatusFilter(raw) ? raw : 'all',
+        serialize: (value: PrStatusFilter): string | null =>
+          value === 'all' ? null : value,
+      },
+    }),
+    [],
+  );
+
+  // Status filter is URL-backed (`prStatus`); pagination is owned by
+  // `useMinerExplorerPagination` below. Wiring `paramKeys.page` to
+  // `MINER_EXPLORER_PAGE_PARAM` lets the hook clear the same page slot
+  // when the filter changes.
+  const { filters, setFilter } = useDataTableParams<
+    PrSortField,
+    { status: PrStatusFilter }
+  >({
+    sortKeys: [],
+    defaultSortKey: 'date',
+    paramKeys: { page: MINER_EXPLORER_PAGE_PARAM },
+    filters: filtersConfig,
+  });
+
+  const statusFilter = filters.status;
+  const setStatusFilter = useCallback(
+    (next: PrStatusFilter) => setFilter('status', next),
+    [setFilter],
+  );
 
   useEffect(() => {
     setSelectedAuthor(null);
@@ -138,70 +168,6 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     setSortDir('desc');
     setExpandedKeys(new Set());
   }, [githubId]);
-
-  const page = parseInt(searchParams.get('prPage') || '0', 10);
-  const setPage = useCallback(
-    (updater: number | ((prev: number) => number)) => {
-      const next = typeof updater === 'function' ? updater(page) : updater;
-      setSearchParams(
-        (prev) => {
-          const p = new URLSearchParams(prev);
-          if (next === 0) p.delete('prPage');
-          else p.set('prPage', String(next));
-          return p;
-        },
-        { replace: true },
-      );
-    },
-    [page, setSearchParams],
-  );
-
-  // Ref lets the callback read the latest searchQuery without closing over
-  // it (which would re-fire the wrapper's debounce effect on every commit).
-  const searchQueryRef = useRef(searchQuery);
-  useEffect(() => {
-    searchQueryRef.current = searchQuery;
-  });
-
-  // Skip when the wrapper fires with the already-committed value (mount + the
-  // [githubId] reset above) so a deep-linked `?prPage=N` survives.
-  const handleDebouncedSearch = useCallback(
-    (next: string) => {
-      if (next === searchQueryRef.current) return;
-      setSearchQuery(next);
-      setPage(0);
-    },
-    [setPage],
-  );
-
-  const setStatusFilter = useCallback(
-    (next: PrStatusFilter) => {
-      setSearchParams(
-        (prev) => {
-          const p = new URLSearchParams(prev);
-          if (next === 'all') p.delete('prStatus');
-          else p.set('prStatus', next);
-          p.delete('prPage');
-          return p;
-        },
-        { replace: true },
-      );
-    },
-    [setSearchParams],
-  );
-
-  const handleSort = useCallback(
-    (field: PrSortField) => {
-      if (sortField === field) {
-        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
-      } else {
-        setSortField(field);
-        setSortDir(DEFAULT_SORT_DIR[field]);
-      }
-      setPage(0);
-    },
-    [sortField, setPage],
-  );
 
   const filteredPRs = useMemo(
     () =>
@@ -247,12 +213,45 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     return sorted;
   }, [filteredPRs, sortField, sortDir, isWatched]);
 
-  const pagedPRs = useMemo(
-    () => paginateItems(sortedPRs, page, PAGE_SIZE),
-    [sortedPRs, page],
+  const { page, setPage, rowsPerPage, setRowsPerPage } =
+    useMinerExplorerPagination({
+      resetKey: githubId,
+      totalItemCount: sortedPRs.length,
+    });
+
+  const paging = useMemo(
+    () => getMinerExplorerPaging(sortedPRs, page, rowsPerPage),
+    [sortedPRs, page, rowsPerPage],
   );
 
-  const totalPages = Math.ceil(sortedPRs.length / PAGE_SIZE);
+  const { slice: pagedPRs, totalPages, safePage, showPageNav } = paging;
+
+  const searchQueryRef = useRef(searchQuery);
+  useEffect(() => {
+    searchQueryRef.current = searchQuery;
+  });
+
+  const handleDebouncedSearch = useCallback(
+    (next: string) => {
+      if (next === searchQueryRef.current) return;
+      setSearchQuery(next);
+      setPage(0);
+    },
+    [setPage],
+  );
+
+  const handleSort = useCallback(
+    (field: PrSortField) => {
+      if (sortField === field) {
+        setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+      } else {
+        setSortField(field);
+        setSortDir(DEFAULT_SORT_DIR[field]);
+      }
+      setPage(0);
+    },
+    [sortField, setPage],
+  );
 
   // Count over the search + author scope (excluding the active status filter)
   // so each button reflects what the user would see if they clicked it.
@@ -611,52 +610,70 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
         </Box>
       </Box>
 
-      <DebouncedSearchInput
-        initialDraft={searchQuery}
-        onDebouncedChange={handleDebouncedSearch}
+      <Box
+        sx={{
+          mt: 2,
+          display: 'flex',
+          flexDirection: 'row',
+          alignItems: 'center',
+          flexWrap: 'nowrap',
+          gap: 2,
+          width: '100%',
+          minWidth: 0,
+        }}
       >
-        {({ draftValue, setDraftValue }) => (
-          <TextField
-            size="small"
-            placeholder="Search by title, repo, or PR number..."
-            value={draftValue}
-            onChange={(e) => setDraftValue(e.target.value)}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon
-                    sx={{
-                      color: (t) => alpha(t.palette.text.primary, 0.3),
-                      fontSize: '1rem',
-                    }}
+        <MinerTableRowsSelect
+          value={rowsPerPage}
+          onChange={setRowsPerPage}
+          id="miner-prs-rows"
+        />
+        <DebouncedSearchInput
+          initialDraft={searchQuery}
+          onDebouncedChange={handleDebouncedSearch}
+        >
+          {({ draftValue, setDraftValue }) => (
+            <TextField
+              size="small"
+              placeholder="Search by title, repo, or PR number..."
+              value={draftValue}
+              onChange={(e) => setDraftValue(e.target.value)}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <SearchIcon
+                      sx={{
+                        color: (t) => alpha(t.palette.text.primary, 0.3),
+                        fontSize: '1rem',
+                      }}
+                    />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <ClearSearchAdornment
+                    visible={Boolean(draftValue)}
+                    onClear={() => setDraftValue('')}
                   />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <ClearSearchAdornment
-                  visible={Boolean(draftValue)}
-                  onClear={() => setDraftValue('')}
-                />
-              ),
-            }}
-            sx={{
-              mt: 2,
-              width: { xs: '100%', sm: 'auto' },
-              maxWidth: { xs: '100%', sm: 400 },
-              minWidth: { xs: 0, sm: 350 },
-              '& .MuiOutlinedInput-root': {
-                fontSize: '0.8rem',
-                color: 'text.primary',
-                backgroundColor: 'surface.subtle',
-                borderRadius: 2,
-                '& fieldset': { borderColor: 'border.light' },
-                '&:hover fieldset': { borderColor: 'border.medium' },
-                '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-              },
-            }}
-          />
-        )}
-      </DebouncedSearchInput>
+                ),
+              }}
+              sx={{
+                flex: 1,
+                minWidth: 0,
+                width: 'auto',
+                maxWidth: { xs: '100%', sm: 480 },
+                '& .MuiOutlinedInput-root': {
+                  fontSize: '0.8rem',
+                  color: 'text.primary',
+                  backgroundColor: 'surface.subtle',
+                  borderRadius: 2,
+                  '& fieldset': { borderColor: 'border.light' },
+                  '&:hover fieldset': { borderColor: 'border.medium' },
+                  '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+                },
+              }}
+            />
+          )}
+        </DebouncedSearchInput>
+      </Box>
     </Box>
   );
 
@@ -719,11 +736,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           onChange: handleSort,
         }}
         pagination={
-          <TablePagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-          />
+          showPageNav ? (
+            <TablePagination
+              page={safePage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          ) : null
         }
       />
     </Card>

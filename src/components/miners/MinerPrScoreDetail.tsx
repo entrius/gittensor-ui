@@ -13,10 +13,12 @@ import {
   OpenInNew as OpenInNewIcon,
 } from '@mui/icons-material';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
+import { pluralize } from '../../utils/format';
 import { usePullRequestDetails, type CommitLog } from '../../api';
 import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import { parseNumber } from '../../utils/ExplorerUtils';
 import { buildMergedPillDefs } from '../../utils/multiplierDefs';
+import { minerPrPath } from '../../utils';
 
 const tipProps = {
   ...tooltipSlotProps,
@@ -116,7 +118,7 @@ const MinerPrScoreDetail: React.FC<MinerPrScoreDetailProps> = ({
   expanded,
 }) => {
   const prLinkProps = useLinkBehavior<HTMLAnchorElement>(
-    `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+    minerPrPath(pr.repository, pr.pullRequestNumber),
   );
 
   const isMerged = !!pr.mergedAt;
@@ -201,7 +203,7 @@ const MinerPrScoreDetail: React.FC<MinerPrScoreDetailProps> = ({
         {[
           baseScore > 0 && `base ${baseScore.toFixed(2)}`,
           `+${pr.additions} / -${pr.deletions}`,
-          `${pr.commitCount} commit${pr.commitCount !== 1 ? 's' : ''}`,
+          pluralize(pr.commitCount, 'commit'),
           pr.tokenScore != null &&
             `tokens ${parseNumber(pr.tokenScore).toFixed(2)}`,
           pr.totalNodesScored != null &&
