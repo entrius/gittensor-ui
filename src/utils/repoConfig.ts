@@ -86,6 +86,16 @@ export const SCORING_FIELD_DEFS: RepoConfigFieldDef[] = [
     max: 5,
     format: 'multiplier',
   },
+  {
+    key: 'src_tok_saturation_scale',
+    label: 'Source-token saturation scale',
+    description:
+      'Source token score at which base score reaches ~63% of its max — higher values make the curve rise more slowly.',
+    default: 58,
+    min: 10,
+    max: 500,
+    format: 'score',
+  },
 ];
 
 // --- Time-decay curve (nested scoring.time_decay) ---------------------------

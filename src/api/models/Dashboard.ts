@@ -49,6 +49,7 @@ export type RepoScoringConfig = {
   review_penalty_rate?: number;
   standard_issue_multiplier?: number;
   maintainer_issue_multiplier?: number;
+  src_tok_saturation_scale?: number;
   time_decay?: RepoTimeDecayConfig;
 };
 
