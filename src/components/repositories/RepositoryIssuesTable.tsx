@@ -23,7 +23,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
-import { formatTokenAmount, getLowerText, type SortOrder } from '../../utils';
+import { formatTokenAmount, getLowerText } from '../../utils';
 import { formatDate } from '../../utils/format';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import {
@@ -33,6 +33,7 @@ import {
 import { STATUS_COLORS, TEXT_OPACITY, scrollbarSx } from '../../theme';
 import FilterButton from '../FilterButton';
 import TablePagination from '../../components/common/TablePagination';
+import { useDataTableParams } from '../../hooks/useDataTableParams';
 import { TableSearchFilter } from './TableSearchFilter';
 
 interface RepositoryIssuesTableProps {
@@ -46,6 +47,15 @@ type SortKey =
   | 'linkedPr'
   | 'created'
   | 'closed';
+
+const ISSUE_SORT_KEYS: readonly SortKey[] = [
+  'number',
+  'title',
+  'status',
+  'linkedPr',
+  'created',
+  'closed',
+];
 
 type RepoIssuesFilter = 'all' | 'open' | 'closed';
 
@@ -83,15 +93,48 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     'all',
     isRepoIssuesFilter,
   );
-  const [sortKey, setSortKey] = useState<SortKey>('number');
-  const [sortDirection, setSortDirection] = useState<SortOrder>('desc');
   const [searchQuery, setSearchQuery] = useState('');
 
+  const {
+    sortField: sortKey,
+    sortOrder: sortDirection,
+    setSort: handleSort,
+    page,
+    setPage,
+  } = useDataTableParams<SortKey>({
+    sortKeys: ISSUE_SORT_KEYS,
+    defaultSortKey: 'number',
+    // String columns (title, status) feel natural ascending; others desc.
+    defaultOrderOverrides: { title: 'asc', status: 'asc' },
+    paramKeys: { sort: 'issueSort', order: 'issueDir', page: 'issuePage' },
+  });
+
+  // Search resets when navigating between repositories so the input does
+  // not leak across detail pages.
   useEffect(() => {
     setSearchQuery('');
   }, [repositoryFullName]);
 
-  const [page, setPage] = useState(0);
+  // Filter and search are local; the hook handles page reset for URL-backed
+  // sort changes. Reset page here when the local status or search filter
+  // changes, gated on actual value change to avoid clobbering deep links.
+  const handleFilterChange = useCallback(
+    (next: RepoIssuesFilter) => {
+      if (next === filter) return;
+      setFilter(next);
+      setPage(0);
+    },
+    [filter, setFilter, setPage],
+  );
+
+  const handleSearchChange = useCallback(
+    (next: string) => {
+      if (next === searchQuery) return;
+      setSearchQuery(next);
+      setPage(0);
+    },
+    [searchQuery, setPage],
+  );
 
   const counts = useMemo(() => {
     if (!issues) return { total: 0, open: 0, closed: 0 };
@@ -161,11 +204,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     return decorated.map((item) => item.issue);
   }, [searchFilteredIssues, sortKey, sortDirection]);
 
-  // Reset to the first page whenever the result set changes underneath us.
-  useEffect(() => {
-    setPage(0);
-  }, [filter, sortKey, sortDirection, searchQuery]);
-
   const totalPages = Math.ceil(sortedIssues.length / ISSUE_PAGE_SIZE);
   const pagedIssues = useMemo(
     () =>
@@ -174,18 +212,6 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
         page * ISSUE_PAGE_SIZE + ISSUE_PAGE_SIZE,
       ),
     [sortedIssues, page],
-  );
-
-  const handleSort = useCallback(
-    (key: SortKey) => {
-      if (sortKey === key) {
-        setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
-        return;
-      }
-      setSortKey(key);
-      setSortDirection(key === 'title' || key === 'status' ? 'asc' : 'desc');
-    },
-    [sortKey],
   );
 
   const handleRowClick = useCallback((issue: RepositoryIssue) => {
@@ -343,11 +369,12 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       alignItems="center"
       flexWrap="wrap"
       useFlexGap
+      sx={{ rowGap: 1 }}
     >
       <FilterButton
         label="All"
         isActive={filter === 'all'}
-        onClick={() => setFilter('all')}
+        onClick={() => handleFilterChange('all')}
         count={counts.total}
         color={STATUS_COLORS.open}
         activeTextColor="text.primary"
@@ -355,7 +382,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       <FilterButton
         label="Open"
         isActive={filter === 'open'}
-        onClick={() => setFilter('open')}
+        onClick={() => handleFilterChange('open')}
         count={counts.open}
         color={STATUS_COLORS.open}
         activeTextColor="text.primary"
@@ -363,14 +390,14 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       <FilterButton
         label="Closed"
         isActive={filter === 'closed'}
-        onClick={() => setFilter('closed')}
+        onClick={() => handleFilterChange('closed')}
         count={counts.closed}
         color={STATUS_COLORS.merged}
         activeTextColor="text.primary"
       />
       <TableSearchFilter
         value={searchQuery}
-        onChange={setSearchQuery}
+        onChange={handleSearchChange}
         popoverTitle="Search issues"
         placeholder="Search (#, title, author)…"
       />
