@@ -24,7 +24,12 @@ import {
   ExpandMore as ExpandMoreIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
-import { useMinerPRs, type CommitLog } from '../../api';
+import {
+  useMinerPRs,
+  useReposAndWeights,
+  type CommitLog,
+  type RepositoryConfig,
+} from '../../api';
 import {
   filterPrs,
   getRepositoryOwnerAvatarSrc,
@@ -55,6 +60,11 @@ import TablePagination, {
 import { formatDate } from '../../utils/format';
 import { tooltipSlotProps } from '../../theme';
 import MinerPrScoreDetail from './MinerPrScoreDetail';
+import PRTimeDecayChart from '../prs/PRTimeDecayChart';
+import {
+  buildDecayProjection,
+  resolveDecayParams,
+} from '../prs/prTimeDecayModel';
 
 type PrSortField =
   | 'number'
@@ -120,7 +130,35 @@ interface MinerPRsTableProps {
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
   const { data: prs, isLoading } = useMinerPRs(githubId);
+  const { data: repos } = useReposAndWeights();
   const { isWatched } = useWatchlist('prs');
+
+  // Per-repo config drives each PR's time-decay curve (resolved client-side, no
+  // extra fetch) so the table can show how much a merged PR has decayed.
+  const configByRepo = useMemo(() => {
+    const map = new Map<string, RepositoryConfig>();
+    (repos ?? []).forEach((r) => map.set(r.fullName.toLowerCase(), r.config));
+    return map;
+  }, [repos]);
+  const decayMultiplierFor = useCallback(
+    (pr: CommitLog): number | null => {
+      if (pr.prState !== 'MERGED' || !pr.mergedAt) return null;
+      const params = resolveDecayParams(
+        null,
+        configByRepo.get((pr.repository || '').toLowerCase()),
+      );
+      return buildDecayProjection(
+        {
+          mergedAt: pr.mergedAt,
+          prState: pr.prState,
+          timeDecayMultiplier: pr.timeDecayMultiplier,
+          earnedScore: pr.score,
+        },
+        params,
+      ).chartNowMultiplier;
+    },
+    [configByRepo],
+  );
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<PrSortField>('date');
@@ -467,6 +505,31 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 Collateral
               </Typography>
             )}
+            {pr.mergedAt &&
+              (() => {
+                const mult = decayMultiplierFor(pr);
+                if (mult == null) return null;
+                const color =
+                  mult >= 0.7
+                    ? theme.palette.status.success
+                    : mult >= 0.4
+                      ? theme.palette.status.warning
+                      : theme.palette.status.warningOrange;
+                return (
+                  <Tooltip
+                    title={`Time decay: this merged PR is currently worth ${(mult * 100).toFixed(0)}% of its peak score. Value falls as it ages.`}
+                    arrow
+                    placement="top"
+                    slotProps={tooltipSlotProps}
+                  >
+                    <Typography
+                      sx={{ fontSize: '0.6rem', color, cursor: 'help' }}
+                    >
+                      decay {mult.toFixed(2)}×
+                    </Typography>
+                  </Tooltip>
+                );
+              })()}
           </Box>
         );
       },
@@ -722,6 +785,17 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           const open = expandedKeys.has(prRowKey(pr));
           return (
             <Collapse in={open} timeout="auto" unmountOnExit>
+              {pr.prState === 'MERGED' && pr.mergedAt && (
+                <Box sx={{ px: 2, pt: 1.75 }}>
+                  <PRTimeDecayChart
+                    repository={pr.repository}
+                    mergedAt={pr.mergedAt}
+                    prState={pr.prState}
+                    timeDecayMultiplier={pr.timeDecayMultiplier}
+                    earnedScore={pr.score}
+                  />
+                </Box>
+              )}
               <MinerPrScoreDetail pr={pr} expanded={open} />
             </Collapse>
           );

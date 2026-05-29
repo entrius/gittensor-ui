@@ -5,4 +5,5 @@ export { default as MinerOpenPrRisk } from './MinerOpenPrRisk';
 export { default as MinerPRsTable } from './MinerPRsTable';
 export { default as MinerProfileHero } from './MinerProfileHero';
 export { default as MinerRepositoryPanel } from './MinerRepositoryPanel';
+export { default as MinerScoreLevers } from './MinerScoreLevers';
 export { default as MinerStatBand } from './MinerStatBand';

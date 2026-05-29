@@ -40,6 +40,9 @@ const COPY_FEEDBACK_MS = 1500;
 const HOTKEY_VISIBLE_EDGE_CHARS = 6;
 const MS_PER_DAY = 86_400_000;
 
+/** Meta chips are border-only — the page keeps a single background colour. */
+const INFO_CHIP_SX = { backgroundColor: 'transparent' } as const;
+
 const startOfUtcDay = (ms: number): number => {
   const d = new Date(ms);
   d.setUTCHours(0, 0, 0, 0);
@@ -125,7 +128,7 @@ const CopyableHotkey: React.FC<{ hotkey: string }> = ({ hotkey }) => {
           borderRadius: 1,
           border: '1px solid',
           borderColor: 'border.light',
-          backgroundColor: 'surface.subtle',
+          backgroundColor: 'transparent',
           fontSize: '0.66rem',
           lineHeight: 1,
           color: (t) =>
@@ -176,8 +179,8 @@ const EligibilityPill: React.FC<{
         py: 0.5,
         borderRadius: 1.5,
         border: '1px solid',
-        borderColor: active ? alpha(color, 0.35) : 'border.light',
-        backgroundColor: active ? alpha(color, 0.1) : 'surface.subtle',
+        borderColor: active ? alpha(color, 0.45) : 'border.light',
+        backgroundColor: 'transparent',
       }}
     >
       <Box
@@ -263,7 +266,7 @@ const MinerProfileHero: React.FC<MinerProfileHeroProps> = ({ githubId }) => {
   }
 
   return (
-    <Card sx={{ p: { xs: 2.5, md: 3 } }} elevation={0}>
+    <Card sx={{ p: { xs: 2, md: 2.5 } }} elevation={0}>
       <Box
         sx={{
           display: 'flex',
@@ -339,7 +342,7 @@ const MinerProfileHero: React.FC<MinerProfileHeroProps> = ({ githubId }) => {
                 label={`UID ${minerStats.uid}`}
                 size="small"
                 variant="info"
-                sx={{ height: 20, fontSize: '0.68rem' }}
+                sx={{ ...INFO_CHIP_SX, height: 20, fontSize: '0.68rem' }}
               />
               <CopyableHotkey hotkey={minerStats.hotkey || ''} />
             </Box>
@@ -425,6 +428,7 @@ const MinerProfileHero: React.FC<MinerProfileHeroProps> = ({ githubId }) => {
                 icon={<FollowersIcon />}
                 label={`${(githubData.followers ?? 0).toLocaleString()} followers`}
                 size="small"
+                sx={INFO_CHIP_SX}
               />
               {githubData.company && (
                 <Chip
@@ -432,6 +436,7 @@ const MinerProfileHero: React.FC<MinerProfileHeroProps> = ({ githubId }) => {
                   icon={<CompanyIcon />}
                   label={githubData.company}
                   size="small"
+                  sx={INFO_CHIP_SX}
                 />
               )}
               {githubData.location && (
@@ -440,6 +445,7 @@ const MinerProfileHero: React.FC<MinerProfileHeroProps> = ({ githubId }) => {
                   icon={<LocationIcon />}
                   label={githubData.location}
                   size="small"
+                  sx={INFO_CHIP_SX}
                 />
               )}
               {githubData.blog && (
@@ -457,6 +463,7 @@ const MinerProfileHero: React.FC<MinerProfileHeroProps> = ({ githubId }) => {
                   label="Website"
                   clickable
                   size="small"
+                  sx={INFO_CHIP_SX}
                 />
               )}
             </Stack>

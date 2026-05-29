@@ -125,8 +125,8 @@ const StatusChip: React.FC<{ unlocked: boolean }> = ({ unlocked }) => {
         px: 0.9,
         py: 0.35,
         borderRadius: 1,
-        border: `1px solid ${alpha(color, 0.35)}`,
-        backgroundColor: alpha(color, 0.1),
+        border: `1px solid ${alpha(color, 0.45)}`,
+        backgroundColor: 'transparent',
         flexShrink: 0,
       }}
     >
@@ -149,6 +149,8 @@ interface MinerRepositoryCardProps {
   repo: MinerRepositoryEvaluation;
   unlock: RepoUnlock;
   viewMode: ViewMode;
+  /** Repo's emission share (payout weight) of the OSS reward pool, 0–1. */
+  pays?: number;
 }
 
 /**
@@ -161,6 +163,7 @@ const MinerRepositoryCard: React.FC<MinerRepositoryCardProps> = ({
   repo,
   unlock,
   viewMode,
+  pays = 0,
 }) => {
   const isIssue = viewMode === 'issues';
   const linkProps = useLinkBehavior<HTMLAnchorElement>(
@@ -231,17 +234,17 @@ const MinerRepositoryCard: React.FC<MinerRepositoryCardProps> = ({
         sx={{
           display: 'flex',
           alignItems: 'center',
-          gap: 1.25,
-          px: 2,
-          py: 1.5,
+          gap: 1,
+          px: 1.75,
+          py: 1.1,
         }}
       >
         <Avatar
           src={getRepositoryOwnerAvatarSrc(owner)}
           alt={owner}
           sx={{
-            width: 34,
-            height: 34,
+            width: 28,
+            height: 28,
             border: '1px solid',
             borderColor: 'border.light',
             filter: unlock.unlocked ? 'none' : 'grayscale(60%)',
@@ -287,13 +290,12 @@ const MinerRepositoryCard: React.FC<MinerRepositoryCardProps> = ({
           alignItems: 'center',
           borderTop: `1px solid ${theme.palette.border.light}`,
           borderBottom: `1px solid ${theme.palette.border.light}`,
-          backgroundColor: alpha(theme.palette.text.primary, 0.015),
         })}
       >
-        <Box sx={{ px: 2, py: 1.25, minWidth: 0 }}>
+        <Box sx={{ px: 1.75, py: 0.9, minWidth: 0 }}>
           <Typography
             sx={{
-              fontSize: '0.58rem',
+              fontSize: '0.56rem',
               color: 'text.secondary',
               textTransform: 'uppercase',
               letterSpacing: '0.12em',
@@ -304,7 +306,7 @@ const MinerRepositoryCard: React.FC<MinerRepositoryCardProps> = ({
           <Typography
             sx={{
               fontFamily: FONT_MONO,
-              fontSize: '1.4rem',
+              fontSize: '1.2rem',
               fontWeight: 700,
               lineHeight: 1.1,
               fontFeatureSettings: TABULAR,
@@ -314,19 +316,26 @@ const MinerRepositoryCard: React.FC<MinerRepositoryCardProps> = ({
           >
             {score.toFixed(2)}
           </Typography>
+          {pays > 0 && (
+            <Typography
+              sx={{ fontSize: '0.58rem', color: 'text.tertiary', mt: 0.3 }}
+            >
+              pays {(pays * 100).toFixed(pays >= 0.1 ? 1 : 2)}% of pool
+            </Typography>
+          )}
         </Box>
         <Box
           sx={(theme) => ({
-            px: 2,
-            py: 1.25,
+            px: 1.75,
+            py: 0.9,
             borderLeft: `1px solid ${theme.palette.border.light}`,
             textAlign: 'right',
-            minWidth: 96,
+            minWidth: 92,
           })}
         >
           <Typography
             sx={{
-              fontSize: '0.58rem',
+              fontSize: '0.56rem',
               color: 'text.secondary',
               textTransform: 'uppercase',
               letterSpacing: '0.12em',
@@ -337,7 +346,7 @@ const MinerRepositoryCard: React.FC<MinerRepositoryCardProps> = ({
           <Typography
             sx={{
               fontFamily: FONT_MONO,
-              fontSize: '1.05rem',
+              fontSize: '0.95rem',
               fontWeight: 700,
               fontFeatureSettings: TABULAR,
               color: credibilityColor(credibility),
@@ -351,16 +360,16 @@ const MinerRepositoryCard: React.FC<MinerRepositoryCardProps> = ({
       {/* Unlock progress */}
       <Box
         sx={{
-          px: 2,
-          py: 1.5,
+          px: 1.75,
+          py: 1.1,
           display: 'flex',
           flexDirection: 'column',
-          gap: 1.25,
+          gap: 0.85,
         }}
       >
         <Typography
           sx={{
-            fontSize: '0.58rem',
+            fontSize: '0.56rem',
             color: 'text.secondary',
             textTransform: 'uppercase',
             letterSpacing: '0.12em',

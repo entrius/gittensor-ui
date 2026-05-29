@@ -12,6 +12,7 @@ import {
   MinerPRsTable,
   MinerProfileHero,
   MinerRepositoryPanel,
+  MinerScoreLevers,
   MinerStatBand,
   SEO,
 } from '../components';
@@ -100,7 +101,7 @@ const MinerDetailsPage: React.FC = () => {
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 2.5,
+            gap: 2,
             width: '100%',
             maxWidth: 1320,
             px: { xs: 2, md: 0 },
@@ -130,7 +131,9 @@ const MinerDetailsPage: React.FC = () => {
                 sx={{
                   display: 'flex',
                   gap: 0.5,
-                  backgroundColor: 'surface.subtle',
+                  backgroundColor: 'transparent',
+                  border: '1px solid',
+                  borderColor: 'border.light',
                   p: 0.5,
                   borderRadius: 2,
                 }}
@@ -152,15 +155,14 @@ const MinerDetailsPage: React.FC = () => {
                         py: 0.75,
                         borderRadius: 1.5,
                         cursor: 'pointer',
-                        backgroundColor: isActive
-                          ? 'surface.elevated'
-                          : 'transparent',
+                        backgroundColor: 'transparent',
+                        border: '1px solid',
+                        borderColor: isActive ? 'border.medium' : 'transparent',
                         color: isActive
-                          ? 'text.primary'
+                          ? 'primary.main'
                           : (t) => alpha(t.palette.text.primary, 0.5),
                         transition: 'all 0.2s',
                         '&:hover': {
-                          backgroundColor: 'surface.elevated',
                           color: 'text.primary',
                         },
                       }}
@@ -194,6 +196,9 @@ const MinerDetailsPage: React.FC = () => {
 
           {/* ── Headline performance band ────────────────────────── */}
           <MinerStatBand githubId={githubId} />
+
+          {/* ── Earning levers — why your score is what it is ────── */}
+          <MinerScoreLevers githubId={githubId} />
 
           {/* ── Open PR risk (renders only when open PRs > 0) ────── */}
           <MinerOpenPrRisk githubId={githubId} />

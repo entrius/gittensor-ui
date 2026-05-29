@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { alpha, Box, Card, Tooltip, Typography } from '@mui/material';
+import { Box, Card, Tooltip, Typography } from '@mui/material';
 import { WarningAmberOutlined as WarningIcon } from '@mui/icons-material';
 import {
   useMinerStats,
@@ -111,75 +111,74 @@ const MinerOpenPrRisk: React.FC<MinerOpenPrRiskProps> = ({ githubId }) => {
   const hasBreach = rows.some((r) => r.level === 'over' || r.level === 'at');
 
   return (
-    <Card sx={{ p: { xs: 2, md: 2.5 } }} elevation={0}>
+    <Card sx={{ p: { xs: 1.5, md: 2 } }} elevation={0}>
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
-          justifyContent: 'space-between',
-          gap: 1.5,
+          gap: 1,
           flexWrap: 'wrap',
-          mb: 1.75,
+          mb: 1.25,
         }}
       >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <WarningIcon
-            sx={{
-              fontSize: '1.1rem',
-              color: hasBreach ? STATUS_COLORS.warningOrange : 'text.secondary',
-            }}
-          />
-          <Typography variant="sectionTitle">Open PR risk</Typography>
-        </Box>
-        <Box sx={{ display: 'flex', gap: 2.5, flexWrap: 'wrap' }}>
-          <Box sx={{ textAlign: 'right' }}>
-            <Typography
-              sx={{ fontSize: '1.05rem', fontWeight: 700, lineHeight: 1 }}
+        <WarningIcon
+          sx={{
+            fontSize: '1rem',
+            color: hasBreach ? STATUS_COLORS.warningOrange : 'text.secondary',
+          }}
+        />
+        <Typography variant="sectionTitle">Open PR risk</Typography>
+        <Box
+          sx={{
+            ml: 'auto',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            fontSize: '0.72rem',
+            color: 'text.secondary',
+          }}
+        >
+          <Typography component="span" sx={{ fontSize: 'inherit' }}>
+            <Box
+              component="span"
+              sx={{ color: 'text.primary', fontWeight: 700 }}
             >
               {totalOpen}
-            </Typography>
-            <Typography
-              sx={{
-                fontSize: '0.66rem',
-                color: 'text.tertiary',
-                textTransform: 'uppercase',
-              }}
-            >
-              open PRs
-            </Typography>
-          </Box>
+            </Box>{' '}
+            open
+          </Typography>
+          <Box
+            component="span"
+            sx={{
+              width: 3,
+              height: 3,
+              borderRadius: '50%',
+              bgcolor: 'text.tertiary',
+            }}
+          />
           <Tooltip
-            title="Score withheld as collateral while these PRs stay open. Released as they merge (or forfeited if they close unmerged)."
+            title="Score withheld as collateral while these PRs stay open. Released as they merge, forfeited if they close unmerged."
             arrow
             placement="top"
             slotProps={tooltipSlotProps}
           >
-            <Box sx={{ textAlign: 'right', cursor: 'help' }}>
-              <Typography
-                sx={{
-                  fontSize: '1.05rem',
-                  fontWeight: 700,
-                  lineHeight: 1,
-                  color: STATUS_COLORS.warningOrange,
-                }}
+            <Typography
+              component="span"
+              sx={{ fontSize: 'inherit', cursor: 'help' }}
+            >
+              <Box
+                component="span"
+                sx={{ color: STATUS_COLORS.warningOrange, fontWeight: 700 }}
               >
                 {totalCollateral.toFixed(2)}
-              </Typography>
-              <Typography
-                sx={{
-                  fontSize: '0.66rem',
-                  color: 'text.tertiary',
-                  textTransform: 'uppercase',
-                }}
-              >
-                collateral held
-              </Typography>
-            </Box>
+              </Box>{' '}
+              collateral
+            </Typography>
           </Tooltip>
         </Box>
       </Box>
 
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
         {rows.map((r) => {
           const meta = RISK_META[r.level];
           const fillPct = Math.min(
@@ -189,65 +188,59 @@ const MinerOpenPrRisk: React.FC<MinerOpenPrRiskProps> = ({ githubId }) => {
           return (
             <Box
               key={r.repo}
-              sx={{
-                display: 'grid',
-                gridTemplateColumns: {
-                  xs: '1fr auto',
-                  sm: 'minmax(0,1fr) 120px auto',
-                },
-                alignItems: 'center',
-                gap: 1.5,
-              }}
+              sx={{ display: 'flex', alignItems: 'center', gap: 1.25 }}
             >
+              <Box
+                sx={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: '50%',
+                  backgroundColor: meta.color,
+                  flexShrink: 0,
+                }}
+              />
               <Typography
                 title={r.repo}
                 sx={{
-                  fontSize: '0.8rem',
+                  fontSize: '0.78rem',
                   overflow: 'hidden',
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
+                  flex: '0 1 auto',
                   minWidth: 0,
                 }}
               >
                 {r.repo}
               </Typography>
-
               <Box
                 sx={{
-                  display: { xs: 'none', sm: 'flex' },
-                  alignItems: 'center',
-                  gap: 1,
+                  width: 64,
+                  height: 4,
+                  borderRadius: 999,
+                  backgroundColor: 'border.light',
+                  overflow: 'hidden',
+                  flexShrink: 0,
                 }}
               >
                 <Box
                   sx={{
-                    flex: 1,
-                    height: 5,
+                    width: `${fillPct}%`,
+                    height: '100%',
+                    backgroundColor: meta.color,
                     borderRadius: 999,
-                    backgroundColor: 'border.light',
-                    overflow: 'hidden',
                   }}
-                >
-                  <Box
-                    sx={{
-                      width: `${fillPct}%`,
-                      height: '100%',
-                      backgroundColor: meta.color,
-                      borderRadius: 999,
-                    }}
-                  />
-                </Box>
-                <Typography
-                  sx={{
-                    fontSize: '0.72rem',
-                    color: 'text.secondary',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  {r.open}/{r.allowance}
-                </Typography>
+                />
               </Box>
-
+              <Typography
+                sx={{
+                  fontSize: '0.7rem',
+                  color: 'text.secondary',
+                  whiteSpace: 'nowrap',
+                  flexShrink: 0,
+                }}
+              >
+                {r.open}/{r.allowance}
+              </Typography>
               <Tooltip
                 title={
                   r.level === 'over'
@@ -258,38 +251,18 @@ const MinerOpenPrRisk: React.FC<MinerOpenPrRiskProps> = ({ githubId }) => {
                 placement="top"
                 slotProps={tooltipSlotProps}
               >
-                <Box
+                <Typography
                   sx={{
-                    justifySelf: 'end',
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    px: 0.9,
-                    py: 0.3,
-                    borderRadius: 1,
-                    border: `1px solid ${alpha(meta.color, 0.35)}`,
-                    backgroundColor: alpha(meta.color, 0.1),
+                    fontSize: '0.66rem',
+                    fontWeight: 600,
+                    color: meta.color,
                     whiteSpace: 'nowrap',
+                    cursor: 'help',
+                    flexShrink: 0,
                   }}
                 >
-                  <Box
-                    sx={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      backgroundColor: meta.color,
-                    }}
-                  />
-                  <Typography
-                    sx={{
-                      fontSize: '0.68rem',
-                      fontWeight: 600,
-                      color: meta.color,
-                    }}
-                  >
-                    {meta.label}
-                  </Typography>
-                </Box>
+                  {meta.label}
+                </Typography>
               </Tooltip>
             </Box>
           );

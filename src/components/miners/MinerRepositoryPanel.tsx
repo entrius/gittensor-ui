@@ -12,6 +12,7 @@ import {
   TextField,
   ToggleButton,
   ToggleButtonGroup,
+  Tooltip,
   Typography,
 } from '@mui/material';
 import {
@@ -28,9 +29,10 @@ import {
   type MinerRepositoryEvaluation,
   type RepositoryConfig,
 } from '../../api';
-import { STATUS_COLORS } from '../../theme';
+import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import { credibilityColor } from '../../utils/format';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
+import { buildRepoWeightsMap } from '../../utils/ExplorerUtils';
 import {
   computeRepoUnlock,
   countValidMergedPrsByRepo,
@@ -49,6 +51,7 @@ type StandingsView = 'cards' | 'table';
 type SortKey =
   | 'progress'
   | 'status'
+  | 'pays'
   | 'score'
   | 'credibility'
   | 'count'
@@ -66,16 +69,37 @@ interface RepoRow {
   score: number;
   credibility: number;
   count: number;
+  /** Repo's emission share (payout weight) of the OSS reward pool, 0–1. */
+  pays: number;
 }
 
 const SORT_OPTIONS: { value: SortKey; label: string }[] = [
   { value: 'progress', label: 'Closest to unlock' },
+  { value: 'pays', label: 'Pays most' },
   { value: 'status', label: 'Status' },
   { value: 'score', label: 'Score' },
   { value: 'credibility', label: 'Credibility' },
   { value: 'count', label: 'Activity' },
   { value: 'repository', label: 'Repository' },
 ];
+
+/** Payout weight as a percentage of the OSS reward pool. */
+const PaysCell: React.FC<{ pays: number }> = ({ pays }) =>
+  pays > 0 ? (
+    <Typography
+      component="span"
+      sx={{ fontSize: '0.83rem', fontWeight: 600, color: 'text.primary' }}
+    >
+      {(pays * 100).toFixed(pays >= 0.1 ? 1 : 2)}%
+    </Typography>
+  ) : (
+    <Typography
+      component="span"
+      sx={{ fontSize: '0.83rem', color: 'text.tertiary' }}
+    >
+      —
+    </Typography>
+  );
 
 const RepositoryCell: React.FC<{ repository: string }> = ({ repository }) => {
   const owner = repository.split('/')[0];
@@ -156,7 +180,9 @@ const MinerRepositoryPanel: React.FC<MinerRepositoryPanelProps> = ({
   const { data: prs } = useMinerPRs(githubId);
   const { data: repos } = useReposAndWeights();
 
-  const [view, setView] = useState<StandingsView>('cards');
+  // Default to the dense table — compact for scanning many repos; the card
+  // grid (with full dual-gate progress bars) is one toggle away.
+  const [view, setView] = useState<StandingsView>('table');
   const [sortField, setSortField] = useState<SortKey>('progress');
   const [sortOrder, setSortOrder] = useState<SortOrder>('desc');
   const [search, setSearch] = useState('');
@@ -172,6 +198,13 @@ const MinerRepositoryPanel: React.FC<MinerRepositoryPanelProps> = ({
     );
     return map;
   }, [repos]);
+
+  // Per-repo payout weight (emission share) — what fraction of the OSS reward
+  // pool the repo distributes; lets a miner see which repos are worth the effort.
+  const weightsByRepo = useMemo(
+    () => (repos ? buildRepoWeightsMap(repos) : new Map<string, number>()),
+    [repos],
+  );
 
   const validMergedByRepo = useMemo(
     () =>
@@ -201,9 +234,17 @@ const MinerRepositoryPanel: React.FC<MinerRepositoryPanelProps> = ({
         score: isIssue ? repo.issueDiscoveryScore : repo.totalScore,
         credibility: isIssue ? repo.issueCredibility : repo.credibility,
         count: isIssue ? repo.totalSolvedIssues : repo.totalMergedPrs,
+        pays: weightsByRepo.get(repo.repositoryFullName.toLowerCase()) ?? 0,
       };
     });
-  }, [minerStats, thresholdsByRepo, validMergedByRepo, viewMode, isIssue]);
+  }, [
+    minerStats,
+    thresholdsByRepo,
+    validMergedByRepo,
+    weightsByRepo,
+    viewMode,
+    isIssue,
+  ]);
 
   const filteredSorted = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -225,6 +266,9 @@ const MinerRepositoryPanel: React.FC<MinerRepositoryPanelProps> = ({
       switch (sortField) {
         case 'status':
           c = Number(a.unlock.unlocked) - Number(b.unlock.unlocked);
+          break;
+        case 'pays':
+          c = a.pays - b.pays;
           break;
         case 'score':
           c = a.score - b.score;
@@ -261,7 +305,7 @@ const MinerRepositoryPanel: React.FC<MinerRepositoryPanelProps> = ({
     {
       key: 'repository',
       header: 'Repository',
-      width: '34%',
+      width: '30%',
       sortKey: 'repository',
       renderCell: (r) => (
         <RepositoryCell repository={r.repo.repositoryFullName} />
@@ -270,14 +314,33 @@ const MinerRepositoryPanel: React.FC<MinerRepositoryPanelProps> = ({
     {
       key: 'status',
       header: 'Unlock',
-      width: '20%',
+      width: '18%',
       sortKey: 'status',
       renderCell: (r) => <StatusCell unlock={r.unlock} />,
     },
     {
+      key: 'pays',
+      header: (
+        <Tooltip
+          title="Payout weight — the share of the OSS reward pool this repository distributes. Higher means more emissions to compete for."
+          arrow
+          placement="top"
+          slotProps={tooltipSlotProps}
+        >
+          <Box component="span" sx={{ cursor: 'help' }}>
+            Pays
+          </Box>
+        </Tooltip>
+      ),
+      width: '12%',
+      align: 'right',
+      sortKey: 'pays',
+      renderCell: (r) => <PaysCell pays={r.pays} />,
+    },
+    {
       key: 'credibility',
       header: 'Credibility',
-      width: '14%',
+      width: '13%',
       align: 'right',
       sortKey: 'credibility',
       renderCell: (r) => (
@@ -304,7 +367,7 @@ const MinerRepositoryPanel: React.FC<MinerRepositoryPanelProps> = ({
     {
       key: 'score',
       header: isIssue ? 'Discovery score' : 'Repo score',
-      width: '14%',
+      width: '15%',
       align: 'right',
       sortKey: 'score',
       renderCell: (r) => r.score.toFixed(2),
@@ -514,6 +577,7 @@ const MinerRepositoryPanel: React.FC<MinerRepositoryPanelProps> = ({
               repo={r.repo}
               unlock={r.unlock}
               viewMode={viewMode}
+              pays={r.pays}
             />
           ))}
         </Box>

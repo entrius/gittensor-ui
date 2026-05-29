@@ -5,9 +5,10 @@ import {
   ErrorOutline as WarningIcon,
   Lightbulb as TipIcon,
 } from '@mui/icons-material';
-import { useMinerStats } from '../../api';
+import { useMinerStats, useReposAndWeights } from '../../api';
 import type { MinerRepositoryEvaluation } from '../../api/models/Dashboard';
 import { STATUS_COLORS } from '../../theme';
+import { buildRepoWeightsMap } from '../../utils/ExplorerUtils';
 
 interface MinerInsightsCardProps {
   githubId: string;
@@ -49,6 +50,7 @@ const credibilityFor = (
 const buildInsights = (
   repositories: MinerRepositoryEvaluation[],
   isIssueMode: boolean,
+  weightsByRepo: Map<string, number> = new Map(),
 ): InsightItem[] => {
   const assembled: InsightItem[] = [];
 
@@ -143,6 +145,30 @@ const buildInsights = (
     });
   }
 
+  // Highest-paying repo — point the miner at the biggest reward pool.
+  const topPaying = repositories
+    .map((r) => ({
+      repo: r,
+      pay: weightsByRepo.get(r.repositoryFullName.toLowerCase()) ?? 0,
+    }))
+    .filter((x) => x.pay > 0)
+    .sort((a, b) => b.pay - a.pay)[0];
+  if (topPaying) {
+    const pct = (topPaying.pay * 100).toFixed(topPaying.pay >= 0.1 ? 1 : 2);
+    const eligibleThere = eligibleFor(topPaying.repo, isIssueMode);
+    assembled.push({
+      id: `pay-${topPaying.repo.repositoryFullName}`,
+      type: eligibleThere ? 'achievement' : 'tip',
+      title: eligibleThere
+        ? `Keep shipping to ${topPaying.repo.repositoryFullName}`
+        : `${topPaying.repo.repositoryFullName} pays the most`,
+      description: eligibleThere
+        ? `Your highest-paying repo distributes ${pct}% of the OSS reward pool and you're eligible — concentrate effort here to maximize emissions.`
+        : `It distributes ${pct}% of the OSS reward pool — the biggest opportunity. Clear its eligibility gate to start earning from it.`,
+      priority: 58,
+    });
+  }
+
   return assembled;
 };
 
@@ -182,6 +208,7 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
   viewMode = 'prs',
 }) => {
   const { data: minerStats } = useMinerStats(githubId);
+  const { data: repos } = useReposAndWeights();
   const isIssueMode = viewMode === 'issues';
 
   const insights = useMemo(() => {
@@ -190,10 +217,13 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
     const repositories = (minerStats.repositories ?? []).filter(
       (r) => r.repositoryFullName.trim().length > 0,
     );
-    return buildInsights(repositories, isIssueMode)
+    const weights = repos
+      ? buildRepoWeightsMap(repos)
+      : new Map<string, number>();
+    return buildInsights(repositories, isIssueMode, weights)
       .sort((a, b) => b.priority - a.priority)
       .slice(0, 3);
-  }, [minerStats, isIssueMode]);
+  }, [minerStats, repos, isIssueMode]);
 
   if (!minerStats || insights.length === 0) return null;
 
@@ -209,7 +239,7 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
       elevation={0}
     >
       <Typography variant="statLabel" sx={{ display: 'block', mb: 1.5 }}>
-        {isIssueMode ? 'Issue discovery insights' : 'Insights & next actions'}
+        {isIssueMode ? 'Issue discovery — next moves' : 'Next moves'}
       </Typography>
 
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
@@ -223,7 +253,8 @@ const MinerInsightsCard: React.FC<MinerInsightsCardProps> = ({
                 px: 1.5,
                 py: 1.2,
                 border: `1px solid ${style.border}`,
-                backgroundColor: style.background,
+                borderLeft: `3px solid ${style.color}`,
+                backgroundColor: 'transparent',
                 display: 'flex',
                 alignItems: 'flex-start',
                 gap: 1.1,
