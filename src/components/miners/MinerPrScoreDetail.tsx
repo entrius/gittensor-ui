@@ -18,6 +18,7 @@ import { usePullRequestDetails, type CommitLog } from '../../api';
 import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import { parseNumber } from '../../utils/ExplorerUtils';
 import { buildMergedPillDefs } from '../../utils/multiplierDefs';
+import { minerPrPath } from '../../utils';
 
 const tipProps = {
   ...tooltipSlotProps,
@@ -117,7 +118,7 @@ const MinerPrScoreDetail: React.FC<MinerPrScoreDetailProps> = ({
   expanded,
 }) => {
   const prLinkProps = useLinkBehavior<HTMLAnchorElement>(
-    `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
+    minerPrPath(pr.repository, pr.pullRequestNumber),
   );
 
   const isMerged = !!pr.mergedAt;

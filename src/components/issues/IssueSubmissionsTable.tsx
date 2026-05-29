@@ -15,7 +15,7 @@ import EmojiEventsIcon from '@mui/icons-material/EmojiEvents';
 import { IssueSubmission } from '../../api/models/Issues';
 import { STATUS_COLORS } from '../../theme';
 import { formatDate } from '../../utils/format';
-import { getGithubAvatarSrc } from '../../utils';
+import { getGithubAvatarSrc, minerPrPath } from '../../utils';
 import { LinkBox } from '../common/linkBehavior';
 import {
   DataTable,
@@ -223,7 +223,10 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
       {winnerSubmission && (
         <LinkBox
-          href={`/miners/pr?repo=${encodeURIComponent(winnerSubmission.repositoryFullName)}&number=${winnerSubmission.number}`}
+          href={minerPrPath(
+            winnerSubmission.repositoryFullName,
+            winnerSubmission.number,
+          )}
           linkState={linkState}
           sx={{ textDecoration: 'none', display: 'block' }}
         >
@@ -471,7 +474,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
             }
             onRowClick={(submission) =>
               navigate(
-                `/miners/pr?repo=${encodeURIComponent(submission.repositoryFullName)}&number=${submission.number}`,
+                minerPrPath(submission.repositoryFullName, submission.number),
                 { state: linkState },
               )
             }

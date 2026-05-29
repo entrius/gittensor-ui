@@ -30,7 +30,12 @@ import {
 } from '../../hooks/useWatchlist';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
 import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
-import { filterPrs, getPrStatusCounts, type PrStatusFilter } from '../../utils';
+import {
+  filterPrs,
+  getPrStatusCounts,
+  minerPrPath,
+  type PrStatusFilter,
+} from '../../utils';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { formatDate } from '../../utils/format';
 import FilterButton from '../FilterButton';
@@ -220,10 +225,9 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
 
   const handleRowClick = useCallback(
     (pr: CommitLog) => {
-      navigate(
-        `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`,
-        { state: { backLabel: `Back to ${repositoryFullName}` } },
-      );
+      navigate(minerPrPath(pr.repository, pr.pullRequestNumber), {
+        state: { backLabel: `Back to ${repositoryFullName}` },
+      });
     },
     [navigate, repositoryFullName],
   );
