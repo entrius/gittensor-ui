@@ -38,6 +38,19 @@ const toStringArray = (value: unknown): string[] =>
     ? value.filter((x): x is string => typeof x === 'string')
     : [];
 
+const normalizeIds = (ids: string[]): string[] => {
+  const out: string[] = [];
+  const seen = new Set<string>();
+  for (const raw of ids) {
+    const id = raw.trim();
+    if (!id) continue;
+    if (seen.has(id)) continue;
+    seen.add(id);
+    out.push(id);
+  }
+  return out;
+};
+
 // Read v2 if present, otherwise migrate v1 (legacy miner-only string[]) into
 // the new shape. The v1 key is left intact so a downgrade can still recover.
 const readFromStorage = (): WatchlistState => {
@@ -47,18 +60,31 @@ const readFromStorage = (): WatchlistState => {
       const parsed = JSON.parse(v2Raw);
       if (parsed && typeof parsed === 'object') {
         return {
-          miners: toStringArray((parsed as Record<string, unknown>).miners),
-          repos: toStringArray((parsed as Record<string, unknown>).repos),
-          bounties: toStringArray((parsed as Record<string, unknown>).bounties),
-          prs: toStringArray((parsed as Record<string, unknown>).prs),
-          issues: toStringArray((parsed as Record<string, unknown>).issues),
+          miners: normalizeIds(
+            toStringArray((parsed as Record<string, unknown>).miners),
+          ),
+          repos: normalizeIds(
+            toStringArray((parsed as Record<string, unknown>).repos),
+          ),
+          bounties: normalizeIds(
+            toStringArray((parsed as Record<string, unknown>).bounties),
+          ),
+          prs: normalizeIds(
+            toStringArray((parsed as Record<string, unknown>).prs),
+          ),
+          issues: normalizeIds(
+            toStringArray((parsed as Record<string, unknown>).issues),
+          ),
         };
       }
       return EMPTY_STATE;
     }
     const v1Raw = window.localStorage.getItem(V1_KEY);
     if (v1Raw) {
-      return { ...EMPTY_STATE, miners: toStringArray(JSON.parse(v1Raw)) };
+      return {
+        ...EMPTY_STATE,
+        miners: normalizeIds(toStringArray(JSON.parse(v1Raw))),
+      };
     }
     return EMPTY_STATE;
   } catch {
@@ -164,18 +190,23 @@ export const useWatchlist = (
   // each other's writes immediately instead of both reading a stale array.
   const add = useCallback(
     (id: string) => {
-      if (!id || snapshot[category].includes(id)) return;
-      setSnapshot({ ...snapshot, [category]: [...snapshot[category], id] });
+      const normalizedId = id.trim();
+      if (!normalizedId || snapshot[category].includes(normalizedId)) return;
+      setSnapshot({
+        ...snapshot,
+        [category]: normalizeIds([...snapshot[category], normalizedId]),
+      });
     },
     [category],
   );
 
   const remove = useCallback(
     (id: string) => {
-      if (!snapshot[category].includes(id)) return;
+      const normalizedId = id.trim();
+      if (!snapshot[category].includes(normalizedId)) return;
       setSnapshot({
         ...snapshot,
-        [category]: snapshot[category].filter((x) => x !== id),
+        [category]: snapshot[category].filter((x) => x !== normalizedId),
       });
     },
     [category],
@@ -183,13 +214,14 @@ export const useWatchlist = (
 
   const toggle = useCallback(
     (id: string) => {
-      if (!id) return;
+      const normalizedId = id.trim();
+      if (!normalizedId) return;
       const list = snapshot[category];
       setSnapshot({
         ...snapshot,
-        [category]: list.includes(id)
-          ? list.filter((x) => x !== id)
-          : [...list, id],
+        [category]: list.includes(normalizedId)
+          ? list.filter((x) => x !== normalizedId)
+          : normalizeIds([...list, normalizedId]),
       });
     },
     [category],

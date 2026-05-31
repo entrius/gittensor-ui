@@ -46,7 +46,15 @@ export const useWatchedPRs = (
     [watchedRepoIds],
   );
 
-  const starredKeys = useMemo(() => new Set(starredKeyList), [starredKeyList]);
+  const starredKeys = useMemo(
+    () =>
+      new Set(
+        starredKeyList
+          .map((key) => key.trim())
+          .filter((key) => key.length > 0),
+      ),
+    [starredKeyList],
+  );
 
   const { items, sourcesByKey } = useMemo(() => {
     const filtered: CommitLog[] = [];
