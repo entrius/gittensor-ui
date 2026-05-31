@@ -16,6 +16,9 @@ const DEFAULT_PARAM_KEYS: ParamKeys = {
   rowsPerPage: 'rows',
 };
 
+const MAX_PAGE_INDEX = 10_000;
+const MAX_ROWS_PER_PAGE = 500;
+
 /**
  * Configuration for an additional URL-backed filter (search, enum, etc.)
  * that should be co-located with the table's sort/pagination state.
@@ -94,7 +97,8 @@ const parseSortOrder = (
 const parsePage = (value: string | null): number => {
   if (!value) return 0;
   const parsed = Number.parseInt(value, 10);
-  return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
+  if (!Number.isFinite(parsed) || parsed < 0) return 0;
+  return Math.min(parsed, MAX_PAGE_INDEX);
 };
 
 const parseRowsPerPage = (
@@ -105,8 +109,9 @@ const parseRowsPerPage = (
   if (!value) return defaultRowsPerPage;
   const parsed = Number.parseInt(value, 10);
   if (!Number.isFinite(parsed) || parsed <= 0) return defaultRowsPerPage;
-  if (options && !options.includes(parsed)) return defaultRowsPerPage;
-  return parsed;
+  const clamped = Math.min(parsed, MAX_ROWS_PER_PAGE);
+  if (options && !options.includes(clamped)) return defaultRowsPerPage;
+  return clamped;
 };
 
 const computeNextSort = <K extends string>(
@@ -247,11 +252,15 @@ export const useDataTableParams = <
 
   const setPage = useCallback(
     (nextPage: number) => {
+      const safePage =
+        Number.isFinite(nextPage) && nextPage > 0
+          ? Math.min(Math.floor(nextPage), MAX_PAGE_INDEX)
+          : 0;
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
-          if (nextPage <= 0) next.delete(paramKeys.page);
-          else next.set(paramKeys.page, String(nextPage));
+          if (safePage <= 0) next.delete(paramKeys.page);
+          else next.set(paramKeys.page, String(safePage));
           return next;
         },
         { replace: true },
@@ -262,12 +271,16 @@ export const useDataTableParams = <
 
   const setRowsPerPage = useCallback(
     (nextRowsPerPage: number) => {
+      const clampedRows = Math.min(
+        Math.max(Math.floor(nextRowsPerPage), 1),
+        MAX_ROWS_PER_PAGE,
+      );
       setSearchParams(
         (prev) => {
           const next = new URLSearchParams(prev);
-          if (nextRowsPerPage === defaultRowsPerPage)
+          if (clampedRows === defaultRowsPerPage)
             next.delete(paramKeys.rowsPerPage);
-          else next.set(paramKeys.rowsPerPage, String(nextRowsPerPage));
+          else next.set(paramKeys.rowsPerPage, String(clampedRows));
           // Row size change invalidates the current page index.
           next.delete(paramKeys.page);
           return next;
