@@ -36,6 +36,7 @@ const sameSet = (
 };
 
 const readFromStorage = (): Set<WatchedPRSource> => {
+  if (typeof window === 'undefined') return new Set(ALL_SOURCES);
   try {
     return parseSourceFilter(window.localStorage.getItem(KEY));
   } catch {
@@ -43,10 +44,18 @@ const readFromStorage = (): Set<WatchedPRSource> => {
   }
 };
 
-let snapshot: Set<WatchedPRSource> = readFromStorage();
+let snapshot: Set<WatchedPRSource> = new Set(ALL_SOURCES);
+let initialized = false;
 const listeners = new Set<() => void>();
 
+const ensureInitialized = () => {
+  if (initialized) return;
+  snapshot = readFromStorage();
+  initialized = true;
+};
+
 const write = (next: Set<WatchedPRSource>) => {
+  ensureInitialized();
   if (sameSet(next, snapshot)) return;
   snapshot = next;
   try {
@@ -62,6 +71,7 @@ const write = (next: Set<WatchedPRSource>) => {
 
 const handleStorageEvent = (e: StorageEvent) => {
   if (e.key !== KEY) return;
+  ensureInitialized();
   const next = readFromStorage();
   if (sameSet(next, snapshot)) return;
   snapshot = next;
@@ -69,6 +79,7 @@ const handleStorageEvent = (e: StorageEvent) => {
 };
 
 const subscribe = (listener: () => void) => {
+  ensureInitialized();
   if (listeners.size === 0) {
     window.addEventListener('storage', handleStorageEvent);
   }
@@ -81,7 +92,10 @@ const subscribe = (listener: () => void) => {
   };
 };
 
-const getSnapshot = () => snapshot;
+const getSnapshot = () => {
+  ensureInitialized();
+  return snapshot;
+};
 
 interface UsePrSourceFilter {
   active: Set<WatchedPRSource>;
