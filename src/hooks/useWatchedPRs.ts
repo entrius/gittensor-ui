@@ -49,9 +49,7 @@ export const useWatchedPRs = (
   const starredKeys = useMemo(
     () =>
       new Set(
-        starredKeyList
-          .map((key) => key.trim())
-          .filter((key) => key.length > 0),
+        starredKeyList.map((key) => key.trim()).filter((key) => key.length > 0),
       ),
     [starredKeyList],
   );
