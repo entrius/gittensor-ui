@@ -23,7 +23,10 @@ const parseSourceFilter = (raw: unknown): Set<WatchedPRSource> => {
   if (!Array.isArray(parsed)) return new Set(ALL_SOURCES);
   const next = new Set<WatchedPRSource>();
   for (const v of parsed) if (isSource(v)) next.add(v);
-  return next;
+  // An empty selection hides every PR with no obvious way to recover from the
+  // UI. Treat a stale/corrupt empty value as "all on" so reloading restores
+  // visibility instead of leaving the watchlist permanently blank.
+  return next.size > 0 ? next : new Set(ALL_SOURCES);
 };
 
 const sameSet = (
@@ -94,8 +97,14 @@ export const usePrSourceFilter = (): UsePrSourceFilter => {
 
   const toggle = useCallback((source: WatchedPRSource) => {
     const next = new Set(snapshot);
-    if (next.has(source)) next.delete(source);
-    else next.add(source);
+    if (next.has(source)) {
+      // Keep at least one source active — disabling the final one would
+      // empty the filter and hide every PR with no recovery in the UI.
+      if (next.size === 1) return;
+      next.delete(source);
+    } else {
+      next.add(source);
+    }
     write(next);
   }, []);
 
