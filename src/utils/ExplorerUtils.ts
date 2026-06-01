@@ -45,7 +45,8 @@ const VALID_ISSUE_SOLVE_TOKEN_THRESHOLD = 5;
 // Scoring window staleness check
 // ---------------------------------------------------------------------------
 
-const SCORING_WINDOW_DAYS = 35;
+/** Default PR scoring lookback — mirrors gittensor `PR_LOOKBACK_DAYS`. */
+const SCORING_WINDOW_DAYS = 30;
 
 export const isOutsideScoringWindow = (
   date: string | null | undefined,
@@ -56,7 +57,7 @@ export const isOutsideScoringWindow = (
   return new Date(date) < cutoff;
 };
 
-/** ISO timestamp for the start of the 35-day scoring window (UTC, suitable for
+/** ISO timestamp for the start of the scoring window (UTC, suitable for
  *  GitHub Search `created:>=` qualifier and other since-style filters). */
 export const getScoringWindowStartIso = (): string => {
   const cutoff = new Date();
