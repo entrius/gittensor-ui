@@ -94,8 +94,10 @@ export const usePrSourceFilter = (): UsePrSourceFilter => {
 
   const toggle = useCallback((source: WatchedPRSource) => {
     const next = new Set(snapshot);
-    if (next.has(source)) next.delete(source);
-    else next.add(source);
+    if (next.has(source)) {
+      if (next.size === 1) return;
+      next.delete(source);
+    } else next.add(source);
     write(next);
   }, []);
 
