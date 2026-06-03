@@ -61,10 +61,12 @@ export function parseMinerExplorerPageParam(raw: string | null): number {
   return Number.isFinite(parsed) && parsed >= 0 ? parsed : 0;
 }
 
+export type MinerExplorerPageSize = MinerExplorerRowsOption | number;
+
 export function getMinerExplorerPaging<T>(
   items: readonly T[],
   page: number,
-  rows: MinerExplorerRowsOption,
+  rows: MinerExplorerPageSize,
 ): {
   totalPages: number;
   safePage: number;
@@ -88,11 +90,14 @@ export function getMinerExplorerPaging<T>(
 type UseMinerExplorerPaginationOptions = {
   resetKey?: string;
   totalItemCount: number;
+  /** Page size used for clamping (e.g. card view uses a larger size than URL rows). */
+  pageSizeForClamp?: MinerExplorerPageSize;
 };
 
 export function useMinerExplorerPagination({
   resetKey,
   totalItemCount,
+  pageSizeForClamp,
 }: UseMinerExplorerPaginationOptions) {
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -156,13 +161,19 @@ export function useMinerExplorerPagination({
     setPageRef.current(0);
   }, [resetKey]);
 
+  const clampRows = pageSizeForClamp ?? rowsPerPage;
+
   useEffect(() => {
-    const isAll = rowsPerPage === 'all';
-    const size = isAll ? Math.max(totalItemCount, 1) : rowsPerPage;
+    const isAll = clampRows === 'all';
+    const size = isAll
+      ? Math.max(totalItemCount, 1)
+      : typeof clampRows === 'number'
+        ? clampRows
+        : clampRows;
     const totalPages = Math.max(1, Math.ceil(totalItemCount / size));
     const last = totalPages - 1;
     if (page > last) setPageRef.current(last);
-  }, [totalItemCount, rowsPerPage, page]);
+  }, [totalItemCount, clampRows, page]);
 
   return {
     page,

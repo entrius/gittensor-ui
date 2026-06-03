@@ -1,5 +1,6 @@
-import type { PullRequestDetails } from '../api/models/Dashboard';
+import type { CommitLog, PullRequestDetails } from '../api/models/Dashboard';
 import { parseNumber } from './ExplorerUtils';
+import { isMergedPr } from './prStatus';
 
 interface MultiplierPillDef {
   key: string;
@@ -171,4 +172,63 @@ export function buildMultiplierGrid(
   const entries = configs.map((cfg) => buildGridEntry(pr, cfg));
   if (isOpen) entries.push({ label: 'Collateral %', value: '20%' });
   return appendOptionalEntries(entries, pr);
+}
+
+export type MinerPrCardBadge = {
+  key: string;
+  label: string;
+  value: number;
+};
+
+const MERGED_CARD_BADGE_FIELDS: Array<{
+  key: string;
+  label: string;
+  field: keyof PullRequestDetails;
+}> = [
+  { key: 'cred', label: 'CRED', field: 'credibilityMultiplier' },
+  { key: 'spam', label: 'SPAM', field: 'openPrSpamMultiplier' },
+  { key: 'issue', label: 'ISSUE', field: 'issueMultiplier' },
+  { key: 'decay', label: 'DECAY', field: 'timeDecayMultiplier' },
+  { key: 'review', label: 'REVI', field: 'reviewQualityMultiplier' },
+];
+
+function parseCardMultiplier(raw: string | number | null | undefined): number {
+  if (raw == null || raw === '') return 1;
+  const n = parseNumber(raw);
+  return Number.isFinite(n) ? n : 1;
+}
+
+function readCommitLogMultiplier(
+  pr: CommitLog,
+  field: keyof PullRequestDetails,
+): string | number | null | undefined {
+  if (field === 'labelMultiplier') return pr.labelMultiplier;
+  return pr[field as keyof CommitLog] as string | undefined;
+}
+
+/** Merged PR multiplier badges for miner card view (list data + optional /details). */
+export function buildMinerPrCardBadges(
+  pr: CommitLog,
+  details?: PullRequestDetails | null,
+): MinerPrCardBadge[] {
+  if (!isMergedPr(pr)) return [];
+  const source = details ?? null;
+  const read = (field: keyof PullRequestDetails) =>
+    parseCardMultiplier(
+      source ? source[field] : readCommitLogMultiplier(pr, field),
+    );
+  return [
+    ...MERGED_CARD_BADGE_FIELDS.map(({ key, label, field }) => ({
+      key,
+      label,
+      value: read(field),
+    })),
+    {
+      key: 'label',
+      label: 'LABEL',
+      value: parseCardMultiplier(
+        source ? source.labelMultiplier : pr.labelMultiplier,
+      ),
+    },
+  ];
 }

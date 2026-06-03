@@ -5,6 +5,7 @@ import React, {
   useEffect,
   useRef,
 } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import {
   Avatar,
   Box,
@@ -12,7 +13,10 @@ import {
   Chip,
   CircularProgress,
   Collapse,
+  IconButton,
   InputAdornment,
+  MenuItem,
+  Select,
   TextField,
   Tooltip,
   Typography,
@@ -20,13 +24,18 @@ import {
   useTheme,
 } from '@mui/material';
 import {
+  ArrowDownward as ArrowDownwardIcon,
+  ArrowUpward as ArrowUpwardIcon,
   ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
   Search as SearchIcon,
+  ViewList as ViewListIcon,
+  ViewModule as ViewModuleIcon,
 } from '@mui/icons-material';
 import { useMinerPRs, type CommitLog } from '../../api';
 import {
   filterPrs,
+  getMinerPrEffectiveScore,
   getRepositoryOwnerAvatarSrc,
   getPrStatusCounts,
   isOutsideScoringWindow,
@@ -50,11 +59,20 @@ import MinerTableRowsSelect from './MinerTableRowsSelect';
 import TablePagination, {
   getMinerExplorerPaging,
   MINER_EXPLORER_PAGE_PARAM,
+  MINER_EXPLORER_ROWS_PARAM,
+  parseMinerExplorerRowsParam,
   useMinerExplorerPagination,
 } from '../common/TablePagination';
 import { formatDate } from '../../utils/format';
 import { tooltipSlotProps } from '../../theme';
 import MinerPrScoreDetail from './MinerPrScoreDetail';
+import MinerPrCard from './MinerPrCard';
+import {
+  readStoredMinerPrsViewMode,
+  resolveMinerPrsPageSize,
+  writeStoredMinerPrsViewMode,
+  type MinerPrsViewMode,
+} from './minerPrsViewMode';
 
 type PrSortField =
   | 'number'
@@ -83,17 +101,6 @@ const DEFAULT_SORT_DIR: Record<PrSortField, SortDir> = {
   watch: 'desc',
 };
 
-// Mirrors the Score cell's render logic so clicking the Score header
-// sorts by what users actually see: merged → score, open → collateral,
-// closed-unmerged → treated as zero.
-const getEffectiveScore = (pr: CommitLog): number => {
-  if (pr.prState === 'CLOSED' && !pr.mergedAt) return 0;
-  if (!pr.mergedAt && pr.collateralScore) {
-    return parseFloat(pr.collateralScore || '0');
-  }
-  return parseFloat(pr.score || '0');
-};
-
 const getScoreTooltip = (pr: CommitLog): string | null => {
   const base = parseFloat(pr.baseScore || '0');
   if (!pr.mergedAt || base <= 0) return null;
@@ -108,6 +115,75 @@ const getScoreTooltip = (pr: CommitLog): string | null => {
 const isPrStatusFilter = (value: string | null): value is PrStatusFilter =>
   value !== null && (PR_STATUS_FILTERS as readonly string[]).includes(value);
 
+const CARD_SORT_OPTIONS: { value: PrSortField; label: string }[] = [
+  { value: 'date', label: 'Date' },
+  { value: 'score', label: 'Score' },
+  { value: 'number', label: 'PR #' },
+  { value: 'repository', label: 'Repository' },
+  { value: 'lines', label: 'Lines' },
+  { value: 'watch', label: 'Watchlist' },
+];
+
+const MinerPrsViewModeToggle: React.FC<{
+  viewMode: MinerPrsViewMode;
+  onChange: (mode: MinerPrsViewMode) => void;
+}> = ({ viewMode, onChange }) => {
+  const options: {
+    value: MinerPrsViewMode;
+    label: string;
+    Icon: typeof ViewListIcon;
+  }[] = [
+    { value: 'list', label: 'List view', Icon: ViewListIcon },
+    { value: 'cards', label: 'Card view', Icon: ViewModuleIcon },
+  ];
+
+  return (
+    <Box
+      sx={(t) => ({
+        display: 'inline-flex',
+        alignItems: 'center',
+        borderRadius: 2,
+        border: '1px solid',
+        borderColor: t.palette.border.light,
+        overflow: 'hidden',
+        flexShrink: 0,
+      })}
+      role="group"
+      aria-label="Toggle view mode"
+    >
+      {options.map(({ value, label, Icon }) => {
+        const isActive = viewMode === value;
+        return (
+          <Tooltip key={value} title={label} placement="top" arrow>
+            <IconButton
+              onClick={() => onChange(value)}
+              size="small"
+              aria-label={label}
+              aria-pressed={isActive}
+              sx={(t) => ({
+                borderRadius: 0,
+                padding: '6px 10px',
+                color: isActive
+                  ? t.palette.primary.main
+                  : t.palette.text.tertiary,
+                backgroundColor: isActive
+                  ? alpha(t.palette.primary.main, 0.12)
+                  : 'transparent',
+                '&:hover': {
+                  backgroundColor: alpha(t.palette.primary.main, 0.18),
+                  color: t.palette.primary.main,
+                },
+              })}
+            >
+              <Icon fontSize="small" />
+            </IconButton>
+          </Tooltip>
+        );
+      })}
+    </Box>
+  );
+};
+
 // Stable per-PR key — shared by the DataTable row key and the expanded-row
 // tracking set so the two never drift.
 const prRowKey = (pr: CommitLog): string =>
@@ -119,6 +195,7 @@ interface MinerPRsTableProps {
 
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
+  const [searchParams] = useSearchParams();
   const { data: prs, isLoading } = useMinerPRs(githubId);
   const { isWatched } = useWatchlist('prs');
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
@@ -128,6 +205,10 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(
     () => new Set(),
   );
+  const [viewMode, setViewMode] = useState<MinerPrsViewMode>(
+    readStoredMinerPrsViewMode,
+  );
+  const [isSortMenuOpen, setIsSortMenuOpen] = useState(false);
 
   const filtersConfig = useMemo(
     () => ({
@@ -194,7 +275,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           if (cmp === 0) cmp = a.pullRequestNumber - b.pullRequestNumber;
           break;
         case 'score':
-          cmp = getEffectiveScore(a) - getEffectiveScore(b);
+          cmp = getMinerPrEffectiveScore(a) - getMinerPrEffectiveScore(b);
           break;
         case 'lines':
           cmp = a.additions + a.deletions - (b.additions + b.deletions);
@@ -214,15 +295,42 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
     return sorted;
   }, [filteredPRs, sortField, sortDir, isWatched]);
 
+  const tableRows = useMemo(
+    () =>
+      parseMinerExplorerRowsParam(searchParams.get(MINER_EXPLORER_ROWS_PARAM)),
+    [searchParams],
+  );
+
+  const effectivePageSize = useMemo(
+    () => resolveMinerPrsPageSize(tableRows, viewMode),
+    [tableRows, viewMode],
+  );
+
   const { page, setPage, rowsPerPage, setRowsPerPage } =
     useMinerExplorerPagination({
       resetKey: githubId,
       totalItemCount: sortedPRs.length,
+      pageSizeForClamp: effectivePageSize,
     });
 
+  const handleViewModeChange = useCallback(
+    (next: MinerPrsViewMode) => {
+      setViewMode(next);
+      writeStoredMinerPrsViewMode(next);
+      setPage(0);
+      setExpandedKeys(new Set());
+    },
+    [setPage],
+  );
+
+  const toggleSortDir = useCallback(() => {
+    setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
+    setPage(0);
+  }, [setPage]);
+
   const paging = useMemo(
-    () => getMinerExplorerPaging(sortedPRs, page, rowsPerPage),
-    [sortedPRs, page, rowsPerPage],
+    () => getMinerExplorerPaging(sortedPRs, page, effectivePageSize),
+    [sortedPRs, page, effectivePageSize],
   );
 
   const { slice: pagedPRs, totalPages, safePage, showPageNav } = paging;
@@ -621,7 +729,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           display: 'flex',
           flexDirection: 'row',
           alignItems: 'center',
-          flexWrap: 'nowrap',
+          flexWrap: 'wrap',
           gap: 2,
           width: '100%',
           minWidth: 0,
@@ -631,6 +739,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           value={rowsPerPage}
           onChange={setRowsPerPage}
           id="miner-prs-rows"
+          cardView={viewMode === 'cards'}
         />
         <DebouncedSearchInput
           initialDraft={searchQuery}
@@ -678,6 +787,94 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             />
           )}
         </DebouncedSearchInput>
+
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            flexShrink: 0,
+            ml: { xs: 0, sm: 'auto' },
+            flexWrap: 'wrap',
+          }}
+        >
+          {viewMode === 'cards' && (
+            <>
+              <Typography sx={{ fontSize: '0.8rem', color: 'text.secondary' }}>
+                Sort by
+              </Typography>
+              <Select
+                size="small"
+                value={sortField}
+                onOpen={() => setIsSortMenuOpen(true)}
+                onClose={() => setIsSortMenuOpen(false)}
+                onChange={(e) => handleSort(e.target.value as PrSortField)}
+                MenuProps={{
+                  PaperProps: {
+                    sx: (t) => ({
+                      mt: 0.75,
+                      borderRadius: 2,
+                      border: `1px solid ${t.palette.border.light}`,
+                      backgroundColor: t.palette.background.default,
+                      backgroundImage: 'none',
+                    }),
+                  },
+                }}
+                sx={{
+                  color: 'text.primary',
+                  backgroundColor: isSortMenuOpen
+                    ? (t) => alpha(t.palette.text.primary, 0.06)
+                    : 'background.default',
+                  fontSize: '0.8rem',
+                  height: 32,
+                  minWidth: 120,
+                  borderRadius: 2,
+                  '& .MuiOutlinedInput-notchedOutline': {
+                    borderColor: isSortMenuOpen
+                      ? 'border.medium'
+                      : 'border.light',
+                  },
+                  '& .MuiSelect-select': { py: 0.5, fontWeight: 600 },
+                }}
+              >
+                {CARD_SORT_OPTIONS.map((opt) => (
+                  <MenuItem key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </MenuItem>
+                ))}
+              </Select>
+              <IconButton
+                onClick={toggleSortDir}
+                size="small"
+                aria-label={
+                  sortDir === 'asc' ? 'Sort descending' : 'Sort ascending'
+                }
+                sx={{
+                  color: 'text.primary',
+                  border: '1px solid',
+                  borderColor: 'border.light',
+                  borderRadius: 2,
+                  width: 32,
+                  height: 32,
+                  '&:hover': {
+                    backgroundColor: 'surface.light',
+                    borderColor: 'border.medium',
+                  },
+                }}
+              >
+                {sortDir === 'asc' ? (
+                  <ArrowUpwardIcon sx={{ fontSize: '1rem' }} />
+                ) : (
+                  <ArrowDownwardIcon sx={{ fontSize: '1rem' }} />
+                )}
+              </IconButton>
+            </>
+          )}
+          <MinerPrsViewModeToggle
+            viewMode={viewMode}
+            onChange={handleViewModeChange}
+          />
+        </Box>
       </Box>
     </Box>
   );
@@ -686,6 +883,27 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const emptyMessage = noDataAtAll
     ? 'No PRs found'
     : 'No PRs found for the selected filters';
+
+  const paginationFooter = showPageNav ? (
+    <TablePagination
+      page={safePage}
+      totalPages={totalPages}
+      onPageChange={setPage}
+    />
+  ) : null;
+
+  const emptyState = (
+    <Box sx={{ textAlign: 'center', py: 8 }}>
+      <Typography
+        sx={{
+          color: (t) => alpha(t.palette.text.primary, 0.5),
+          fontSize: '0.9rem',
+        }}
+      >
+        {emptyMessage}
+      </Typography>
+    </Box>
+  );
 
   return (
     <Card
@@ -697,59 +915,84 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       }}
       elevation={0}
     >
-      <DataTable<CommitLog, PrSortField>
-        columns={columns}
-        rows={pagedPRs}
-        getRowKey={prRowKey}
-        minWidth="760px"
-        stickyHeader
-        size="medium"
-        header={headerToolbar}
-        emptyState={
-          <Box sx={{ textAlign: 'center', py: 8 }}>
-            <Typography
+      {headerToolbar}
+      {viewMode === 'list' ? (
+        <DataTable<CommitLog, PrSortField>
+          columns={columns}
+          rows={pagedPRs}
+          getRowKey={prRowKey}
+          minWidth="760px"
+          stickyHeader
+          size="medium"
+          emptyState={emptyState}
+          onRowClick={toggleExpanded}
+          renderExpandedRow={(pr) => {
+            const open = expandedKeys.has(prRowKey(pr));
+            return (
+              <Collapse in={open} timeout="auto" unmountOnExit>
+                <MinerPrScoreDetail pr={pr} expanded={open} />
+              </Collapse>
+            );
+          }}
+          getRowSx={(pr) => {
+            if (pr.mergedAt && isOutsideScoringWindow(pr.mergedAt)) {
+              return { opacity: 0.4, filter: 'grayscale(0.5)' };
+            }
+            if (expandedKeys.has(prRowKey(pr))) {
+              return { backgroundColor: 'surface.subtle' };
+            }
+            return {};
+          }}
+          sort={{
+            field: sortField,
+            order: sortDir,
+            onChange: handleSort,
+          }}
+          pagination={paginationFooter}
+        />
+      ) : pagedPRs.length === 0 ? (
+        emptyState
+      ) : (
+        <Box
+          sx={{
+            px: { xs: 2, sm: 2.5 },
+            pt: { xs: 2, sm: 2.5 },
+            pb: 1,
+            display: 'grid',
+            gap: 2,
+            width: '100%',
+            alignItems: 'start',
+            gridTemplateColumns: {
+              xs: 'minmax(0, 1fr)',
+              sm: 'repeat(2, minmax(0, 1fr))',
+              md: 'repeat(3, minmax(0, 1fr))',
+            },
+          }}
+        >
+          {pagedPRs.map((pr) => (
+            <Box
+              key={prRowKey(pr)}
               sx={{
-                color: (t) => alpha(t.palette.text.primary, 0.5),
-                fontSize: '0.9rem',
+                display: 'flex',
+                flexDirection: 'column',
+                minWidth: 0,
               }}
             >
-              {emptyMessage}
-            </Typography>
-          </Box>
-        }
-        onRowClick={toggleExpanded}
-        renderExpandedRow={(pr) => {
-          const open = expandedKeys.has(prRowKey(pr));
-          return (
-            <Collapse in={open} timeout="auto" unmountOnExit>
-              <MinerPrScoreDetail pr={pr} expanded={open} />
-            </Collapse>
-          );
-        }}
-        getRowSx={(pr) => {
-          if (pr.mergedAt && isOutsideScoringWindow(pr.mergedAt)) {
-            return { opacity: 0.4, filter: 'grayscale(0.5)' };
-          }
-          if (expandedKeys.has(prRowKey(pr))) {
-            return { backgroundColor: 'surface.subtle' };
-          }
-          return {};
-        }}
-        sort={{
-          field: sortField,
-          order: sortDir,
-          onChange: handleSort,
-        }}
-        pagination={
-          showPageNav ? (
-            <TablePagination
-              page={safePage}
-              totalPages={totalPages}
-              onPageChange={setPage}
-            />
-          ) : null
-        }
-      />
+              <MinerPrCard pr={pr} />
+            </Box>
+          ))}
+        </Box>
+      )}
+      {viewMode === 'cards' ? (
+        <Box
+          sx={{
+            borderTop: showPageNav ? '1px solid' : 'none',
+            borderColor: 'border.light',
+          }}
+        >
+          {paginationFooter}
+        </Box>
+      ) : null}
     </Card>
   );
 };
