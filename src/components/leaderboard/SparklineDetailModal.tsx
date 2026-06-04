@@ -29,8 +29,12 @@ import {
   echartsMutedCartesianAxisColors,
   echartsTransparentBackground,
 } from '../../utils/echarts/gittensorChartTheme';
-import { useRecentCommits } from '../../api';
-import { isDiscoveryCommit } from './useMinerActivityIndex';
+import {
+  useRecentCommits,
+  useMinerIssues,
+  MINER_ISSUES_FULL_HISTORY_SINCE_ISO,
+} from '../../api';
+import { minerSolvedIssueAt } from './useMinerActivityIndex';
 
 interface SparklineDetailModalProps {
   open: boolean;
@@ -283,8 +287,14 @@ const SparklineDetailModal: React.FC<SparklineDetailModalProps> = ({
   const [mode, setMode] = useState<ChartMode>('stack');
   const [range, setRange] = useState<RangeKey>('30d');
 
-  // 1D view re-buckets raw commits into 3-hour slots; daily props can't do it.
+  // 1D view re-buckets raw commits + solved issues into 3-hour slots; the daily
+  // props can't be re-sliced that finely. Only fetched while the modal is open.
   const { data: recentCommits } = useRecentCommits(500);
+  const { data: minerIssues } = useMinerIssues(
+    githubId ?? '',
+    open && !!githubId,
+    MINER_ISSUES_FULL_HISTORY_SINCE_ISO,
+  );
 
   const activeRange = useMemo(
     () => RANGE_OPTIONS.find((r) => r.key === range) ?? RANGE_OPTIONS[2],
@@ -304,8 +314,16 @@ const SparklineDetailModal: React.FC<SparklineDetailModalProps> = ({
         if (!Number.isFinite(t)) continue;
         const slot = buckets.findIndex((b) => t >= b.startMs && t < b.endMs);
         if (slot < 0) continue;
-        if (isDiscoveryCommit(c)) disc[slot] += 1;
-        else oss[slot] += 1;
+        oss[slot] += 1;
+      }
+      for (const issue of minerIssues ?? []) {
+        const solvedAt = minerSolvedIssueAt(issue, githubId ?? '');
+        if (solvedAt === null) continue;
+        const slot = buckets.findIndex(
+          (b) => solvedAt >= b.startMs && solvedAt < b.endMs,
+        );
+        if (slot < 0) continue;
+        disc[slot] += 1;
       }
       return {
         labels: buckets.map((b) => b.label),
@@ -327,6 +345,7 @@ const SparklineDetailModal: React.FC<SparklineDetailModalProps> = ({
     range,
     activeRange,
     recentCommits,
+    minerIssues,
     githubId,
     primaryValues,
     secondaryValues,
@@ -537,7 +556,13 @@ const SparklineDetailModal: React.FC<SparklineDetailModalProps> = ({
             }}
           >
             Activity · {activeRange.label} window ·{' '}
-            {grandTotal.toLocaleString()} merged PR{grandTotal === 1 ? '' : 's'}
+            {totalPrimary.toLocaleString()} merged PR
+            {totalPrimary === 1 ? '' : 's'}
+            {totalSecondary > 0
+              ? ` · ${totalSecondary.toLocaleString()} issue${
+                  totalSecondary === 1 ? '' : 's'
+                } solved`
+              : ''}
           </Typography>
         </Box>
         <IconButton
@@ -560,7 +585,7 @@ const SparklineDetailModal: React.FC<SparklineDetailModalProps> = ({
           <StatTile
             label={secondaryLabel}
             value={totalSecondary.toLocaleString()}
-            caption="merged PRs"
+            caption="issues solved"
             accentColor={LEADERBOARD_TRACK_COLORS.discovery}
           />
           <StatTile
@@ -658,7 +683,7 @@ const SparklineDetailModal: React.FC<SparklineDetailModalProps> = ({
                   color: alpha(theme.palette.text.primary, 0.7),
                 }}
               >
-                No PR activity in this window
+                No activity in this window
               </Typography>
               <Typography
                 sx={{

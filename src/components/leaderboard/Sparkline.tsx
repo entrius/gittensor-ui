@@ -100,7 +100,7 @@ const Sparkline: React.FC<SparklineProps> = ({
 
   const defaultTooltip: React.ReactNode = (() => {
     if (total === 0 && totalSecondary === 0) {
-      return `No PR activity in the last ${values.length} days`;
+      return `No activity in the last ${values.length} days`;
     }
     if (!hasSecondary) {
       return `${total} ${primaryLabel} in ${values.length}d · ${last7} in the last 7d${trendText}`;

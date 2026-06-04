@@ -2477,8 +2477,28 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
 }) => {
   const navigate = useNavigate();
   const { isWatched, count: watchedCount } = useWatchlist('miners');
+  const activityGithubIds = useMemo(
+    () => miners.map((m) => m.githubId).filter(Boolean),
+    [miners],
+  );
+  // `/dash/commits` carries hotkey + author login but NOT githubId, so the
+  // OSS/merged series can't be attributed without this identity bridge.
+  const minerIdentities = useMemo(
+    () =>
+      miners.map((m) => ({
+        githubId: m.githubId,
+        hotkey: m.hotkey,
+        login: m.githubUsername,
+      })),
+    [miners],
+  );
   const { index: activityIndex, isLoading: isLoadingActivity } =
-    useMinerActivityIndex({ lookbackDays: 30, topReposLimit: 2 });
+    useMinerActivityIndex({
+      lookbackDays: 30,
+      topReposLimit: 2,
+      githubIds: activityGithubIds,
+      identities: minerIdentities,
+    });
 
   const [searchParams, setSearchParams] = useSearchParams();
   const initialViewMode = useMemo<LeaderboardViewMode>(() => {
