@@ -46,6 +46,7 @@ import theme, {
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { parseNumber } from '../../utils/ExplorerUtils';
 import { paginateItems } from '../../utils';
+import { minerDetailsPath } from '../../utils/paths';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
 import { useWatchlist } from '../../hooks/useWatchlist';
 import type { MinerEvaluation } from '../../api';
@@ -1260,11 +1261,11 @@ const MobileMinerCard: React.FC<{
     <Box
       role="button"
       tabIndex={0}
-      onClick={() => navigate(`/miners/details?githubId=${row.miner.githubId}`)}
+      onClick={() => navigate(minerDetailsPath(row.miner.githubId))}
       onKeyDown={(event) => {
         if (event.key === 'Enter' || event.key === ' ') {
           event.preventDefault();
-          navigate(`/miners/details?githubId=${row.miner.githubId}`);
+          navigate(minerDetailsPath(row.miner.githubId));
         }
       }}
       sx={(t) => ({
@@ -3511,9 +3512,7 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
         columns={columns}
         rows={paged}
         getRowKey={(row) => row.miner.githubId}
-        onRowClick={(row) =>
-          navigate(`/miners/details?githubId=${row.miner.githubId}`)
-        }
+        onRowClick={(row) => navigate(minerDetailsPath(row.miner.githubId))}
         getRowSx={(row) => {
           const ineligible = !isAnyEligibleNow(row.miner);
           return {

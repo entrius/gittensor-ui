@@ -23,7 +23,9 @@ import {
   getGithubAvatarSrc,
   getGithubUserAvatarSrcById,
   getPrStatusLabel,
+  minerDetailsPath,
   minerPrPath,
+  minerRepositoryPath,
   parseNumber,
 } from '../utils';
 import useDashboardData from './dashboard/useDashboardData';
@@ -1449,9 +1451,7 @@ const TopMinersPanel: React.FC<{
             return (
               <LinkBox
                 key={`${miner.githubId}-${index}`}
-                href={`/miners/details?githubId=${encodeURIComponent(
-                  miner.githubId,
-                )}`}
+                href={minerDetailsPath(miner.githubId)}
                 linkState={{ backLabel: 'Back to Home' }}
                 sx={(theme) => ({
                   display: 'grid',
@@ -1722,9 +1722,7 @@ const TopActiveReposPanel: React.FC<{
               return (
                 <LinkBox
                   key={`${row.repository}-${index}`}
-                  // TODO: this route does not exist — should be minerRepositoryPath(row.repository) (/miners/repository?name=...).
-                  // Left as-is to keep this PR a no-op extraction; fix in a follow-up.
-                  href={`/repositories/details?repo=${encodeURIComponent(row.repository)}`}
+                  href={minerRepositoryPath(row.repository)}
                   linkState={{ backLabel: 'Back to Home' }}
                   sx={(theme) => ({
                     display: 'grid',

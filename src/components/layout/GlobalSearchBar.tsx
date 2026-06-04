@@ -25,6 +25,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSearchResults } from '../../pages/search/searchData';
 import { useLinkBehavior, linkResetSx } from '../common/linkBehavior';
 import { minerPrPath, minerRepositoryPath } from '../../utils';
+import { minerDetailsPath, bountyDetailsPath } from '../../utils/paths';
 
 const QUICK_RESULT_LIMIT = 3;
 const DROPDOWN_CLOSE_DELAY_MS = 150;
@@ -306,7 +307,7 @@ const GlobalSearchBar: React.FC = () => {
   const navItems: NavItem[] = useMemo(() => {
     const items: NavItem[] = [];
     minerResults.forEach((miner) => {
-      const href = `/miners/details?githubId=${encodeURIComponent(miner.githubId)}`;
+      const href = minerDetailsPath(miner.githubId);
       items.push({
         key: `miner-${miner.githubId}`,
         kind: 'miner',
@@ -339,7 +340,7 @@ const GlobalSearchBar: React.FC = () => {
       });
     });
     issueResults.forEach((issue) => {
-      const href = `/bounties/details?id=${issue.id}`;
+      const href = bountyDetailsPath(issue.id);
       items.push({
         key: `issue-${issue.id}`,
         kind: 'issue',

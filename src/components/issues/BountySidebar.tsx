@@ -27,6 +27,7 @@ import { StatRow } from '../leaderboard/ActivitySidebarCards';
 import { FONTS } from '../leaderboard/types';
 import { CHART_COLORS, CREDIBILITY_COLORS, STATUS_COLORS } from '../../theme';
 import { getGithubAvatarSrc, parseNumber } from '../../utils';
+import { minerDetailsPath } from '../../utils/paths';
 import { formatAlphaToUsd, formatTokenAmount } from '../../utils/format';
 import { usePrices } from '../../hooks/usePrices';
 import { useFiltersPanelOpenInUrl } from '../../hooks/useFiltersPanelUrlState';
@@ -606,7 +607,7 @@ const HunterRowItem: React.FC<{
       : '';
   const displayName = authorLogin || truncateHotkey(hotkey);
   const profileHref = authorGithubId
-    ? `/miners/details?githubId=${encodeURIComponent(authorGithubId)}`
+    ? minerDetailsPath(authorGithubId)
     : hotkey
       ? `/miners?hotkey=${encodeURIComponent(hotkey)}`
       : '/miners';

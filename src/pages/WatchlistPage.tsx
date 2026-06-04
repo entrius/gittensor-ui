@@ -109,6 +109,7 @@ import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatDate, formatTokenAmount, formatWeight } from '../utils/format';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import { minerPrPath, minerRepositoryPath } from '../utils';
+import { minerDetailsPath, bountyDetailsPath } from '../utils/paths';
 import theme, {
   CHART_COLORS,
   LABEL_COLORS,
@@ -1007,9 +1008,7 @@ const MinersList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
       <TopMinersTable
         miners={minerStats}
         isLoading={isLoading}
-        getMinerHref={(m) =>
-          `/miners/details?githubId=${encodeURIComponent(m.githubId)}`
-        }
+        getMinerHref={(m) => minerDetailsPath(m.githubId)}
         linkState={{ backLabel: 'Back to Watchlist' }}
         variant="watchlist"
         showDualEligibilityBadges
@@ -2130,8 +2129,7 @@ const BOUNTY_STATUS_FILTERS: readonly BountyStatusFilter[] = [
 
 const bountyKey = (issue: IssueBounty) => String(issue.id);
 
-const getBountyHref = (issue: IssueBounty) =>
-  `/bounties/details?id=${issue.id}`;
+const getBountyHref = (issue: IssueBounty) => bountyDetailsPath(issue.id);
 
 const bountyDate = (issue: IssueBounty): string =>
   issue.completedAt ||

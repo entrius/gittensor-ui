@@ -8,6 +8,7 @@ import {
   formatDate,
   formatUsdEstimate,
   getRepositoryOwnerAvatarSrc,
+  minerDetailsPath,
   minerRepositoryPath,
 } from '../../utils';
 import { type PullRequestDetails } from '../../api/models/Dashboard';
@@ -30,7 +31,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
     { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
   );
   const authorLinkProps = useLinkBehavior<HTMLAnchorElement>(
-    `/miners/details?githubId=${prDetails.githubId ?? ''}`,
+    minerDetailsPath(prDetails.githubId),
     { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
   );
   const githubPrUrl = `https://github.com/${repository}/pull/${pullRequestNumber}`;

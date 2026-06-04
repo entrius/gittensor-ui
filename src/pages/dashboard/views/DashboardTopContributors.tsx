@@ -9,6 +9,7 @@ import {
 import { alpha, useTheme } from '@mui/material/styles';
 import { useNavigate } from 'react-router-dom';
 import { getGithubAvatarSrc } from '../../../utils';
+import { minerDetailsPath } from '../../../utils/paths';
 import { type DashboardFeaturedContributor } from '../dashboardData';
 
 interface DashboardTopContributorsProps {
@@ -39,9 +40,8 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
   const monoFontFamily = theme.typography.fontFamily;
 
   const openContributor = (githubId: string) => {
-    const modeParam = mode !== 'prs' ? `&mode=${mode}` : '';
     navigate(
-      `/miners/details?githubId=${encodeURIComponent(githubId)}${modeParam}`,
+      minerDetailsPath(githubId, mode !== 'prs' ? { mode } : undefined),
       {
         state: { backTo: '/dashboard' },
       },
