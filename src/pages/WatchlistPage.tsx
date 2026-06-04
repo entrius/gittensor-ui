@@ -108,6 +108,7 @@ import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatDate, formatTokenAmount, formatWeight } from '../utils/format';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
+import { minerPrPath, minerRepositoryPath } from '../utils';
 import theme, {
   CHART_COLORS,
   LABEL_COLORS,
@@ -1149,8 +1150,7 @@ const repoHeaderStack = (
   </Box>
 );
 
-const getRepoHref = (repo: Repository) =>
-  `/miners/repository?name=${encodeURIComponent(repo.fullName)}`;
+const getRepoHref = (repo: Repository) => minerRepositoryPath(repo.fullName);
 
 const repoColumns: DataTableColumn<WatchedRepoStats, RepoSortKey>[] = [
   {
@@ -3038,7 +3038,7 @@ const PRsViewModeToggle: React.FC<{
 };
 
 const getPrHref = (pr: CommitLog) =>
-  `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`;
+  minerPrPath(pr.repository, pr.pullRequestNumber);
 
 const PRCard: React.FC<{
   pr: CommitLog;

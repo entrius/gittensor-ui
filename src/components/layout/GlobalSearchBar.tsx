@@ -24,6 +24,7 @@ import CloseIcon from '@mui/icons-material/Close';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSearchResults } from '../../pages/search/searchData';
 import { useLinkBehavior, linkResetSx } from '../common/linkBehavior';
+import { minerPrPath, minerRepositoryPath } from '../../utils';
 
 const QUICK_RESULT_LIMIT = 3;
 const DROPDOWN_CLOSE_DELAY_MS = 150;
@@ -316,7 +317,7 @@ const GlobalSearchBar: React.FC = () => {
       });
     });
     repositoryResults.forEach((repo) => {
-      const href = `/miners/repository?name=${encodeURIComponent(repo.fullName)}`;
+      const href = minerRepositoryPath(repo.fullName);
       items.push({
         key: `repo-${repo.fullName}`,
         kind: 'repo',
@@ -327,7 +328,7 @@ const GlobalSearchBar: React.FC = () => {
       });
     });
     prResults.forEach((pr) => {
-      const href = `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${pr.pullRequestNumber}`;
+      const href = minerPrPath(pr.repository, pr.pullRequestNumber);
       items.push({
         key: `pr-${pr.repository}-${pr.pullRequestNumber}`,
         kind: 'pr',

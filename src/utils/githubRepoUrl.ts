@@ -4,10 +4,14 @@ export const extractRepoFullName = (repoUrl: string): string | null => {
     if (!['http:', 'https:'].includes(url.protocol)) return null;
     if (url.hostname.toLowerCase() !== 'github.com') return null;
 
-    const [owner, repo] = url.pathname.split('/').filter(Boolean);
+    const [owner, rawRepo] = url.pathname.split('/').filter(Boolean);
     const ownerPattern = /^[a-z\d](?:[a-z\d-]{0,37}[a-z\d])?$/i;
     const repoPattern = /^[a-z\d._-]+$/i;
-    if (!owner || !repo) return null;
+    if (!owner || !rawRepo) return null;
+
+    const repo = rawRepo.toLowerCase().endsWith('.git')
+      ? rawRepo.slice(0, -4)
+      : rawRepo;
     if (!ownerPattern.test(owner) || !repoPattern.test(repo)) return null;
 
     return `${owner}/${repo}`;

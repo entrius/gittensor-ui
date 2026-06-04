@@ -23,6 +23,7 @@ import {
   getGithubAvatarSrc,
   getGithubUserAvatarSrcById,
   getPrStatusLabel,
+  minerPrPath,
   parseNumber,
 } from '../utils';
 import useDashboardData from './dashboard/useDashboardData';
@@ -266,9 +267,7 @@ const buildActivityRows = (prs: CommitLog[]): LandingActivityRow[] =>
       title: pr.pullRequestTitle || `PR #${pr.pullRequestNumber}`,
       repository: pr.repository,
       author: pr.author || shortIdentity(pr.hotkey || 'unknown'),
-      href: `/miners/pr?repo=${encodeURIComponent(pr.repository)}&number=${
-        pr.pullRequestNumber
-      }`,
+      href: minerPrPath(pr.repository, pr.pullRequestNumber),
       dateLabel: timestamp.dateLabel,
       timeLabel: timestamp.timeLabel,
       tone:
@@ -1723,6 +1722,8 @@ const TopActiveReposPanel: React.FC<{
               return (
                 <LinkBox
                   key={`${row.repository}-${index}`}
+                  // TODO: this route does not exist — should be minerRepositoryPath(row.repository) (/miners/repository?name=...).
+                  // Left as-is to keep this PR a no-op extraction; fix in a follow-up.
                   href={`/repositories/details?repo=${encodeURIComponent(row.repository)}`}
                   linkState={{ backLabel: 'Back to Home' }}
                   sx={(theme) => ({
