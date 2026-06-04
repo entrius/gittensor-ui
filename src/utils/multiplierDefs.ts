@@ -58,7 +58,7 @@ const PILL_CONFIGS: PillConfig[] = [
     label: 'cred',
     field: 'credibilityMultiplier',
     title: 'Credibility',
-    desc: 'Based on your PR success rate, scaled to reward consistency.',
+    desc: 'Based on your PR credibility, scaled to reward consistency.',
   },
   {
     key: 'issue',

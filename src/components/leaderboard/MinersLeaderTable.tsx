@@ -45,6 +45,7 @@ import theme, {
 } from '../../theme';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { parseNumber } from '../../utils/ExplorerUtils';
+import { formatRelativeTimeAgo as formatLastActive } from '../../utils/format';
 import { paginateItems } from '../../utils';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
 import { useWatchlist } from '../../hooks/useWatchlist';
@@ -158,21 +159,6 @@ const fmtUsd = (n: number): string => {
   if (n < 1) return '<$1';
   if (n >= 10_000) return `$${(n / 1000).toFixed(1)}k`;
   return `$${Math.round(n).toLocaleString()}`;
-};
-
-const formatLastActive = (iso: string | null | undefined): string => {
-  if (!iso) return '—';
-  const t = Date.parse(iso);
-  if (!Number.isFinite(t)) return '—';
-  const mins = Math.floor((Date.now() - t) / 60_000);
-  if (mins < 1) return 'just now';
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 30) return `${days}d ago`;
-  const months = Math.floor(days / 30);
-  return `${months}mo ago`;
 };
 
 const SparklineButton: React.FC<{
@@ -1717,7 +1703,7 @@ interface ToolbarProps {
 const SORT_FIELD_LABELS: Record<SortField, string> = {
   score: 'Score',
   usd: '$/Day',
-  credibility: 'Success rate',
+  credibility: 'Credibility',
   volume: 'Volume (PRs + issues)',
   active: 'Last active',
   movement: 'Rank movement',

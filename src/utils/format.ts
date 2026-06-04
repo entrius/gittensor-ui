@@ -56,6 +56,29 @@ export const formatDate = (dateStr: string | null | undefined): string => {
   return format(new Date(dateStr), 'MMM d, yyyy');
 };
 
+/**
+ * Compact relative "time ago" label — "just now", "5m ago", "3h ago",
+ * "2d ago", "4mo ago" (returns "—" when missing/invalid). Shared by the
+ * leaderboard's last-active column and the miner dashboard so recency reads
+ * identically across the app.
+ */
+export const formatRelativeTimeAgo = (
+  iso: string | null | undefined,
+): string => {
+  if (!iso) return '—';
+  const t = Date.parse(iso);
+  if (!Number.isFinite(t)) return '—';
+  const mins = Math.floor((Date.now() - t) / 60_000);
+  if (mins < 1) return 'just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
+};
+
 export const formatUsdEstimate = (
   value: number | null | undefined,
   options?: { includeApproxPrefix?: boolean; showZero?: boolean },

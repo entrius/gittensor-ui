@@ -6,13 +6,11 @@ import { LinkBox } from '../components/common/linkBehavior';
 import {
   BackButton,
   MinerActivity,
-  MinerInsightsCard,
+  MinerNextSteps,
   MinerOpenDiscoveryIssuesByRepo,
-  MinerOpenPrRisk,
   MinerPRsTable,
   MinerProfileHero,
   MinerRepositoryPanel,
-  MinerScoreLevers,
   MinerStatBand,
   SEO,
 } from '../components';
@@ -25,16 +23,109 @@ const PR_TABS = ['pull-requests', 'activity'] as const;
 const ISSUE_TABS = ['open-issues', 'activity'] as const;
 type MinerDetailsTab = (typeof PR_TABS)[number] | (typeof ISSUE_TABS)[number];
 
+// Offset so smooth-scrolled sections clear the sticky global search bar
+// (see AppLayout) instead of landing flush under it.
+const sectionAnchorSx = { scrollMarginTop: { xs: 72, md: 88 } } as const;
+
+// Segmented-pill tab styling — matches the OSS/Discovery + range switches:
+// no underline indicator, the active tab is a raised elevated pill with bold
+// white text, inactive tabs are muted grey.
 const tabsAlignSx = {
+  minHeight: 0,
+  border: '1px solid',
+  borderColor: 'border.light',
+  borderRadius: 2,
+  p: 0.5,
+  '& .MuiTabs-indicator': { display: 'none' },
+  '& .MuiTabs-flexContainer': { gap: 0.5 },
   '& .MuiTab-root': {
-    color: 'text.secondary',
+    minHeight: 0,
+    minWidth: 0,
     textTransform: 'none' as const,
-    fontSize: '0.83rem',
+    fontSize: '0.8rem',
     fontWeight: 500,
-    '&.Mui-selected': { color: 'primary.main' },
-    '&:first-of-type': { pl: 0 },
+    color: 'text.secondary',
+    px: { xs: 1.5, sm: 2 },
+    py: 0.6,
+    borderRadius: 1.5,
+    border: '1px solid transparent',
+    transition: 'all 0.2s',
+    '&:hover': { color: 'text.primary', backgroundColor: 'surface.light' },
+    '&.Mui-selected': {
+      color: 'text.primary',
+      fontWeight: 700,
+      backgroundColor: 'surface.elevated',
+      borderColor: 'border.medium',
+      boxShadow: '0 1px 2px rgba(0, 0, 0, 0.45)',
+    },
   },
 };
+
+// Time-range options for the contributions toolbar. 30D is the default (and the
+// widest, matching the subnet's ~30-day PR scoring window).
+const RANGES = [
+  { label: '1D', value: '1d', days: 1 },
+  { label: '7D', value: '7d', days: 7 },
+  { label: '30D', value: '30d', days: 30 },
+] as const;
+
+/** Small segmented (pill) toggle built from router links — used for both the
+ *  OSS/Discovery track and the 1D/7D/30D range. */
+const Segmented: React.FC<{
+  ariaLabel: string;
+  options: ReadonlyArray<{ label: string; href: string; active: boolean }>;
+}> = ({ ariaLabel, options }) => (
+  <Box
+    role="group"
+    aria-label={ariaLabel}
+    sx={{
+      display: 'inline-flex',
+      gap: 0.5,
+      border: '1px solid',
+      borderColor: 'border.light',
+      p: 0.5,
+      borderRadius: 2,
+    }}
+  >
+    {options.map((o) => (
+      <LinkBox
+        key={o.label}
+        href={o.href}
+        replace
+        sx={{
+          px: { xs: 1.5, sm: 2 },
+          py: 0.6,
+          borderRadius: 1.5,
+          cursor: 'pointer',
+          border: '1px solid',
+          borderColor: o.active ? 'border.medium' : 'transparent',
+          backgroundColor: o.active ? 'surface.elevated' : 'transparent',
+          boxShadow: o.active ? '0 1px 2px rgba(0, 0, 0, 0.45)' : 'none',
+          color: o.active
+            ? 'text.primary'
+            : (t) => alpha(t.palette.text.primary, 0.45),
+          transition: 'all 0.2s',
+          '&:hover': {
+            color: 'text.primary',
+            backgroundColor: o.active
+              ? 'surface.elevated'
+              : (t) => alpha(t.palette.text.primary, 0.04),
+          },
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: '0.8rem',
+            fontWeight: o.active ? 700 : 500,
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {o.label}
+        </Typography>
+      </LinkBox>
+    ))}
+  </Box>
+);
 
 const MinerDetailsPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -53,6 +144,19 @@ const MinerDetailsPage: React.FC = () => {
     // Drop the tab param so the new mode lands on its own first tab —
     // PR and issue modes have disjoint first tabs.
     p.delete('tab');
+    return `${location.pathname}?${p.toString()}`;
+  };
+
+  // Time range for the contributions (PR/issue lists + activity). Defaults to
+  // the widest window (30D).
+  const rangeParam = searchParams.get('range');
+  const activeRange =
+    RANGES.find((r) => r.value === rangeParam) ?? RANGES[RANGES.length - 1];
+  const rangeDays = activeRange.days;
+
+  const buildRangeHref = (value: string) => {
+    const p = new URLSearchParams(searchParams);
+    p.set('range', value);
     return `${location.pathname}?${p.toString()}`;
   };
 
@@ -94,128 +198,85 @@ const MinerDetailsPage: React.FC = () => {
           display: 'flex',
           width: '100%',
           justifyContent: 'center',
-          py: { xs: 2, sm: 3 },
+          py: { xs: 1.5, sm: 2.5 },
         }}
       >
         <Box
           sx={{
             display: 'flex',
             flexDirection: 'column',
-            gap: 2,
+            gap: 1.5,
             width: '100%',
             maxWidth: 1320,
             px: { xs: 2, md: 0 },
           }}
         >
-          {/* ── Header: back · mode toggle · watch ─────────────── */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 2,
-              flexWrap: 'wrap',
-            }}
-          >
-            <BackButton to="/repositories" />
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 1.5,
-                flexWrap: 'wrap',
-              }}
-            >
-              {/* Mode toggle — a real page-level axis, not a stat */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 0.5,
-                  backgroundColor: 'transparent',
-                  border: '1px solid',
-                  borderColor: 'border.light',
-                  p: 0.5,
-                  borderRadius: 2,
-                }}
-              >
-                {(
-                  [
-                    { label: 'OSS Contributions', value: 'prs' as const },
-                    { label: 'Issue Discovery', value: 'issues' as const },
-                  ] as const
-                ).map((option) => {
-                  const isActive = viewMode === option.value;
-                  return (
-                    <LinkBox
-                      key={option.value}
-                      href={buildModeHref(option.value)}
-                      replace
-                      sx={{
-                        px: 2,
-                        py: 0.75,
-                        borderRadius: 1.5,
-                        cursor: 'pointer',
-                        backgroundColor: 'transparent',
-                        border: '1px solid',
-                        borderColor: isActive ? 'border.medium' : 'transparent',
-                        color: isActive
-                          ? 'primary.main'
-                          : (t) => alpha(t.palette.text.primary, 0.5),
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          color: 'text.primary',
-                        },
-                      }}
-                    >
-                      <Typography
-                        sx={{
-                          fontSize: '0.8rem',
-                          fontWeight: 600,
-                          textAlign: 'center',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {option.label}
-                      </Typography>
-                    </LinkBox>
-                  );
-                })}
-              </Box>
-              {minerExists && (
+          {/* ── Back (icon button) ───────────────────────────────── */}
+          <BackButton to="/repositories" />
+
+          {/* ── Identity header (watch action pinned top-right) ──── */}
+          <MinerProfileHero
+            githubId={githubId}
+            action={
+              minerExists ? (
                 <WatchlistButton
                   category="miners"
                   itemKey={githubId}
                   size="medium"
                 />
-              )}
-            </Box>
-          </Box>
+              ) : undefined
+            }
+          />
 
-          {/* ── Identity header ──────────────────────────────────── */}
-          <MinerProfileHero githubId={githubId} />
-
-          {/* ── Headline performance band ────────────────────────── */}
+          {/* ── Headline performance band (with peer percentiles) ── */}
           <MinerStatBand githubId={githubId} />
 
-          {/* ── Earning levers — why your score is what it is ────── */}
-          <MinerScoreLevers githubId={githubId} />
+          {/* ── What to do next — the prioritised action list ────── */}
+          <MinerNextSteps githubId={githubId} />
 
-          {/* ── Open PR risk (renders only when open PRs > 0) ────── */}
-          <MinerOpenPrRisk githubId={githubId} />
+          {/* ── Track toggle — governs the repositories table and the
+              contribution tabs below (not the hero / next-steps / risk). */}
+          <Box sx={{ mt: 0.5 }}>
+            <Segmented
+              ariaLabel="Contribution track"
+              options={[
+                {
+                  label: 'OSS Contributions',
+                  href: buildModeHref('prs'),
+                  active: viewMode === 'prs',
+                },
+                {
+                  label: 'Issue Discovery',
+                  href: buildModeHref('issues'),
+                  active: viewMode === 'issues',
+                },
+              ]}
+            />
+          </Box>
 
           {/* ── Repositories — standing + unlock progress ────────── */}
-          <MinerRepositoryPanel githubId={githubId} viewMode={viewMode} />
+          <Box id="repositories" sx={sectionAnchorSx}>
+            <MinerRepositoryPanel githubId={githubId} viewMode={viewMode} />
+          </Box>
 
-          {/* ── Insights & next actions ──────────────────────────── */}
-          <MinerInsightsCard githubId={githubId} viewMode={viewMode} />
-
-          {/* ── Contribution detail ──────────────────────────────── */}
-          <Box sx={{ borderBottom: '1px solid', borderColor: 'border.light' }}>
+          {/* ── Contribution detail: tabs (left) · range (right) ───
+              The 1D/7D/30D range filters these contribution lists and the
+              activity heatmap by date. */}
+          <Box
+            id="contributions"
+            sx={{
+              ...sectionAnchorSx,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: 1.5,
+              flexWrap: 'wrap',
+            }}
+          >
             <Tabs
               value={activeTab}
               onChange={handleTabChange}
-              variant="scrollable"
-              scrollButtons={false}
+              variant="standard"
               sx={tabsAlignSx}
             >
               {viewMode === 'issues' ? (
@@ -225,17 +286,34 @@ const MinerDetailsPage: React.FC = () => {
               )}
               <Tab value="activity" label="Activity" />
             </Tabs>
+            <Box sx={{ flexShrink: 0 }}>
+              <Segmented
+                ariaLabel="Time range"
+                options={RANGES.map((r) => ({
+                  label: r.label,
+                  href: buildRangeHref(r.value),
+                  active: r.value === activeRange.value,
+                }))}
+              />
+            </Box>
           </Box>
 
           <Box>
             {activeTab === 'pull-requests' && viewMode === 'prs' && (
-              <MinerPRsTable githubId={githubId} />
+              <MinerPRsTable githubId={githubId} rangeDays={rangeDays} />
             )}
             {activeTab === 'open-issues' && viewMode === 'issues' && (
-              <MinerOpenDiscoveryIssuesByRepo githubId={githubId} />
+              <MinerOpenDiscoveryIssuesByRepo
+                githubId={githubId}
+                rangeDays={rangeDays}
+              />
             )}
             {activeTab === 'activity' && (
-              <MinerActivity githubId={githubId} viewMode={viewMode} />
+              <MinerActivity
+                githubId={githubId}
+                viewMode={viewMode}
+                rangeDays={rangeDays}
+              />
             )}
           </Box>
         </Box>

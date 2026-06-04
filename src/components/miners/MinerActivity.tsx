@@ -19,9 +19,8 @@ import {
 } from '../../api';
 import ContributionHeatmap from '../ContributionHeatmap';
 import DayPRsPanel from '../DayPRsPanel';
-import { CHART_COLORS, STATUS_COLORS, TEXT_OPACITY } from '../../theme';
+import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import {
-  echartsItemTooltipChrome,
   echartsRadarChrome,
   echartsTransparentBackground,
 } from '../../utils/echarts/gittensorChartTheme';
@@ -32,193 +31,22 @@ import {
   type IssueRepoStats,
 } from '../../utils/ExplorerUtils';
 import TrustBadge from './TrustBadge';
-import CredibilityChart from './CredibilityChart';
+import MergeOutcomeBar from './MergeOutcomeBar';
 import PerformanceRadar from './PerformanceRadar';
-import {
-  ChartEmptyPanel,
-  chartNumericSeriesHasPositive,
-} from '../common/ChartEmptyPanel';
+import { ChartEmptyPanel } from '../common/ChartEmptyPanel';
 
 type ViewMode = 'prs' | 'issues';
 
 interface MinerActivityProps {
   githubId: string;
   viewMode?: ViewMode;
+  /** Heatmap window from the dashboard's 1D/7D/30D range switch. */
+  rangeDays?: number;
 }
 
 // ---------------------------------------------------------------------------
 // Issue-mode chart sub-components
 // ---------------------------------------------------------------------------
-
-const LegendItem: React.FC<{ label: string; value: number; color: string }> = ({
-  label,
-  value,
-  color,
-}) => {
-  const theme = useTheme();
-
-  return (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-      <Box
-        sx={{
-          width: 6,
-          height: 6,
-          borderRadius: '50%',
-          backgroundColor: color,
-        }}
-      />
-      <Typography
-        sx={{
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.tertiary),
-          fontSize: '0.65rem',
-        }}
-      >
-        {label}
-      </Typography>
-      <Typography
-        sx={{
-          color,
-          fontSize: '0.75rem',
-          fontWeight: 700,
-        }}
-      >
-        {value}
-      </Typography>
-    </Box>
-  );
-};
-
-const IssueCredibilityChart: React.FC<{
-  solved: number;
-  open: number;
-  closed: number;
-  credibility: number;
-}> = ({ solved, open, closed, credibility }) => {
-  const theme = useTheme();
-  const hasIssueActivity = chartNumericSeriesHasPositive([
-    solved,
-    open,
-    closed,
-  ]);
-
-  const chartOption = useMemo(
-    () => ({
-      ...echartsTransparentBackground(),
-      title: {
-        text: `${(credibility * 100).toFixed(0)}%`,
-        subtext: 'Credibility',
-        left: 'center',
-        top: '38%',
-        textStyle: {
-          color: theme.palette.text.primary,
-          fontSize: 28,
-          fontWeight: 'bold',
-        },
-        subtextStyle: {
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
-          fontSize: 11,
-          fontWeight: 500,
-        },
-      },
-      tooltip: {
-        trigger: 'item',
-        formatter: '{b}: {c} ({d}%)',
-        ...echartsItemTooltipChrome(theme),
-      },
-      series: [
-        {
-          name: 'Issue Status',
-          type: 'pie',
-          radius: ['58%', '72%'],
-          avoidLabelOverlap: false,
-          itemStyle: {
-            borderRadius: 6,
-            borderColor: 'transparent',
-            borderWidth: 3,
-          },
-          label: { show: false, position: 'center' },
-          emphasis: { label: { show: false }, scale: true, scaleSize: 5 },
-          labelLine: { show: false },
-          data: [
-            {
-              value: solved,
-              name: 'Solved',
-              itemStyle: { color: CHART_COLORS.merged },
-            },
-            {
-              value: open,
-              name: 'Open',
-              itemStyle: { color: CHART_COLORS.open },
-            },
-            {
-              value: closed,
-              name: 'Closed',
-              itemStyle: { color: CHART_COLORS.closed },
-            },
-          ],
-        },
-      ],
-    }),
-    [solved, open, closed, credibility, theme],
-  );
-
-  return (
-    <Box
-      sx={{
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-      }}
-    >
-      <Typography
-        variant="monoSmall"
-        sx={{
-          color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
-          mb: 0.75,
-          textAlign: 'center',
-        }}
-      >
-        Issue Solve Ratio
-      </Typography>
-
-      <ChartEmptyPanel
-        empty={!hasIssueActivity}
-        minHeight={190}
-        title="No activity yet"
-        hint="Issue solve metrics appear once you have solved, open, or closed issues on tracked bounties."
-      >
-        <Box sx={{ height: '190px', width: '100%', mb: 0.75 }}>
-          <ReactECharts
-            option={chartOption}
-            style={{ height: '100%', width: '100%' }}
-            opts={{ renderer: 'svg' }}
-          />
-        </Box>
-
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 1.5,
-            justifyContent: 'center',
-            flexWrap: 'wrap',
-          }}
-        >
-          <LegendItem
-            label="Solved"
-            value={solved}
-            color={CHART_COLORS.merged}
-          />
-          <LegendItem label="Open" value={open} color={CHART_COLORS.open} />
-          <LegendItem
-            label="Closed"
-            value={closed}
-            color={CHART_COLORS.closed}
-          />
-        </Box>
-      </ChartEmptyPanel>
-    </Box>
-  );
-};
 
 const IssuePerformanceRadar: React.FC<{
   credibility: number;
@@ -246,12 +74,12 @@ const IssuePerformanceRadar: React.FC<{
         ...echartsRadarChrome(theme),
         indicator: [
           { name: 'Credibility', max: 100 },
-          { name: 'Solve\nRate', max: 100 },
-          { name: 'Valid\nRate', max: 100 },
-          { name: 'Volume', max: 100 },
-          { name: 'Token\nScore', max: 100 },
+          { name: 'Solve\nrate', max: 100 },
+          { name: 'Valid\nrate', max: 100 },
+          { name: 'Solve\nvolume', max: 100 },
+          { name: 'Token\nscore', max: 100 },
           // Keep max 100 like other spokes — ECharts radar mixes poorly with max: 1.
-          { name: 'Avg Repo\nWeight', max: 100 },
+          { name: 'Repo\npayout', max: 100 },
         ],
         center: ['50%', '50%'],
         radius: '50%',
@@ -310,11 +138,21 @@ const IssuePerformanceRadar: React.FC<{
         variant="monoSmall"
         sx={{
           color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
-          mb: 2,
+          mb: 0.5,
           textAlign: 'center',
         }}
       >
         Discovery Profile
+      </Typography>
+      <Typography
+        sx={{
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
+          fontSize: '0.62rem',
+          mb: 1.5,
+          textAlign: 'center',
+        }}
+      >
+        Each axis scaled 0–100 vs the network's best
       </Typography>
       <ChartEmptyPanel
         empty={isEmpty}
@@ -337,6 +175,7 @@ const IssuePerformanceRadar: React.FC<{
 const MinerActivity: React.FC<MinerActivityProps> = ({
   githubId,
   viewMode = 'prs',
+  rangeDays,
 }) => {
   const isIssueMode = viewMode === 'issues';
   const { data: minerStats } = useMinerStats(githubId);
@@ -378,15 +217,21 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
 
       const diffTime = Math.abs(today.getTime() - earliestDate.getTime());
       const daysDiff = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-      const daysToShow = Math.max(daysDiff, 1);
+      // Clamp the visible window to the selected range (1D/7D/30D); without a
+      // range, show the miner's full history as before.
+      const daysToShow = Math.min(
+        Math.max(daysDiff, 1),
+        rangeDays ?? Number.MAX_SAFE_INTEGER,
+      );
 
       const dataMap = new Map<string, number>();
       for (let i = daysToShow; i >= 0; i--) {
         dataMap.set(format(subDays(today, i), 'yyyy-MM-dd'), 0);
       }
 
+      const windowDays = rangeDays ?? 30;
       let last30Count = 0;
-      const thirtyDaysAgo = subDays(today, 30);
+      const windowStart = subDays(today, windowDays);
 
       prs.forEach((pr) => {
         if (!pr.mergedAt) return;
@@ -397,7 +242,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
         if (dataMap.has(dateStr)) {
           dataMap.set(dateStr, (dataMap.get(dateStr) || 0) + 1);
         }
-        if (date >= thirtyDaysAgo) last30Count++;
+        if (date >= windowStart) last30Count++;
       });
 
       const data = Array.from(dataMap.entries())
@@ -416,7 +261,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
         contributionsLast30Days: last30Count,
         totalDaysShown: daysToShow,
       };
-    }, [prs]);
+    }, [prs, rangeDays]);
 
   // PR-mode radar chart values (normalized to 100)
   const prRadarValues = useMemo(() => {
@@ -613,11 +458,14 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
                 justifyContent: 'center',
               }}
             >
-              <IssueCredibilityChart
-                solved={issueData!.solved}
+              <MergeOutcomeBar
+                merged={issueData!.solved}
                 open={issueData!.openIssues}
                 closed={issueData!.closedIssues}
                 credibility={issueData!.issueCred}
+                title="Issue outcomes"
+                mergedLabel="Solved"
+                rateLabel="Credibility"
               />
             </Grid>
 
@@ -662,7 +510,7 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
                 data={contributionData}
                 contributionsLast30Days={contributionsLast30Days}
                 totalDaysShown={totalDaysShown}
-                subtitle="contribution(s) in the last 30 days"
+                subtitle={`contribution(s) in the last ${rangeDays ?? 30} days`}
                 footerText="* Activity based on merged PRs in Gittensor-tracked repositories"
                 bare
                 selectedDate={selectedDate}
@@ -685,11 +533,14 @@ const MinerActivity: React.FC<MinerActivityProps> = ({
                 justifyContent: 'center',
               }}
             >
-              <CredibilityChart
+              <MergeOutcomeBar
                 merged={minerStats.totalMergedPrs || 0}
                 open={minerStats.totalOpenPrs || 0}
                 closed={minerStats.totalClosedPrs || 0}
                 credibility={minerStats.credibility || 0}
+                title="PR outcomes"
+                mergedLabel="Merged"
+                rateLabel="Credibility"
               />
             </Grid>
 

@@ -3,10 +3,8 @@ import { alpha, Box, Card, Skeleton, Tooltip, Typography } from '@mui/material';
 import {
   BoltOutlined as EarningsIcon,
   EmojiEventsOutlined as ScoreIcon,
-  FolderOpenOutlined as RepoIcon,
   InsightsOutlined as ActivityIcon,
-  LeaderboardOutlined as RankIcon,
-  VerifiedUserOutlined as CredibilityIcon,
+  LockOutlined as CollateralIcon,
 } from '@mui/icons-material';
 import { useAllMiners, useMinerStats } from '../../api';
 import {
@@ -14,11 +12,15 @@ import {
   STATUS_COLORS,
   tooltipSlotProps,
 } from '../../theme';
-import { credibilityColor } from '../../utils/format';
 import {
   aggregateMinerTotals,
   computeNetworkRank,
 } from '../../utils/minerProgress';
+import {
+  computeMinerBenchmark,
+  type Percentile,
+} from '../../utils/minerBenchmark';
+import PercentileBadge from './PercentileBadge';
 
 interface MinerStatBandProps {
   githubId: string;
@@ -41,130 +43,21 @@ const usd = (n: number): string =>
 const OSS = LEADERBOARD_TRACK_COLORS.oss;
 const DISC = LEADERBOARD_TRACK_COLORS.discovery;
 
-/* ── One stat cell ────────────────────────────────────────────────── */
+/** Tiny label after a colored figure in a split value (e.g. "merged"). */
+const TRACK_LABEL_SX = {
+  fontSize: '0.6rem',
+  fontWeight: 600,
+  letterSpacing: '0.04em',
+  color: 'text.tertiary',
+  ml: 0.4,
+} as const;
 
-const Cell: React.FC<{
-  icon: React.ReactNode;
-  label: string;
-  tone?: string;
-  tooltip?: string;
-  value: React.ReactNode;
-  valueColor?: string;
-  bar?: { value: number; color: string };
-  sub: React.ReactNode;
-}> = ({ icon, label, tone, tooltip, value, valueColor, bar, sub }) => {
-  const header = (
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6, minWidth: 0 }}>
-      <Box
-        sx={{
-          color: tone ?? ((t) => alpha(t.palette.text.primary, 0.4)),
-          display: 'inline-flex',
-          '& svg': { fontSize: '0.85rem' },
-        }}
-      >
-        {icon}
-      </Box>
-      <Typography
-        sx={{
-          fontSize: '0.6rem',
-          fontWeight: 600,
-          letterSpacing: '0.06em',
-          textTransform: 'uppercase',
-          color: 'text.tertiary',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {label}
-      </Typography>
-    </Box>
-  );
-
-  return (
-    <Box
-      sx={{
-        px: 1.75,
-        py: 1.5,
-        minWidth: 0,
-        display: 'flex',
-        flexDirection: 'column',
-        gap: 0.5,
-        borderRight: '1px solid',
-        borderBottom: '1px solid',
-        borderColor: 'border.light',
-      }}
-    >
-      {tooltip ? (
-        <Tooltip
-          title={tooltip}
-          arrow
-          placement="top"
-          slotProps={tooltipSlotProps}
-        >
-          <Box
-            sx={{
-              display: 'inline-flex',
-              cursor: 'help',
-              alignSelf: 'flex-start',
-            }}
-          >
-            {header}
-          </Box>
-        </Tooltip>
-      ) : (
-        header
-      )}
-
-      <Typography
-        sx={{
-          fontSize: '1.4rem',
-          fontWeight: 700,
-          lineHeight: 1.05,
-          letterSpacing: '-0.02em',
-          color: valueColor ?? 'text.primary',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {value}
-      </Typography>
-
-      {bar && (
-        <Box
-          sx={{
-            height: 3,
-            borderRadius: 999,
-            backgroundColor: 'border.light',
-            overflow: 'hidden',
-          }}
-        >
-          <Box
-            sx={{
-              width: `${Math.min(100, Math.max(0, bar.value * 100))}%`,
-              height: '100%',
-              backgroundColor: bar.color,
-              borderRadius: 999,
-            }}
-          />
-        </Box>
-      )}
-
-      <Typography
-        sx={{
-          fontSize: '0.66rem',
-          color: 'text.secondary',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-        }}
-      >
-        {sub}
-      </Typography>
-    </Box>
-  );
-};
+/** Middot between the two track figures of a split value. */
+const TRACK_SEP_SX = {
+  color: 'text.tertiary',
+  mx: 0.75,
+  fontWeight: 400,
+} as const;
 
 const Dot: React.FC<{ color: string }> = ({ color }) => (
   <Box
@@ -181,14 +74,194 @@ const Dot: React.FC<{ color: string }> = ({ color }) => (
   />
 );
 
+/** A two-track split value — OSS figure (green) and Disc figure (blue). */
+const TrackPair: React.FC<{
+  ossValue: React.ReactNode;
+  ossLabel: string;
+  discValue: React.ReactNode;
+  discLabel: string;
+}> = ({ ossValue, ossLabel, discValue, discLabel }) => (
+  <>
+    <Box component="span" sx={{ color: OSS, fontWeight: 700 }}>
+      {ossValue}
+    </Box>
+    <Box component="span" sx={TRACK_LABEL_SX}>
+      {ossLabel}
+    </Box>
+    <Box component="span" sx={TRACK_SEP_SX}>
+      ·
+    </Box>
+    <Box component="span" sx={{ color: DISC, fontWeight: 700 }}>
+      {discValue}
+    </Box>
+    <Box component="span" sx={TRACK_LABEL_SX}>
+      {discLabel}
+    </Box>
+  </>
+);
+
+/** One muted detail line under a metric's value. */
+const Detail: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Typography
+    sx={{
+      fontSize: '0.66rem',
+      color: 'text.secondary',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      whiteSpace: 'nowrap',
+      minWidth: 0,
+    }}
+  >
+    {children}
+  </Typography>
+);
+
+/* ── One metric inside a combined card ────────────────────────────── */
+
+const Metric: React.FC<{
+  icon: React.ReactNode;
+  label: string;
+  tone?: string;
+  tooltip?: string;
+  value: React.ReactNode;
+  valueColor?: string;
+  percentile?: Percentile | null;
+  details?: React.ReactNode;
+}> = ({
+  icon,
+  label,
+  tone,
+  tooltip,
+  value,
+  valueColor,
+  percentile,
+  details,
+}) => {
+  const content = (
+    <Box
+      sx={{
+        flex: 1,
+        minWidth: 0,
+        p: { xs: 1.5, md: 2 },
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 0.5,
+        cursor: tooltip ? 'help' : 'default',
+      }}
+    >
+      <Box
+        sx={{ display: 'flex', alignItems: 'center', gap: 0.6, minWidth: 0 }}
+      >
+        <Box
+          sx={{
+            color: tone ?? ((t) => alpha(t.palette.text.primary, 0.4)),
+            display: 'inline-flex',
+            '& svg': { fontSize: '0.85rem' },
+          }}
+        >
+          {icon}
+        </Box>
+        <Typography
+          sx={{
+            fontSize: '0.6rem',
+            fontWeight: 600,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            color: 'text.tertiary',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          {label}
+        </Typography>
+      </Box>
+
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'baseline',
+          flexWrap: 'wrap',
+          gap: 0.5,
+          rowGap: 0.25,
+          minWidth: 0,
+        }}
+      >
+        <Typography
+          sx={{
+            fontSize: { xs: '1.15rem', sm: '1.35rem' },
+            fontWeight: 700,
+            lineHeight: 1.05,
+            letterSpacing: '-0.02em',
+            color: valueColor ?? 'text.primary',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            whiteSpace: 'nowrap',
+            minWidth: 0,
+          }}
+        >
+          {value}
+        </Typography>
+        {percentile && (
+          <Box sx={{ flexShrink: 0 }}>
+            <PercentileBadge percentile={percentile} inline />
+          </Box>
+        )}
+      </Box>
+
+      {details && (
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 0.2,
+            minWidth: 0,
+          }}
+        >
+          {details}
+        </Box>
+      )}
+    </Box>
+  );
+
+  return tooltip ? (
+    <Tooltip title={tooltip} arrow placement="top" slotProps={tooltipSlotProps}>
+      {content}
+    </Tooltip>
+  ) : (
+    content
+  );
+};
+
+/** Two metrics sharing one card, divided by a hairline. */
+const PairCard: React.FC<{ children: React.ReactNode }> = ({ children }) => (
+  <Card sx={{ p: 0, overflow: 'hidden' }} elevation={0}>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'stretch',
+        height: '100%',
+        '& > *:first-of-type': {
+          borderRight: '1px solid',
+          borderColor: 'border.light',
+        },
+      }}
+    >
+      {children}
+    </Box>
+  </Card>
+);
+
 /**
- * Headline performance strip — the numbers a miner checks first, in one tight
- * divided band: earnings, score, credibility, activity, eligible repos and
- * subnet rank. Equal cells, hairline dividers, one sub-line each.
+ * Headline performance — two combined cards: Earnings + Score, and Activity +
+ * Collateral. Each metric carries supporting detail lines (peer percentile,
+ * rank, score split, code volume, repos at risk) so the band reads richly
+ * without the old six-cell sprawl. Eligibility now lives in the profile hero.
  *
  * The single-miner endpoint serves its SUM'd float columns as broken strings;
- * `aggregateMinerTotals` sources them from the clean leaderboard row (or sums
- * the per-repo rows). Earnings is the honest network-wide figure.
+ * `aggregateMinerTotals` sources score/earnings floats from the clean
+ * leaderboard row and the contribution counts from the per-repo rows (so they
+ * match the repositories table).
  */
 const MinerStatBand: React.FC<MinerStatBandProps> = ({ githubId }) => {
   const { data: m, isLoading } = useMinerStats(githubId);
@@ -199,13 +272,29 @@ const MinerStatBand: React.FC<MinerStatBandProps> = ({ githubId }) => {
     [allMiners, githubId],
   );
 
+  const benchmark = useMemo(
+    () => computeMinerBenchmark(allMiners, githubId),
+    [allMiners, githubId],
+  );
+
   if (isLoading || !m) {
     return (
-      <Skeleton
-        variant="rounded"
-        height={84}
-        sx={{ borderRadius: 3, bgcolor: 'surface.subtle' }}
-      />
+      <Box
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+          gap: 1.5,
+        }}
+      >
+        {[0, 1].map((i) => (
+          <Skeleton
+            key={i}
+            variant="rounded"
+            height={104}
+            sx={{ borderRadius: 3, bgcolor: 'surface.subtle' }}
+          />
+        ))}
+      </Box>
     );
   }
 
@@ -216,148 +305,133 @@ const MinerStatBand: React.FC<MinerStatBandProps> = ({ githubId }) => {
     discScore,
     combinedScore,
     baseScore,
+    collateral,
     additions,
     deletions,
   } = totals;
-  const cred = totals.ossCred;
-  const issueCred = totals.issueCred;
-  const blendedCred = totals.blendedCred;
-  const hasCred = cred + issueCred > 0 || combinedScore > 0;
-
   const usdPerDay = toNum(m.usdPerDay);
   const lifetimeUsd = toNum(m.lifetimeUsd);
   const totalIssues =
     totals.solvedIssues + totals.closedIssues + totals.openIssues;
-  const repoCount = (m.repositories ?? []).filter(
-    (r) => r.repositoryFullName.trim().length > 0,
+  const hasLines = additions + deletions > 0;
+  const reposWithOpenPrs = (m.repositories ?? []).filter(
+    (r) => toNum(r.totalOpenPrs) > 0,
   ).length;
 
   return (
-    <Card sx={{ p: 0, overflow: 'hidden' }} elevation={0}>
-      {/* Negative margins clip the trailing right/bottom cell borders so only
-          interior hairline dividers show — structure from borders, no fills. */}
-      <Box sx={{ overflow: 'hidden' }}>
-        <Box
-          sx={{
-            display: 'grid',
-            mr: '-1px',
-            mb: '-1px',
-            gridTemplateColumns: {
-              xs: 'repeat(2, 1fr)',
-              sm: 'repeat(3, 1fr)',
-              lg: 'repeat(6, 1fr)',
-            },
-          }}
-        >
-          <Cell
-            icon={<EarningsIcon />}
-            label="Earn / day"
-            tone={usdPerDay > 0 ? STATUS_COLORS.success : undefined}
-            tooltip="Network-wide daily earnings from the metagraph incentive distribution — not split per repo or track."
-            value={`~${usd(usdPerDay)}`}
-            valueColor={usdPerDay > 0 ? STATUS_COLORS.success : undefined}
-            sub={
-              usdPerDay > 0
-                ? `~${usd(usdPerDay * 30)}/mo · ${usd(lifetimeUsd)} lifetime`
-                : 'not earning yet'
-            }
-          />
-          <Cell
-            icon={<ScoreIcon />}
-            label="Score"
-            tooltip={`Combined OSS + discovery score. Base ${baseScore.toFixed(2)}.`}
-            value={combinedScore.toFixed(2)}
-            sub={
+    <Box
+      sx={{
+        display: 'grid',
+        gridTemplateColumns: { xs: '1fr', md: '1fr 1fr' },
+        gap: 1.5,
+      }}
+    >
+      {/* ── Earnings + Score ─────────────────────────────────── */}
+      <PairCard>
+        <Metric
+          icon={<EarningsIcon />}
+          label="$/Day"
+          tone={usdPerDay > 0 ? STATUS_COLORS.success : undefined}
+          tooltip="Network-wide earnings from the metagraph incentive distribution — not split per repo or track."
+          value={`~${usd(usdPerDay)}`}
+          valueColor={usdPerDay > 0 ? STATUS_COLORS.success : undefined}
+          percentile={usdPerDay > 0 ? benchmark.earnings : null}
+          details={
+            usdPerDay > 0 || lifetimeUsd > 0 ? (
               <>
+                <Detail>~{usd(usdPerDay * 30)}/mo</Detail>
+                <Detail>~{usd(lifetimeUsd)} earned to date</Detail>
+              </>
+            ) : (
+              <Detail>not earning yet</Detail>
+            )
+          }
+        />
+        <Metric
+          icon={<ScoreIcon />}
+          label="Score"
+          tooltip={`Combined OSS + discovery score. Base ${baseScore.toFixed(
+            2,
+          )}.${rank ? ` Ranked #${rank.rank} of ${rank.total} by score.` : ''}`}
+          value={combinedScore.toFixed(2)}
+          percentile={combinedScore > 0 ? benchmark.combinedScore : null}
+          details={
+            <>
+              {rank && (
+                <Detail>
+                  #{rank.rank} of {rank.total.toLocaleString()} miners
+                </Detail>
+              )}
+              <Detail>
                 <Dot color={OSS} />
-                {ossScore.toFixed(1)} · <Dot color={DISC} />
-                {discScore.toFixed(1)}
-              </>
-            }
-          />
-          <Cell
-            icon={<CredibilityIcon />}
-            label="Credibility"
-            tooltip="Score-weighted blend of OSS merge-rate and issue solve-rate credibility."
-            value={hasCred ? `${Math.round(blendedCred * 100)}%` : '—'}
-            valueColor={hasCred ? credibilityColor(blendedCred) : undefined}
-            bar={
-              hasCred
-                ? { value: blendedCred, color: credibilityColor(blendedCred) }
-                : undefined
-            }
-            sub={
+                {ossScore.toFixed(1)} OSS · <Dot color={DISC} />
+                {discScore.toFixed(1)} Disc
+              </Detail>
+            </>
+          }
+        />
+      </PairCard>
+
+      {/* ── Activity + Collateral ────────────────────────────── */}
+      <PairCard>
+        <Metric
+          icon={<ActivityIcon />}
+          label="Activity"
+          tooltip={
+            hasLines
+              ? `Merged PRs and solved issues. +${additions.toLocaleString()} / −${deletions.toLocaleString()} lines changed.`
+              : 'Merged PRs and solved issues.'
+          }
+          value={
+            <TrackPair
+              ossValue={totals.mergedPrs}
+              ossLabel="merged"
+              discValue={totals.solvedIssues}
+              discLabel="solved"
+            />
+          }
+          percentile={totals.mergedPrs > 0 ? benchmark.mergedPrs : null}
+          details={
+            <>
+              <Detail>
+                {totals.prs} PRs · {totalIssues} issues
+              </Detail>
+              {hasLines && (
+                <Detail>
+                  +{compact(additions)} / −{compact(deletions)} lines
+                </Detail>
+              )}
+            </>
+          }
+        />
+        <Metric
+          icon={<CollateralIcon />}
+          label="Collateral"
+          tone={collateral > 0 ? STATUS_COLORS.warningOrange : undefined}
+          tooltip="Score withheld as collateral while your PRs stay open — released as they merge, forfeited if they close unmerged."
+          value={collateral.toFixed(2)}
+          valueColor={collateral > 0 ? STATUS_COLORS.warningOrange : undefined}
+          details={
+            collateral > 0 ? (
               <>
-                <Dot color={OSS} />
-                {Math.round(cred * 100)}% · <Dot color={DISC} />
-                {Math.round(issueCred * 100)}%
+                <Detail>
+                  held by {totals.openPrs} open PR
+                  {totals.openPrs === 1 ? '' : 's'}
+                </Detail>
+                {reposWithOpenPrs > 0 && (
+                  <Detail>
+                    across {reposWithOpenPrs} repo
+                    {reposWithOpenPrs === 1 ? '' : 's'}
+                  </Detail>
+                )}
               </>
-            }
-          />
-          <Cell
-            icon={<ActivityIcon />}
-            label="Activity"
-            tooltip={
-              additions + deletions > 0
-                ? `Merged PRs / solved issues. +${additions.toLocaleString()} / −${deletions.toLocaleString()} lines.`
-                : 'Merged PRs / solved issues.'
-            }
-            value={
-              <>
-                <Box component="span" sx={{ color: OSS }}>
-                  {totals.mergedPrs}
-                </Box>
-                <Box
-                  component="span"
-                  sx={{ color: 'text.tertiary', mx: 0.5, fontWeight: 400 }}
-                >
-                  /
-                </Box>
-                <Box component="span" sx={{ color: DISC }}>
-                  {totals.solvedIssues}
-                </Box>
-              </>
-            }
-            sub={`${totals.prs} PRs · ${totalIssues} issues`}
-          />
-          <Cell
-            icon={<RepoIcon />}
-            label="Eligible"
-            tooltip="Repositories where earning is unlocked (eligibility gate cleared), of all evaluated."
-            value={
-              <>
-                {m.eligibleRepoCount ?? 0}
-                <Box
-                  component="span"
-                  sx={{
-                    fontSize: '0.85rem',
-                    color: 'text.tertiary',
-                    fontWeight: 500,
-                  }}
-                >
-                  {' / '}
-                  {repoCount}
-                </Box>
-              </>
-            }
-            sub={
-              <>
-                <Dot color={OSS} />
-                {m.eligibleRepoCount ?? 0} OSS · <Dot color={DISC} />
-                {m.issueEligibleRepoCount ?? 0} disc
-              </>
-            }
-          />
-          <Cell
-            icon={<RankIcon />}
-            label="Rank"
-            tooltip="Standing among active miners by combined score."
-            value={rank ? `#${rank.rank}` : '—'}
-            sub={rank ? `of ${rank.total.toLocaleString()} miners` : '—'}
-          />
-        </Box>
-      </Box>
-    </Card>
+            ) : (
+              <Detail>none withheld</Detail>
+            )
+          }
+        />
+      </PairCard>
+    </Box>
   );
 };
 

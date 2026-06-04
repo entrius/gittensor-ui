@@ -1,9 +1,9 @@
+export { default as MergeOutcomeBar } from './MergeOutcomeBar';
 export { default as MinerActivity } from './MinerActivity';
-export { default as MinerInsightsCard } from './MinerInsightsCard';
+export { default as MinerNextSteps } from './MinerNextSteps';
 export { default as MinerOpenDiscoveryIssuesByRepo } from './MinerOpenDiscoveryIssuesByRepo';
-export { default as MinerOpenPrRisk } from './MinerOpenPrRisk';
 export { default as MinerPRsTable } from './MinerPRsTable';
 export { default as MinerProfileHero } from './MinerProfileHero';
 export { default as MinerRepositoryPanel } from './MinerRepositoryPanel';
-export { default as MinerScoreLevers } from './MinerScoreLevers';
 export { default as MinerStatBand } from './MinerStatBand';
+export { default as PercentileBadge } from './PercentileBadge';

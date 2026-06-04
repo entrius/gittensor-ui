@@ -19,23 +19,25 @@ import {
   getRepositoryOwnerAvatarSrc,
   getScoringWindowStartIso,
   isOutsideScoringWindow,
-  paginateItems,
 } from '../../utils';
 import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
-import FilterButton from '../FilterButton';
+import SegmentedToggle from '../common/SegmentedToggle';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
-import TablePagination from '../common/TablePagination';
+import TablePagination, {
+  DEFAULT_MINER_EXPLORER_ROWS,
+  getMinerExplorerPaging,
+  type MinerExplorerRowsOption,
+} from '../common/TablePagination';
+import MinerTableRowsSelect from './MinerTableRowsSelect';
 import { tooltipSlotProps } from '../../theme';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
 
 type IssueStatusFilter = 'all' | 'open' | 'solved' | 'closed';
 type IssueSortField = 'number' | 'repository' | 'date';
 type SortDir = 'asc' | 'desc';
-
-const PAGE_SIZE = 20;
 
 const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
   'all',
@@ -95,20 +97,38 @@ const getIssueDate = (issue: MinerIssue): string =>
 
 interface MinerOpenDiscoveryIssuesByRepoProps {
   githubId: string;
+  /** When set, only issues active within the last N days are shown (driven by
+   *  the dashboard's 1D/7D/30D range switch). */
+  rangeDays?: number;
 }
 
 const MinerOpenDiscoveryIssuesByRepo: React.FC<
   MinerOpenDiscoveryIssuesByRepoProps
-> = ({ githubId }) => {
+> = ({ githubId, rangeDays }) => {
   const theme = useTheme();
   const navigate = useNavigate();
   // Pin the `since` cutoff per mount so React Query's cache key stays stable
   // while the component is open. The 35-day scoring window slides on remount.
   const since = useMemo(() => getScoringWindowStartIso(), []);
   const { data: issues, isLoading } = useMinerIssues(githubId, true, since);
+
+  // Range filter — applied before status/search filters and the status counts.
+  const rangedIssues = useMemo(() => {
+    if (!issues) return issues;
+    if (!rangeDays) return issues;
+    const cutoff = Date.now() - rangeDays * 86_400_000;
+    return issues.filter((issue) => {
+      const iso = getIssueDate(issue);
+      const t = iso ? Date.parse(iso) : NaN;
+      return Number.isFinite(t) ? t >= cutoff : true;
+    });
+  }, [issues, rangeDays]);
   const [searchQuery, setSearchQuery] = useState('');
   const [sortField, setSortField] = useState<IssueSortField>('date');
   const [sortDir, setSortDir] = useState<SortDir>('desc');
+  const [rowsPerPage, setRowsPerPage] = useState<MinerExplorerRowsOption>(
+    DEFAULT_MINER_EXPLORER_ROWS,
+  );
 
   const filtersConfig = useMemo(
     () => ({
@@ -161,8 +181,8 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
   }, [githubId]);
 
   const filteredIssues = useMemo(
-    () => filterIssues(issues ?? [], { statusFilter, searchQuery }),
-    [issues, statusFilter, searchQuery],
+    () => filterIssues(rangedIssues ?? [], { statusFilter, searchQuery }),
+    [rangedIssues, statusFilter, searchQuery],
   );
 
   const sortedIssues = useMemo(() => {
@@ -186,23 +206,26 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
     return sorted;
   }, [filteredIssues, sortField, sortDir]);
 
-  const pagedIssues = useMemo(
-    () => paginateItems(sortedIssues, page, PAGE_SIZE),
-    [sortedIssues, page],
+  const {
+    slice: pagedIssues,
+    totalPages,
+    safePage,
+    showPageNav,
+  } = useMemo(
+    () => getMinerExplorerPaging(sortedIssues, page, rowsPerPage),
+    [sortedIssues, page, rowsPerPage],
   );
-
-  const totalPages = Math.ceil(sortedIssues.length / PAGE_SIZE);
 
   // Count over the search scope (excluding the active status filter) so each
   // button reflects what the user would see if they clicked it.
   const statusCounts = useMemo(() => {
-    if (!issues) return { all: 0, open: 0, solved: 0, closed: 0 };
-    const scope = filterIssues(issues, {
+    if (!rangedIssues) return { all: 0, open: 0, solved: 0, closed: 0 };
+    const scope = filterIssues(rangedIssues, {
       statusFilter: 'all',
       searchQuery,
     });
     return getIssueStatusCounts(scope);
-  }, [issues, searchQuery]);
+  }, [rangedIssues, searchQuery]);
 
   const hasFilters = statusFilter !== 'all' || searchQuery.trim() !== '';
 
@@ -413,95 +436,84 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
             width: { xs: '100%', sm: 'auto' },
           }}
         >
-          <Box
-            sx={{
-              display: 'flex',
-              gap: { xs: 0.75, sm: 0.5 },
-              flexWrap: 'wrap',
-              width: { xs: '100%', sm: 'auto' },
-              '& > .MuiButton-root': {
-                flex: { xs: 1, sm: 'none' },
-                minWidth: 0,
-              },
-            }}
-          >
-            <FilterButton
-              label="All"
-              count={statusCounts.all}
-              color={theme.palette.status.neutral}
-              isActive={statusFilter === 'all'}
-              onClick={() => setStatusFilter('all')}
-            />
-            <FilterButton
-              label="Open"
-              count={statusCounts.open}
-              color={theme.palette.status.open}
-              isActive={statusFilter === 'open'}
-              onClick={() => setStatusFilter('open')}
-            />
-            <FilterButton
-              label="Solved"
-              count={statusCounts.solved}
-              color={theme.palette.status.merged}
-              isActive={statusFilter === 'solved'}
-              onClick={() => setStatusFilter('solved')}
-            />
-            <FilterButton
-              label="Closed"
-              count={statusCounts.closed}
-              color={theme.palette.status.closed}
-              isActive={statusFilter === 'closed'}
-              onClick={() => setStatusFilter('closed')}
-            />
-          </Box>
+          <SegmentedToggle
+            ariaLabel="Filter by status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: 'all', label: 'All', count: statusCounts.all },
+              { value: 'open', label: 'Open', count: statusCounts.open },
+              { value: 'solved', label: 'Solved', count: statusCounts.solved },
+              { value: 'closed', label: 'Closed', count: statusCounts.closed },
+            ]}
+          />
         </Box>
       </Box>
 
-      <TextField
-        size="small"
-        placeholder="Search by title, repo, or issue number..."
-        value={searchQuery}
-        onChange={(e) => {
-          setSearchQuery(e.target.value);
-          setPage(0);
-        }}
-        InputProps={{
-          startAdornment: (
-            <InputAdornment position="start">
-              <SearchIcon
-                sx={{
-                  color: (t) => alpha(t.palette.text.primary, 0.3),
-                  fontSize: '1rem',
-                }}
-              />
-            </InputAdornment>
-          ),
-          endAdornment: (
-            <ClearSearchAdornment
-              visible={Boolean(searchQuery)}
-              onClear={() => {
-                setSearchQuery('');
-                setPage(0);
-              }}
-            />
-          ),
-        }}
+      <Box
         sx={{
           mt: 2,
-          width: { xs: '100%', sm: 'auto' },
-          maxWidth: { xs: '100%', sm: 400 },
-          minWidth: { xs: 0, sm: 350 },
-          '& .MuiOutlinedInput-root': {
-            fontSize: '0.8rem',
-            color: 'text.primary',
-            backgroundColor: 'surface.subtle',
-            borderRadius: 2,
-            '& fieldset': { borderColor: 'border.light' },
-            '&:hover fieldset': { borderColor: 'border.medium' },
-            '&.Mui-focused fieldset': { borderColor: 'primary.main' },
-          },
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          flexWrap: 'nowrap',
+          gap: 2,
+          width: '100%',
+          minWidth: 0,
         }}
-      />
+      >
+        <MinerTableRowsSelect
+          value={rowsPerPage}
+          onChange={(next) => {
+            setRowsPerPage(next);
+            setPage(0);
+          }}
+          id="miner-issues-rows"
+        />
+        <TextField
+          size="small"
+          placeholder="Search by title, repo, or issue number..."
+          value={searchQuery}
+          onChange={(e) => {
+            setSearchQuery(e.target.value);
+            setPage(0);
+          }}
+          InputProps={{
+            startAdornment: (
+              <InputAdornment position="start">
+                <SearchIcon
+                  sx={{
+                    color: (t) => alpha(t.palette.text.primary, 0.3),
+                    fontSize: '1rem',
+                  }}
+                />
+              </InputAdornment>
+            ),
+            endAdornment: (
+              <ClearSearchAdornment
+                visible={Boolean(searchQuery)}
+                onClear={() => {
+                  setSearchQuery('');
+                  setPage(0);
+                }}
+              />
+            ),
+          }}
+          sx={{
+            flex: '0 1 320px',
+            minWidth: 0,
+            '& .MuiOutlinedInput-root': {
+              fontSize: '0.8rem',
+              color: 'text.primary',
+              backgroundColor: 'surface.subtle',
+              borderRadius: 2,
+              '& fieldset': { borderColor: 'border.light' },
+              '&:hover fieldset': { borderColor: 'border.medium' },
+              '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+            },
+          }}
+        />
+      </Box>
     </Box>
   );
 
@@ -554,11 +566,13 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
           onChange: handleSort,
         }}
         pagination={
-          <TablePagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-          />
+          showPageNav ? (
+            <TablePagination
+              page={safePage}
+              totalPages={totalPages}
+              onPageChange={setPage}
+            />
+          ) : null
         }
       />
     </Card>

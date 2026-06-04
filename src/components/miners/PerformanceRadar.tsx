@@ -36,12 +36,12 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
       radar: {
         ...echartsRadarChrome(theme),
         indicator: [
-          { name: 'Credibility', max: 100 },
-          { name: 'Complexity', max: 100 },
+          { name: 'Success\nrate', max: 100 },
+          { name: 'Code\ndepth', max: 100 },
           { name: 'Merged\nPRs', max: 100 },
-          { name: 'Unique\nRepos', max: 100 },
-          { name: 'Total\nPRs', max: 100 },
-          { name: 'Avg Repo\nWeight', max: 100 },
+          { name: 'Repo\nspread', max: 100 },
+          { name: 'PR\nvolume', max: 100 },
+          { name: 'Repo\npayout', max: 100 },
         ],
         center: ['50%', '50%'],
         radius: '50%',
@@ -100,11 +100,21 @@ const PerformanceRadar: React.FC<PerformanceRadarProps> = ({
         variant="monoSmall"
         sx={{
           color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
-          mb: 2,
+          mb: 0.5,
           textAlign: 'center',
         }}
       >
         Performance Profile
+      </Typography>
+      <Typography
+        sx={{
+          color: alpha(theme.palette.common.white, TEXT_OPACITY.faint),
+          fontSize: '0.62rem',
+          mb: 1.5,
+          textAlign: 'center',
+        }}
+      >
+        Each axis scaled 0–100 vs the network's best
       </Typography>
       <ChartEmptyPanel
         empty={isActivityEmpty}

@@ -237,7 +237,7 @@ export const aggregateMinerTotals = (
   const additions = toNum(listed?.totalAdditions);
   const deletions = toNum(listed?.totalDeletions);
 
-  // Counts + credibility are clean on both endpoints; prefer the list row.
+  // Credibility (MAX) is clean on both endpoints; prefer the list row.
   const src = listed ?? single;
   const ossCred = toNum(src?.credibility);
   const issueCred = toNum(src?.issueCredibility);
@@ -247,6 +247,30 @@ export const aggregateMinerTotals = (
       ? (ossScore * ossCred + discScore * issueCred) / denom
       : Math.max(ossCred, issueCred);
 
+  // Contribution counts: sum the authoritative per-repo rows when we have them
+  // (this is exactly what the repositories table shows). The miner-wide/list
+  // totals can disagree — they cover a wider scope than the tracked repos — so
+  // the per-repo sum is the one that matches the rest of the dashboard. Fall
+  // back to the flat totals only when there are no per-repo rows.
+  const hasRepos = (single?.repositories ?? []).length > 0;
+  const mergedPrs = hasRepos
+    ? sumRepo('totalMergedPrs')
+    : toNum(src?.totalMergedPrs);
+  const openPrs = hasRepos ? sumRepo('totalOpenPrs') : toNum(src?.totalOpenPrs);
+  const closedPrs = hasRepos
+    ? sumRepo('totalClosedPrs')
+    : toNum(src?.totalClosedPrs);
+  const prs = hasRepos ? mergedPrs + openPrs + closedPrs : toNum(src?.totalPrs);
+  const solvedIssues = hasRepos
+    ? sumRepo('totalSolvedIssues')
+    : toNum(src?.totalSolvedIssues);
+  const openIssues = hasRepos
+    ? sumRepo('totalOpenIssues')
+    : toNum(src?.totalOpenIssues);
+  const closedIssues = hasRepos
+    ? sumRepo('totalClosedIssues')
+    : toNum(src?.totalClosedIssues);
+
   return {
     ossScore,
     baseScore,
@@ -255,17 +279,43 @@ export const aggregateMinerTotals = (
     collateral,
     additions,
     deletions,
-    mergedPrs: toNum(src?.totalMergedPrs),
-    openPrs: toNum(src?.totalOpenPrs),
-    closedPrs: toNum(src?.totalClosedPrs),
-    prs: toNum(src?.totalPrs),
-    solvedIssues: toNum(src?.totalSolvedIssues),
-    closedIssues: toNum(src?.totalClosedIssues),
-    openIssues: toNum(src?.totalOpenIssues),
+    mergedPrs,
+    openPrs,
+    closedPrs,
+    prs,
+    solvedIssues,
+    closedIssues,
+    openIssues,
     ossCred,
     issueCred,
     blendedCred,
   };
+};
+
+/**
+ * Dashboard "success rate": merged PRs over *all* PRs blended with solved issues
+ * over *all* issues, weighted by each track's score so the dominant track leads.
+ * Open (still-unresolved) PRs/issues count against the rate — they are pending,
+ * not successes — so a miner with merges still in flight reads below 100%.
+ * Falls back to the larger single-track rate when neither track has scored yet.
+ *
+ * This intentionally derives the rate from real outcome counts rather than the
+ * upstream `credibility` field (which is a separately-modelled author trust
+ * score, not a merge ratio).
+ */
+export const blendedSuccessRate = (
+  mergedPrs: number,
+  totalPrs: number,
+  solvedIssues: number,
+  totalIssues: number,
+  ossScore: number,
+  discScore: number,
+): number => {
+  const ossRate = totalPrs > 0 ? mergedPrs / totalPrs : 0;
+  const discRate = totalIssues > 0 ? solvedIssues / totalIssues : 0;
+  const denom = ossScore + discScore;
+  if (denom > 0) return (ossScore * ossRate + discScore * discRate) / denom;
+  return Math.max(ossRate, discRate);
 };
 
 export interface NetworkRank {

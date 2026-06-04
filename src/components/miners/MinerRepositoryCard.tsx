@@ -145,6 +145,61 @@ const StatusChip: React.FC<{ unlocked: boolean }> = ({ unlocked }) => {
   );
 };
 
+/** One headline figure in the card's top stat strip. */
+const StatCell: React.FC<{
+  label: string;
+  value: React.ReactNode;
+  valueColor?: string;
+  tooltip?: string;
+}> = ({ label, value, valueColor, tooltip }) => {
+  const body = (
+    <Box
+      sx={{
+        px: 1.75,
+        py: 1,
+        minWidth: 0,
+        cursor: tooltip ? 'help' : 'inherit',
+      }}
+    >
+      <Typography
+        sx={{
+          fontSize: '0.56rem',
+          color: 'text.secondary',
+          textTransform: 'uppercase',
+          letterSpacing: '0.12em',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {label}
+      </Typography>
+      <Typography
+        sx={{
+          fontFamily: FONT_MONO,
+          fontSize: '1.05rem',
+          fontWeight: 700,
+          lineHeight: 1.2,
+          mt: 0.25,
+          fontFeatureSettings: TABULAR,
+          letterSpacing: '-0.01em',
+          color: valueColor ?? 'text.primary',
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {value}
+      </Typography>
+    </Box>
+  );
+  return tooltip ? (
+    <Tooltip title={tooltip} arrow placement="top" slotProps={tooltipSlotProps}>
+      {body}
+    </Tooltip>
+  ) : (
+    body
+  );
+};
+
 interface MinerRepositoryCardProps {
   repo: MinerRepositoryEvaluation;
   unlock: RepoUnlock;
@@ -177,16 +232,30 @@ const MinerRepositoryCard: React.FC<MinerRepositoryCardProps> = ({
     repo.repositoryFullName.split('/').slice(1).join('/') ||
     repo.repositoryFullName;
 
-  const counts = isIssue
+  const counts: { label: string; value: number; tone: string }[] = isIssue
     ? [
-        { label: 'Solved', value: repo.totalSolvedIssues },
-        { label: 'Valid', value: repo.totalValidSolvedIssues },
-        { label: 'Open', value: repo.totalOpenIssues },
+        {
+          label: 'Solved',
+          value: repo.totalSolvedIssues,
+          tone: 'text.primary',
+        },
+        {
+          label: 'Valid',
+          value: repo.totalValidSolvedIssues,
+          tone: 'text.primary',
+        },
+        { label: 'Open', value: repo.totalOpenIssues, tone: 'text.secondary' },
+        {
+          label: 'Closed',
+          value: repo.totalClosedIssues,
+          tone: 'text.tertiary',
+        },
       ]
     : [
-        { label: 'Merged', value: repo.totalMergedPrs },
-        { label: 'Open', value: repo.totalOpenPrs },
-        { label: 'Closed', value: repo.totalClosedPrs },
+        { label: 'Merged', value: repo.totalMergedPrs, tone: 'text.primary' },
+        { label: 'Valid', value: unlock.count.have, tone: 'text.primary' },
+        { label: 'Open', value: repo.totalOpenPrs, tone: 'text.secondary' },
+        { label: 'Closed', value: repo.totalClosedPrs, tone: 'text.tertiary' },
       ];
 
   const accent = STATUS_COLORS.info;
@@ -282,82 +351,39 @@ const MinerRepositoryCard: React.FC<MinerRepositoryCardProps> = ({
         <StatusChip unlocked={unlock.unlocked} />
       </Box>
 
-      {/* Hero metrics */}
+      {/* Headline stats */}
       <Box
         sx={(theme) => ({
           display: 'grid',
-          gridTemplateColumns: '1fr auto',
-          alignItems: 'center',
+          gridTemplateColumns: 'repeat(3, 1fr)',
           borderTop: `1px solid ${theme.palette.border.light}`,
           borderBottom: `1px solid ${theme.palette.border.light}`,
+          '& > *:not(:last-of-type)': {
+            borderRight: `1px solid ${theme.palette.border.light}`,
+          },
         })}
       >
-        <Box sx={{ px: 1.75, py: 0.9, minWidth: 0 }}>
-          <Typography
-            sx={{
-              fontSize: '0.56rem',
-              color: 'text.secondary',
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-            }}
-          >
-            {isIssue ? 'Discovery score' : 'Repo score'}
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: FONT_MONO,
-              fontSize: '1.2rem',
-              fontWeight: 700,
-              lineHeight: 1.1,
-              fontFeatureSettings: TABULAR,
-              letterSpacing: '-0.02em',
-              color: unlock.unlocked ? 'text.primary' : alpha('#fff', 0.5),
-            }}
-          >
-            {score.toFixed(2)}
-          </Typography>
-          {pays > 0 && (
-            <Typography
-              sx={{ fontSize: '0.58rem', color: 'text.tertiary', mt: 0.3 }}
-            >
-              pays {(pays * 100).toFixed(pays >= 0.1 ? 1 : 2)}% of pool
-            </Typography>
-          )}
-        </Box>
-        <Box
-          sx={(theme) => ({
-            px: 1.75,
-            py: 0.9,
-            borderLeft: `1px solid ${theme.palette.border.light}`,
-            textAlign: 'right',
-            minWidth: 92,
-          })}
-        >
-          <Typography
-            sx={{
-              fontSize: '0.56rem',
-              color: 'text.secondary',
-              textTransform: 'uppercase',
-              letterSpacing: '0.12em',
-            }}
-          >
-            Credibility
-          </Typography>
-          <Typography
-            sx={{
-              fontFamily: FONT_MONO,
-              fontSize: '0.95rem',
-              fontWeight: 700,
-              fontFeatureSettings: TABULAR,
-              color: credibilityColor(credibility),
-            }}
-          >
-            {(credibility * 100).toFixed(1)}%
-          </Typography>
-        </Box>
+        <StatCell
+          label={isIssue ? 'Discovery' : 'Score'}
+          value={score.toFixed(2)}
+          valueColor={unlock.unlocked ? 'text.primary' : alpha('#fff', 0.5)}
+        />
+        <StatCell
+          label="Pays"
+          value={
+            pays > 0 ? `${(pays * 100).toFixed(pays >= 0.1 ? 1 : 2)}%` : '—'
+          }
+          valueColor={pays > 0 ? 'text.primary' : 'text.tertiary'}
+          tooltip="Payout weight — the share of the OSS reward pool this repository distributes."
+        />
+        <StatCell
+          label="Credibility"
+          value={`${(credibility * 100).toFixed(1)}%`}
+          valueColor={credibilityColor(credibility)}
+        />
       </Box>
 
-      {/* Unlock progress */}
+      {/* Unlock progress — grows so the count footer pins to the card base */}
       <Box
         sx={{
           px: 1.75,
@@ -365,18 +391,26 @@ const MinerRepositoryCard: React.FC<MinerRepositoryCardProps> = ({
           display: 'flex',
           flexDirection: 'column',
           gap: 0.85,
+          flex: 1,
         }}
       >
-        <Typography
-          sx={{
-            fontSize: '0.56rem',
-            color: 'text.secondary',
-            textTransform: 'uppercase',
-            letterSpacing: '0.12em',
-          }}
-        >
-          {unlock.unlocked ? 'Eligibility · cleared' : 'Unlock progress'}
-        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+          {unlock.unlocked && (
+            <UnlockedIcon
+              sx={{ fontSize: '0.8rem', color: STATUS_COLORS.success }}
+            />
+          )}
+          <Typography
+            sx={{
+              fontSize: '0.56rem',
+              color: unlock.unlocked ? STATUS_COLORS.success : 'text.secondary',
+              textTransform: 'uppercase',
+              letterSpacing: '0.12em',
+            }}
+          >
+            {unlock.unlocked ? 'All gates cleared' : 'Unlock progress'}
+          </Typography>
+        </Box>
         <GateBar
           label={isIssue ? 'Valid solved issues' : 'Valid merged PRs'}
           progress={unlock.count}
@@ -389,45 +423,6 @@ const MinerRepositoryCard: React.FC<MinerRepositoryCardProps> = ({
           kind="percent"
           accent={accent}
         />
-
-        {/* Activity counts */}
-        <Box
-          sx={{
-            display: 'flex',
-            alignItems: 'baseline',
-            gap: 1.25,
-            flexWrap: 'wrap',
-            mt: 0.25,
-          }}
-        >
-          {counts.map((c) => (
-            <Box
-              key={c.label}
-              sx={{ display: 'inline-flex', alignItems: 'baseline', gap: 0.5 }}
-            >
-              <Typography
-                sx={{
-                  fontSize: '0.6rem',
-                  color: 'text.tertiary',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.08em',
-                }}
-              >
-                {c.label}
-              </Typography>
-              <Typography
-                sx={{
-                  fontFamily: FONT_MONO,
-                  fontSize: '0.82rem',
-                  fontWeight: 700,
-                  fontFeatureSettings: TABULAR,
-                }}
-              >
-                {c.value.toLocaleString()}
-              </Typography>
-            </Box>
-          ))}
-        </Box>
 
         {!unlock.unlocked && repo.failedReason && (
           <Tooltip
@@ -445,12 +440,53 @@ const MinerRepositoryCard: React.FC<MinerRepositoryCardProps> = ({
                 WebkitLineClamp: 2,
                 WebkitBoxOrient: 'vertical',
                 overflow: 'hidden',
+                mt: 0.25,
               }}
             >
               {repo.failedReason}
             </Typography>
           </Tooltip>
         )}
+      </Box>
+
+      {/* Activity count footer */}
+      <Box
+        sx={(theme) => ({
+          display: 'grid',
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          borderTop: `1px solid ${theme.palette.border.light}`,
+          '& > *:not(:last-of-type)': {
+            borderRight: `1px solid ${theme.palette.border.subtle}`,
+          },
+        })}
+      >
+        {counts.map((c) => (
+          <Box key={c.label} sx={{ py: 0.9, px: 0.5, textAlign: 'center' }}>
+            <Typography
+              sx={{
+                fontFamily: FONT_MONO,
+                fontSize: '0.9rem',
+                fontWeight: 700,
+                lineHeight: 1.1,
+                fontFeatureSettings: TABULAR,
+                color: c.value > 0 ? c.tone : 'text.tertiary',
+              }}
+            >
+              {c.value.toLocaleString()}
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: '0.55rem',
+                color: 'text.tertiary',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                mt: 0.2,
+              }}
+            >
+              {c.label}
+            </Typography>
+          </Box>
+        ))}
       </Box>
     </Card>
   );

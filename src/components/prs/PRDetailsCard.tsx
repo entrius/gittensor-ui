@@ -421,7 +421,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                         color: alpha(theme.palette.common.white, 0.9),
                       }}
                     >
-                      Based on your PR success rate, scaled to reward
+                      Based on your PR credibility, scaled to reward
                       consistency.
                     </Typography>
                   </Box>

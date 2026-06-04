@@ -41,7 +41,7 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
-import FilterButton from '../FilterButton';
+import SegmentedToggle from '../common/SegmentedToggle';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
 import { WatchlistButton } from '../../components/common';
@@ -57,7 +57,6 @@ import TablePagination, {
   MINER_EXPLORER_PAGE_PARAM,
   useMinerExplorerPagination,
 } from '../common/TablePagination';
-import { formatDate } from '../../utils/format';
 import { tooltipSlotProps } from '../../theme';
 import MinerPrScoreDetail from './MinerPrScoreDetail';
 import PRTimeDecayChart from '../prs/PRTimeDecayChart';
@@ -125,11 +124,30 @@ const prRowKey = (pr: CommitLog): string =>
 
 interface MinerPRsTableProps {
   githubId: string;
+  /** When set, only PRs whose merge/close/create date falls within the last
+   *  N days are shown (driven by the dashboard's 1D/7D/30D range switch). */
+  rangeDays?: number;
 }
 
-const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
+const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
+  githubId,
+  rangeDays,
+}) => {
   const theme = useTheme();
   const { data: prs, isLoading } = useMinerPRs(githubId);
+
+  // Range filter — applied before every other filter and the status counts so
+  // the whole table reflects the selected window.
+  const rangedPrs = useMemo(() => {
+    if (!prs) return prs;
+    if (!rangeDays) return prs;
+    const cutoff = Date.now() - rangeDays * 86_400_000;
+    return prs.filter((pr) => {
+      const iso = pr.mergedAt ?? pr.closedAt ?? pr.prCreatedAt;
+      const t = iso ? Date.parse(iso) : NaN;
+      return Number.isFinite(t) ? t >= cutoff : true;
+    });
+  }, [prs, rangeDays]);
   const { data: repos } = useReposAndWeights();
   const { isWatched } = useWatchlist('prs');
 
@@ -210,13 +228,13 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
 
   const filteredPRs = useMemo(
     () =>
-      filterPrs(prs ?? [], {
+      filterPrs(rangedPrs ?? [], {
         author: selectedAuthor,
         includeNumber: true,
         searchQuery,
         statusFilter,
       }),
-    [prs, selectedAuthor, statusFilter, searchQuery],
+    [rangedPrs, selectedAuthor, statusFilter, searchQuery],
   );
 
   const sortedPRs = useMemo(() => {
@@ -295,15 +313,15 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   // Count over the search + author scope (excluding the active status filter)
   // so each button reflects what the user would see if they clicked it.
   const statusCounts = useMemo(() => {
-    if (!prs) return { all: 0, open: 0, merged: 0, closed: 0 };
-    const scope = filterPrs(prs, {
+    if (!rangedPrs) return { all: 0, open: 0, merged: 0, closed: 0 };
+    const scope = filterPrs(rangedPrs, {
       author: selectedAuthor,
       includeNumber: true,
       searchQuery,
       statusFilter: 'all',
     });
     return getPrStatusCounts(scope);
-  }, [prs, selectedAuthor, searchQuery]);
+  }, [rangedPrs, selectedAuthor, searchQuery]);
 
   const hasFilters =
     Boolean(selectedAuthor) ||
@@ -546,7 +564,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
       },
       renderCell: (pr) =>
         pr.mergedAt
-          ? formatDate(pr.mergedAt)
+          ? new Date(pr.mergedAt).toLocaleDateString()
           : pr.prState === 'CLOSED'
             ? 'Closed'
             : 'Open',
@@ -634,47 +652,17 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
             />
           )}
 
-          <Box
-            sx={{
-              display: 'flex',
-              gap: { xs: 0.75, sm: 0.5 },
-              flexWrap: 'wrap',
-              width: { xs: '100%', sm: 'auto' },
-              '& > .MuiButton-root': {
-                flex: { xs: 1, sm: 'none' },
-                minWidth: 0,
-              },
-            }}
-          >
-            <FilterButton
-              label="All"
-              count={statusCounts.all}
-              color={theme.palette.status.neutral}
-              isActive={statusFilter === 'all'}
-              onClick={() => setStatusFilter('all')}
-            />
-            <FilterButton
-              label="Open"
-              count={statusCounts.open}
-              color={theme.palette.status.open}
-              isActive={statusFilter === 'open'}
-              onClick={() => setStatusFilter('open')}
-            />
-            <FilterButton
-              label="Merged"
-              count={statusCounts.merged}
-              color={theme.palette.status.merged}
-              isActive={statusFilter === 'merged'}
-              onClick={() => setStatusFilter('merged')}
-            />
-            <FilterButton
-              label="Closed"
-              count={statusCounts.closed}
-              color={theme.palette.status.closed}
-              isActive={statusFilter === 'closed'}
-              onClick={() => setStatusFilter('closed')}
-            />
-          </Box>
+          <SegmentedToggle
+            ariaLabel="Filter by status"
+            value={statusFilter}
+            onChange={setStatusFilter}
+            options={[
+              { value: 'all', label: 'All', count: statusCounts.all },
+              { value: 'open', label: 'Open', count: statusCounts.open },
+              { value: 'merged', label: 'Merged', count: statusCounts.merged },
+              { value: 'closed', label: 'Closed', count: statusCounts.closed },
+            ]}
+          />
         </Box>
       </Box>
 
@@ -684,6 +672,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           display: 'flex',
           flexDirection: 'row',
           alignItems: 'center',
+          justifyContent: 'space-between',
           flexWrap: 'nowrap',
           gap: 2,
           width: '100%',
@@ -724,10 +713,8 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
                 ),
               }}
               sx={{
-                flex: 1,
+                flex: '0 1 320px',
                 minWidth: 0,
-                width: 'auto',
-                maxWidth: { xs: '100%', sm: 480 },
                 '& .MuiOutlinedInput-root': {
                   fontSize: '0.8rem',
                   color: 'text.primary',

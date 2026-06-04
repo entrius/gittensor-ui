@@ -64,7 +64,7 @@ export function parseMinerExplorerPageParam(raw: string | null): number {
 export function getMinerExplorerPaging<T>(
   items: readonly T[],
   page: number,
-  rows: MinerExplorerRowsOption,
+  rows: number | 'all',
 ): {
   totalPages: number;
   safePage: number;
