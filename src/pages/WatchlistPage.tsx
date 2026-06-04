@@ -108,7 +108,7 @@ import { filterPrs, type PrStatusFilter } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatDate, formatTokenAmount, formatWeight } from '../utils/format';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
-import { minerPrPath, minerRepositoryPath } from '../utils';
+import { buildIssueUrl, minerPrPath, minerRepositoryPath } from '../utils';
 import theme, {
   CHART_COLORS,
   LABEL_COLORS,
@@ -3926,7 +3926,7 @@ const buildIssueColumns = (
 ];
 
 const getIssueHref = (issue: MinerIssue): string =>
-  `https://github.com/${issue.repo_full_name}/issues/${issue.issue_number}`;
+  buildIssueUrl(issue.repo_full_name, issue.issue_number);
 
 const IssueCard: React.FC<{
   issue: MinerIssue;

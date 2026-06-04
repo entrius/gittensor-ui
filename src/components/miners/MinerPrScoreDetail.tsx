@@ -18,7 +18,7 @@ import { usePullRequestDetails, type CommitLog } from '../../api';
 import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import { parseNumber } from '../../utils/ExplorerUtils';
 import { buildMergedPillDefs } from '../../utils/multiplierDefs';
-import { minerPrPath } from '../../utils';
+import { buildPrUrl, minerPrPath } from '../../utils';
 
 const tipProps = {
   ...tooltipSlotProps,
@@ -295,7 +295,7 @@ const MinerPrScoreDetail: React.FC<MinerPrScoreDetailProps> = ({
           size="small"
           startIcon={<GitHubIcon sx={{ fontSize: '0.85rem' }} />}
           component="a"
-          href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
+          href={buildPrUrl(pr.repository, pr.pullRequestNumber)}
           target="_blank"
           rel="noopener noreferrer"
           onClick={(e) => e.stopPropagation()}

@@ -16,6 +16,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMinerIssues } from '../../api';
 import type { MinerIssue } from '../../api/models/Dashboard';
 import {
+  buildIssueUrl,
   getRepositoryOwnerAvatarSrc,
   getScoringWindowStartIso,
   isOutsideScoringWindow,
@@ -217,7 +218,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
       cellSx: { fontSize: { xs: '0.75rem', sm: '0.85rem' } },
       renderCell: (issue) => (
         <a
-          href={`https://github.com/${issue.repo_full_name}/issues/${issue.issue_number}`}
+          href={buildIssueUrl(issue.repo_full_name, issue.issue_number)}
           target="_blank"
           rel="noopener noreferrer"
           style={{

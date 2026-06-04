@@ -31,6 +31,7 @@ import {
 import { useDataTableParams } from '../../hooks/useDataTableParams';
 import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import {
+  buildPrUrl,
   filterPrs,
   getPrStatusCounts,
   minerPrPath,
@@ -310,7 +311,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       renderCell: (pr) => (
         // Native <a> to GitHub — `onRowClick` (no row-as-anchor) keeps this valid HTML.
         <a
-          href={`https://github.com/${pr.repository}/pull/${pr.pullRequestNumber}`}
+          href={buildPrUrl(pr.repository, pr.pullRequestNumber)}
           target="_blank"
           rel="noopener noreferrer"
           style={{

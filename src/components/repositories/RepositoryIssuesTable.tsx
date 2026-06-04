@@ -23,7 +23,12 @@ import {
   DataTable,
   type DataTableColumn,
 } from '../../components/common/DataTable';
-import { formatTokenAmount, getLowerText } from '../../utils';
+import {
+  buildIssueUrl,
+  buildPrUrl,
+  formatTokenAmount,
+  getLowerText,
+} from '../../utils';
 import { formatDate } from '../../utils/format';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import {
@@ -218,7 +223,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
     // Row navigates to GitHub in a new tab; using onRowClick (not getRowHref)
     // keeps nested <a> cells valid HTML.
     window.open(
-      `https://github.com/${issue.repositoryFullName}/issues/${issue.number}`,
+      buildIssueUrl(issue.repositoryFullName, issue.number),
       '_blank',
       'noopener,noreferrer',
     );
@@ -254,7 +259,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       sortKey: 'number',
       renderCell: (issue) => (
         <a
-          href={`https://github.com/${issue.repositoryFullName}/issues/${issue.number}`}
+          href={buildIssueUrl(issue.repositoryFullName, issue.number)}
           target="_blank"
           rel="noopener noreferrer"
           style={{
@@ -322,7 +327,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
       renderCell: (issue) =>
         issue.prNumber ? (
           <a
-            href={`https://github.com/${issue.repositoryFullName}/pull/${issue.prNumber}`}
+            href={buildPrUrl(issue.repositoryFullName, issue.prNumber)}
             target="_blank"
             rel="noopener noreferrer"
             style={{

@@ -5,6 +5,7 @@ import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import EventAvailableIcon from '@mui/icons-material/EventAvailable';
 import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
 import {
+  buildPrUrl,
   formatDate,
   formatUsdEstimate,
   getRepositoryOwnerAvatarSrc,
@@ -33,7 +34,7 @@ const PRHeader: React.FC<PRHeaderProps> = ({
     `/miners/details?githubId=${prDetails.githubId ?? ''}`,
     { state: { backLabel: `Back to PR #${pullRequestNumber}` } },
   );
-  const githubPrUrl = `https://github.com/${repository}/pull/${pullRequestNumber}`;
+  const githubPrUrl = buildPrUrl(repository, pullRequestNumber);
   const mergedDateLabel = prDetails.mergedAt
     ? formatDate(prDetails.mergedAt)
     : null;

@@ -1,3 +1,18 @@
+// Build & parse github.com URLs. Builders take positional (repo, number) args so
+// call sites stay one-liners regardless of the upstream field naming
+// (repository / repositoryFullName / repo_full_name and number / issue_number /
+// pullRequestNumber / prNumber).
+
+export const buildPrUrl = (
+  repoFullName: string,
+  number: number | string,
+): string => `https://github.com/${repoFullName}/pull/${number}`;
+
+export const buildIssueUrl = (
+  repoFullName: string,
+  number: number | string,
+): string => `https://github.com/${repoFullName}/issues/${number}`;
+
 export const extractRepoFullName = (repoUrl: string): string | null => {
   try {
     const url = new URL(repoUrl.trim());
