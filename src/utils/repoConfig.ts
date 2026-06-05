@@ -9,7 +9,7 @@
  * No repo sets a `scoring` block yet, so until one does every field resolves
  * to the default below.
  */
-import type { RepositoryConfig } from '../api/models/Dashboard';
+import type { Repository, RepositoryConfig } from '../api/models/Dashboard';
 import { pluralize } from './format';
 
 type RepoConfigFormat =
@@ -98,6 +98,31 @@ export const SCORING_FIELD_DEFS: RepoConfigFieldDef[] = [
     format: 'score',
   },
 ];
+
+/** Validator default — mirrors gittensor `PR_LOOKBACK_DAYS`. */
+export const DEFAULT_PR_LOOKBACK_DAYS =
+  SCORING_FIELD_DEFS.find((d) => d.key === 'pr_lookback_days')?.default ?? 30;
+
+/** Per-repo rolling window for merged PR scoring (`scoring.pr_lookback_days`). */
+export function resolvePrLookbackDays(
+  config?: RepositoryConfig | null,
+): number {
+  const raw = config?.scoring?.pr_lookback_days;
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw >= 1) {
+    return raw;
+  }
+  return DEFAULT_PR_LOOKBACK_DAYS;
+}
+
+export function buildRepoLookbackDaysMap(
+  repos: readonly Pick<Repository, 'fullName' | 'config'>[],
+): Map<string, number> {
+  const map = new Map<string, number>();
+  for (const repo of repos) {
+    map.set(repo.fullName.toLowerCase(), resolvePrLookbackDays(repo.config));
+  }
+  return map;
+}
 
 // --- Time-decay curve (nested scoring.time_decay) ---------------------------
 

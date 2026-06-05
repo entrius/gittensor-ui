@@ -2,6 +2,7 @@ import { type CommitLog, type MinerEvaluation, type Repository } from '../api';
 import { type IssueBounty } from '../api/models/Issues';
 import { getRepositoryOwnerAvatarSrc } from './avatar';
 import { isMergedPr } from './prStatus';
+import { DEFAULT_PR_LOOKBACK_DAYS } from './repoConfig';
 
 export const getGithubAvatarSrc = (username?: string | null) =>
   getRepositoryOwnerAvatarSrc(username);
@@ -45,23 +46,30 @@ const VALID_ISSUE_SOLVE_TOKEN_THRESHOLD = 5;
 // Scoring window staleness check
 // ---------------------------------------------------------------------------
 
-/** Default PR scoring lookback — mirrors gittensor `PR_LOOKBACK_DAYS`. */
-const SCORING_WINDOW_DAYS = 30;
-
 export const isOutsideScoringWindow = (
   date: string | null | undefined,
+  lookbackDays: number = DEFAULT_PR_LOOKBACK_DAYS,
+): boolean => isOutsidePrLookbackWindow(date, lookbackDays);
+
+/** Staleness check using a repo's `pr_lookback_days` scoring window. */
+export const isOutsidePrLookbackWindow = (
+  date: string | null | undefined,
+  lookbackDays: number,
 ): boolean => {
-  if (!date) return false;
+  if (!date || lookbackDays <= 0) return false;
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return false;
   const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - SCORING_WINDOW_DAYS);
-  return new Date(date) < cutoff;
+  cutoff.setDate(cutoff.getDate() - lookbackDays);
+  return parsed < cutoff;
 };
 
-/** ISO timestamp for the start of the scoring window (UTC, suitable for
- *  GitHub Search `created:>=` qualifier and other since-style filters). */
-export const getScoringWindowStartIso = (): string => {
+/** ISO timestamp for the start of the PR lookback window (UTC). */
+export const getScoringWindowStartIso = (
+  lookbackDays: number = DEFAULT_PR_LOOKBACK_DAYS,
+): string => {
   const cutoff = new Date();
-  cutoff.setUTCDate(cutoff.getUTCDate() - SCORING_WINDOW_DAYS);
+  cutoff.setUTCDate(cutoff.getUTCDate() - lookbackDays);
   return cutoff.toISOString();
 };
 
