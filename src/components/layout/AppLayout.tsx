@@ -17,6 +17,7 @@ import { Sidebar } from '..';
 import ErrorBoundary from '../ErrorBoundary';
 import GlobalSearchBar from './GlobalSearchBar';
 import ShortcutsHelpDialog from './ShortcutsHelpDialog';
+import { ScrollToTopButton } from '../common/ScrollToTopButton';
 import theme, { scrollbarSx } from '../../theme';
 import { getRouteForPathname } from '../../routes';
 
@@ -194,6 +195,7 @@ const AppLayout: React.FC = () => {
           </ErrorBoundary>
         </Suspense>
       </Box>
+      <ScrollToTopButton />
       <ShortcutsHelpDialog
         open={isHelpOpen}
         shortcuts={shortcuts}
