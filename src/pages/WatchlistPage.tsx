@@ -3422,27 +3422,26 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
                     mx: 0.5,
                   }}
                 />
-                <FilterButton
-                  label="Starred"
-                  count={sourceCounts.starred}
-                  color={SOURCE_META.starred.color}
-                  isActive={activeSources.has('starred')}
-                  onClick={() => toggleSource('starred')}
-                />
-                <FilterButton
-                  label="Miner"
-                  count={sourceCounts.miner}
-                  color={SOURCE_META.miner.color}
-                  isActive={activeSources.has('miner')}
-                  onClick={() => toggleSource('miner')}
-                />
-                <FilterButton
-                  label="Repo"
-                  count={sourceCounts.repo}
-                  color={SOURCE_META.repo.color}
-                  isActive={activeSources.has('repo')}
-                  onClick={() => toggleSource('repo')}
-                />
+                {(['starred', 'miner', 'repo'] as const).map((src) => {
+                  const isOnlyActive =
+                    activeSources.size === 1 && activeSources.has(src);
+                  return (
+                    <FilterButton
+                      key={src}
+                      label={SOURCE_META[src].label}
+                      count={sourceCounts[src]}
+                      color={SOURCE_META[src].color}
+                      isActive={activeSources.has(src)}
+                      disabled={isOnlyActive}
+                      tooltip={
+                        isOnlyActive
+                          ? 'At least one source must stay active'
+                          : undefined
+                      }
+                      onClick={() => toggleSource(src)}
+                    />
+                  );
+                })}
               </Box>
             }
             searchValue={draftValue}
@@ -4369,27 +4368,27 @@ const IssuesList: React.FC<{ minerIds: string[] }> = ({ minerIds }) => {
                     mx: 0.5,
                   }}
                 />
-                <FilterButton
-                  label="Starred"
-                  count={issueSourceCounts.starred}
-                  color={SOURCE_META.starred.color}
-                  isActive={issueActiveSources.has('starred')}
-                  onClick={() => toggleIssueSource('starred')}
-                />
-                <FilterButton
-                  label="Miner"
-                  count={issueSourceCounts.miner}
-                  color={SOURCE_META.miner.color}
-                  isActive={issueActiveSources.has('miner')}
-                  onClick={() => toggleIssueSource('miner')}
-                />
-                <FilterButton
-                  label="Repo"
-                  count={issueSourceCounts.repo}
-                  color={SOURCE_META.repo.color}
-                  isActive={issueActiveSources.has('repo')}
-                  onClick={() => toggleIssueSource('repo')}
-                />
+                {(['starred', 'miner', 'repo'] as const).map((src) => {
+                  const isOnlyActive =
+                    issueActiveSources.size === 1 &&
+                    issueActiveSources.has(src);
+                  return (
+                    <FilterButton
+                      key={src}
+                      label={SOURCE_META[src].label}
+                      count={issueSourceCounts[src]}
+                      color={SOURCE_META[src].color}
+                      isActive={issueActiveSources.has(src)}
+                      disabled={isOnlyActive}
+                      tooltip={
+                        isOnlyActive
+                          ? 'At least one source must stay active'
+                          : undefined
+                      }
+                      onClick={() => toggleIssueSource(src)}
+                    />
+                  );
+                })}
               </Box>
             }
             searchValue={draftValue}
