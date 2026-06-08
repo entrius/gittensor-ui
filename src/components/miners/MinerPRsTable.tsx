@@ -10,7 +10,6 @@ import {
   Box,
   Card,
   Chip,
-  CircularProgress,
   Collapse,
   InputAdornment,
   TextField,
@@ -35,6 +34,7 @@ import {
   getRepositoryOwnerAvatarSrc,
   getPrStatusCounts,
   isOutsideScoringWindow,
+  isPrStatusFilter,
   type PrStatusFilter,
 } from '../../utils';
 import {
@@ -44,7 +44,7 @@ import {
 import SegmentedToggle from '../common/SegmentedToggle';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
-import { WatchlistButton } from '../../components/common';
+import { LoadingCard, WatchlistButton } from '../../components/common';
 import {
   comparePRsByWatchlist,
   serializePRKey,
@@ -73,13 +73,6 @@ type PrSortField =
   | 'date'
   | 'watch';
 type SortDir = 'asc' | 'desc';
-
-const PR_STATUS_FILTERS: readonly PrStatusFilter[] = [
-  'all',
-  'open',
-  'merged',
-  'closed',
-];
 
 // Direction applied when a user first clicks a column header — string
 // columns feel natural ascending, numeric/date columns descending.
@@ -113,9 +106,6 @@ const getScoreTooltip = (pr: CommitLog): string | null => {
     parts.push(`Cred: ${Number(pr.credibilityMultiplier).toFixed(2)}×`);
   return parts.join(' · ');
 };
-
-const isPrStatusFilter = (value: string | null): value is PrStatusFilter =>
-  value !== null && (PR_STATUS_FILTERS as readonly string[]).includes(value);
 
 // Stable per-PR key — shared by the DataTable row key and the expanded-row
 // tracking set so the two never drift.
@@ -586,11 +576,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({
   ];
 
   if (isLoading) {
-    return (
-      <Card sx={{ p: 4, textAlign: 'center' }} elevation={0}>
-        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
-      </Card>
-    );
+    return <LoadingCard />;
   }
 
   const headerToolbar = (

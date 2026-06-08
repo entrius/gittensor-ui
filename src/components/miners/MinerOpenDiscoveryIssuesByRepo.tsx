@@ -3,7 +3,6 @@ import {
   Avatar,
   Box,
   Card,
-  CircularProgress,
   InputAdornment,
   TextField,
   Tooltip,
@@ -18,8 +17,10 @@ import type { MinerIssue } from '../../api/models/Dashboard';
 import {
   getRepositoryOwnerAvatarSrc,
   getScoringWindowStartIso,
+  isIssueStatusFilter,
   isOutsideScoringWindow,
   minerPrPath,
+  type IssueStatusFilter,
 } from '../../utils';
 import {
   DataTable,
@@ -27,6 +28,7 @@ import {
 } from '../../components/common/DataTable';
 import SegmentedToggle from '../common/SegmentedToggle';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
+import { LoadingCard } from '../common';
 import TablePagination, {
   DEFAULT_MINER_EXPLORER_ROWS,
   getMinerExplorerPaging,
@@ -36,16 +38,8 @@ import MinerTableRowsSelect from './MinerTableRowsSelect';
 import { tooltipSlotProps } from '../../theme';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
 
-type IssueStatusFilter = 'all' | 'open' | 'solved' | 'closed';
 type IssueSortField = 'number' | 'repository' | 'date';
 type SortDir = 'asc' | 'desc';
-
-const ISSUE_STATUS_FILTERS: readonly IssueStatusFilter[] = [
-  'all',
-  'open',
-  'solved',
-  'closed',
-];
 
 const DEFAULT_SORT_DIR: Record<IssueSortField, SortDir> = {
   number: 'desc',
@@ -58,11 +52,6 @@ const isSolvedIssue = (i: MinerIssue) =>
   i.state === 'CLOSED' && !!i.solving_pr?.merged_at;
 const isClosedIssue = (i: MinerIssue) =>
   i.state === 'CLOSED' && !i.solving_pr?.merged_at;
-
-const isIssueStatusFilter = (
-  value: string | null,
-): value is IssueStatusFilter =>
-  value !== null && (ISSUE_STATUS_FILTERS as readonly string[]).includes(value);
 
 const filterIssues = (
   issues: MinerIssue[],
@@ -382,11 +371,7 @@ const MinerOpenDiscoveryIssuesByRepo: React.FC<
   ];
 
   if (isLoading) {
-    return (
-      <Card sx={{ p: 4, textAlign: 'center' }} elevation={0}>
-        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
-      </Card>
-    );
+    return <LoadingCard />;
   }
 
   const headerToolbar = (
