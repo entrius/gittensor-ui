@@ -457,41 +457,42 @@ const FileTreeItem: React.FC<{
         >
           {getIcon()}
         </ListItemIcon>
-
-        <ListItemText
-          primary={
-            <Box
-              component="span"
-              sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
-            >
-              {node.name}
-              {node.hasChanges && !open && hasChildren && (
-                <Box
-                  sx={{
-                    width: 6,
-                    height: 6,
-                    borderRadius: '50%',
-                    bgcolor: 'status.warning',
-                  }}
-                />
-              )}
-            </Box>
-          }
-          primaryTypographyProps={{
-            sx: {
-              fontSize: '12px',
-              color: isSelected
-                ? 'text.primary'
-                : node.file || node.hasChanges
-                  ? 'text.tertiary'
-                  : 'status.open',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              fontWeight: isSelected || node.hasChanges ? 600 : 400,
-            },
-          }}
-        />
+        <Tooltip title={node.name} arrow>
+          <ListItemText
+            primary={
+              <Box
+                component="span"
+                sx={{ display: 'flex', alignItems: 'center', gap: 1 }}
+              >
+                {node.name}
+                {node.hasChanges && !open && hasChildren && (
+                  <Box
+                    sx={{
+                      width: 6,
+                      height: 6,
+                      borderRadius: '50%',
+                      bgcolor: 'status.warning',
+                    }}
+                  />
+                )}
+              </Box>
+            }
+            primaryTypographyProps={{
+              sx: {
+                fontSize: '12px',
+                color: isSelected
+                  ? 'text.primary'
+                  : node.file || node.hasChanges
+                    ? 'text.tertiary'
+                    : 'status.open',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                fontWeight: isSelected || node.hasChanges ? 600 : 400,
+              },
+            }}
+          />
+        </Tooltip>
       </ListItemButton>
       {hasChildren && (
         <Collapse in={open} timeout="auto" unmountOnExit>
