@@ -10,7 +10,6 @@ import {
   Box,
   Card,
   Chip,
-  CircularProgress,
   Collapse,
   InputAdornment,
   TextField,
@@ -39,7 +38,7 @@ import {
 import FilterButton from '../FilterButton';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 import { DebouncedSearchInput } from '../common/DebouncedSearchInput';
-import { WatchlistButton } from '../../components/common';
+import { LoadingCard, WatchlistButton } from '../../components/common';
 import {
   comparePRsByWatchlist,
   serializePRKey,
@@ -505,11 +504,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   ];
 
   if (isLoading) {
-    return (
-      <Card sx={{ p: 4, textAlign: 'center' }} elevation={0}>
-        <CircularProgress size={40} sx={{ color: 'primary.main' }} />
-      </Card>
-    );
+    return <LoadingCard />;
   }
 
   const headerToolbar = (

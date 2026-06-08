@@ -6,7 +6,6 @@ import {
   ButtonBase,
   Card,
   Chip,
-  CircularProgress,
   Stack,
   Typography,
 } from '@mui/material';
@@ -27,6 +26,7 @@ import {
 import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 import { STATUS_COLORS } from '../../theme';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
+import { LoadingCard } from '../common';
 import MinerInsightsCard from './MinerInsightsCard';
 
 type ViewMode = 'prs' | 'issues';
@@ -237,11 +237,7 @@ const MinerIdentityRail: React.FC<MinerIdentityRailProps> = ({
   }, [minerStats]);
 
   if (isLoading) {
-    return (
-      <Card sx={{ p: 4, textAlign: 'center' }} elevation={0}>
-        <CircularProgress size={32} sx={{ color: 'primary.main' }} />
-      </Card>
-    );
+    return <LoadingCard size={32} />;
   }
 
   if (error || !minerStats || !summary) {
