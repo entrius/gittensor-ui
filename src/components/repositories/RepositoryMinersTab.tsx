@@ -2,6 +2,7 @@ import React, { useMemo, useState } from 'react';
 import { alpha, Box, Tooltip, Typography } from '@mui/material';
 import { useRepositoryConfig, useRepositoryMiners } from '../../api';
 import { mapRepositoryMinersToStats } from '../../utils/minerMapper';
+import { minerDetailsPath } from '../../utils/paths';
 import { tooltipSlotProps } from '../../theme';
 import { TopMinersTable, type MinerStats } from '../leaderboard';
 
@@ -58,8 +59,8 @@ const RepositoryMinersTab: React.FC<RepositoryMinersTabProps> = ({
 
   const getMinerHref = (miner: MinerStats): string =>
     effectiveMode === 'discoveries'
-      ? `/miners/details?githubId=${miner.githubId}&mode=issues&tab=open-issues`
-      : `/miners/details?githubId=${miner.githubId}`;
+      ? minerDetailsPath(miner.githubId, { mode: 'issues', tab: 'open-issues' })
+      : minerDetailsPath(miner.githubId);
 
   const linkState = useMemo(
     () => ({ backLabel: `Back to ${repositoryFullName}` }),

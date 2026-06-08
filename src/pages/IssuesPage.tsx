@@ -19,9 +19,10 @@ import {
 } from '../components/issues/IssuesList';
 import { useIssuesStats, useIssues } from '../api';
 import { useTwitterStickySidebar } from '../hooks/useTwitterStickySidebar';
+import { bountyDetailsPath } from '../utils/paths';
 
 const ISSUE_LINK_STATE = { backLabel: 'Back to Bounties' } as const;
-const getIssueHref = (id: number) => `/bounties/details?id=${id}`;
+const getIssueHref = (id: number) => bountyDetailsPath(id);
 
 const IssuesPage: React.FC = () => {
   const navigate = useNavigate();

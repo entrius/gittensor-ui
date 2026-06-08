@@ -10,6 +10,7 @@ import PullRequestsTab from './PullRequestsTab';
 import RepositoryTab from './RepositoryTab';
 import { MIN_SEARCH_QUERY_LENGTH, useSearchResults } from './searchData';
 import { minerPrPath, minerRepositoryPath } from '../../utils';
+import { minerDetailsPath, bountyDetailsPath } from '../../utils/paths';
 
 const ROWS_PER_PAGE_OPTIONS = [10, 25, 50];
 const SEARCH_TABS = ['miners', 'repositories', 'prs', 'issues'] as const;
@@ -168,7 +169,7 @@ const SearchPage: React.FC = () => {
   };
 
   const getMinerHref = (miner: { githubId: string }) =>
-    `/miners/details?githubId=${encodeURIComponent(miner.githubId)}`;
+    minerDetailsPath(miner.githubId);
 
   const getRepositoryHref = (repo: { fullName: string }) =>
     minerRepositoryPath(repo.fullName);
@@ -176,8 +177,7 @@ const SearchPage: React.FC = () => {
   const getPrHref = (pr: { repository: string; pullRequestNumber: number }) =>
     minerPrPath(pr.repository, pr.pullRequestNumber);
 
-  const getIssueHref = (issue: { id: number }) =>
-    `/bounties/details?id=${issue.id}`;
+  const getIssueHref = (issue: { id: number }) => bountyDetailsPath(issue.id);
 
   return (
     <Page title="Search">

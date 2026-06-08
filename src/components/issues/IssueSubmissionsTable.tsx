@@ -16,6 +16,7 @@ import { IssueSubmission } from '../../api/models/Issues';
 import { STATUS_COLORS } from '../../theme';
 import { formatDate } from '../../utils/format';
 import { getGithubAvatarSrc, minerPrPath } from '../../utils';
+import { minerDetailsPath } from '../../utils/paths';
 import { LinkBox } from '../common/linkBehavior';
 import {
   DataTable,
@@ -94,7 +95,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
             onKeyDown={(e) => e.stopPropagation()}
           >
             <LinkBox
-              href={`/miners/details?githubId=${submission.authorGithubId}`}
+              href={minerDetailsPath(submission.authorGithubId)}
               linkState={linkState}
               sx={{
                 fontSize: '0.85rem',
@@ -379,7 +380,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                           e.stopPropagation();
                           e.preventDefault();
                           navigate(
-                            `/miners/details?githubId=${winnerSubmission.authorGithubId}`,
+                            minerDetailsPath(winnerSubmission.authorGithubId),
                             { state: linkState },
                           );
                         }}
@@ -388,7 +389,7 @@ const IssueSubmissionsTable: React.FC<IssueSubmissionsTableProps> = ({
                           if (e.key === 'Enter' || e.key === ' ') {
                             e.preventDefault();
                             navigate(
-                              `/miners/details?githubId=${winnerSubmission.authorGithubId}`,
+                              minerDetailsPath(winnerSubmission.authorGithubId),
                               { state: linkState },
                             );
                           }

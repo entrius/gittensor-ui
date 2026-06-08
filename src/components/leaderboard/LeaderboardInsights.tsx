@@ -22,6 +22,7 @@ import {
 } from '../../theme';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
 import { parseNumber } from '../../utils/ExplorerUtils';
+import { minerDetailsPath } from '../../utils/paths';
 import { LinkBox } from '../common/linkBehavior';
 import type { MinerEvaluation } from '../../api';
 import {
@@ -414,7 +415,7 @@ const DailyPoolZone: React.FC<{
                   slotProps={tooltipSlotProps}
                 >
                   <LinkBox
-                    href={`/miners/details?githubId=${e.githubId}`}
+                    href={minerDetailsPath(e.githubId)}
                     aria-label={`${e.username}, ranked ${rank}, ${fmtUsd(e.usdPerDay)} per day`}
                     sx={{
                       display: 'inline-flex',
@@ -751,7 +752,7 @@ const PodiumZone: React.FC<{
           return (
             <LinkBox
               key={row.githubId}
-              href={`/miners/details?githubId=${row.githubId}`}
+              href={minerDetailsPath(row.githubId)}
               sx={(t) => ({
                 display: 'grid',
                 gridTemplateColumns: '28px minmax(0, 1fr) auto',

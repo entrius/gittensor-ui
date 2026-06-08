@@ -24,6 +24,7 @@ import {
   type DataTableColumn,
 } from '../../components/common/DataTable';
 import { formatTokenAmount, getLowerText } from '../../utils';
+import { bountyDetailsPath } from '../../utils/paths';
 import { formatDate } from '../../utils/format';
 import { ScrollAwareTooltip } from '../../components/common/ScrollAwareTooltip';
 import {
@@ -466,7 +467,7 @@ const RepositoryIssuesTable: React.FC<RepositoryIssuesTableProps> = ({
               return (
                 <LinkBox
                   key={bounty.id}
-                  href={`/bounties/details?id=${bounty.id}`}
+                  href={bountyDetailsPath(bounty.id)}
                   linkState={{ backLabel: `Back to ${repositoryFullName}` }}
                   sx={{
                     display: 'flex',
