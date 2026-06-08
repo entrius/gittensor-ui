@@ -29,6 +29,7 @@ import {
   getRepositoryOwnerAvatarSrc,
   getPrStatusCounts,
   isOutsideScoringWindow,
+  isPrStatusFilter,
   type PrStatusFilter,
 } from '../../utils';
 import {
@@ -64,13 +65,6 @@ type PrSortField =
   | 'watch';
 type SortDir = 'asc' | 'desc';
 
-const PR_STATUS_FILTERS: readonly PrStatusFilter[] = [
-  'all',
-  'open',
-  'merged',
-  'closed',
-];
-
 // Direction applied when a user first clicks a column header — string
 // columns feel natural ascending, numeric/date columns descending.
 const DEFAULT_SORT_DIR: Record<PrSortField, SortDir> = {
@@ -103,9 +97,6 @@ const getScoreTooltip = (pr: CommitLog): string | null => {
     parts.push(`Cred: ${Number(pr.credibilityMultiplier).toFixed(2)}×`);
   return parts.join(' · ');
 };
-
-const isPrStatusFilter = (value: string | null): value is PrStatusFilter =>
-  value !== null && (PR_STATUS_FILTERS as readonly string[]).includes(value);
 
 // Stable per-PR key — shared by the DataTable row key and the expanded-row
 // tracking set so the two never drift.

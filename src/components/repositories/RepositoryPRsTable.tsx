@@ -33,6 +33,7 @@ import theme, { TEXT_OPACITY, scrollbarSx } from '../../theme';
 import {
   filterPrs,
   getPrStatusCounts,
+  isPrStatusFilter,
   minerPrPath,
   type PrStatusFilter,
 } from '../../utils';
@@ -68,9 +69,6 @@ interface RepositoryPRsTableProps {
   repositoryFullName: string;
   state?: 'open' | 'closed' | 'merged' | 'all';
 }
-
-const isPrStatusFilter = (v: unknown): v is PrStatusFilter =>
-  v === 'all' || v === 'open' || v === 'merged' || v === 'closed';
 
 const PR_PAGE_SIZE = 20;
 

@@ -102,9 +102,11 @@ import { usePrSourceFilter } from '../hooks/usePrSourceFilter';
 import {
   isMergedPr,
   isClosedUnmergedPr,
+  isPrStatusFilter,
   getPrStatusCounts,
+  type PrStatusFilter,
 } from '../utils/prStatus';
-import { filterPrs, type PrStatusFilter } from '../utils/prTable';
+import { filterPrs } from '../utils/prTable';
 import { getIssueStatusMeta } from '../utils/issueStatus';
 import { formatDate, formatTokenAmount, formatWeight } from '../utils/format';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
@@ -1029,9 +1031,6 @@ type WatchedRepoStats = Repository & {
   discoveryIssues: number;
   discoveryContributors: Set<string>;
 };
-
-const isPrStatusFilterStored = (v: unknown): v is PrStatusFilter =>
-  v === 'all' || v === 'open' || v === 'merged' || v === 'closed';
 
 type RepoSortKey =
   | 'name'
@@ -3238,7 +3237,7 @@ const PRsList: React.FC<{ itemKeys: string[] }> = ({ itemKeys }) => {
   const [statusFilter, setStatusFilter] = useSessionStoredState<PrStatusFilter>(
     'watchlist:prs:statusFilter',
     'all',
-    isPrStatusFilterStored,
+    isPrStatusFilter,
   );
   const [viewMode, setViewMode] = useWatchlistViewMode();
   const [page, setPage] = useState(0);

@@ -1,5 +1,10 @@
 import { type CommitLog } from '../api';
-import { isClosedUnmergedPr, isMergedPr, isOpenPr } from './prStatus';
+import {
+  isClosedUnmergedPr,
+  isMergedPr,
+  isOpenPr,
+  type PrStatusFilter,
+} from './prStatus';
 
 /** Substring match against merged timestamp (ISO, locale date/time, year). */
 const mergedAtMatchesSearch = (
@@ -15,8 +20,6 @@ const mergedAtMatchesSearch = (
   if (String(d.getFullYear()).includes(qLower)) return true;
   return false;
 };
-
-export type PrStatusFilter = 'all' | 'open' | 'merged' | 'closed';
 
 interface FilterPrsOptions {
   author?: string | null;
