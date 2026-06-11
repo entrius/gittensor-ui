@@ -2,7 +2,6 @@ import { type CommitLog, type MinerEvaluation, type Repository } from '../api';
 import { type IssueBounty } from '../api/models/Issues';
 import { getRepositoryOwnerAvatarSrc } from './avatar';
 import { isMergedPr } from './prStatus';
-import { DEFAULT_PR_LOOKBACK_DAYS } from './repoConfig';
 
 export const getGithubAvatarSrc = (username?: string | null) =>
   getRepositoryOwnerAvatarSrc(username);
@@ -46,10 +45,12 @@ const VALID_ISSUE_SOLVE_TOKEN_THRESHOLD = 5;
 // Scoring window staleness check
 // ---------------------------------------------------------------------------
 
+/** UI-wide staleness window (watchlist, issues, discovery fetch). */
+const SCORING_WINDOW_DAYS = 35;
+
 export const isOutsideScoringWindow = (
   date: string | null | undefined,
-  lookbackDays: number = DEFAULT_PR_LOOKBACK_DAYS,
-): boolean => isOutsidePrLookbackWindow(date, lookbackDays);
+): boolean => isOutsidePrLookbackWindow(date, SCORING_WINDOW_DAYS);
 
 /** Staleness check using a repo's `pr_lookback_days` scoring window. */
 export const isOutsidePrLookbackWindow = (
@@ -64,12 +65,11 @@ export const isOutsidePrLookbackWindow = (
   return parsed < cutoff;
 };
 
-/** ISO timestamp for the start of the PR lookback window (UTC). */
-export const getScoringWindowStartIso = (
-  lookbackDays: number = DEFAULT_PR_LOOKBACK_DAYS,
-): string => {
+/** ISO timestamp for the start of the 35-day scoring window (UTC, suitable for
+ *  GitHub Search `created:>=` qualifier and other since-style filters). */
+export const getScoringWindowStartIso = (): string => {
   const cutoff = new Date();
-  cutoff.setUTCDate(cutoff.getUTCDate() - lookbackDays);
+  cutoff.setUTCDate(cutoff.getUTCDate() - SCORING_WINDOW_DAYS);
   return cutoff.toISOString();
 };
 
