@@ -25,6 +25,7 @@ import {
   ArrowDownward as ArrowDownwardIcon,
   ArrowUpward as ArrowUpwardIcon,
   Close as ClearIcon,
+  InfoOutlined as InfoOutlinedIcon,
   Search as SearchIcon,
   Sort as SortIcon,
   StarBorder as StarBorderIcon,
@@ -1901,6 +1902,15 @@ const Toolbar: React.FC<ToolbarProps> = ({
     total > 0
       ? `${counts.eligible.toLocaleString()} eligible · ${counts.ineligible.toLocaleString()} ineligible`
       : null;
+  // Any active filter hides rows from the globally-ranked list, so the # column
+  // shows non-consecutive numbers. Surface a note so those gaps read as
+  // "filtered out" rather than "buggy" (issue #1102).
+  const isFiltered =
+    filter !== 'all' ||
+    trackedOnly ||
+    Boolean(selectedRepo) ||
+    Boolean(selectedCohort) ||
+    search.trim().length > 0;
   return (
     <Box
       sx={{
@@ -2417,6 +2427,26 @@ const Toolbar: React.FC<ToolbarProps> = ({
           }}
         />
       </Box>
+      {isFiltered && (
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.75 }}>
+          <InfoOutlinedIcon
+            sx={{
+              fontSize: '0.95rem',
+              color: alpha(theme.palette.common.white, 0.45),
+            }}
+          />
+          <Typography
+            sx={{
+              fontSize: '0.72rem',
+              lineHeight: 1.35,
+              color: alpha(theme.palette.common.white, 0.55),
+            }}
+          >
+            Filtered view — the # column shows global rank across all miners, so
+            hidden miners leave gaps in the numbering.
+          </Typography>
+        </Box>
+      )}
     </Box>
   );
 };
@@ -2737,7 +2767,23 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
   const columns: DataTableColumn<RankedMiner, SortField>[] = [
     {
       key: 'rank',
-      header: '#',
+      header: (
+        <Tooltip
+          arrow
+          placement="top"
+          slotProps={tooltipSlotProps}
+          title={
+            <RowTooltipContent
+              title="Global rank"
+              body="Position across all miners. When a filter is active, hidden miners leave gaps in the sequence."
+            />
+          }
+        >
+          <Box component="span" sx={{ cursor: 'help' }}>
+            #
+          </Box>
+        </Tooltip>
+      ),
       width: 48,
       sortKey: 'movement',
       renderCell: (row) => (
