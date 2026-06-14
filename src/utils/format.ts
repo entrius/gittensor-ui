@@ -53,7 +53,12 @@ export const truncateText = (text: string, maxLength: number): string => {
 
 export const formatDate = (dateStr: string | null | undefined): string => {
   if (!dateStr) return '-';
-  return format(new Date(dateStr), 'MMM d, yyyy');
+  // A non-empty but unparseable date makes an Invalid Date, and date-fns
+  // `format()` throws `RangeError: Invalid time value` on it — which would
+  // crash every table/card that renders the value. Fall back to '-' like the
+  // empty case instead of throwing.
+  const date = new Date(dateStr);
+  return Number.isNaN(date.getTime()) ? '-' : format(date, 'MMM d, yyyy');
 };
 
 export const formatUsdEstimate = (
