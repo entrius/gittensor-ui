@@ -39,6 +39,19 @@ import { useQuery } from '@tanstack/react-query';
 import { RateLimitError, githubFetch } from '../../api';
 import { ClearSearchAdornment } from '../common/ClearSearchAdornment';
 
+/**
+ * date-fns `formatDistanceToNow` throws `RangeError: Invalid time value` on an
+ * Invalid Date, so a malformed/missing commit timestamp from the GitHub API
+ * would crash the code browser header. Render nothing for an unparseable date
+ * instead of throwing.
+ */
+const commitRelativeTime = (dateStr: string): string => {
+  const date = new Date(dateStr);
+  return Number.isNaN(date.getTime())
+    ? ''
+    : formatDistanceToNow(date, { addSuffix: true });
+};
+
 interface RepositoryCodeBrowserProps {
   repositoryFullName: string;
 }
@@ -886,9 +899,7 @@ const RepositoryCodeBrowser: React.FC<RepositoryCodeBrowserProps> = ({
                 <Typography
                   sx={{ fontSize: '13px', color: STATUS_COLORS.open }}
                 >
-                  {formatDistanceToNow(new Date(currentCommit.date), {
-                    addSuffix: true,
-                  })}
+                  {commitRelativeTime(currentCommit.date)}
                 </Typography>
               </Box>
             </>
