@@ -93,8 +93,6 @@ const getScoreTooltip = (pr: CommitLog): string | null => {
   const parts: string[] = [`Base: ${base.toFixed(2)}`];
   if (pr.tokenScore != null)
     parts.push(`Tokens: ${Number(pr.tokenScore).toFixed(2)}`);
-  if (pr.credibilityMultiplier != null)
-    parts.push(`Cred: ${Number(pr.credibilityMultiplier).toFixed(2)}×`);
   return parts.join(' · ');
 };
 

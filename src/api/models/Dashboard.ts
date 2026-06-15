@@ -211,7 +211,6 @@ export type CommitLog = {
   issueMultiplier?: string;
   openPrSpamMultiplier?: string;
   timeDecayMultiplier?: string;
-  credibilityMultiplier?: string;
 
   // Token scoring fields
   totalNodesScored?: number;
@@ -408,7 +407,6 @@ export type PullRequestDetails = {
   issueMultiplier: string; // float returned as string
   openPrSpamMultiplier: string; // float returned as string
   timeDecayMultiplier: string; // float returned as string
-  credibilityMultiplier: string; // float returned as string
   reviewQualityMultiplier?: string; // float returned as string
   labelMultiplier: number;
   label: string | null;

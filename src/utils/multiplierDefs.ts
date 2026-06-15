@@ -13,7 +13,6 @@ interface MultiplierPillDef {
 interface MultiplierGridEntry {
   label: string;
   value: string;
-  isCredibility?: boolean;
 }
 
 interface PillConfig {
@@ -53,13 +52,6 @@ function resolvePillTooltip(pr: PullRequestDetails, cfg: PillConfig): string {
 }
 
 const PILL_CONFIGS: PillConfig[] = [
-  {
-    key: 'cred',
-    label: 'cred',
-    field: 'credibilityMultiplier',
-    title: 'Credibility',
-    desc: 'Based on your PR success rate, scaled to reward consistency.',
-  },
   {
     key: 'issue',
     label: 'issue',
@@ -117,7 +109,6 @@ export function buildMergedPillDefs(
 interface GridConfig {
   label: string;
   field: keyof PullRequestDetails;
-  isCredibility?: boolean;
 }
 
 function resolveGridLabel(
@@ -137,7 +128,6 @@ function buildGridEntry(
   return {
     label: resolveGridLabel(pr, cfg.field, cfg.label),
     value: fmtGrid(pr[cfg.field] ?? '0'),
-    ...(cfg.isCredibility ? { isCredibility: true } : {}),
   };
 }
 
@@ -147,7 +137,6 @@ const OPEN_GRID: GridConfig[] = [
 
 const MERGED_GRID: GridConfig[] = [
   { label: 'Issue Bonus', field: 'issueMultiplier' },
-  { label: 'Credibility', field: 'credibilityMultiplier', isCredibility: true },
   { label: 'Review Quality', field: 'reviewQualityMultiplier' },
   { label: 'Time Decay', field: 'timeDecayMultiplier' },
 ];
