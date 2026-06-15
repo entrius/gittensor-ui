@@ -353,8 +353,9 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 : numeric < 1
                   ? STATUS_COLORS.warningOrange
                   : theme.palette.text.tertiary;
-            const chip = (
+            return (
               <Box
+                key={index}
                 sx={{
                   display: 'inline-flex',
                   alignItems: 'center',
@@ -364,7 +365,6 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                   borderRadius: 1.5,
                   border: `1px solid ${alpha(accent, 0.35)}`,
                   backgroundColor: alpha(accent, 0.1),
-                  cursor: m.isCredibility ? 'pointer' : 'default',
                 }}
               >
                 <Typography
@@ -390,42 +390,7 @@ const PRDetailsCard: React.FC<PRDetailsCardProps> = ({
                 >
                   {m.value}
                 </Typography>
-                {m.isCredibility && (
-                  <InfoOutlinedIcon
-                    sx={{ fontSize: '0.85rem', color: accent, opacity: 0.7 }}
-                  />
-                )}
               </Box>
-            );
-            return m.isCredibility ? (
-              <Tooltip
-                key={index}
-                title={
-                  <Box sx={{ p: 0.5 }}>
-                    <Typography
-                      sx={{ fontSize: '0.75rem', fontWeight: 600, mb: 1 }}
-                    >
-                      Credibility Multiplier
-                    </Typography>
-                    <Typography
-                      sx={{
-                        fontSize: '0.7rem',
-                        color: alpha(theme.palette.common.white, 0.9),
-                      }}
-                    >
-                      Based on your PR success rate, scaled to reward
-                      consistency.
-                    </Typography>
-                  </Box>
-                }
-                arrow
-                placement="top"
-                slotProps={tooltipSlotProps}
-              >
-                {chip}
-              </Tooltip>
-            ) : (
-              <React.Fragment key={index}>{chip}</React.Fragment>
             );
           })}
         </Box>
