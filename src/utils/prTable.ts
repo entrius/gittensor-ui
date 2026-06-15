@@ -54,6 +54,7 @@ export const filterPrs = <T extends CommitLog>(
   return filtered.filter(
     (pr) =>
       pr.pullRequestTitle?.toLowerCase().includes(normalizedQuery) ||
+      pr.author?.toLowerCase().includes(normalizedQuery) ||
       pr.repository.toLowerCase().includes(normalizedQuery) ||
       (includeNumber &&
         (String(pr.pullRequestNumber).includes(normalizedQuery) ||

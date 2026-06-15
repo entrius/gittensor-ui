@@ -490,7 +490,7 @@ const RepositoryPRsTable: React.FC<RepositoryPRsTableProps> = ({
       </Box>
       <TextField
         size="small"
-        placeholder="Search title, PR #, merged date…"
+        placeholder="Search title, PR #, author, merged date…"
         value={searchQuery}
         onChange={(e) => handleSearchChange(e.target.value)}
         InputProps={{
