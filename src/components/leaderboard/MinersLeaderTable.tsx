@@ -187,6 +187,7 @@ const SparklineButton: React.FC<{
   primaryLabel?: string;
   secondaryLabel?: string;
   emphasis?: boolean;
+  activeRangeMinDays?: number;
 }> = ({
   username,
   githubId,
@@ -197,6 +198,7 @@ const SparklineButton: React.FC<{
   primaryLabel = 'OSS',
   secondaryLabel = 'Discovery',
   emphasis = false,
+  activeRangeMinDays,
 }) => {
   const [open, setOpen] = useState(false);
   const totalPrimary = primaryValues.reduce((a, b) => a + b, 0);
@@ -240,6 +242,7 @@ const SparklineButton: React.FC<{
           primaryLabel={primaryLabel}
           secondaryLabel={secondaryLabel}
           emphasis={emphasis}
+          activeRangeMinDays={activeRangeMinDays}
         />
       </Box>
       <SparklineDetailModal
@@ -266,6 +269,7 @@ const ResponsiveSparklineButton: React.FC<{
   primaryLabel?: string;
   secondaryLabel?: string;
   emphasis?: boolean;
+  activeRangeMinDays?: number;
 }> = ({
   username,
   githubId,
@@ -275,6 +279,7 @@ const ResponsiveSparklineButton: React.FC<{
   primaryLabel,
   secondaryLabel,
   emphasis,
+  activeRangeMinDays,
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const [width, setWidth] = useState(0);
@@ -313,6 +318,7 @@ const ResponsiveSparklineButton: React.FC<{
           primaryLabel={primaryLabel}
           secondaryLabel={secondaryLabel}
           emphasis={emphasis}
+          activeRangeMinDays={activeRangeMinDays}
         />
       )}
     </Box>
@@ -1440,6 +1446,7 @@ const MobileMinerCard: React.FC<{
             primaryLabel="OSS"
             secondaryLabel="Discovery"
             emphasis
+            activeRangeMinDays={10}
           />
         </Box>
       </Box>
@@ -2831,6 +2838,7 @@ const MinersLeaderTable: React.FC<MinersLeaderTableProps> = ({
             primaryLabel="OSS"
             secondaryLabel="Discovery"
             emphasis
+            activeRangeMinDays={10}
           />
         </Box>
       ),
