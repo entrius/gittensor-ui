@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef } from 'react';
 import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
 import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
 import {
@@ -22,8 +22,33 @@ interface ContributionCalendarProps {
 
 const CALENDAR_BLOCK = {
   mobile: { size: 10, margin: 3, fontSize: 10 },
-  desktop: { size: 11, margin: 3, fontSize: 11 },
+  desktop: { size: 14, margin: 4, fontSize: 12 },
 } as const;
+
+const HEATMAP_EMPTY_COLOR = '#161b22';
+const HEATMAP_LOW_COLOR = '#0e4429';
+const HEATMAP_HIGH_COLOR = '#39d353';
+
+const hexToRgb = (hex: string): [number, number, number] => {
+  const normalized = hex.replace('#', '');
+  return [
+    parseInt(normalized.slice(0, 2), 16),
+    parseInt(normalized.slice(2, 4), 16),
+    parseInt(normalized.slice(4, 6), 16),
+  ];
+};
+
+const toHex = (value: number): string =>
+  Math.round(value).toString(16).padStart(2, '0');
+
+const mixHex = (from: string, to: string, amount: number): string => {
+  const [fr, fg, fb] = hexToRgb(from);
+  const [tr, tg, tb] = hexToRgb(to);
+  const clamped = Math.max(0, Math.min(1, amount));
+  return `#${toHex(fr + (tr - fr) * clamped)}${toHex(
+    fg + (tg - fg) * clamped,
+  )}${toHex(fb + (tb - fb) * clamped)}`;
+};
 
 const ContributionCalendarLegend: React.FC = () => {
   const theme = useTheme();
@@ -89,8 +114,28 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
     () => calendar.days.reduce((sum, day) => sum + day.count, 0),
     [calendar.days],
   );
+  const activeDays = useMemo(
+    () => calendar.days.filter((day) => day.count > 0).length,
+    [calendar.days],
+  );
+  const peakContributionCount = useMemo(
+    () => Math.max(0, ...calendar.days.map((day) => day.count)),
+    [calendar.days],
+  );
 
   const blockConfig = isMobile ? CALENDAR_BLOCK.mobile : CALENDAR_BLOCK.desktop;
+
+  const getHeatmapBlockColor = useCallback(
+    (activity: { count: number }) => {
+      if (activity.count <= 0) return HEATMAP_EMPTY_COLOR;
+      if (peakContributionCount <= 1) return HEATMAP_HIGH_COLOR;
+
+      const intensity =
+        Math.log1p(activity.count) / Math.log1p(peakContributionCount);
+      return mixHex(HEATMAP_LOW_COLOR, HEATMAP_HIGH_COLOR, intensity);
+    },
+    [peakContributionCount],
+  );
 
   const heatmapScrollSx = useMemo(
     () => ({
@@ -127,84 +172,107 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
       : weekTrendPositive
         ? theme.palette.status.success
         : theme.palette.status.closed;
+  const rollingDeltaLabel =
+    calendar.weekOverWeekPercent === null
+      ? 'n/a'
+      : `${calendar.weekOverWeekPercent >= 0 ? '+' : ''}${Math.round(
+          calendar.weekOverWeekPercent,
+        )}%`;
 
-  const weekSummaryCard = (
+  const summaryMetricSx = {
+    minWidth: 0,
+    p: { xs: 0.85, sm: 0.95, md: 1 },
+    borderRadius: 2,
+    border: `1px solid ${theme.palette.border.light}`,
+    backgroundColor: alpha(theme.palette.text.primary, 0.018),
+    display: 'flex',
+    flexDirection: 'column',
+    justifyContent: 'center',
+  };
+
+  const summaryLabelSx = {
+    color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
+    fontFamily: monoFontFamily,
+    fontSize: '0.62rem',
+    fontWeight: 700,
+    letterSpacing: '0.08em',
+    textTransform: 'uppercase',
+  };
+
+  const summaryValueSx = {
+    mt: 0.45,
+    fontFamily: monoFontFamily,
+    fontSize: { xs: '1.2rem', sm: '1.35rem', md: '1.3rem' },
+    fontWeight: 700,
+    lineHeight: 1,
+    fontVariantNumeric: 'tabular-nums',
+  };
+
+  const summaryStack = (
     <Box
       sx={{
-        flexShrink: 0,
-        width: { xs: '100%', md: 148 },
-        p: { xs: 1.25, sm: 1.5 },
-        borderRadius: 2,
-        border: `1px solid ${theme.palette.border.light}`,
-        backgroundColor: theme.palette.surface.subtle,
-        display: 'flex',
+        display: { xs: 'grid', md: 'flex' },
+        gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))' },
         flexDirection: 'column',
-        justifyContent: 'center',
+        gap: 1,
+        minWidth: 0,
+        width: { xs: '100%', md: 160 },
+        flexShrink: 0,
+        '& > *': {
+          flex: { md: '0 0 auto' },
+        },
       }}
     >
-      <Typography
-        sx={{
-          color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
-          fontFamily: monoFontFamily,
-          fontSize: '0.62rem',
-          fontWeight: 700,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-        }}
-      >
-        This week
-      </Typography>
-      <Typography
-        sx={{
-          mt: 0.75,
-          color: theme.palette.diff.additions,
-          fontFamily: monoFontFamily,
-          fontSize: { xs: '2rem', md: '2.35rem' },
-          fontWeight: 700,
-          lineHeight: 1,
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
-        {calendar.thisWeekCount.toLocaleString()}
-      </Typography>
-      <Typography
-        sx={{
-          mt: 0.35,
-          color: alpha(theme.palette.text.primary, TEXT_OPACITY.faint),
-          fontFamily: monoFontFamily,
-          fontSize: '0.72rem',
-        }}
-      >
-        Contributions
-      </Typography>
-      <Stack
-        direction="row"
-        spacing={0.25}
-        alignItems="center"
-        sx={{ mt: 1.1 }}
-      >
-        {calendar.weekOverWeekPercent !== null &&
-          (weekTrendPositive ? (
-            <ArrowUpwardIcon
-              sx={{ fontSize: '0.95rem', color: weekTrendColor }}
-            />
-          ) : (
-            <ArrowDownwardIcon
-              sx={{ fontSize: '0.95rem', color: weekTrendColor }}
-            />
-          ))}
+      <Box sx={summaryMetricSx}>
+        <Typography sx={summaryLabelSx}>Last 7 days</Typography>
         <Typography
-          sx={{
-            color: weekTrendColor,
-            fontFamily: monoFontFamily,
-            fontSize: '0.68rem',
-            fontWeight: 600,
-            lineHeight: 1.2,
-          }}
+          sx={{ ...summaryValueSx, color: theme.palette.diff.additions }}
         >
-          {calendar.weekOverWeekLabel}
+          {calendar.thisWeekCount.toLocaleString()}
         </Typography>
-      </Stack>
+      </Box>
+
+      <Box sx={summaryMetricSx}>
+        <Typography sx={summaryLabelSx}>Prior 7d</Typography>
+        <Stack
+          direction="row"
+          spacing={0.35}
+          alignItems="center"
+          sx={{ mt: 0.55 }}
+        >
+          {calendar.weekOverWeekPercent !== null &&
+            (weekTrendPositive ? (
+              <ArrowUpwardIcon
+                sx={{ fontSize: '1rem', color: weekTrendColor }}
+              />
+            ) : (
+              <ArrowDownwardIcon
+                sx={{ fontSize: '1rem', color: weekTrendColor }}
+              />
+            ))}
+          <Typography
+            sx={{
+              color: weekTrendColor,
+              fontFamily: monoFontFamily,
+              fontSize: { xs: '1.05rem', sm: '1.12rem', md: '1.05rem' },
+              fontWeight: 700,
+              lineHeight: 1,
+              fontVariantNumeric: 'tabular-nums',
+            }}
+          >
+            {rollingDeltaLabel}
+          </Typography>
+        </Stack>
+      </Box>
+
+      <Box sx={summaryMetricSx}>
+        <Typography sx={summaryLabelSx}>Active days</Typography>
+        <Typography
+          sx={{ ...summaryValueSx, color: theme.palette.text.primary }}
+        >
+          {activeDays.toLocaleString()}
+        </Typography>
+      </Box>
     </Box>
   );
 
@@ -256,15 +324,17 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
               <CircularProgress size={28} />
             </Box>
           ) : (
-            <Stack
-              direction={{ xs: 'column', md: 'row' }}
-              spacing={{ xs: 1.5, md: 1.75 }}
-              alignItems="stretch"
-              sx={{ minWidth: 0 }}
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: { xs: '1fr', md: 'minmax(0, 1fr) 160px' },
+                gap: { xs: 1.25, md: 1.5 },
+                alignItems: 'stretch',
+                minWidth: 0,
+              }}
             >
               <Box
                 sx={{
-                  flex: 1,
                   minWidth: 0,
                   display: 'flex',
                   flexDirection: 'column',
@@ -276,6 +346,7 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
                   data={calendar.days}
                   contributionsLast30Days={calendar.thisWeekCount}
                   totalDaysShown={calendar.totalDaysShown}
+                  subtitle="network contribution(s) in the last 7 days"
                   emptySubtitle="Activity will appear here once PRs merge and issues resolve"
                   blockSize={blockConfig.size}
                   blockMargin={blockConfig.margin}
@@ -286,6 +357,7 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
                   showColorLegend={false}
                   scrollContainerRef={scrollRef}
                   scrollContainerSx={heatmapScrollSx}
+                  getBlockColor={getHeatmapBlockColor}
                 />
                 <Box
                   sx={{
@@ -316,8 +388,8 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
                   {!isEmpty && <ContributionCalendarLegend />}
                 </Box>
               </Box>
-              {weekSummaryCard}
-            </Stack>
+              {summaryStack}
+            </Box>
           )}
         </CardContent>
       </Card>

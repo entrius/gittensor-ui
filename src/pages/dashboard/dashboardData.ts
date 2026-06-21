@@ -393,11 +393,20 @@ const parseCalendarDateKey = (dateKey: string) => {
   return getLocalDayStart(new Date(year, month - 1, day).getTime());
 };
 
-const getContributionLevel = (count: number): 0 | 1 | 2 | 3 | 4 => {
+const getContributionLevel = (
+  count: number,
+  nonZeroCounts: number[],
+): 0 | 1 | 2 | 3 | 4 => {
   if (count <= 0) return 0;
-  if (count < 2) return 1;
-  if (count < 3) return 2;
-  if (count < 5) return 3;
+  if (nonZeroCounts.length === 0) return 0;
+
+  const lower = nonZeroCounts[Math.floor((nonZeroCounts.length - 1) * 0.25)];
+  const middle = nonZeroCounts[Math.floor((nonZeroCounts.length - 1) * 0.5)];
+  const upper = nonZeroCounts[Math.floor((nonZeroCounts.length - 1) * 0.75)];
+
+  if (count <= lower) return 1;
+  if (count <= middle) return 2;
+  if (count <= upper) return 3;
   return 4;
 };
 
@@ -448,33 +457,37 @@ export const buildDashboardContributionCalendar = (
     incrementDay(toTimestamp(issue.solving_pr?.merged_at));
   });
 
+  const nonZeroCounts = Array.from(dataMap.values())
+    .filter((count) => count > 0)
+    .sort((a, b) => a - b);
+
   const days = Array.from(dataMap.entries())
     .map(([date, count]) => ({
       date,
       count,
-      level: getContributionLevel(count),
+      level: getContributionLevel(count, nonZeroCounts),
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  const thisWeekStart = getLocalSundayWeekStart(now.getTime());
-  const lastWeekStart = thisWeekStart - WEEK_MS;
+  const rolling7Start = addLocalDays(rollingEndMs, -6);
+  const prior7Start = addLocalDays(rolling7Start, -7);
 
   let thisWeekCount = 0;
   let lastWeekCount = 0;
 
   days.forEach(({ date, count }) => {
     const dayMs = parseCalendarDateKey(date);
-    if (dayMs >= thisWeekStart) {
+    if (dayMs >= rolling7Start && dayMs <= rollingEndMs) {
       thisWeekCount += count;
       return;
     }
-    if (dayMs >= lastWeekStart) {
+    if (dayMs >= prior7Start && dayMs < rolling7Start) {
       lastWeekCount += count;
     }
   });
 
   let weekOverWeekPercent: number | null = null;
-  let weekOverWeekLabel = '0% vs last week';
+  let weekOverWeekLabel = '0% vs prior 7d';
 
   if (thisWeekCount === 0 && lastWeekCount === 0) {
     weekOverWeekPercent = 0;
@@ -483,9 +496,9 @@ export const buildDashboardContributionCalendar = (
       ((thisWeekCount - lastWeekCount) / lastWeekCount) * 100;
     const rounded = Math.round(weekOverWeekPercent);
     const sign = rounded > 0 ? '+' : '';
-    weekOverWeekLabel = `${sign}${rounded}% vs last week`;
+    weekOverWeekLabel = `${sign}${rounded}% vs prior 7d`;
   } else if (thisWeekCount > 0) {
-    weekOverWeekLabel = 'New activity this week';
+    weekOverWeekLabel = 'New activity in last 7d';
   }
 
   return {
