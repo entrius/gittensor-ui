@@ -1,6 +1,10 @@
-import React, { useEffect, useMemo, useRef } from 'react';
-import ArrowDownwardIcon from '@mui/icons-material/ArrowDownward';
-import ArrowUpwardIcon from '@mui/icons-material/ArrowUpward';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import {
   Box,
   Card,
@@ -11,19 +15,63 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
-import ContributionHeatmap from '../../../components/ContributionHeatmap';
-import { CONTRIBUTION_HEATMAP_SCALE, TEXT_OPACITY } from '../../../theme';
+import {
+  CONTRIBUTION_HEATMAP_SCALE,
+  TEXT_OPACITY,
+  scrollbarSx,
+} from '../../../theme';
+import { pluralize } from '../../../utils/format';
 import { type DashboardContributionCalendar } from '../dashboardData';
 
 interface ContributionCalendarProps {
   calendar: DashboardContributionCalendar;
   isLoading?: boolean;
+  onMonthChange?: (month: string) => void;
 }
 
-const CALENDAR_BLOCK = {
-  mobile: { size: 10, margin: 3, fontSize: 10 },
-  desktop: { size: 11, margin: 3, fontSize: 11 },
-} as const;
+const HEATMAP_EMPTY_COLOR = '#161b22';
+const HEATMAP_LOW_COLOR = '#0e4429';
+const HEATMAP_HIGH_COLOR = '#39d353';
+const HOUR_LABELS = new Set([0, 6, 12, 18, 23]);
+
+const hexToRgb = (hex: string): [number, number, number] => {
+  const normalized = hex.replace('#', '');
+  return [
+    parseInt(normalized.slice(0, 2), 16),
+    parseInt(normalized.slice(2, 4), 16),
+    parseInt(normalized.slice(4, 6), 16),
+  ];
+};
+
+const toHex = (value: number): string =>
+  Math.round(value).toString(16).padStart(2, '0');
+
+const mixHex = (from: string, to: string, amount: number): string => {
+  const [fr, fg, fb] = hexToRgb(from);
+  const [tr, tg, tb] = hexToRgb(to);
+  const clamped = Math.max(0, Math.min(1, amount));
+  return `#${toHex(fr + (tr - fr) * clamped)}${toHex(
+    fg + (tg - fg) * clamped,
+  )}${toHex(fb + (tb - fb) * clamped)}`;
+};
+
+const parseMonthKey = (monthKey: string) => {
+  const [year, month] = monthKey.split('-').map(Number);
+  return { year, monthIndex: month - 1 };
+};
+
+const formatMonthLabel = (monthKey: string, compact = false) => {
+  const { year, monthIndex } = parseMonthKey(monthKey);
+  return new Date(year, monthIndex, 1).toLocaleDateString('en-US', {
+    month: compact ? 'short' : 'long',
+    year: 'numeric',
+  });
+};
+
+const formatHourTooltip = (timestamp: string, count: number) => {
+  const [dateKey, hourKey] = timestamp.split('T');
+  return `${pluralize(count, 'contribution')} during ${dateKey} ${hourKey}:00`;
+};
 
 const ContributionCalendarLegend: React.FC = () => {
   const theme = useTheme();
@@ -78,135 +126,113 @@ const ContributionCalendarLegend: React.FC = () => {
 const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
   calendar,
   isLoading = false,
+  onMonthChange,
 }) => {
   const theme = useTheme();
   const monoFontFamily = theme.typography.fontFamily;
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const scrollRef = useRef<HTMLDivElement>(null);
+  const [heatmapWidth, setHeatmapWidth] = useState(0);
 
-  const isEmpty = calendar.days.every((day) => day.count === 0);
-  const totalContributions = useMemo(
-    () => calendar.days.reduce((sum, day) => sum + day.count, 0),
-    [calendar.days],
+  const isEmpty = calendar.hours.every((hour) => hour.count === 0);
+  const peakContributionCount = useMemo(
+    () => Math.max(0, ...calendar.hours.map((hour) => hour.count)),
+    [calendar.hours],
   );
 
-  const blockConfig = isMobile ? CALENDAR_BLOCK.mobile : CALENDAR_BLOCK.desktop;
+  const monthDays = useMemo(
+    () => Array.from(new Set(calendar.hours.map((hour) => hour.date))).sort(),
+    [calendar.hours],
+  );
+  const timelineMonths = useMemo(
+    () => [...calendar.availableMonths].reverse(),
+    [calendar.availableMonths],
+  );
+  const hourMap = useMemo(
+    () => new Map(calendar.hours.map((hour) => [hour.timestamp, hour])),
+    [calendar.hours],
+  );
+  const blockSize = isMobile ? 7 : 10;
+  const blockGap = isMobile ? 3 : 3;
+  const labelColumnWidth = isMobile ? 28 : 34;
+  const visibleDayCapacity = useMemo(() => {
+    if (heatmapWidth <= labelColumnWidth) return monthDays.length;
+    return Math.max(
+      1,
+      Math.floor((heatmapWidth - labelColumnWidth) / (blockSize + blockGap)),
+    );
+  }, [blockGap, blockSize, heatmapWidth, labelColumnWidth, monthDays.length]);
+  const visibleMonthDays = useMemo(
+    () => monthDays.slice(Math.max(0, monthDays.length - visibleDayCapacity)),
+    [monthDays, visibleDayCapacity],
+  );
 
-  const heatmapScrollSx = useMemo(
-    () => ({
-      WebkitOverflowScrolling: 'touch',
-      touchAction: 'pan-x',
-      pb: 0.5,
-      '& .react-activity-calendar': {
-        display: 'inline-block',
-        width: 'max-content',
-        minWidth: 'max-content',
-      },
-      '& .react-activity-calendar svg': {
-        display: 'block',
-      },
-      '& .react-activity-calendar text': {
-        fill: alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary),
-        fontFamily: monoFontFamily,
-      },
-    }),
-    [monoFontFamily, theme.palette.text.primary],
+  const getHeatmapBlockColor = useCallback(
+    (count: number) => {
+      if (count <= 0) return HEATMAP_EMPTY_COLOR;
+      if (peakContributionCount <= 1) return HEATMAP_HIGH_COLOR;
+
+      const intensity = Math.log1p(count) / Math.log1p(peakContributionCount);
+      return mixHex(HEATMAP_LOW_COLOR, HEATMAP_HIGH_COLOR, intensity);
+    },
+    [peakContributionCount],
   );
 
   useEffect(() => {
     const el = scrollRef.current;
     if (!el || isEmpty || isLoading) return;
     el.scrollLeft = el.scrollWidth;
-  }, [calendar.days, isEmpty, isLoading]);
+  }, [calendar.hours, isEmpty, isLoading]);
 
-  const weekTrendPositive =
-    calendar.weekOverWeekPercent !== null && calendar.weekOverWeekPercent >= 0;
-  const weekTrendColor =
-    calendar.weekOverWeekPercent === null
+  useEffect(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+
+    const updateWidth = () => setHeatmapWidth(el.clientWidth);
+    updateWidth();
+
+    if (typeof ResizeObserver === 'undefined') {
+      window.addEventListener('resize', updateWidth);
+      return () => window.removeEventListener('resize', updateWidth);
+    }
+
+    const observer = new ResizeObserver(updateWidth);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  const rangeTrendPositive =
+    calendar.rangeOverRangePercent !== null &&
+    calendar.rangeOverRangePercent >= 0;
+  const rangeTrendColor =
+    calendar.rangeOverRangePercent === null
       ? alpha(theme.palette.text.primary, TEXT_OPACITY.muted)
-      : weekTrendPositive
+      : rangeTrendPositive
         ? theme.palette.status.success
         : theme.palette.status.closed;
-
-  const weekSummaryCard = (
-    <Box
-      sx={{
-        flexShrink: 0,
-        width: { xs: '100%', md: 148 },
-        p: { xs: 1.25, sm: 1.5 },
-        borderRadius: 2,
-        border: `1px solid ${theme.palette.border.light}`,
-        backgroundColor: theme.palette.surface.subtle,
-        display: 'flex',
-        flexDirection: 'column',
-        justifyContent: 'center',
-      }}
-    >
-      <Typography
-        sx={{
-          color: alpha(theme.palette.text.primary, TEXT_OPACITY.muted),
-          fontFamily: monoFontFamily,
-          fontSize: '0.62rem',
-          fontWeight: 700,
-          letterSpacing: '0.08em',
-          textTransform: 'uppercase',
-        }}
-      >
-        This week
-      </Typography>
-      <Typography
-        sx={{
-          mt: 0.75,
-          color: theme.palette.diff.additions,
-          fontFamily: monoFontFamily,
-          fontSize: { xs: '2rem', md: '2.35rem' },
-          fontWeight: 700,
-          lineHeight: 1,
-          fontVariantNumeric: 'tabular-nums',
-        }}
-      >
-        {calendar.thisWeekCount.toLocaleString()}
-      </Typography>
-      <Typography
-        sx={{
-          mt: 0.35,
-          color: alpha(theme.palette.text.primary, TEXT_OPACITY.faint),
-          fontFamily: monoFontFamily,
-          fontSize: '0.72rem',
-        }}
-      >
-        Contributions
-      </Typography>
-      <Stack
-        direction="row"
-        spacing={0.25}
-        alignItems="center"
-        sx={{ mt: 1.1 }}
-      >
-        {calendar.weekOverWeekPercent !== null &&
-          (weekTrendPositive ? (
-            <ArrowUpwardIcon
-              sx={{ fontSize: '0.95rem', color: weekTrendColor }}
-            />
-          ) : (
-            <ArrowDownwardIcon
-              sx={{ fontSize: '0.95rem', color: weekTrendColor }}
-            />
-          ))}
-        <Typography
-          sx={{
-            color: weekTrendColor,
-            fontFamily: monoFontFamily,
-            fontSize: '0.68rem',
-            fontWeight: 600,
-            lineHeight: 1.2,
-          }}
-        >
-          {calendar.weekOverWeekLabel}
-        </Typography>
-      </Stack>
-    </Box>
-  );
+  const rangeDeltaLabel =
+    calendar.rangeOverRangePercent === null
+      ? 'n/a'
+      : `${calendar.rangeOverRangePercent >= 0 ? '+' : ''}${Math.round(
+          calendar.rangeOverRangePercent,
+        )}%`;
+  const showRangeComparison = calendar.rangeOverRangePercent !== null;
+  const monthTrendPositive =
+    calendar.monthOverMonthPercent !== null &&
+    calendar.monthOverMonthPercent >= 0;
+  const monthTrendColor =
+    calendar.monthOverMonthPercent === null
+      ? alpha(theme.palette.text.primary, TEXT_OPACITY.muted)
+      : monthTrendPositive
+        ? theme.palette.status.success
+        : theme.palette.status.closed;
+  const monthDeltaLabel =
+    calendar.monthOverMonthPercent === null
+      ? 'n/a'
+      : `${calendar.monthOverMonthPercent >= 0 ? '+' : ''}${Math.round(
+          calendar.monthOverMonthPercent,
+        )}%`;
+  const showMonthComparison = calendar.monthOverMonthPercent !== null;
 
   return (
     <Box
@@ -256,37 +282,236 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
               <CircularProgress size={28} />
             </Box>
           ) : (
-            <Stack
-              direction={{ xs: 'column', md: 'row' }}
-              spacing={{ xs: 1.5, md: 1.75 }}
-              alignItems="stretch"
-              sx={{ minWidth: 0 }}
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '1fr',
+                minWidth: 0,
+              }}
             >
               <Box
                 sx={{
-                  flex: 1,
                   minWidth: 0,
                   display: 'flex',
                   flexDirection: 'column',
                 }}
               >
-                <ContributionHeatmap
-                  bare
-                  showHeader={false}
-                  data={calendar.days}
-                  contributionsLast30Days={calendar.thisWeekCount}
-                  totalDaysShown={calendar.totalDaysShown}
-                  emptySubtitle="Activity will appear here once PRs merge and issues resolve"
-                  blockSize={blockConfig.size}
-                  blockMargin={blockConfig.margin}
-                  fontSize={blockConfig.fontSize}
-                  weekStart={0}
-                  showWeekdayLabels={['mon', 'wed', 'fri']}
-                  showTotalCount={false}
-                  showColorLegend={false}
-                  scrollContainerRef={scrollRef}
-                  scrollContainerSx={heatmapScrollSx}
-                />
+                {timelineMonths.length > 0 && (
+                  <Box
+                    sx={{
+                      mb: 1.1,
+                      maxWidth: '100%',
+                      overflowX: 'auto',
+                      overflowY: 'hidden',
+                      pb: 0.35,
+                      ...scrollbarSx,
+                    }}
+                  >
+                    <Stack
+                      direction="row"
+                      spacing={0.75}
+                      sx={{
+                        position: 'relative',
+                        width: 'max-content',
+                        minWidth: 'max-content',
+                        alignItems: 'center',
+                        px: 0.15,
+                        py: 0.25,
+                        '&::before': {
+                          content: '""',
+                          position: 'absolute',
+                          left: 8,
+                          right: 8,
+                          top: '50%',
+                          height: 1,
+                          backgroundColor: alpha(
+                            theme.palette.text.primary,
+                            0.12,
+                          ),
+                          transform: 'translateY(-50%)',
+                        },
+                      }}
+                    >
+                      {timelineMonths.map((month) => {
+                        const isSelected = month === calendar.selectedMonth;
+                        return (
+                          <Box
+                            key={month}
+                            component="button"
+                            type="button"
+                            onClick={() => onMonthChange?.(month)}
+                            disabled={isSelected}
+                            aria-pressed={isSelected}
+                            aria-label={`Show ${formatMonthLabel(month)}`}
+                            sx={{
+                              appearance: 'none',
+                              position: 'relative',
+                              zIndex: 1,
+                              border: `1px solid ${
+                                isSelected
+                                  ? alpha(theme.palette.status.success, 0.55)
+                                  : alpha(theme.palette.border.light, 0.9)
+                              }`,
+                              borderRadius: 1,
+                              px: 1.05,
+                              py: 0.55,
+                              minWidth: { xs: 76, sm: 86 },
+                              color: isSelected
+                                ? theme.palette.text.primary
+                                : alpha(
+                                    theme.palette.text.primary,
+                                    TEXT_OPACITY.secondary,
+                                  ),
+                              backgroundColor: isSelected
+                                ? alpha(theme.palette.status.success, 0.14)
+                                : theme.palette.background.paper,
+                              cursor: isSelected ? 'default' : 'pointer',
+                              fontFamily: monoFontFamily,
+                              fontSize: { xs: '0.64rem', sm: '0.68rem' },
+                              fontWeight: isSelected ? 700 : 600,
+                              lineHeight: 1.1,
+                              textAlign: 'center',
+                              whiteSpace: 'nowrap',
+                              transition:
+                                'background-color 120ms ease, color 120ms ease, border-color 120ms ease',
+                              '&:hover': {
+                                color: theme.palette.text.primary,
+                                backgroundColor: alpha(
+                                  theme.palette.text.primary,
+                                  0.065,
+                                ),
+                              },
+                              '&:disabled': {
+                                opacity: 1,
+                              },
+                            }}
+                          >
+                            {formatMonthLabel(month, true)}
+                          </Box>
+                        );
+                      })}
+                    </Stack>
+                  </Box>
+                )}
+                <Box
+                  ref={scrollRef}
+                  sx={{
+                    width: '100%',
+                    maxWidth: '100%',
+                    overflowX: 'hidden',
+                    overflowY: 'hidden',
+                    WebkitOverflowScrolling: 'touch',
+                    touchAction: 'pan-x',
+                    pb: 0.5,
+                    ...scrollbarSx,
+                  }}
+                >
+                  <Box
+                    sx={{
+                      display: 'grid',
+                      gridTemplateColumns: `${labelColumnWidth}px repeat(${visibleMonthDays.length}, ${blockSize}px)`,
+                      gridAutoRows: `${blockSize}px`,
+                      gap: `${blockGap}px`,
+                      width: 'max-content',
+                      minWidth: 'max-content',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Box />
+                    {visibleMonthDays.map((dateKey, index) => {
+                      const [year, month, day] = dateKey.split('-').map(Number);
+                      const isMonthStart = day === 1 || index === 0;
+                      const showLabel = isMonthStart || day === 15;
+                      return (
+                        <Typography
+                          key={dateKey}
+                          component="span"
+                          sx={{
+                            color: alpha(
+                              theme.palette.text.primary,
+                              showLabel
+                                ? TEXT_OPACITY.tertiary
+                                : TEXT_OPACITY.ghost,
+                            ),
+                            fontFamily: monoFontFamily,
+                            fontSize: { xs: '0.55rem', sm: '0.6rem' },
+                            lineHeight: 1,
+                            textAlign: 'left',
+                            whiteSpace: 'nowrap',
+                            visibility: showLabel ? 'visible' : 'hidden',
+                          }}
+                        >
+                          {isMonthStart
+                            ? new Date(year, month - 1, day).toLocaleDateString(
+                                'en-US',
+                                {
+                                  month: 'short',
+                                },
+                              )
+                            : day}
+                        </Typography>
+                      );
+                    })}
+                    {Array.from({ length: 24 }, (_, hour) => (
+                      <React.Fragment key={hour}>
+                        <Typography
+                          component="span"
+                          sx={{
+                            color: alpha(
+                              theme.palette.text.primary,
+                              HOUR_LABELS.has(hour)
+                                ? TEXT_OPACITY.tertiary
+                                : TEXT_OPACITY.ghost,
+                            ),
+                            fontFamily: monoFontFamily,
+                            fontSize: { xs: '0.52rem', sm: '0.58rem' },
+                            lineHeight: 1,
+                            textAlign: 'right',
+                            visibility: HOUR_LABELS.has(hour)
+                              ? 'visible'
+                              : 'hidden',
+                          }}
+                        >
+                          {String(hour).padStart(2, '0')}
+                        </Typography>
+                        {visibleMonthDays.map((dateKey) => {
+                          const timestamp = `${dateKey}T${String(hour).padStart(
+                            2,
+                            '0',
+                          )}`;
+                          const bucket = hourMap.get(timestamp);
+                          const count = bucket?.count ?? 0;
+                          const label = formatHourTooltip(timestamp, count);
+                          return (
+                            <Box
+                              key={timestamp}
+                              component="span"
+                              title={label}
+                              aria-label={label}
+                              sx={{
+                                display: 'block',
+                                width: blockSize,
+                                height: blockSize,
+                                borderRadius: '2px',
+                                backgroundColor: getHeatmapBlockColor(count),
+                                boxShadow:
+                                  count > 0
+                                    ? `0 0 0 1px ${alpha(
+                                        theme.palette.common.white,
+                                        0.02,
+                                      )} inset`
+                                    : `0 0 0 1px ${alpha(
+                                        theme.palette.common.white,
+                                        0.025,
+                                      )} inset`,
+                              }}
+                            />
+                          );
+                        })}
+                      </React.Fragment>
+                    ))}
+                  </Box>
+                </Box>
                 <Box
                   sx={{
                     mt: 1,
@@ -310,14 +535,79 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
                       lineHeight: 1.35,
                     }}
                   >
-                    {totalContributions.toLocaleString()} contribution
-                    {totalContributions === 1 ? '' : 's'} in the last year
+                    {calendar.rangeCount.toLocaleString()} contribution
+                    {calendar.rangeCount === 1 ? '' : 's'} in{' '}
+                    {calendar.rangeLabel}
+                    {showRangeComparison && (
+                      <>
+                        <Box
+                          component="span"
+                          sx={{
+                            mx: 0.85,
+                            color: alpha(
+                              theme.palette.text.primary,
+                              TEXT_OPACITY.ghost,
+                            ),
+                          }}
+                        >
+                          /
+                        </Box>
+                        <Box
+                          component="span"
+                          sx={{
+                            color: rangeTrendColor,
+                            fontWeight: 700,
+                          }}
+                        >
+                          {rangeTrendPositive ? '↑ ' : '↓ '}
+                          {rangeDeltaLabel}
+                        </Box>
+                      </>
+                    )}
+                    <Box
+                      component="span"
+                      sx={{
+                        mx: 0.85,
+                        color: alpha(
+                          theme.palette.text.primary,
+                          TEXT_OPACITY.ghost,
+                        ),
+                      }}
+                    >
+                      /
+                    </Box>
+                    <Box
+                      component="span"
+                      sx={{
+                        color: alpha(
+                          theme.palette.text.primary,
+                          TEXT_OPACITY.secondary,
+                        ),
+                      }}
+                    >
+                      {calendar.selectedMonthCount.toLocaleString()} in{' '}
+                      {calendar.selectedMonthLabel} vs{' '}
+                      {calendar.previousMonthCount.toLocaleString()} in{' '}
+                      {calendar.previousMonthLabel}
+                    </Box>
+                    {showMonthComparison && (
+                      <Box
+                        component="span"
+                        sx={{
+                          ml: 0.6,
+                          color: monthTrendColor,
+                          fontWeight: 700,
+                        }}
+                      >
+                        {monthTrendPositive ? '↑ ' : '↓ '}
+                        {monthDeltaLabel}
+                      </Box>
+                    )}
                   </Typography>
                   {!isEmpty && <ContributionCalendarLegend />}
                 </Box>
               </Box>
-              {weekSummaryCard}
-            </Stack>
+            </Box>
           )}
         </CardContent>
       </Card>

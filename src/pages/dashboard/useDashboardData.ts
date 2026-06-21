@@ -49,7 +49,7 @@ type DashboardDatasets = {
 // the React Query cache key stable across renders and route remounts.
 const DASHBOARD_ISSUES_SINCE_ISO = new Date(GITTENSOR_START_MS).toISOString();
 
-const useDashboardData = (range: TrendTimeRange) => {
+const useDashboardData = (range: TrendTimeRange, calendarMonth?: string) => {
   const prsQuery = useAllPrs();
   const minersQuery = useAllMiners();
   const issuesQuery = useIssues();
@@ -140,8 +140,11 @@ const useDashboardData = (range: TrendTimeRange) => {
       buildDashboardContributionCalendar(
         datasets.prs.data,
         datasets.minerIssues.data,
+        new Date(),
+        calendarMonth,
+        range,
       ),
-    [datasets.minerIssues.data, datasets.prs.data],
+    [calendarMonth, datasets.minerIssues.data, datasets.prs.data, range],
   );
 
   const featuredContributors = useMemo(

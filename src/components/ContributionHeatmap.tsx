@@ -57,6 +57,10 @@ export interface ContributionHeatmapProps {
   showColorLegend?: boolean;
   scrollContainerRef?: React.RefObject<HTMLDivElement | null>;
   scrollContainerSx?: SxProps<Theme>;
+  getBlockColor?: (activity: {
+    count: number;
+    date: string;
+  }) => string | undefined;
 }
 
 const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
@@ -80,6 +84,7 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
   showColorLegend,
   scrollContainerRef,
   scrollContainerSx,
+  getBlockColor,
 }) => {
   const theme = useTheme();
   const heatmapLevels = [...CONTRIBUTION_HEATMAP_SCALE];
@@ -168,13 +173,19 @@ const ContributionHeatmap: React.FC<ContributionHeatmapProps> = ({
           renderBlock={(block, activity) => {
             const clickable = interactive;
             const isSelected = selectedDate === activity.date;
+            const blockColor = getBlockColor?.(activity);
+            const coloredBlock = blockColor
+              ? React.cloneElement(block as React.ReactElement, {
+                  fill: blockColor,
+                })
+              : block;
             const highlighted =
               clickable && isSelected
-                ? React.cloneElement(block as React.ReactElement, {
+                ? React.cloneElement(coloredBlock as React.ReactElement, {
                     stroke: theme.palette.text.primary,
                     strokeWidth: 1.5,
                   })
-                : block;
+                : coloredBlock;
             const wrapped = clickable ? (
               <g
                 onClick={() => onDayClick?.(activity.date)}

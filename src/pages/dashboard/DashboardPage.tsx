@@ -10,6 +10,11 @@ import DashboardFeaturedWorkSection from './views/DashboardFeaturedWork';
 import DashboardTopContributors from './views/DashboardTopContributors';
 import LiveSidebar from './views/LiveSidebar';
 
+const getCurrentMonthKey = () => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+};
+
 const DashboardFeaturePage: React.FC = () => {
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'md'));
@@ -17,6 +22,8 @@ const DashboardFeaturePage: React.FC = () => {
   const showSidebarRight = useMediaQuery(theme.breakpoints.up('xl'));
 
   const [range, setRange] = useState<TrendTimeRange>('35d');
+  const [calendarMonth, setCalendarMonth] =
+    useState<string>(getCurrentMonthKey);
   const {
     kpis,
     overview,
@@ -28,7 +35,7 @@ const DashboardFeaturePage: React.FC = () => {
     featuredContributors,
     featuredDiscoveryContributors,
     isLoading,
-  } = useDashboardData(range);
+  } = useDashboardData(range, calendarMonth);
 
   const sidebarWidth =
     isMobile || isTablet ? '100%' : isLargeScreen ? '340px' : '300px';
@@ -81,6 +88,7 @@ const DashboardFeaturePage: React.FC = () => {
               kpis={kpis}
               isLoading={isLoading}
               onRangeChange={setRange}
+              onCalendarMonthChange={setCalendarMonth}
             />
 
             <DashboardTopContributors

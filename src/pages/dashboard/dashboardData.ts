@@ -55,16 +55,27 @@ export interface DashboardKpi {
   subtitle: string;
 }
 
-export interface DashboardContributionDay {
+export interface DashboardContributionHour {
+  timestamp: string;
   date: string;
+  hour: number;
   count: number;
   level: 0 | 1 | 2 | 3 | 4;
 }
 
 export interface DashboardContributionCalendar {
-  days: DashboardContributionDay[];
-  totalDaysShown: number;
-  weekCount: number;
+  hours: DashboardContributionHour[];
+  totalHoursShown: number;
+  selectedMonth: string;
+  availableMonths: string[];
+  rangeCount: number;
+  rangeLabel: string;
+  rangeOverRangePercent: number | null;
+  selectedMonthCount: number;
+  selectedMonthLabel: string;
+  previousMonthCount: number;
+  previousMonthLabel: string;
+  monthOverMonthPercent: number | null;
   thisWeekCount: number;
   weekOverWeekPercent: number | null;
   weekOverWeekLabel: string;
@@ -373,6 +384,12 @@ const getLocalDayStart = (timestamp: number) => {
   return date.getTime();
 };
 
+const getLocalHourStart = (timestamp: number) => {
+  const date = new Date(timestamp);
+  date.setMinutes(0, 0, 0);
+  return date.getTime();
+};
+
 const addLocalDays = (dayStartMs: number, days: number) => {
   const date = new Date(dayStartMs);
   date.setDate(date.getDate() + days);
@@ -380,11 +397,9 @@ const addLocalDays = (dayStartMs: number, days: number) => {
   return date.getTime();
 };
 
-/** Sunday 00:00 local for the week containing `timestamp`. */
-const getLocalSundayWeekStart = (timestamp: number) => {
-  const date = new Date(timestamp);
-  date.setHours(0, 0, 0, 0);
-  date.setDate(date.getDate() - date.getDay());
+const addLocalHours = (hourStartMs: number, hours: number) => {
+  const date = new Date(hourStartMs);
+  date.setHours(date.getHours() + hours, 0, 0, 0);
   return date.getTime();
 };
 
@@ -393,88 +408,302 @@ const parseCalendarDateKey = (dateKey: string) => {
   return getLocalDayStart(new Date(year, month - 1, day).getTime());
 };
 
-const getContributionLevel = (count: number): 0 | 1 | 2 | 3 | 4 => {
+const parseCalendarHourKey = (hourKey: string) => {
+  const [dateKey, hourString] = hourKey.split('T');
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return getLocalHourStart(
+    new Date(year, month - 1, day, Number(hourString)).getTime(),
+  );
+};
+
+const formatMonthKey = (timestamp: number) => {
+  const date = new Date(timestamp);
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${year}-${month}`;
+};
+
+const formatHourKey = (timestamp: number) => {
+  const date = new Date(timestamp);
+  return `${formatCalendarDateKey(timestamp)}T${String(
+    date.getHours(),
+  ).padStart(2, '0')}`;
+};
+
+const parseMonthKey = (monthKey: string) => {
+  const [year, month] = monthKey.split('-').map(Number);
+  return { year, monthIndex: month - 1 };
+};
+
+const getContributionLevel = (
+  count: number,
+  nonZeroCounts: number[],
+): 0 | 1 | 2 | 3 | 4 => {
   if (count <= 0) return 0;
-  if (count < 2) return 1;
-  if (count < 3) return 2;
-  if (count < 5) return 3;
+  if (nonZeroCounts.length === 0) return 0;
+
+  const lower = nonZeroCounts[Math.floor((nonZeroCounts.length - 1) * 0.25)];
+  const middle = nonZeroCounts[Math.floor((nonZeroCounts.length - 1) * 0.5)];
+  const upper = nonZeroCounts[Math.floor((nonZeroCounts.length - 1) * 0.75)];
+
+  if (count <= lower) return 1;
+  if (count <= middle) return 2;
+  if (count <= upper) return 3;
   return 4;
 };
 
-const buildContributionCalendarDateRange = (now = new Date()) => {
-  const rollingEndMs = getLocalDayStart(now.getTime());
-  // Rolling year: if today is May 17, activity range starts May 18 prior year.
-  const rollingStartMs = addLocalDays(
-    rollingEndMs,
-    -(CONTRIBUTION_CALENDAR_DAYS - 1),
+const buildContributionCalendarDateRange = (
+  selectedMonth: string,
+  now = new Date(),
+) => {
+  const { year, monthIndex } = parseMonthKey(selectedMonth);
+  const currentMonth = formatMonthKey(now.getTime());
+  const startMs = getLocalHourStart(
+    new Date(year, monthIndex - 3, 1).getTime(),
   );
-  // 53 Sun–Sat columns; only render days through today (no future week padding).
-  const gridStartMs =
-    getLocalSundayWeekStart(rollingEndMs) -
-    (CONTRIBUTION_CALENDAR_WEEKS - 1) * WEEK_MS;
-  return { gridStartMs, rollingEndMs, rollingStartMs };
+  const endMs =
+    selectedMonth === currentMonth
+      ? getLocalHourStart(now.getTime())
+      : getLocalHourStart(new Date(year, monthIndex + 1, 0, 23).getTime());
+  return { startMs, endMs };
+};
+
+interface ContributionCalendarAggregation {
+  prs: CommitLog[];
+  issues: MirrorDashboardIssue[];
+  currentMonth: string;
+  availableMonths: string[];
+  hourlyCounts: Map<string, number>;
+}
+
+let contributionCalendarAggregationCache: ContributionCalendarAggregation | null =
+  null;
+
+const getContinuousContributionMonths = (months: Set<string>) => {
+  const sortedMonths = Array.from(months).sort((a, b) => a.localeCompare(b));
+  const firstMonth = sortedMonths[0];
+  const lastMonth = sortedMonths[sortedMonths.length - 1];
+  if (!firstMonth || !lastMonth) return [];
+
+  const { year: startYear, monthIndex: startMonthIndex } =
+    parseMonthKey(firstMonth);
+  const { year: endYear, monthIndex: endMonthIndex } = parseMonthKey(lastMonth);
+  const continuousMonths: string[] = [];
+  const cursor = new Date(startYear, startMonthIndex, 1);
+  const end = new Date(endYear, endMonthIndex, 1);
+
+  while (cursor.getTime() <= end.getTime()) {
+    continuousMonths.push(formatMonthKey(cursor.getTime()));
+    cursor.setMonth(cursor.getMonth() + 1, 1);
+  }
+
+  return continuousMonths.sort((a, b) => b.localeCompare(a));
+};
+
+const getContributionCalendarAggregation = (
+  prs: CommitLog[],
+  issues: MirrorDashboardIssue[],
+  now = new Date(),
+): ContributionCalendarAggregation => {
+  const currentMonth = formatMonthKey(now.getTime());
+  const cached = contributionCalendarAggregationCache;
+
+  if (
+    cached &&
+    cached.prs === prs &&
+    cached.issues === issues &&
+    cached.currentMonth === currentMonth
+  ) {
+    return cached;
+  }
+
+  const months = new Set<string>([currentMonth]);
+  const hourlyCounts = new Map<string, number>();
+
+  const incrementHour = (timestamp: number | null) => {
+    if (timestamp === null) return;
+    const hourMs = getLocalHourStart(timestamp);
+    const hourKey = formatHourKey(hourMs);
+    hourlyCounts.set(hourKey, (hourlyCounts.get(hourKey) ?? 0) + 1);
+    months.add(formatMonthKey(timestamp));
+  };
+
+  prs.forEach((pr) => {
+    incrementHour(toTimestamp(pr.mergedAt));
+  });
+
+  issues.forEach((issue) => {
+    if (!isResolvedMinerIssue(issue)) return;
+    incrementHour(toTimestamp(issue.solving_pr?.merged_at));
+  });
+
+  contributionCalendarAggregationCache = {
+    prs,
+    issues,
+    currentMonth,
+    availableMonths: getContinuousContributionMonths(months),
+    hourlyCounts,
+  };
+
+  return contributionCalendarAggregationCache;
+};
+
+const getContributionRangeLabel = (range: TrendTimeRange) => {
+  if (range === '1d') return 'last 1d';
+  if (range === '7d') return 'last 7d';
+  if (range === '35d') return 'last 35d';
+  return 'all time';
+};
+
+const sumHourlyCountsInWindow = (
+  hourlyCounts: Map<string, number>,
+  window: WindowBounds,
+) => {
+  let total = 0;
+  hourlyCounts.forEach((count, hourKey) => {
+    if (isWithinWindow(parseCalendarHourKey(hourKey), window)) {
+      total += count;
+    }
+  });
+  return total;
+};
+
+const getMonthWindowBounds = (monthKey: string): WindowBounds => {
+  const { year, monthIndex } = parseMonthKey(monthKey);
+  return {
+    startMs: new Date(year, monthIndex, 1).getTime(),
+    endMs: new Date(year, monthIndex + 1, 1).getTime(),
+  };
+};
+
+const addMonthsToMonthKey = (monthKey: string, months: number) => {
+  const { year, monthIndex } = parseMonthKey(monthKey);
+  return formatMonthKey(new Date(year, monthIndex + months, 1).getTime());
+};
+
+const getCompactMonthLabel = (monthKey: string) => {
+  const { year, monthIndex } = parseMonthKey(monthKey);
+  return new Date(year, monthIndex, 1).toLocaleDateString('en-US', {
+    month: 'short',
+    year: 'numeric',
+  });
 };
 
 export const buildDashboardContributionCalendar = (
   prs: CommitLog[],
   issues: MirrorDashboardIssue[],
   now = new Date(),
+  selectedMonth = formatMonthKey(now.getTime()),
+  range: TrendTimeRange = '7d',
 ): DashboardContributionCalendar => {
-  const { gridStartMs, rollingEndMs, rollingStartMs } =
-    buildContributionCalendarDateRange(now);
+  const { availableMonths, hourlyCounts } = getContributionCalendarAggregation(
+    prs,
+    issues,
+    now,
+  );
+  const resolvedMonth = availableMonths.includes(selectedMonth)
+    ? selectedMonth
+    : (availableMonths[0] ?? formatMonthKey(now.getTime()));
+  const { startMs, endMs } = buildContributionCalendarDateRange(
+    resolvedMonth,
+    now,
+  );
   const dataMap = new Map<string, number>();
 
   for (
-    let dayMs = gridStartMs;
-    dayMs <= rollingEndMs;
-    dayMs = addLocalDays(dayMs, 1)
+    let hourMs = startMs;
+    hourMs <= endMs;
+    hourMs = addLocalHours(hourMs, 1)
   ) {
-    dataMap.set(formatCalendarDateKey(dayMs), 0);
+    const hourKey = formatHourKey(hourMs);
+    dataMap.set(hourKey, hourlyCounts.get(hourKey) ?? 0);
   }
 
-  const incrementDay = (timestamp: number | null) => {
-    if (timestamp === null) return;
-    const dayMs = getLocalDayStart(timestamp);
-    if (dayMs < rollingStartMs || dayMs > rollingEndMs) return;
-    const dateKey = formatCalendarDateKey(dayMs);
-    if (!dataMap.has(dateKey)) return;
-    dataMap.set(dateKey, (dataMap.get(dateKey) ?? 0) + 1);
-  };
+  const nonZeroCounts = Array.from(dataMap.values())
+    .filter((count) => count > 0)
+    .sort((a, b) => a - b);
 
-  prs.forEach((pr) => incrementDay(toTimestamp(pr.mergedAt)));
+  const hours = Array.from(dataMap.entries())
+    .map(([timestamp, count]) => {
+      const [date, hourString] = timestamp.split('T');
+      return {
+        timestamp,
+        date,
+        hour: Number(hourString),
+        count,
+        level: getContributionLevel(count, nonZeroCounts),
+      };
+    })
+    .sort((a, b) => a.timestamp.localeCompare(b.timestamp));
 
-  issues.forEach((issue) => {
-    if (!isResolvedMinerIssue(issue)) return;
-    incrementDay(toTimestamp(issue.solving_pr?.merged_at));
+  const dailyCounts = new Map<string, number>();
+  hours.forEach(({ date, count }) => {
+    dailyCounts.set(date, (dailyCounts.get(date) ?? 0) + count);
   });
 
-  const days = Array.from(dataMap.entries())
+  const days = Array.from(dailyCounts.entries())
     .map(([date, count]) => ({
       date,
       count,
-      level: getContributionLevel(count),
+      level: getContributionLevel(count, nonZeroCounts),
     }))
     .sort((a, b) => a.date.localeCompare(b.date));
 
-  const thisWeekStart = getLocalSundayWeekStart(now.getTime());
-  const lastWeekStart = thisWeekStart - WEEK_MS;
+  const currentRangeWindow = getWindowBounds(range, now);
+  const previousRangeWindow = getPreviousWindowBounds(range, now);
+  const rangeCount = sumHourlyCountsInWindow(hourlyCounts, currentRangeWindow);
+  const previousRangeCount = previousRangeWindow
+    ? sumHourlyCountsInWindow(hourlyCounts, previousRangeWindow)
+    : 0;
+  let rangeOverRangePercent: number | null = null;
+
+  if (range !== 'all') {
+    if (rangeCount === 0 && previousRangeCount === 0) {
+      rangeOverRangePercent = 0;
+    } else if (previousRangeCount > 0) {
+      rangeOverRangePercent =
+        ((rangeCount - previousRangeCount) / previousRangeCount) * 100;
+    }
+  }
+
+  const previousMonth = addMonthsToMonthKey(resolvedMonth, -1);
+  const selectedMonthCount = sumHourlyCountsInWindow(
+    hourlyCounts,
+    getMonthWindowBounds(resolvedMonth),
+  );
+  const previousMonthCount = sumHourlyCountsInWindow(
+    hourlyCounts,
+    getMonthWindowBounds(previousMonth),
+  );
+  let monthOverMonthPercent: number | null = null;
+
+  if (selectedMonthCount === 0 && previousMonthCount === 0) {
+    monthOverMonthPercent = 0;
+  } else if (previousMonthCount > 0) {
+    monthOverMonthPercent =
+      ((selectedMonthCount - previousMonthCount) / previousMonthCount) * 100;
+  }
+
+  const currentDayMs = getLocalDayStart(now.getTime());
+  const rolling7Start = addLocalDays(currentDayMs, -6);
+  const prior7Start = addLocalDays(rolling7Start, -7);
 
   let thisWeekCount = 0;
   let lastWeekCount = 0;
 
   days.forEach(({ date, count }) => {
     const dayMs = parseCalendarDateKey(date);
-    if (dayMs >= thisWeekStart) {
+    if (dayMs >= rolling7Start && dayMs <= currentDayMs) {
       thisWeekCount += count;
       return;
     }
-    if (dayMs >= lastWeekStart) {
+    if (dayMs >= prior7Start && dayMs < rolling7Start) {
       lastWeekCount += count;
     }
   });
 
   let weekOverWeekPercent: number | null = null;
-  let weekOverWeekLabel = '0% vs last week';
+  let weekOverWeekLabel = '0% vs prior 7d';
 
   if (thisWeekCount === 0 && lastWeekCount === 0) {
     weekOverWeekPercent = 0;
@@ -483,15 +712,24 @@ export const buildDashboardContributionCalendar = (
       ((thisWeekCount - lastWeekCount) / lastWeekCount) * 100;
     const rounded = Math.round(weekOverWeekPercent);
     const sign = rounded > 0 ? '+' : '';
-    weekOverWeekLabel = `${sign}${rounded}% vs last week`;
+    weekOverWeekLabel = `${sign}${rounded}% vs prior 7d`;
   } else if (thisWeekCount > 0) {
-    weekOverWeekLabel = 'New activity this week';
+    weekOverWeekLabel = 'New activity in last 7d';
   }
 
   return {
-    days,
-    totalDaysShown: dataMap.size,
-    weekCount: Math.ceil(days.length / 7),
+    hours,
+    totalHoursShown: dataMap.size,
+    selectedMonth: resolvedMonth,
+    availableMonths,
+    rangeCount,
+    rangeLabel: getContributionRangeLabel(range),
+    rangeOverRangePercent,
+    selectedMonthCount,
+    selectedMonthLabel: getCompactMonthLabel(resolvedMonth),
+    previousMonthCount,
+    previousMonthLabel: getCompactMonthLabel(previousMonth),
+    monthOverMonthPercent,
     thisWeekCount,
     weekOverWeekPercent,
     weekOverWeekLabel,

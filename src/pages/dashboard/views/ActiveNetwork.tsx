@@ -20,6 +20,7 @@ interface ActiveNetworkProps {
   kpis: DashboardKpi[];
   isLoading?: boolean;
   onRangeChange: (range: TrendTimeRange) => void;
+  onCalendarMonthChange: (month: string) => void;
 }
 
 const ActiveNetwork: React.FC<ActiveNetworkProps> = ({
@@ -31,6 +32,7 @@ const ActiveNetwork: React.FC<ActiveNetworkProps> = ({
   kpis,
   isLoading = false,
   onRangeChange,
+  onCalendarMonthChange,
 }) => {
   return (
     <Box
@@ -53,6 +55,7 @@ const ActiveNetwork: React.FC<ActiveNetworkProps> = ({
       <ContributionCalendar
         calendar={contributionCalendar}
         isLoading={isLoading}
+        onMonthChange={onCalendarMonthChange}
       />
 
       {isLoading ? (
