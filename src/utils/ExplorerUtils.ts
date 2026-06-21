@@ -45,15 +45,24 @@ const VALID_ISSUE_SOLVE_TOKEN_THRESHOLD = 5;
 // Scoring window staleness check
 // ---------------------------------------------------------------------------
 
+/** UI-wide staleness window (watchlist, issues, discovery fetch). */
 const SCORING_WINDOW_DAYS = 35;
 
 export const isOutsideScoringWindow = (
   date: string | null | undefined,
+): boolean => isOutsidePrLookbackWindow(date, SCORING_WINDOW_DAYS);
+
+/** Staleness check using a repo's `pr_lookback_days` scoring window. */
+export const isOutsidePrLookbackWindow = (
+  date: string | null | undefined,
+  lookbackDays: number,
 ): boolean => {
-  if (!date) return false;
+  if (!date || lookbackDays <= 0) return false;
+  const parsed = new Date(date);
+  if (Number.isNaN(parsed.getTime())) return false;
   const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - SCORING_WINDOW_DAYS);
-  return new Date(date) < cutoff;
+  cutoff.setDate(cutoff.getDate() - lookbackDays);
+  return parsed < cutoff;
 };
 
 /** ISO timestamp for the start of the 35-day scoring window (UTC, suitable for

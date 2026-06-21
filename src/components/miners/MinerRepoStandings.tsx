@@ -20,12 +20,16 @@ import {
   GridView as GridViewIcon,
   TableRows as TableRowsIcon,
 } from '@mui/icons-material';
-import { useMinerStats } from '../../api';
+import { useMinerStats, useReposAndWeights } from '../../api';
 import type { MinerRepositoryEvaluation } from '../../api/models/Dashboard';
 import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import { credibilityColor } from '../../utils/format';
 import { type SortOrder } from '../../utils/ExplorerUtils';
 import { getRepositoryOwnerAvatarSrc } from '../../utils/avatar';
+import {
+  buildRepoLookbackDaysMap,
+  DEFAULT_PR_LOOKBACK_DAYS,
+} from '../../utils/repoConfig';
 import { DataTable, type DataTableColumn } from '../common';
 import EmptyStateMessage from './EmptyStateMessage';
 import MinerRepoStandingCard, { repoMinersHref } from './MinerRepoStandingCard';
@@ -144,6 +148,11 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
   viewMode = 'prs',
 }) => {
   const { data: minerStats, isLoading } = useMinerStats(githubId);
+  const { data: repos } = useReposAndWeights();
+  const repoLookbackDays = useMemo(
+    () => buildRepoLookbackDaysMap(repos ?? []),
+    [repos],
+  );
   const [view, setView] = useState<StandingsView>('cards');
   const isIssueMode = viewMode === 'issues';
   const [sortField, setSortField] = useState<StandingsSortKey>(
@@ -571,6 +580,10 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
               key={repo.repositoryFullName}
               repo={repo}
               viewMode={viewMode}
+              prLookbackDays={
+                repoLookbackDays.get(repo.repositoryFullName.toLowerCase()) ??
+                DEFAULT_PR_LOOKBACK_DAYS
+              }
             />
           ))}
         </Box>

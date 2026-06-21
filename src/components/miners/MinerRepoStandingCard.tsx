@@ -12,6 +12,8 @@ type ViewMode = 'prs' | 'issues';
 interface MinerRepoStandingCardProps {
   repo: MinerRepositoryEvaluation;
   viewMode: ViewMode;
+  /** Resolved `scoring.pr_lookback_days` for this repo (PR mode). */
+  prLookbackDays?: number;
 }
 
 const FONT_MONO = '"JetBrains Mono", monospace';
@@ -139,6 +141,7 @@ const InlineStat: React.FC<{
 const MinerRepoStandingCard: React.FC<MinerRepoStandingCardProps> = ({
   repo,
   viewMode,
+  prLookbackDays,
 }) => {
   const isIssueMode = viewMode === 'issues';
   const linkProps = useLinkBehavior<HTMLAnchorElement>(
@@ -354,7 +357,13 @@ const MinerRepoStandingCard: React.FC<MinerRepoStandingCardProps> = ({
         }}
       >
         <Box>
-          <Overline>{isIssueMode ? 'Issue activity' : 'PR activity'}</Overline>
+          <Overline>
+            {isIssueMode
+              ? 'Issue activity'
+              : prLookbackDays != null
+                ? `PR activity · ${prLookbackDays}d lookback`
+                : 'PR activity'}
+          </Overline>
           <Box
             sx={{
               display: 'flex',

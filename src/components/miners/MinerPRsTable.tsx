@@ -23,15 +23,19 @@ import {
   ExpandMore as ExpandMoreIcon,
   Search as SearchIcon,
 } from '@mui/icons-material';
-import { useMinerPRs, type CommitLog } from '../../api';
+import { useMinerPRs, useReposAndWeights, type CommitLog } from '../../api';
 import {
   filterPrs,
   getRepositoryOwnerAvatarSrc,
   getPrStatusCounts,
-  isOutsideScoringWindow,
+  isOutsidePrLookbackWindow,
   isPrStatusFilter,
   type PrStatusFilter,
 } from '../../utils';
+import {
+  buildRepoLookbackDaysMap,
+  DEFAULT_PR_LOOKBACK_DAYS,
+} from '../../utils/repoConfig';
 import {
   DataTable,
   type DataTableColumn,
@@ -108,6 +112,7 @@ interface MinerPRsTableProps {
 const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const theme = useTheme();
   const { data: prs, isLoading } = useMinerPRs(githubId);
+  const { data: repos } = useReposAndWeights();
   const { isWatched } = useWatchlist('prs');
   const [selectedAuthor, setSelectedAuthor] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -115,6 +120,22 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
   const [sortDir, setSortDir] = useState<SortDir>('desc');
   const [expandedKeys, setExpandedKeys] = useState<Set<string>>(
     () => new Set(),
+  );
+
+  const repoLookbackDays = useMemo(
+    () => buildRepoLookbackDaysMap(repos ?? []),
+    [repos],
+  );
+
+  const isMergedOutsideLookback = useCallback(
+    (pr: CommitLog) => {
+      if (!pr.mergedAt) return false;
+      const lookback =
+        repoLookbackDays.get(pr.repository.toLowerCase()) ??
+        DEFAULT_PR_LOOKBACK_DAYS;
+      return isOutsidePrLookbackWindow(pr.mergedAt, lookback);
+    },
+    [repoLookbackDays],
   );
 
   const filtersConfig = useMemo(
@@ -711,7 +732,7 @@ const MinerPRsTable: React.FC<MinerPRsTableProps> = ({ githubId }) => {
           );
         }}
         getRowSx={(pr) => {
-          if (pr.mergedAt && isOutsideScoringWindow(pr.mergedAt)) {
+          if (isMergedOutsideLookback(pr)) {
             return { opacity: 0.4, filter: 'grayscale(0.5)' };
           }
           if (expandedKeys.has(prRowKey(pr))) {
