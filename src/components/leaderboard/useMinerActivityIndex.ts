@@ -203,7 +203,7 @@ export const useMinerActivityIndex = (
   network: NetworkActivity;
   isLoading: boolean;
 } => {
-  const { lookbackDays = 30, topReposLimit = 3, commitLimit = 500 } = options;
+  const { lookbackDays = 30, topReposLimit = 3, commitLimit = 5000 } = options;
 
   const { data, isLoading } = useRecentCommits(commitLimit);
 

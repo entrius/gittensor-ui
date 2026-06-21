@@ -284,7 +284,7 @@ const SparklineDetailModal: React.FC<SparklineDetailModalProps> = ({
   const [range, setRange] = useState<RangeKey>('30d');
 
   // 1D view re-buckets raw commits into 3-hour slots; daily props can't do it.
-  const { data: recentCommits } = useRecentCommits(500);
+  const { data: recentCommits } = useRecentCommits(5000);
 
   const activeRange = useMemo(
     () => RANGE_OPTIONS.find((r) => r.key === range) ?? RANGE_OPTIONS[2],

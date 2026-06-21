@@ -13,6 +13,7 @@ interface SparklineProps {
   primaryLabel?: string;
   secondaryLabel?: string;
   emphasis?: boolean;
+  activeRangeMinDays?: number;
 }
 
 interface BarSpec {
@@ -58,6 +59,19 @@ const computeBars = (
 const sumLast = (values: readonly number[], n: number): number =>
   values.slice(-n).reduce((a, b) => a + b, 0);
 
+const getRenderWindowStart = (
+  primary: readonly number[],
+  secondary: readonly number[] | null,
+  minDays: number | undefined,
+): number => {
+  if (!minDays || primary.length <= minDays) return 0;
+  const firstActive = primary.findIndex(
+    (value, index) => value + (secondary?.[index] ?? 0) > 0,
+  );
+  if (firstActive <= 0) return 0;
+  return Math.min(firstActive, primary.length - minDays);
+};
+
 const Sparkline: React.FC<SparklineProps> = ({
   values,
   secondaryValues,
@@ -69,6 +83,7 @@ const Sparkline: React.FC<SparklineProps> = ({
   primaryLabel = 'merged',
   secondaryLabel = 'discovery',
   emphasis = false,
+  activeRangeMinDays,
 }) => {
   const primaryOpacity = emphasis ? 0.95 : 0.78;
   const secondaryOpacity = emphasis ? 0.95 : 0.78;
@@ -167,10 +182,22 @@ const Sparkline: React.FC<SparklineProps> = ({
     (v, i) => v + (hasSecondary ? (secondaryValues?.[i] ?? 0) : 0),
   );
   const scaleMax = Math.max(...stackedTotals, 0);
-
-  const bars = computeBars(
+  const renderStart = getRenderWindowStart(
     values,
     hasSecondary ? secondaryValues! : null,
+    activeRangeMinDays,
+  );
+  const renderValues = renderStart > 0 ? values.slice(renderStart) : values;
+  const renderSecondaryValues =
+    hasSecondary && renderStart > 0
+      ? secondaryValues!.slice(renderStart)
+      : hasSecondary
+        ? secondaryValues!
+        : null;
+
+  const bars = computeBars(
+    renderValues,
+    renderSecondaryValues,
     width,
     height,
     scaleMax,
