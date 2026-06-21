@@ -46,6 +46,7 @@ import {
   RepositoryCodeBrowser,
   ReadmeViewer,
   RepositoryStats,
+  RepositorySocialLinks,
   RepositoryPrActivityChart,
   ContributingViewer,
   RepositoryMaintainers,
@@ -656,6 +657,8 @@ const RepositoryDetailsPage: React.FC = () => {
                     viewMode={tabValue === 4 ? 'issues' : 'prs'}
                   />
                 ) : null}
+
+                <RepositorySocialLinks repositoryFullName={repo} />
 
                 {/* Maintainers */}
                 <RepositoryMaintainers repositoryFullName={repo} />
