@@ -104,6 +104,19 @@ const CredibilityValue: React.FC<{ value: number }> = ({ value }) => (
   </Typography>
 );
 
+const rightSortHeaderSx = {
+  '& .MuiTableSortLabel-root': {
+    width: '100%',
+    justifyContent: 'flex-end',
+  },
+  '& .MuiTableSortLabel-icon': {
+    width: 0,
+    marginLeft: '2px',
+    marginRight: 0,
+    overflow: 'visible',
+  },
+} as const;
+
 const RepositoryCell: React.FC<{ repository: string }> = ({ repository }) => {
   const owner = repository.split('/')[0];
   return (
@@ -253,14 +266,14 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
     {
       key: 'repository',
       header: 'Repository',
-      width: '40%',
+      width: 220,
       sortKey: 'repository',
       renderCell: (r) => <RepositoryCell repository={r.repositoryFullName} />,
     },
     {
       key: 'eligible',
       header: 'PR eligibility',
-      width: '18%',
+      width: 132,
       sortKey: 'eligible',
       renderCell: (r) => (
         <EligibilityChip eligible={r.isEligible} reason={r.failedReason} />
@@ -269,25 +282,28 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
     {
       key: 'credibility',
       header: 'Credibility',
-      width: '14%',
+      width: 112,
       align: 'right',
       sortKey: 'credibility',
+      headerSx: rightSortHeaderSx,
       renderCell: (r) => <CredibilityValue value={r.credibility} />,
     },
     {
       key: 'merged',
       header: 'Merged PRs',
-      width: '14%',
+      width: 112,
       align: 'right',
       sortKey: 'merged',
+      headerSx: rightSortHeaderSx,
       renderCell: (r) => r.totalMergedPrs,
     },
     {
       key: 'score',
       header: 'Repo score',
-      width: '14%',
+      width: 112,
       align: 'right',
       sortKey: 'score',
+      headerSx: rightSortHeaderSx,
       renderCell: (r) => r.totalScore.toFixed(2),
     },
   ];
@@ -299,14 +315,14 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
     {
       key: 'repository',
       header: 'Repository',
-      width: '34%',
+      width: 200,
       sortKey: 'repository',
       renderCell: (r) => <RepositoryCell repository={r.repositoryFullName} />,
     },
     {
       key: 'issueEligible',
       header: 'Issue eligibility',
-      width: '18%',
+      width: 140,
       sortKey: 'issueEligible',
       renderCell: (r) => (
         <EligibilityChip eligible={r.isIssueEligible} reason={r.failedReason} />
@@ -315,33 +331,37 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
     {
       key: 'issueCredibility',
       header: 'Issue credibility',
-      width: '16%',
+      width: 132,
       align: 'right',
       sortKey: 'issueCredibility',
+      headerSx: rightSortHeaderSx,
       renderCell: (r) => <CredibilityValue value={r.issueCredibility} />,
     },
     {
       key: 'solved',
       header: 'Solved',
-      width: '10%',
+      width: 80,
       align: 'right',
       sortKey: 'solved',
+      headerSx: rightSortHeaderSx,
       renderCell: (r) => r.totalSolvedIssues,
     },
     {
       key: 'valid',
       header: 'Valid',
-      width: '10%',
+      width: 72,
       align: 'right',
       sortKey: 'valid',
+      headerSx: rightSortHeaderSx,
       renderCell: (r) => r.totalValidSolvedIssues,
     },
     {
       key: 'discoveryScore',
       header: 'Discovery score',
-      width: '12%',
+      width: 128,
       align: 'right',
       sortKey: 'discoveryScore',
+      headerSx: rightSortHeaderSx,
       renderCell: (r) => r.issueDiscoveryScore.toFixed(2),
     },
   ];
@@ -362,6 +382,8 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
         backgroundColor: 'transparent',
         p: 0,
         overflow: 'hidden',
+        minWidth: 0,
+        maxWidth: '100%',
       }}
       elevation={0}
     >
@@ -588,18 +610,20 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
           ))}
         </Box>
       ) : (
-        <DataTable<MinerRepositoryEvaluation, StandingsSortKey>
-          columns={isIssueMode ? issueColumns : prColumns}
-          rows={rows}
-          getRowKey={(r) => r.repositoryFullName}
-          getRowHref={(r) => repoMinersHref(r.repositoryFullName)}
-          minWidth="640px"
-          sort={{
-            field: sortField,
-            order: sortOrder,
-            onChange: handleSortChange,
-          }}
-        />
+        <Box sx={{ minWidth: 0, maxWidth: '100%' }}>
+          <DataTable<MinerRepositoryEvaluation, StandingsSortKey>
+            columns={isIssueMode ? issueColumns : prColumns}
+            rows={rows}
+            getRowKey={(r) => r.repositoryFullName}
+            getRowHref={(r) => repoMinersHref(r.repositoryFullName)}
+            minWidth={isIssueMode ? 752 : 688}
+            sort={{
+              field: sortField,
+              order: sortOrder,
+              onChange: handleSortChange,
+            }}
+          />
+        </Box>
       )}
     </Card>
   );

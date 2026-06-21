@@ -109,6 +109,9 @@ type DataTableProps<T, SortKey extends string = never> = {
 };
 
 const containerSx: SxProps<Theme> = {
+  width: '100%',
+  maxWidth: '100%',
+  minWidth: 0,
   overflowX: 'auto',
   ...scrollbarSx,
 };
