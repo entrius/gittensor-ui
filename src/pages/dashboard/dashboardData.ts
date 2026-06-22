@@ -478,6 +478,12 @@ interface ContributionCalendarAggregation {
 
 let contributionCalendarAggregationCache: ContributionCalendarAggregation | null =
   null;
+let contributionCalendarResultCache: {
+  prs: CommitLog[];
+  issues: MirrorDashboardIssue[];
+  currentHour: string;
+  values: Map<string, DashboardContributionCalendar>;
+} | null = null;
 
 const getContinuousContributionMonths = (months: Set<string>) => {
   const sortedMonths = Array.from(months).sort((a, b) => a.localeCompare(b));
@@ -596,6 +602,7 @@ export const buildDashboardContributionCalendar = (
   selectedMonth = formatMonthKey(now.getTime()),
   range: TrendTimeRange = '7d',
 ): DashboardContributionCalendar => {
+  const currentHour = formatHourKey(getLocalHourStart(now.getTime()));
   const { availableMonths, hourlyCounts } = getContributionCalendarAggregation(
     prs,
     issues,
@@ -604,6 +611,19 @@ export const buildDashboardContributionCalendar = (
   const resolvedMonth = availableMonths.includes(selectedMonth)
     ? selectedMonth
     : (availableMonths[0] ?? formatMonthKey(now.getTime()));
+  const cacheKey = `${resolvedMonth}|${range}`;
+  const cached = contributionCalendarResultCache;
+
+  if (
+    cached &&
+    cached.prs === prs &&
+    cached.issues === issues &&
+    cached.currentHour === currentHour
+  ) {
+    const cachedValue = cached.values.get(cacheKey);
+    if (cachedValue) return cachedValue;
+  }
+
   const { startMs, endMs } = buildContributionCalendarDateRange(
     resolvedMonth,
     now,
@@ -717,7 +737,7 @@ export const buildDashboardContributionCalendar = (
     weekOverWeekLabel = 'New activity in last 7d';
   }
 
-  return {
+  const result = {
     hours,
     totalHoursShown: dataMap.size,
     selectedMonth: resolvedMonth,
@@ -734,6 +754,24 @@ export const buildDashboardContributionCalendar = (
     weekOverWeekPercent,
     weekOverWeekLabel,
   };
+
+  if (
+    !contributionCalendarResultCache ||
+    contributionCalendarResultCache.prs !== prs ||
+    contributionCalendarResultCache.issues !== issues ||
+    contributionCalendarResultCache.currentHour !== currentHour
+  ) {
+    contributionCalendarResultCache = {
+      prs,
+      issues,
+      currentHour,
+      values: new Map(),
+    };
+  }
+
+  contributionCalendarResultCache.values.set(cacheKey, result);
+
+  return result;
 };
 
 // Each PR contributes to exactly one bucket, keyed by its terminal state and

@@ -11,6 +11,7 @@ import {
   CardContent,
   CircularProgress,
   Stack,
+  Tooltip,
   Typography,
   useMediaQuery,
 } from '@mui/material';
@@ -73,6 +74,84 @@ const formatHourTooltip = (timestamp: string, count: number) => {
   return `${pluralize(count, 'contribution')} during ${dateKey} ${hourKey}:00`;
 };
 
+const formatTooltipDate = (dateKey: string) => {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return new Date(year, month - 1, day).toLocaleDateString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  });
+};
+
+const formatHourWindow = (hour: number) =>
+  `${String(hour).padStart(2, '0')}:00 - ${String((hour + 1) % 24).padStart(
+    2,
+    '0',
+  )}:00`;
+
+const getHourEndMs = (dateKey: string, hour: number) => {
+  const [year, month, day] = dateKey.split('-').map(Number);
+  return new Date(year, month - 1, day, hour + 1).getTime();
+};
+
+const HeatmapTooltipTitle: React.FC<{
+  date: string;
+  hour: number;
+  count: number;
+}> = ({ date, hour, count }) => {
+  const theme = useTheme();
+  const hasActivity = count > 0;
+
+  return (
+    <Box sx={{ minWidth: 168 }}>
+      <Typography
+        sx={{
+          color: theme.palette.text.primary,
+          fontFamily: theme.typography.fontFamily,
+          fontSize: '0.72rem',
+          fontWeight: 700,
+          lineHeight: 1.25,
+        }}
+      >
+        {formatTooltipDate(date)}
+      </Typography>
+      <Typography
+        sx={{
+          mt: 0.35,
+          color: alpha(theme.palette.text.primary, TEXT_OPACITY.secondary),
+          fontFamily: theme.typography.fontFamily,
+          fontSize: '0.64rem',
+          lineHeight: 1.25,
+        }}
+      >
+        {formatHourWindow(hour)}
+      </Typography>
+      <Box
+        sx={{
+          mt: 0.8,
+          pt: 0.7,
+          borderTop: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
+        }}
+      >
+        <Typography
+          sx={{
+            color: hasActivity
+              ? theme.palette.status.success
+              : alpha(theme.palette.text.primary, TEXT_OPACITY.tertiary),
+            fontFamily: theme.typography.fontFamily,
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            lineHeight: 1.25,
+          }}
+        >
+          {pluralize(count, 'contribution')}
+        </Typography>
+      </Box>
+    </Box>
+  );
+};
+
 const ContributionCalendarLegend: React.FC = () => {
   const theme = useTheme();
   const monoFontFamily = theme.typography.fontFamily;
@@ -133,6 +212,7 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const scrollRef = useRef<HTMLDivElement>(null);
   const [heatmapWidth, setHeatmapWidth] = useState(0);
+  const currentMs = Date.now();
 
   const isEmpty = calendar.hours.every((hour) => hour.count === 0);
   const peakContributionCount = useMemo(
@@ -143,6 +223,10 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
   const monthDays = useMemo(
     () => Array.from(new Set(calendar.hours.map((hour) => hour.date))).sort(),
     [calendar.hours],
+  );
+  const concludedMonthDays = useMemo(
+    () => monthDays.filter((dateKey) => getHourEndMs(dateKey, 0) <= currentMs),
+    [currentMs, monthDays],
   );
   const timelineMonths = useMemo(
     () => [...calendar.availableMonths].reverse(),
@@ -155,16 +239,41 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
   const blockSize = isMobile ? 7 : 10;
   const blockGap = isMobile ? 3 : 3;
   const labelColumnWidth = isMobile ? 28 : 34;
+  const baseHeatmapCellStyle = useMemo<React.CSSProperties>(
+    () => ({
+      display: 'block',
+      width: blockSize,
+      height: blockSize,
+      borderRadius: 2,
+    }),
+    [blockSize],
+  );
+  const hiddenHeatmapCellStyle = useMemo<React.CSSProperties>(
+    () => ({
+      ...baseHeatmapCellStyle,
+      visibility: 'hidden',
+    }),
+    [baseHeatmapCellStyle],
+  );
   const visibleDayCapacity = useMemo(() => {
-    if (heatmapWidth <= labelColumnWidth) return monthDays.length;
+    if (heatmapWidth <= labelColumnWidth) return concludedMonthDays.length;
     return Math.max(
       1,
       Math.floor((heatmapWidth - labelColumnWidth) / (blockSize + blockGap)),
     );
-  }, [blockGap, blockSize, heatmapWidth, labelColumnWidth, monthDays.length]);
+  }, [
+    blockGap,
+    blockSize,
+    concludedMonthDays.length,
+    heatmapWidth,
+    labelColumnWidth,
+  ]);
   const visibleMonthDays = useMemo(
-    () => monthDays.slice(Math.max(0, monthDays.length - visibleDayCapacity)),
-    [monthDays, visibleDayCapacity],
+    () =>
+      concludedMonthDays.slice(
+        Math.max(0, concludedMonthDays.length - visibleDayCapacity),
+      ),
+    [concludedMonthDays, visibleDayCapacity],
   );
 
   const getHeatmapBlockColor = useCallback(
@@ -317,19 +426,6 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
                         alignItems: 'center',
                         px: 0.15,
                         py: 0.25,
-                        '&::before': {
-                          content: '""',
-                          position: 'absolute',
-                          left: 8,
-                          right: 8,
-                          top: '50%',
-                          height: 1,
-                          backgroundColor: alpha(
-                            theme.palette.text.primary,
-                            0.12,
-                          ),
-                          transform: 'translateY(-50%)',
-                        },
                       }}
                     >
                       {timelineMonths.map((month) => {
@@ -349,8 +445,8 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
                               zIndex: 1,
                               border: `1px solid ${
                                 isSelected
-                                  ? alpha(theme.palette.status.success, 0.55)
-                                  : alpha(theme.palette.border.light, 0.9)
+                                  ? alpha(theme.palette.status.success, 0.85)
+                                  : alpha(theme.palette.border.light, 0.72)
                               }`,
                               borderRadius: 1,
                               px: 1.05,
@@ -363,8 +459,17 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
                                     TEXT_OPACITY.secondary,
                                   ),
                               backgroundColor: isSelected
-                                ? alpha(theme.palette.status.success, 0.14)
-                                : theme.palette.background.paper,
+                                ? alpha(theme.palette.status.success, 0.22)
+                                : theme.palette.background.default,
+                              boxShadow: isSelected
+                                ? `0 0 0 1px ${alpha(
+                                    theme.palette.status.success,
+                                    0.32,
+                                  )}`
+                                : `0 0 0 1px ${alpha(
+                                    theme.palette.common.black,
+                                    0.45,
+                                  )}`,
                               cursor: isSelected ? 'default' : 'pointer',
                               fontFamily: monoFontFamily,
                               fontSize: { xs: '0.64rem', sm: '0.68rem' },
@@ -373,12 +478,16 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
                               transition:
-                                'background-color 120ms ease, color 120ms ease, border-color 120ms ease',
+                                'background-color 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease',
                               '&:hover': {
                                 color: theme.palette.text.primary,
+                                borderColor: alpha(
+                                  theme.palette.status.success,
+                                  0.5,
+                                ),
                                 backgroundColor: alpha(
-                                  theme.palette.text.primary,
-                                  0.065,
+                                  theme.palette.status.success,
+                                  isSelected ? 0.22 : 0.09,
                                 ),
                               },
                               '&:disabled': {
@@ -479,33 +588,64 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
                             2,
                             '0',
                           )}`;
+                          const isConcluded =
+                            getHourEndMs(dateKey, hour) <= currentMs;
+                          if (!isConcluded) {
+                            return (
+                              <span
+                                key={timestamp}
+                                aria-hidden="true"
+                                style={hiddenHeatmapCellStyle}
+                              />
+                            );
+                          }
                           const bucket = hourMap.get(timestamp);
                           const count = bucket?.count ?? 0;
                           const label = formatHourTooltip(timestamp, count);
+                          const blockStyle: React.CSSProperties = {
+                            ...baseHeatmapCellStyle,
+                            backgroundColor: getHeatmapBlockColor(count),
+                            boxShadow:
+                              count > 0
+                                ? `0 0 0 1px ${alpha(
+                                    theme.palette.common.white,
+                                    0.02,
+                                  )} inset`
+                                : `0 0 0 1px ${alpha(
+                                    theme.palette.common.white,
+                                    0.025,
+                                  )} inset`,
+                            cursor: count > 0 ? 'default' : 'initial',
+                          };
+
+                          if (count <= 0) {
+                            return (
+                              <span
+                                key={timestamp}
+                                aria-label={label}
+                                style={blockStyle}
+                              />
+                            );
+                          }
+
                           return (
-                            <Box
+                            <Tooltip
                               key={timestamp}
-                              component="span"
-                              title={label}
-                              aria-label={label}
-                              sx={{
-                                display: 'block',
-                                width: blockSize,
-                                height: blockSize,
-                                borderRadius: '2px',
-                                backgroundColor: getHeatmapBlockColor(count),
-                                boxShadow:
-                                  count > 0
-                                    ? `0 0 0 1px ${alpha(
-                                        theme.palette.common.white,
-                                        0.02,
-                                      )} inset`
-                                    : `0 0 0 1px ${alpha(
-                                        theme.palette.common.white,
-                                        0.025,
-                                      )} inset`,
-                              }}
-                            />
+                              title={
+                                <HeatmapTooltipTitle
+                                  date={dateKey}
+                                  hour={hour}
+                                  count={count}
+                                />
+                              }
+                              arrow
+                              disableInteractive
+                              enterDelay={120}
+                              enterNextDelay={40}
+                              placement="top"
+                            >
+                              <span aria-label={label} style={blockStyle} />
+                            </Tooltip>
                           );
                         })}
                       </React.Fragment>
