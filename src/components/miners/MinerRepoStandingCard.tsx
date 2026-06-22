@@ -86,14 +86,7 @@ const InlineStat: React.FC<{
   isLast: boolean;
   eligible: boolean;
 }> = ({ label, value, isLast, eligible }) => (
-  <Box
-    sx={{
-      display: 'inline-flex',
-      alignItems: 'baseline',
-      gap: 0.5,
-      flexShrink: 0,
-    }}
-  >
+  <Box sx={{ display: 'inline-flex', alignItems: 'baseline', gap: 0.5 }}>
     <Typography
       sx={(theme) => ({
         fontFamily: FONT_MONO,
@@ -102,7 +95,6 @@ const InlineStat: React.FC<{
         color: theme.palette.text.tertiary,
         textTransform: 'uppercase',
         letterSpacing: '0.1em',
-        whiteSpace: 'nowrap',
       })}
     >
       {label}
@@ -375,17 +367,10 @@ const MinerRepoStandingCard: React.FC<MinerRepoStandingCardProps> = ({
           <Box
             sx={{
               display: 'flex',
-              flexWrap: 'nowrap',
               alignItems: 'baseline',
               gap: 1,
               mt: 0.7,
-              width: '100%',
-              minWidth: 0,
-              overflowX: 'auto',
-              WebkitOverflowScrolling: 'touch',
-              scrollbarWidth: 'none',
-              msOverflowStyle: 'none',
-              '&::-webkit-scrollbar': { display: 'none' },
+              flexWrap: 'wrap',
             }}
           >
             {segments.map((segment, index) => (
