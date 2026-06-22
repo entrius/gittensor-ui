@@ -103,79 +103,17 @@ const MinerDetailsPage: React.FC = () => {
             px: { xs: 2, md: 0 },
           }}
         >
-          {/* ── Header: back · mode toggle · watch ─────────────── */}
-          <Box
-            sx={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: 2,
-              flexWrap: 'wrap',
-            }}
-          >
-            <BackButton to="/repositories" />
+          {/* ── Header: back + watch on one row; mode toggle below ─ */}
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
             <Box
               sx={{
                 display: 'flex',
                 alignItems: 'center',
-                gap: 1.5,
-                flexWrap: 'wrap',
+                justifyContent: 'space-between',
+                gap: 2,
               }}
             >
-              {/* Mode toggle — a real page-level axis, not a stat */}
-              <Box
-                sx={{
-                  display: 'flex',
-                  gap: 0.5,
-                  backgroundColor: 'surface.subtle',
-                  p: 0.5,
-                  borderRadius: 2,
-                }}
-              >
-                {(
-                  [
-                    { label: 'OSS Contributions', value: 'prs' as const },
-                    { label: 'Issue Discovery', value: 'issues' as const },
-                  ] as const
-                ).map((option) => {
-                  const isActive = viewMode === option.value;
-                  return (
-                    <LinkBox
-                      key={option.value}
-                      href={buildModeHref(option.value)}
-                      replace
-                      sx={{
-                        px: 2,
-                        py: 0.75,
-                        borderRadius: 1.5,
-                        cursor: 'pointer',
-                        backgroundColor: isActive
-                          ? 'surface.elevated'
-                          : 'transparent',
-                        color: isActive
-                          ? 'text.primary'
-                          : (t) => alpha(t.palette.text.primary, 0.5),
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          backgroundColor: 'surface.elevated',
-                          color: 'text.primary',
-                        },
-                      }}
-                    >
-                      <Typography
-                        sx={{
-                          fontSize: '0.8rem',
-                          fontWeight: 600,
-                          textAlign: 'center',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {option.label}
-                      </Typography>
-                    </LinkBox>
-                  );
-                })}
-              </Box>
+              <BackButton to="/repositories" />
               {minerExists && (
                 <WatchlistButton
                   category="miners"
@@ -183,6 +121,61 @@ const MinerDetailsPage: React.FC = () => {
                   size="medium"
                 />
               )}
+            </Box>
+            <Box
+              sx={{
+                display: 'flex',
+                gap: 0.5,
+                backgroundColor: 'surface.subtle',
+                p: 0.5,
+                borderRadius: 2,
+                alignSelf: { xs: 'stretch', sm: 'flex-start' },
+              }}
+            >
+              {(
+                [
+                  { label: 'OSS Contributions', value: 'prs' as const },
+                  { label: 'Issue Discovery', value: 'issues' as const },
+                ] as const
+              ).map((option) => {
+                const isActive = viewMode === option.value;
+                return (
+                  <LinkBox
+                    key={option.value}
+                    href={buildModeHref(option.value)}
+                    replace
+                    sx={{
+                      flex: 1,
+                      px: 2,
+                      py: 0.75,
+                      borderRadius: 1.5,
+                      cursor: 'pointer',
+                      backgroundColor: isActive
+                        ? 'surface.elevated'
+                        : 'transparent',
+                      color: isActive
+                        ? 'text.primary'
+                        : (t) => alpha(t.palette.text.primary, 0.5),
+                      transition: 'all 0.2s',
+                      '&:hover': {
+                        backgroundColor: 'surface.elevated',
+                        color: 'text.primary',
+                      },
+                    }}
+                  >
+                    <Typography
+                      sx={{
+                        fontSize: '0.8rem',
+                        fontWeight: 600,
+                        textAlign: 'center',
+                        whiteSpace: { xs: 'normal', sm: 'nowrap' },
+                      }}
+                    >
+                      {option.label}
+                    </Typography>
+                  </LinkBox>
+                );
+              })}
             </Box>
           </Box>
 
