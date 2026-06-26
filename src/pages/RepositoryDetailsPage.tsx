@@ -35,6 +35,7 @@ import VolunteerActivismIcon from '@mui/icons-material/VolunteerActivism';
 import FactCheckIcon from '@mui/icons-material/FactCheck';
 import TuneIcon from '@mui/icons-material/Tune';
 import GroupsIcon from '@mui/icons-material/Groups';
+import HistoryIcon from '@mui/icons-material/History';
 import { RANK_COLORS, STATUS_COLORS } from '../theme';
 import { Page } from '../components/layout';
 import { useReposAndWeights, useRepoBountySummary } from '../api';
@@ -52,6 +53,7 @@ import {
   RepositoryMaintainers,
   RepositoryCheckTab,
   RepositoryHyperparametersTab,
+  RepositoryConfigHistoryTab,
   RepositoryMinersTab,
   WatchlistButton,
 } from '../components';
@@ -201,6 +203,7 @@ const REPO_TAB_KEYS = [
   'pull-requests',
   'contributing',
   'repo-check',
+  'history',
 ] as const;
 
 function tabIndexFromSearchParam(tab: string | null): number {
@@ -590,6 +593,12 @@ const RepositoryDetailsPage: React.FC = () => {
                 label="Repo Check"
                 disableRipple
               />
+              <Tab
+                icon={<HistoryIcon sx={{ fontSize: 16, mb: 0, mr: 1 }} />}
+                iconPosition="start"
+                label="History"
+                disableRipple
+              />
             </Tabs>
           </Box>
         </Container>
@@ -641,6 +650,11 @@ const RepositoryDetailsPage: React.FC = () => {
             {/* Repo Check Tab */}
             <CustomTabPanel value={tabValue} index={7}>
               <RepositoryCheckTab repositoryFullName={repo} />
+            </CustomTabPanel>
+
+            {/* History Tab */}
+            <CustomTabPanel value={tabValue} index={8}>
+              <RepositoryConfigHistoryTab repositoryFullName={repo} />
             </CustomTabPanel>
           </Grid>
 
