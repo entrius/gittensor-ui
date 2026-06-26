@@ -1,5 +1,28 @@
-import { useQueries, useQuery } from '@tanstack/react-query';
-import axios, { type AxiosError } from 'axios';
+import {
+  useMutation,
+  useQueries,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query';
+import axios, { type AxiosError, type AxiosInstance } from 'axios';
+import { getAuthToken } from '../auth/token';
+
+// Dedicated client for the das-gittensor API. A request interceptor attaches the
+// session JWT as a Bearer token when present, so authed writes (PATCH/POST/DELETE
+// /repos) work while public GETs are unaffected. Deliberately NOT a global axios
+// interceptor: githubFetch / the mirror client hit other origins and must never
+// receive our token.
+export const apiClient: AxiosInstance = axios.create({
+  baseURL: import.meta.env.VITE_REACT_APP_BASE_URL || undefined,
+});
+
+apiClient.interceptors.request.use((config) => {
+  const token = getAuthToken();
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
 
 export const useMirrorApiQueries = <TResponse = unknown, TSelect = TResponse>(
   queryName: string,
@@ -32,18 +55,34 @@ export const useApiQuery = <TResponse = void, TSelect = TResponse>(
   queryParams?: Record<string, string | number | undefined>,
   enabled?: boolean,
 ) => {
-  const baseUrl = import.meta.env.VITE_REACT_APP_BASE_URL;
-
   return useQuery<TResponse, AxiosError, TSelect>({
     queryKey: [queryName, url, queryParams],
     queryFn: async () => {
-      const requestUrl = baseUrl ? `${baseUrl}${url}` : url;
-      const { data } = await axios.get(requestUrl, { params: queryParams });
+      const { data } = await apiClient.get(url, { params: queryParams });
       return data;
     },
     retry: false,
     enabled: enabled ?? true,
     refetchInterval,
+  });
+};
+
+// Mutation helper for authed das-gittensor writes (PATCH/POST/DELETE). The caller
+// supplies a function that performs the request via the injected `apiClient`
+// (Bearer token attached automatically) and returns the response body; on success
+// any `invalidateKeys` query keys are refetched so the UI reflects the write.
+export const useApiMutation = <TVars, TResponse = unknown>(
+  mutationFn: (client: AxiosInstance, vars: TVars) => Promise<TResponse>,
+  options?: { invalidateKeys?: readonly unknown[][] },
+) => {
+  const queryClient = useQueryClient();
+  return useMutation<TResponse, AxiosError, TVars>({
+    mutationFn: (vars) => mutationFn(apiClient, vars),
+    onSuccess: () => {
+      options?.invalidateKeys?.forEach((queryKey) =>
+        queryClient.invalidateQueries({ queryKey }),
+      );
+    },
   });
 };
 

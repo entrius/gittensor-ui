@@ -8,6 +8,7 @@ import { CssBaseline } from '@mui/material';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { HelmetProvider } from 'react-helmet-async';
 import ErrorBoundary from './components/ErrorBoundary';
+import { AuthProvider } from './auth/AuthContext';
 import './index.css';
 
 const queryClient = new QueryClient({
@@ -28,9 +29,11 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
         <CssBaseline />
         <Router>
           <QueryClientProvider client={queryClient}>
-            <ErrorBoundary variant="fullPage">
-              <App />
-            </ErrorBoundary>
+            <AuthProvider>
+              <ErrorBoundary variant="fullPage">
+                <App />
+              </ErrorBoundary>
+            </AuthProvider>
           </QueryClientProvider>
         </Router>
       </ThemeProvider>
