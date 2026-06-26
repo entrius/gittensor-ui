@@ -1,7 +1,8 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   alpha,
   Box,
+  Button,
   Card,
   Chip,
   Divider,
@@ -9,8 +10,11 @@ import {
   Tooltip,
   Typography,
 } from '@mui/material';
+import EditOutlinedIcon from '@mui/icons-material/EditOutlined';
 import InfoOutlinedIcon from '@mui/icons-material/InfoOutlined';
 import { useRepositoryConfig } from '../../api';
+import { useAuth } from '../../auth/AuthContext';
+import RepositoryHyperparametersEditForm from './RepositoryHyperparametersEditForm';
 import { STATUS_COLORS, tooltipSlotProps } from '../../theme';
 import type { RepositoryConfig } from '../../api/models/Dashboard';
 import {
@@ -319,6 +323,8 @@ const RepositoryHyperparametersTab: React.FC<
   RepositoryHyperparametersTabProps
 > = ({ repositoryFullName }) => {
   const { data, isLoading } = useRepositoryConfig(repositoryFullName);
+  const { isAuthenticated } = useAuth();
+  const [editing, setEditing] = useState(false);
   const config = data?.config;
   const resolved = useMemo(() => resolveRepoConfig(config), [config]);
 
@@ -352,35 +358,67 @@ const RepositoryHyperparametersTab: React.FC<
 
   return (
     <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2.5 }}>
-      <Box>
-        <Typography variant="sectionTitle" sx={{ fontSize: '1.05rem' }}>
-          Repository hyperparameters
-        </Typography>
-        <Typography
-          sx={{ fontSize: '0.8rem', color: 'text.secondary', mt: 0.5 }}
-        >
-          {resolved.overrideCount > 0 ? (
-            <>
-              <Box
-                component="span"
-                sx={{ color: STATUS_COLORS.info, fontWeight: 600 }}
-              >
-                {resolved.overrideCount} of {totalKnobs}
-              </Box>{' '}
-              scoring &amp; eligibility knobs are overridden for this repo.
-            </>
-          ) : (
-            `All ${totalKnobs} scoring & eligibility knobs use the global defaults.`
-          )}
-        </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          justifyContent: 'space-between',
+          gap: 2,
+        }}
+      >
+        <Box>
+          <Typography variant="sectionTitle" sx={{ fontSize: '1.05rem' }}>
+            Repository hyperparameters
+          </Typography>
+          <Typography
+            sx={{ fontSize: '0.8rem', color: 'text.secondary', mt: 0.5 }}
+          >
+            {editing ? (
+              'Edit the values below and save. Only changed fields are submitted; maintainers may edit once per day.'
+            ) : resolved.overrideCount > 0 ? (
+              <>
+                <Box
+                  component="span"
+                  sx={{ color: STATUS_COLORS.info, fontWeight: 600 }}
+                >
+                  {resolved.overrideCount} of {totalKnobs}
+                </Box>{' '}
+                scoring &amp; eligibility knobs are overridden for this repo.
+              </>
+            ) : (
+              `All ${totalKnobs} scoring & eligibility knobs use the global defaults.`
+            )}
+          </Typography>
+        </Box>
+        {isAuthenticated && !editing && (
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<EditOutlinedIcon />}
+            onClick={() => setEditing(true)}
+            sx={{ flexShrink: 0 }}
+          >
+            Edit
+          </Button>
+        )}
       </Box>
 
       <Divider sx={{ borderColor: 'border.light' }} />
 
-      <TopLevelSection config={config} />
-      <ResolvedSection group={resolved.eligibility} />
-      <ResolvedSection group={resolved.scoring} />
-      <ResolvedSection group={resolved.timeDecay} />
+      {editing ? (
+        <RepositoryHyperparametersEditForm
+          repositoryFullName={repositoryFullName}
+          config={config}
+          onClose={() => setEditing(false)}
+        />
+      ) : (
+        <>
+          <TopLevelSection config={config} />
+          <ResolvedSection group={resolved.eligibility} />
+          <ResolvedSection group={resolved.scoring} />
+          <ResolvedSection group={resolved.timeDecay} />
+        </>
+      )}
     </Box>
   );
 };

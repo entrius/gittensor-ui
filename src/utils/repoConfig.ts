@@ -36,6 +36,61 @@ export type RepoConfigFieldDef = {
   format: RepoConfigFormat;
 };
 
+// --- Top-level scalar knobs (das config-validation.ts validateConfigPatch) --
+// emission_share is admin-only; the rest are maintainer-editable. Bounds mirror
+// das config-validation.ts and gittensor load_weights.py (keep in sync; the
+// Phase-7 contract test asserts they match).
+
+export const TOP_LEVEL_FIELD_DEFS: RepoConfigFieldDef[] = [
+  {
+    key: 'emission_share',
+    label: 'Emission share',
+    description:
+      "This repo's share of the combined scoring pool. Admin-only; the registry-wide sum must stay within 1.0.",
+    default: 0,
+    min: 0,
+    max: 1,
+    format: 'percent',
+  },
+  {
+    key: 'issue_discovery_share',
+    label: 'Issue discovery share',
+    description:
+      "Share of this repo's emission allocated to the issue-discovery pool.",
+    default: 0,
+    min: 0,
+    max: 1,
+    format: 'percent',
+  },
+  {
+    key: 'maintainer_cut',
+    label: 'Maintainer cut',
+    description: "Share of this repo's emission routed to the maintainer.",
+    default: 0,
+    min: 0,
+    max: 1,
+    format: 'percent',
+  },
+  {
+    key: 'default_label_multiplier',
+    label: 'Default label multiplier',
+    description: 'Score multiplier applied to issues with no matching label.',
+    default: 1,
+    min: 0,
+    max: 20,
+    format: 'multiplier',
+  },
+  {
+    key: 'fixed_base_score',
+    label: 'Fixed base score',
+    description:
+      'Overrides the computed base score with a fixed value. Leave empty to disable.',
+    default: 0,
+    min: 0,
+    format: 'score',
+  },
+];
+
 // --- Scoring knobs (gittensor RepoScoringConfig) ----------------------------
 
 export const SCORING_FIELD_DEFS: RepoConfigFieldDef[] = [
@@ -351,6 +406,36 @@ export function resolveRepoConfig(
 }
 
 // --- Display helpers --------------------------------------------------------
+
+/**
+ * Client-side validation of a raw input against a field def's bounds. Mirrors
+ * das `config-validation.ts` so the UI rejects what the API would reject.
+ * Returns an error message, or null when valid. Empty `raw` is "Required"; the
+ * caller handles optional/clearable fields before calling.
+ */
+export function validateFieldValue(
+  def: RepoConfigFieldDef,
+  raw: string,
+): string | null {
+  const trimmed = raw.trim();
+  if (trimmed === '') return 'Required';
+  const n = Number(trimmed);
+  if (!Number.isFinite(n)) return 'Must be a number';
+  if (def.format === 'integer' && !Number.isInteger(n)) {
+    return 'Must be a whole number';
+  }
+  if (def.min !== undefined) {
+    if (def.minExclusive ? n <= def.min : n < def.min) {
+      return `Must be ${def.minExclusive ? '>' : '≥'} ${def.min}`;
+    }
+  }
+  if (def.max !== undefined) {
+    if (def.maxExclusive ? n >= def.max : n > def.max) {
+      return `Must be ${def.maxExclusive ? '<' : '≤'} ${def.max}`;
+    }
+  }
+  return null;
+}
 
 /** Human-readable bound, e.g. "[1, 90]" or "(0, 1]". Empty when unbounded. */
 export function boundsLabel(def: RepoConfigFieldDef): string {
