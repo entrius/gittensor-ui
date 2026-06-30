@@ -64,6 +64,14 @@ export interface RepoStats {
   trustedLabelPipeline?: boolean;
   /** Per-label scoring multipliers, e.g. `{ bug: 1.25, refactor: 0.25 }`. */
   labelMultipliers?: Record<string, number>;
+  /** Median time from PR opened to merge, in milliseconds. */
+  medianReviewMs?: number | null;
+  /** Miners with any PR activity in the last 30 days. */
+  activeMiners?: Set<string>;
+  /** Eligible miners with scored contributions in this repository. */
+  eligibleMiners?: Set<string>;
+  /** Latest known PR activity timestamp for this repository. */
+  lastActivityAt?: string | null;
 }
 
 export type LeaderboardVariant = 'oss' | 'discoveries' | 'watchlist';
