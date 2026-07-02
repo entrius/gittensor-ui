@@ -12,26 +12,26 @@ import {
 import { alpha } from '@mui/material/styles';
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
-import { isRepoTracked } from '../api';
+import { isRepoInstalled } from '../api';
 import { useLinkBehavior } from '../components/common/linkBehavior';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { extractRepoFullName } from '../utils';
 
 type VerifyResult =
-  | { tracked: true }
-  | { tracked: false; reason: 'not-installed' | 'transient' | 'bad-url' };
+  | { installed: true }
+  | { installed: false; reason: 'not-installed' | 'transient' | 'bad-url' };
 
-const verifyRepoTracked = async (repoUrl: string): Promise<VerifyResult> => {
+const verifyRepoInstalled = async (repoUrl: string): Promise<VerifyResult> => {
   const fullName = extractRepoFullName(repoUrl);
-  if (!fullName) return { tracked: false, reason: 'bad-url' };
+  if (!fullName) return { installed: false, reason: 'bad-url' };
   try {
-    const tracked = await isRepoTracked(fullName);
-    return tracked
-      ? { tracked: true }
-      : { tracked: false, reason: 'not-installed' };
+    const installed = await isRepoInstalled(fullName);
+    return installed
+      ? { installed: true }
+      : { installed: false, reason: 'not-installed' };
   } catch {
-    return { tracked: false, reason: 'transient' };
+    return { installed: false, reason: 'transient' };
   }
 };
 
@@ -139,8 +139,8 @@ const RepositoryRegistrationPage: React.FC = () => {
       return;
     }
 
-    const verification = await verifyRepoTracked(repoUrl);
-    if (!verification.tracked) {
+    const verification = await verifyRepoInstalled(repoUrl);
+    if (!verification.installed) {
       setSubmitting(false);
       if (verification.reason === 'transient') {
         setSubmitError(
