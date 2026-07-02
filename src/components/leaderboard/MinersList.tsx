@@ -75,9 +75,11 @@ export const MinersList: React.FC<MinersListProps> = ({
         {
           key: 'prs',
           header: 'PRs',
-          width: '11%',
+          width: '14%',
           align: 'right',
           sortKey: 'totalPRs',
+          headerSx: { pl: 2 },
+          cellSx: { pl: 2 },
           renderCell: (miner) => (
             <MinerActivitySegments
               miner={miner}
@@ -89,9 +91,11 @@ export const MinersList: React.FC<MinersListProps> = ({
         {
           key: 'issues',
           header: 'Issues',
-          width: '11%',
+          width: '13%',
           align: 'right',
           sortKey: 'totalIssues',
+          headerSx: { pl: 1.5 },
+          cellSx: { pl: 1.5 },
           renderCell: (miner) => (
             <MinerActivitySegments
               miner={miner}
@@ -125,7 +129,7 @@ export const MinersList: React.FC<MinersListProps> = ({
     {
       key: 'miner',
       header: 'Miner',
-      width: '25%',
+      width: isWatchlist ? '23%' : '25%',
       cellSx: { pl: 1.5 },
       sortKey: 'username',
       renderCell: (miner) => <MinerIdentityCell miner={miner} />,
@@ -133,9 +137,10 @@ export const MinersList: React.FC<MinersListProps> = ({
     {
       key: 'usdPerDay',
       header: 'Earnings/day',
-      width: '14%',
+      width: isWatchlist ? '10%' : '14%',
       align: 'right',
       sortKey: 'usdPerDay',
+      ...(isWatchlist ? { headerSx: { pr: 2 }, cellSx: { pr: 2 } } : {}),
       renderCell: (miner) => {
         const earningsHighlighted = isWatchlist
           ? watchlistAnyRewardEligible(miner)
@@ -353,7 +358,9 @@ const MinerActivitySegments: React.FC<MinerActivitySegmentsProps> = ({
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'flex-end',
-        gap: 1.25,
+        gap: 1,
+        minWidth: 0,
+        maxWidth: '100%',
         opacity: trackEligible ? 1 : TRACK_INACTIVE_OPACITY,
       }}
     >
