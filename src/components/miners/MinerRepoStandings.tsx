@@ -389,14 +389,14 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
     >
       <Box
         sx={{
-          p: 3,
+          p: { xs: 2, sm: 3 },
           borderBottom: '1px solid',
           borderColor: 'border.light',
           display: 'flex',
-          alignItems: 'center',
+          flexDirection: { xs: 'column', sm: 'row' },
+          alignItems: { xs: 'stretch', sm: 'center' },
           justifyContent: 'space-between',
           gap: 2,
-          flexWrap: 'wrap',
         }}
       >
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.4 }}>
@@ -434,11 +434,30 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
         </Box>
 
         {rows.length > 0 && (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              width: { xs: '100%', sm: 'auto' },
+              minWidth: 0,
+              overflowX: 'auto',
+              flexWrap: 'nowrap',
+              WebkitOverflowScrolling: 'touch',
+              scrollbarWidth: 'none',
+              msOverflowStyle: 'none',
+              '&::-webkit-scrollbar': { display: 'none' },
+              '& > *': { flexShrink: 0 },
+            }}
+          >
             {view === 'cards' && (
               <>
                 <Typography
-                  sx={{ fontSize: '0.92rem', color: 'text.secondary' }}
+                  sx={{
+                    display: { xs: 'none', sm: 'block' },
+                    fontSize: '0.92rem',
+                    color: 'text.secondary',
+                  }}
                 >
                   Sort:
                 </Typography>
@@ -491,7 +510,7 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
                       : 'background.default',
                     fontSize: '0.8rem',
                     height: 32,
-                    minWidth: 156,
+                    minWidth: { xs: 120, sm: 156 },
                     borderRadius: 2,
                     '& .MuiOutlinedInput-notchedOutline': {
                       borderColor: isSortMenuOpen
@@ -551,6 +570,7 @@ const MinerRepoStandings: React.FC<MinerRepoStandingsProps> = ({
               size="small"
               aria-label="Standings view"
               sx={{
+                flexShrink: 0,
                 '& .MuiToggleButton-root': {
                   color: 'text.secondary',
                   borderColor: 'border.light',
