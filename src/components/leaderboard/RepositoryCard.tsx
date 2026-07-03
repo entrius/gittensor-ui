@@ -1,11 +1,12 @@
 import React from 'react';
 import CheckCircleIcon from '@mui/icons-material/CheckCircle';
-import { Avatar, Box, Card, Divider, Tooltip, Typography } from '@mui/material';
+import { Avatar, Box, Card, Tooltip, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
-import { linkResetSx, useLinkBehavior } from '../common/linkBehavior';
+import { useNavigate } from 'react-router-dom';
 import { WatchlistButton } from '../common';
 import { formatWeight, getRepositoryOwnerAvatarSrc } from '../../utils';
 import { RankIcon } from './RankIcon';
+import { RepositorySocialLinksInline } from '../repositories';
 import {
   FONTS,
   getRepositoryOwnerAvatarBackground,
@@ -91,60 +92,36 @@ const ConfigBar: React.FC<ConfigBarProps> = ({
   </Box>
 );
 
-interface LabelChipProps {
-  label: string;
-  multiplier: number;
-}
-
-const LabelChip: React.FC<LabelChipProps> = ({ label, multiplier }) => (
-  <Box
-    sx={(theme) => ({
-      display: 'inline-flex',
-      alignItems: 'baseline',
-      gap: 0.5,
-      px: 0.75,
-      py: 0.25,
-      borderRadius: '4px',
-      border: '1px solid',
-      borderColor: theme.palette.border.light,
-      backgroundColor: alpha(theme.palette.text.primary, 0.04),
-      fontFamily: FONTS.mono,
-      fontSize: '0.7rem',
-      lineHeight: 1.2,
-      whiteSpace: 'nowrap',
-    })}
-  >
-    <Box component="span" sx={{ color: 'text.secondary', fontWeight: 500 }}>
-      {label}
-    </Box>
-    <Box component="span" sx={{ color: 'text.tertiary', fontWeight: 600 }}>
-      ×{multiplier.toFixed(2)}
-    </Box>
-  </Box>
-);
-
 export const RepositoryCard: React.FC<RepositoryCardProps> = ({
   repo,
   maxWeight,
   href,
   linkState,
 }) => {
+  const navigate = useNavigate();
   const owner = (repo.repository || '').split('/')[0] || '';
   const weightPct =
     maxWeight > 0
       ? Math.max(0, Math.min(100, (repo.weight / maxWeight) * 100))
       : 0;
-  const linkProps = useLinkBehavior<HTMLAnchorElement>(href, {
-    state: linkState,
-  });
+
+  const handleOpen = () => {
+    navigate(href, { state: linkState });
+  };
 
   return (
     <Card
-      component="a"
-      {...linkProps}
+      role="button"
+      tabIndex={0}
       aria-label={`Open ${repo.repository}`}
+      onClick={handleOpen}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          handleOpen();
+        }
+      }}
       sx={(theme) => ({
-        ...linkResetSx,
         p: { xs: 1.5, sm: 2 },
         height: '100%',
         borderRadius: 2,
@@ -191,23 +168,35 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         >
           {(owner[0] || '?').toUpperCase()}
         </Avatar>
-        <Tooltip title={repo.repository || ''} placement="top" arrow>
-          <Typography
-            sx={{
-              fontFamily: FONTS.mono,
-              fontSize: { xs: '0.8rem', sm: '0.85rem' },
-              fontWeight: 500,
-              color: 'text.primary',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-              flex: 1,
-              minWidth: 0,
-            }}
-          >
-            {repo.repository}
-          </Typography>
-        </Tooltip>
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 0.75,
+            flex: 1,
+            minWidth: 0,
+            overflow: 'hidden',
+          }}
+        >
+          <Tooltip title={repo.repository || ''} placement="top" arrow>
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: { xs: '0.8rem', sm: '0.85rem' },
+                fontWeight: 500,
+                color: 'text.primary',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                whiteSpace: 'nowrap',
+                minWidth: 0,
+                flexShrink: 1,
+              }}
+            >
+              {repo.repository}
+            </Typography>
+          </Tooltip>
+          <RepositorySocialLinksInline repositoryFullName={repo.repository} />
+        </Box>
         {repo.repository && (
           <WatchlistButton
             category="repos"
@@ -232,41 +221,6 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
         pct={Math.max(0, Math.min(100, (repo.issueDiscoveryShare ?? 0) * 100))}
         accent="discovery"
       />
-
-      <Divider sx={{ borderColor: 'border.light', opacity: 0.85 }} />
-
-      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
-        <Typography
-          sx={(theme) => ({
-            fontFamily: FONTS.mono,
-            fontSize: '0.65rem',
-            color: theme.palette.text.tertiary,
-            textTransform: 'uppercase',
-            letterSpacing: '0.04em',
-          })}
-        >
-          Label multipliers
-        </Typography>
-        {repo.labelMultipliers &&
-        Object.keys(repo.labelMultipliers).length > 0 ? (
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-            {Object.entries(repo.labelMultipliers).map(([label, mult]) => (
-              <LabelChip key={label} label={label} multiplier={mult} />
-            ))}
-          </Box>
-        ) : (
-          <Typography
-            sx={{
-              fontFamily: FONTS.mono,
-              fontSize: '0.7rem',
-              color: 'text.tertiary',
-              fontStyle: 'italic',
-            }}
-          >
-            Default scoring (×1.00)
-          </Typography>
-        )}
-      </Box>
 
       {repo.trustedLabelPipeline && (
         <Tooltip

@@ -1,6 +1,7 @@
 export { default as LanguageWeightsTable } from './LanguageWeightsTable';
 export { default as RepositoryStats } from './RepositoryStats';
 export { default as RepositorySocialLinks } from './RepositorySocialLinks';
+export { RepositorySocialLinksInline } from './RepositorySocialLinks';
 export { default as RepositoryPrActivityChart } from './RepositoryPrActivityChart';
 export { default as ContributingViewer } from './ContributingViewer';
 export { default as RepositoryPRsTable } from './RepositoryPRsTable';

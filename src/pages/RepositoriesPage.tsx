@@ -134,6 +134,13 @@ const REPO_LINK_STATE = { backLabel: 'Back to Repositories' } as const;
 const getRepoHref = (name: string) => minerRepositoryPath(name);
 const getPrHref = (name: string, number: number) => minerPrPath(name, number);
 
+const median = (values: number[]) => {
+  const sorted = values.filter((v) => Number.isFinite(v)).sort((a, b) => a - b);
+  if (!sorted.length) return null;
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+};
+
 const RepositoriesPage: React.FC = () => {
   const registerRepoLink = useLinkBehavior<HTMLAnchorElement>(
     '/repository-registration',
@@ -164,26 +171,86 @@ const RepositoriesPage: React.FC = () => {
   // ── Main table stats ────────────────────────────────────────────────────
   const repoStats = useMemo(() => {
     if (!reposWithWeights) return [];
+    const activeSince = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    const eligibleMinerKeys = new Set<string>();
+    allMiners?.forEach((miner) => {
+      if (!miner.isEligible) return;
+      if (miner.githubId) eligibleMinerKeys.add(String(miner.githubId));
+      if (miner.githubUsername) {
+        eligibleMinerKeys.add(miner.githubUsername.toLowerCase());
+      }
+    });
 
     const prStatsMap = new Map<
       string,
-      { totalScore: number; totalPRs: number; uniqueMiners: Set<string> }
+      {
+        totalScore: number;
+        totalPRs: number;
+        uniqueMiners: Set<string>;
+        reviewDurations: number[];
+        activeMiners: Set<string>;
+        eligibleMiners: Set<string>;
+        lastActivityAt: string | null;
+        lastActivityMs: number;
+      }
     >();
 
     if (allPRs) {
       allPRs.forEach((pr: CommitLog) => {
         if (!pr?.repository) return;
-        if (!isMergedPr(pr)) return;
 
         const repoKey = pr.repository.toLowerCase();
         const cur = prStatsMap.get(repoKey) || {
           totalScore: 0,
           totalPRs: 0,
           uniqueMiners: new Set<string>(),
+          reviewDurations: [],
+          activeMiners: new Set<string>(),
+          eligibleMiners: new Set<string>(),
+          lastActivityAt: null,
+          lastActivityMs: 0,
         };
-        cur.totalScore += parseFloat(pr.score || '0');
-        cur.totalPRs += 1;
-        if (pr.author) cur.uniqueMiners.add(pr.author);
+
+        const activityAt = pr.mergedAt || pr.closedAt || pr.prCreatedAt || null;
+        if (activityAt) {
+          const activityMs = new Date(activityAt).getTime();
+          if (Number.isFinite(activityMs)) {
+            if (activityMs > cur.lastActivityMs) {
+              cur.lastActivityMs = activityMs;
+              cur.lastActivityAt = activityAt;
+            }
+            if (activityMs >= activeSince && pr.author) {
+              cur.activeMiners.add(pr.author);
+            }
+          }
+        }
+
+        if (isMergedPr(pr)) {
+          const score = parseFloat(pr.score || '0');
+          cur.totalScore += score;
+          cur.totalPRs += 1;
+          if (pr.author) {
+            cur.uniqueMiners.add(pr.author);
+            if (eligibleMinerKeys.has(pr.author.toLowerCase())) {
+              cur.eligibleMiners.add(pr.author);
+            }
+          }
+          if (pr.githubId && eligibleMinerKeys.has(String(pr.githubId))) {
+            cur.eligibleMiners.add(pr.githubId);
+          }
+        }
+
+        if (isMergedPr(pr) && pr.prCreatedAt && pr.mergedAt) {
+          const openedMs = new Date(pr.prCreatedAt).getTime();
+          const mergedMs = new Date(pr.mergedAt).getTime();
+          if (
+            Number.isFinite(openedMs) &&
+            Number.isFinite(mergedMs) &&
+            mergedMs >= openedMs
+          ) {
+            cur.reviewDurations.push(mergedMs - openedMs);
+          }
+        }
         prStatsMap.set(repoKey, cur);
       });
     }
@@ -212,6 +279,10 @@ const RepositoriesPage: React.FC = () => {
             parseFloat(String(repo.config?.issueDiscoveryShare ?? 0)) || 0,
           trustedLabelPipeline: repo.config?.trustedLabelPipeline ?? false,
           labelMultipliers: repo.config?.labelMultipliers,
+          medianReviewMs: median(s?.reviewDurations ?? []),
+          activeMiners: s?.activeMiners ?? new Set<string>(),
+          eligibleMiners: s?.eligibleMiners ?? new Set<string>(),
+          lastActivityAt: s?.lastActivityAt ?? null,
         };
       })
       .sort((a, b) => b.totalScore - a.totalScore);

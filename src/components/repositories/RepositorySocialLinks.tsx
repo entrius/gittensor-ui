@@ -5,6 +5,7 @@ import {
   Box,
   Button,
   CircularProgress,
+  Tooltip,
   Typography,
   alpha,
   useTheme,
@@ -279,11 +280,7 @@ const getIcon = (kind: LinkKind): React.ReactNode => {
   }
 };
 
-const RepositorySocialLinks: React.FC<RepositorySocialLinksProps> = ({
-  repositoryFullName,
-}) => {
-  const theme = useTheme();
-
+const useRepositoryLinks = (repositoryFullName: string) => {
   const metaQuery = useQuery({
     queryKey: ['repository-meta', repositoryFullName],
     queryFn: () =>
@@ -311,7 +308,72 @@ const RepositorySocialLinks: React.FC<RepositorySocialLinksProps> = ({
     [metaQuery.data, readmeQuery.data, repositoryFullName],
   );
 
-  const isLoading = metaQuery.isLoading || readmeQuery.isLoading;
+  return {
+    links,
+    isLoading: metaQuery.isLoading || readmeQuery.isLoading,
+  };
+};
+
+export const RepositorySocialLinksInline: React.FC<
+  RepositorySocialLinksProps
+> = ({ repositoryFullName }) => {
+  const theme = useTheme();
+  const { links, isLoading } = useRepositoryLinks(repositoryFullName);
+
+  if (isLoading || links.length === 0) return null;
+
+  return (
+    <Box
+      sx={{
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 0.5,
+        minWidth: 0,
+        maxWidth: '100%',
+        overflow: 'hidden',
+      }}
+      onClick={(event) => event.stopPropagation()}
+      onMouseDown={(event) => event.stopPropagation()}
+    >
+      {links.slice(0, 4).map((link) => (
+        <Tooltip key={link.url} title={link.label} placement="top" arrow>
+          <Button
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            size="small"
+            aria-label={link.label}
+            sx={{
+              minWidth: 0,
+              width: 24,
+              height: 24,
+              p: 0,
+              border: `1px solid ${theme.palette.border.light}`,
+              borderRadius: 1,
+              color: STATUS_COLORS.open,
+              backgroundColor: alpha(theme.palette.text.primary, 0.02),
+              flexShrink: 0,
+              '& svg': { fontSize: 14 },
+              '&:hover': {
+                borderColor: theme.palette.primary.main,
+                backgroundColor: alpha(theme.palette.primary.main, 0.08),
+                color: 'text.primary',
+              },
+            }}
+          >
+            {getIcon(link.kind)}
+          </Button>
+        </Tooltip>
+      ))}
+    </Box>
+  );
+};
+
+const RepositorySocialLinks: React.FC<RepositorySocialLinksProps> = ({
+  repositoryFullName,
+}) => {
+  const theme = useTheme();
+  const { links, isLoading } = useRepositoryLinks(repositoryFullName);
 
   if (isLoading) {
     return (
