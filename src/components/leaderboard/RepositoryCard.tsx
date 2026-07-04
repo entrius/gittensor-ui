@@ -175,7 +175,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
             gap: 0.75,
             flex: 1,
             minWidth: 0,
-            overflow: 'hidden',
+            overflow: 'visible',
           }}
         >
           <Tooltip title={repo.repository || ''} placement="top" arrow>
@@ -189,7 +189,7 @@ export const RepositoryCard: React.FC<RepositoryCardProps> = ({
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap',
                 minWidth: 0,
-                flexShrink: 1,
+                flex: '1 1 auto',
               }}
             >
               {repo.repository}

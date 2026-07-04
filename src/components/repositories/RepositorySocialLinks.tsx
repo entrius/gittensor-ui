@@ -328,9 +328,9 @@ export const RepositorySocialLinksInline: React.FC<
         display: 'inline-flex',
         alignItems: 'center',
         gap: 0.5,
-        minWidth: 0,
-        maxWidth: '100%',
-        overflow: 'hidden',
+        flex: '0 0 auto',
+        minWidth: 'max-content',
+        overflow: 'visible',
       }}
       onClick={(event) => event.stopPropagation()}
       onMouseDown={(event) => event.stopPropagation()}
