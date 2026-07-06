@@ -230,6 +230,7 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
               alignItems: 'center',
               gap: 1,
               minWidth: 0,
+              maxWidth: '100%',
               cursor: 'pointer',
               '&:hover': {
                 '& .MuiTypography-root': {
@@ -257,9 +258,10 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 0.75,
+                flex: '1 1 auto',
                 minWidth: 0,
                 maxWidth: '100%',
-                overflow: 'hidden',
+                overflow: 'visible',
               }}
             >
               <Typography
@@ -272,8 +274,8 @@ const TopRepositoriesTable: React.FC<TopRepositoriesTableProps> = ({
                   textOverflow: 'ellipsis',
                   whiteSpace: 'nowrap',
                   minWidth: 0,
-                  flexShrink: 1,
-                  display: 'inline-block',
+                  flex: '1 1 auto',
+                  display: 'block',
                 }}
               >
                 {truncateText(repo.repository || '', 40)}
