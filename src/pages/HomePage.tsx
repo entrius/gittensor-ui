@@ -80,56 +80,50 @@ const sortByEmissionShare = (repos: Repository[]) =>
       parseNumber(a.config?.emissionShare ?? 0),
   );
 
-const CHROME_BAR_HEIGHT = 26;
-
-const SiteChromeBar: React.FC<{ host: string; live: boolean }> = ({
+const SiteOverlay: React.FC<{ host: string; live: boolean }> = ({
   host,
   live,
 }) => (
-  <Box
-    sx={(theme) => ({
-      position: 'absolute',
-      top: 0,
-      left: 0,
-      right: 0,
-      height: CHROME_BAR_HEIGHT,
-      display: 'flex',
-      alignItems: 'center',
-      gap: 1,
-      px: 1.25,
-      borderBottom: `1px solid ${theme.palette.border.subtle}`,
-      backgroundColor: alpha(theme.palette.text.primary, 0.05),
-      zIndex: 1,
-    })}
-  >
+  <>
+    {live && (
+      <Box
+        title="Live site"
+        sx={(theme) => ({
+          position: 'absolute',
+          top: 10,
+          right: 10,
+          width: 6,
+          height: 6,
+          borderRadius: '50%',
+          backgroundColor: theme.palette.status.merged,
+          zIndex: 1,
+        })}
+      />
+    )}
     <Typography
       sx={(theme) => ({
-        color: theme.palette.text.secondary,
+        position: 'absolute',
+        bottom: 6,
+        right: 8,
+        maxWidth: 'calc(100% - 16px)',
+        px: 0.75,
+        py: 0.25,
+        borderRadius: 0.75,
+        backgroundColor: alpha(theme.palette.common.black, 0.55),
+        color: alpha(theme.palette.common.white, 0.78),
         fontFamily: 'var(--font-mono)',
         fontSize: '0.58rem',
         letterSpacing: '0.06em',
         whiteSpace: 'nowrap',
         overflow: 'hidden',
         textOverflow: 'ellipsis',
-        minWidth: 0,
-        flex: 1,
+        zIndex: 1,
+        pointerEvents: 'none',
       })}
     >
       {host}
     </Typography>
-    {live && (
-      <Box
-        title="Live site"
-        sx={(theme) => ({
-          width: 6,
-          height: 6,
-          borderRadius: '50%',
-          backgroundColor: theme.palette.status.merged,
-          flexShrink: 0,
-        })}
-      />
-    )}
-  </Box>
+  </>
 );
 
 const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
@@ -220,17 +214,14 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
         })}
       >
         {(canEmbed || useSiteShot) && (
-          <SiteChromeBar host={websiteHost} live={canEmbed} />
+          <SiteOverlay host={websiteHost} live={canEmbed} />
         )}
         {canEmbed ? (
           <Box
             className="repo-card-preview"
             sx={{
               position: 'absolute',
-              top: CHROME_BAR_HEIGHT,
-              left: 0,
-              right: 0,
-              bottom: 0,
+              inset: 0,
               overflow: 'hidden',
               filter: 'grayscale(1)',
               opacity: 0.88,
@@ -266,12 +257,9 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
             onError={() => setSiteShotFailed(true)}
             sx={{
               position: 'absolute',
-              top: CHROME_BAR_HEIGHT,
-              left: 0,
-              right: 0,
-              bottom: 0,
+              inset: 0,
               width: '100%',
-              height: `calc(100% - ${CHROME_BAR_HEIGHT}px)`,
+              height: '100%',
               objectFit: 'cover',
               objectPosition: 'top',
               filter: 'grayscale(1)',
