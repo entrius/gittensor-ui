@@ -99,19 +99,6 @@ const SiteChromeBar: React.FC<{ host: string; live: boolean }> = ({
       zIndex: 1,
     })}
   >
-    <Box sx={{ display: 'flex', gap: 0.5 }}>
-      {[0, 1, 2].map((dot) => (
-        <Box
-          key={dot}
-          sx={(theme) => ({
-            width: 7,
-            height: 7,
-            borderRadius: '50%',
-            backgroundColor: alpha(theme.palette.text.primary, 0.16),
-          })}
-        />
-      ))}
-    </Box>
     <Typography
       sx={(theme) => ({
         color: theme.palette.text.secondary,
@@ -128,26 +115,16 @@ const SiteChromeBar: React.FC<{ host: string; live: boolean }> = ({
       {host}
     </Typography>
     {live && (
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
-        <Box
-          sx={(theme) => ({
-            width: 5,
-            height: 5,
-            borderRadius: '50%',
-            backgroundColor: theme.palette.status.merged,
-          })}
-        />
-        <Typography
-          sx={(theme) => ({
-            color: theme.palette.status.merged,
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.55rem',
-            letterSpacing: '0.14em',
-          })}
-        >
-          LIVE
-        </Typography>
-      </Box>
+      <Box
+        title="Live site"
+        sx={(theme) => ({
+          width: 6,
+          height: 6,
+          borderRadius: '50%',
+          backgroundColor: theme.palette.status.merged,
+          flexShrink: 0,
+        })}
+      />
     )}
   </Box>
 );
