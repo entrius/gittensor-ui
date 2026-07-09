@@ -11,4 +11,6 @@ export { default as RepositoryCodeBrowser } from './RepositoryCodeBrowser';
 export { default as RepositoryMaintainers } from './RepositoryMaintainers';
 export { default as RepositoryCheckTab } from './RepositoryCheckTab';
 export { default as RepositoryHyperparametersTab } from './RepositoryHyperparametersTab';
+export { default as RepositoryConfigHistoryTab } from './RepositoryConfigHistoryTab';
+export { default as AdminRegisterRepositoryForm } from './AdminRegisterRepositoryForm';
 export { default as RepositoryMinersTab } from './RepositoryMinersTab';

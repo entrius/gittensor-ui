@@ -15,7 +15,7 @@ import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import { isRepoInstalled } from '../api';
 import { useLinkBehavior } from '../components/common/linkBehavior';
 import { Page } from '../components/layout';
-import { SEO } from '../components';
+import { SEO, AdminRegisterRepositoryForm } from '../components';
 import { extractRepoFullName } from '../utils';
 
 type VerifyResult =
@@ -335,6 +335,9 @@ const RepositoryRegistrationPage: React.FC = () => {
             GitHub App, then fill out the form below.
           </Typography>
         </Stack>
+
+        {/* Admins can register a repo directly into the registry; self-gates. */}
+        <AdminRegisterRepositoryForm />
 
         <Box
           sx={(theme) => ({
