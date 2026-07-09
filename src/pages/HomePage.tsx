@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Avatar, Box, Typography } from '@mui/material';
+import { Avatar, Box, Stack, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
@@ -111,7 +111,7 @@ const SiteOverlay: React.FC<{ host: string; live: boolean }> = ({
         borderRadius: 0.75,
         backgroundColor: alpha(theme.palette.common.black, 0.55),
         color: alpha(theme.palette.common.white, 0.78),
-        fontFamily: 'var(--font-mono)',
+        fontFamily: 'var(--font-accent)',
         fontSize: '0.58rem',
         letterSpacing: '0.06em',
         whiteSpace: 'nowrap',
@@ -275,7 +275,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
               display: 'grid',
               placeItems: 'center',
               color: alpha(theme.palette.text.primary, 0.3),
-              fontFamily: 'var(--font-heading)',
+              fontFamily: 'var(--font-accent)',
               fontSize: '1.4rem',
               fontWeight: 900,
             })}
@@ -327,7 +327,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
         <Box sx={{ minWidth: 0 }}>
           <Typography
             sx={{
-              fontFamily: 'var(--font-heading)',
+              fontFamily: 'var(--font-accent)',
               fontWeight: 900,
               fontSize: '1.02rem',
               lineHeight: 1.2,
@@ -341,7 +341,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           <Typography
             sx={(theme) => ({
               color: theme.palette.text.secondary,
-              fontFamily: 'var(--font-mono)',
+              fontFamily: 'var(--font-accent)',
               fontSize: '0.64rem',
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
@@ -407,8 +407,14 @@ const RepoCardSkeleton: React.FC<{ index: number }> = ({ index }) => (
   </Box>
 );
 
+const DashboardTimeline = React.lazy(() => import('./dashboard/DashboardPage'));
+
+type Timeline = 'repositories' | 'dashboard';
+const TIMELINES: readonly Timeline[] = ['repositories', 'dashboard'];
+
 const HomePage: React.FC = () => {
   const reposQuery = useReposAndWeights();
+  const [timeline, setTimeline] = useState<Timeline>('repositories');
 
   const repos = useMemo(
     () => sortByEmissionShare(reposQuery.data ?? []),
@@ -425,7 +431,7 @@ const HomePage: React.FC = () => {
       <Box
         sx={{
           width: '100%',
-          maxWidth: 1180,
+          maxWidth: timeline === 'dashboard' ? 1680 : 1180,
           mx: 'auto',
           px: { xs: 1.5, sm: 3 },
           py: { xs: 4, md: 7 },
@@ -438,73 +444,164 @@ const HomePage: React.FC = () => {
         <Typography
           component="h1"
           sx={{
-            fontFamily: 'var(--font-heading)',
+            fontFamily: 'var(--font-accent)',
             fontWeight: 900,
-            fontSize: { xs: '1.9rem', sm: '2.4rem' },
+            fontSize: { xs: '2.1rem', sm: '2.7rem' },
             textAlign: 'center',
             lineHeight: 1.1,
             ...fadeUp(40),
           }}
         >
-          Gittensor Repositories
+          Gittensor
         </Typography>
-        <Typography
+
+        <Stack
+          direction="row"
+          spacing={0}
           sx={(theme) => ({
-            mt: { xs: 3, md: 4.5 },
+            mt: { xs: 2.5, md: 3.5 },
             mx: 'auto',
-            maxWidth: 640,
-            color: alpha(theme.palette.text.primary, 0.55),
-            fontFamily: 'var(--font-mono)',
-            fontSize: '0.72rem',
-            letterSpacing: '0.14em',
-            textTransform: 'uppercase',
-            textAlign: 'center',
-            lineHeight: 1.9,
-            ...fadeUp(120),
+            width: 'fit-content',
+            borderRadius: 1,
+            overflow: 'hidden',
+            border: `1px solid ${theme.palette.border.light}`,
+            ...fadeUp(100),
           })}
         >
-          These are the open source projects tracked by Gittensor. Miners,
-          increasingly AI agents, continuously improve them; validators score
-          the merged work and emissions follow.
-        </Typography>
+          {TIMELINES.map((tab) => (
+            <Box
+              key={tab}
+              onClick={() => setTimeline(tab)}
+              sx={(theme) => ({
+                px: 2.25,
+                py: 0.7,
+                cursor: 'pointer',
+                fontFamily: 'var(--font-accent)',
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
+                transition: 'all 0.25s ease',
+                backgroundColor:
+                  timeline === tab
+                    ? alpha(theme.palette.status.merged, 0.15)
+                    : 'transparent',
+                color:
+                  timeline === tab
+                    ? theme.palette.status.merged
+                    : alpha(theme.palette.text.primary, 0.4),
+                '&:hover': {
+                  backgroundColor:
+                    timeline === tab
+                      ? alpha(theme.palette.status.merged, 0.15)
+                      : alpha(theme.palette.text.primary, 0.06),
+                },
+              })}
+            >
+              {tab}
+            </Box>
+          ))}
+        </Stack>
 
-        <Box
-          sx={{
-            mt: { xs: 5, md: 8 },
-            display: 'grid',
-            gridTemplateColumns: {
-              xs: '1fr',
-              sm: 'repeat(2, minmax(0, 1fr))',
-              md: 'repeat(3, minmax(0, 1fr))',
-            },
-            gap: { xs: 2, md: 2.5 },
-          }}
-        >
-          {reposQuery.isLoading
-            ? Array.from({ length: 9 }, (_, index) => (
-                <RepoCardSkeleton key={index} index={index} />
-              ))
-            : repos.map((repo, index) => (
-                <RepoCard key={repo.fullName} repo={repo} index={index} />
-              ))}
-        </Box>
+        {timeline === 'repositories' ? (
+          <>
+            <Typography
+              sx={(theme) => ({
+                mt: { xs: 3, md: 4.5 },
+                mx: 'auto',
+                maxWidth: 640,
+                color: alpha(theme.palette.text.primary, 0.55),
+                fontFamily: 'var(--font-accent)',
+                fontSize: '0.72rem',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                textAlign: 'center',
+                lineHeight: 1.9,
+                ...fadeUp(120),
+              })}
+            >
+              These are the open source projects built by Gittensor.
+            </Typography>
 
-        {!reposQuery.isLoading && repos.length === 0 && (
-          <Typography
-            sx={(theme) => ({
-              mt: 6,
-              color: theme.palette.text.secondary,
-              fontFamily: 'var(--font-mono)',
-              fontSize: '0.72rem',
-              letterSpacing: '0.14em',
-              textTransform: 'uppercase',
-              textAlign: 'center',
-            })}
-          >
-            {reposQuery.isError
-              ? 'Repository list is unavailable right now.'
-              : 'No tracked repositories returned.'}
-          </Typography>
+            <Box
+              sx={{
+                mt: { xs: 4, md: 6 },
+                display: 'grid',
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  sm: 'repeat(2, minmax(0, 1fr))',
+                  md: 'repeat(3, minmax(0, 1fr))',
+                },
+                gap: { xs: 2, md: 2.5 },
+              }}
+            >
+              {reposQuery.isLoading
+                ? Array.from({ length: 9 }, (_, index) => (
+                    <RepoCardSkeleton key={index} index={index} />
+                  ))
+                : repos.map((repo, index) => (
+                    <RepoCard key={repo.fullName} repo={repo} index={index} />
+                  ))}
+            </Box>
+
+            {!reposQuery.isLoading && repos.length === 0 && (
+              <Typography
+                sx={(theme) => ({
+                  mt: 6,
+                  color: theme.palette.text.secondary,
+                  fontFamily: 'var(--font-accent)',
+                  fontSize: '0.72rem',
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  textAlign: 'center',
+                })}
+              >
+                {reposQuery.isError
+                  ? 'Repository list is unavailable right now.'
+                  : 'No tracked repositories returned.'}
+              </Typography>
+            )}
+          </>
+        ) : (
+          <Box sx={{ mt: { xs: 2, md: 3 } }}>
+            <Typography
+              sx={(theme) => ({
+                mt: { xs: 1, md: 1.5 },
+                mx: 'auto',
+                maxWidth: 640,
+                color: alpha(theme.palette.text.primary, 0.55),
+                fontFamily: 'var(--font-accent)',
+                fontSize: '0.72rem',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                textAlign: 'center',
+                lineHeight: 1.9,
+                ...fadeUp(120),
+              })}
+            >
+              This is the work done by Gittensor miners.
+            </Typography>
+            <React.Suspense
+              fallback={
+                <Typography
+                  sx={(theme) => ({
+                    mt: 6,
+                    color: theme.palette.text.secondary,
+                    fontFamily: 'var(--font-accent)',
+                    fontSize: '0.72rem',
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
+                    textAlign: 'center',
+                  })}
+                >
+                  Loading dashboard…
+                </Typography>
+              }
+            >
+              <DashboardTimeline />
+            </React.Suspense>
+          </Box>
         )}
       </Box>
     </Page>

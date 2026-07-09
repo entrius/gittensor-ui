@@ -11,13 +11,7 @@ import {
 } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import LeaderboardIcon from '@mui/icons-material/Leaderboard';
-import VisibilityIcon from '@mui/icons-material/Visibility';
-import BugReportIcon from '@mui/icons-material/BugReport';
-import FolderCopyIcon from '@mui/icons-material/FolderCopy';
-import SchoolIcon from '@mui/icons-material/School';
 import { useLinkBehavior } from '../common/linkBehavior';
-import { useWatchlistTotalCount } from '../../hooks/useWatchlist';
 
 const LOGO_IMG_FILTER =
   'brightness(0) invert(1) drop-shadow(0 0 8px rgba(255, 255, 255, 0.8))';
@@ -81,21 +75,13 @@ const GittensorLogoImg: React.FC<{ heightPx: number }> = ({ heightPx }) => (
 
 const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
   const location = useLocation();
-  const watchlistCount = useWatchlistTotalCount();
 
-  const navItems = [
-    { label: 'dashboard', path: '/dashboard', icon: <DashboardIcon /> },
-    { label: 'leaderboard', path: '/leaderboard', icon: <LeaderboardIcon /> },
-    { label: 'repositories', path: '/repositories', icon: <FolderCopyIcon /> },
-    {
-      label: 'watchlist',
-      path: '/watchlist',
-      badge: watchlistCount > 0 ? String(watchlistCount) : undefined,
-      icon: <VisibilityIcon />,
-    },
-    { label: 'bounties', path: '/bounties', icon: <BugReportIcon /> },
-    { label: 'onboard', path: '/onboard', icon: <SchoolIcon /> },
-  ];
+  const navItems: Array<{
+    label: string;
+    path: string;
+    icon: React.ReactNode;
+    badge?: string;
+  }> = [{ label: 'dashboard', path: '/dashboard', icon: <DashboardIcon /> }];
 
   const logoLink = (
     <SidebarLogoLink onNavigate={onNavigate} collapsed={collapsed}>

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Box, useMediaQuery } from '@mui/material';
 import { Page } from '../../components/layout';
 import { SEO } from '../../components';
-import theme, { scrollbarSx } from '../../theme';
+import theme from '../../theme';
 import { type TrendTimeRange } from './dashboardData';
 import useDashboardData from './useDashboardData';
 import ActiveNetwork from './views/ActiveNetwork';
@@ -59,11 +59,10 @@ const DashboardFeaturePage: React.FC = () => {
         <Box
           sx={{
             width: '100%',
-            height: showSidebarRight ? 'calc(100vh - 64px)' : 'auto',
             display: 'flex',
             flexDirection: showSidebarRight ? 'row' : 'column',
+            alignItems: showSidebarRight ? 'stretch' : 'normal',
             gap: { xs: 1.5, sm: 1.5, md: 1.75, lg: 2 },
-            overflow: 'hidden',
           }}
         >
           <Box
@@ -72,11 +71,7 @@ const DashboardFeaturePage: React.FC = () => {
               display: 'flex',
               flexDirection: 'column',
               gap: { xs: 1.35, sm: 1.15, md: 1.25 },
-              minHeight: 0,
-              overflow: showSidebarRight ? 'auto' : 'visible',
               minWidth: 0,
-              pr: showSidebarRight ? 0.75 : 0,
-              ...scrollbarSx,
             }}
           >
             <ActiveNetwork
