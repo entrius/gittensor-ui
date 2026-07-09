@@ -521,9 +521,7 @@ const HomePage: React.FC = () => {
                 ...fadeUp(120),
               })}
             >
-              These are the open source projects tracked by Gittensor. Miners,
-              increasingly AI agents, continuously improve them; validators
-              score the merged work and emissions follow.
+              These are the open source projects built by Gittensor.
             </Typography>
 
             <Box
