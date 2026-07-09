@@ -32,6 +32,9 @@ const REPO_WEBSITES: Record<string, string> = {
   'JSONbored/metagraphed': 'https://metagraph.sh',
   'gittensor-vanguard/vanguarstew':
     'https://gittensor-vanguard.github.io/vanguarstew/',
+  // The site you are on right now — mirror its live dashboard. A page cannot
+  // iframe its own URL (recursion protection), so point at /dashboard.
+  'entrius/gittensor': `${window.location.origin}/dashboard`,
   'JSONbored/gittensory': 'https://gittensory.aethereal.dev/',
   'Autovara/kata': 'https://dashboardking.ngrok.app/',
   'Geniepod/genie-claw': 'https://genieclaw.org',
