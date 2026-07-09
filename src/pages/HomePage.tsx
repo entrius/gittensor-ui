@@ -23,6 +23,49 @@ const getRepoPreviewSrc = (fullName: string, attempt: number) =>
     attempt > 0 ? `?retry=${attempt}` : ''
   }`;
 
+// Experiment: show each project's own website in the card instead of the
+// GitHub OpenGraph card. Homepages come from the repos' GitHub metadata
+// (snapshotted 2026-07-09); repos without a website fall back to the OG image.
+const REPO_WEBSITES: Record<string, string> = {
+  'gittensor-ai-lab/sparkinfer':
+    'https://gittensor-ai-lab.github.io/sparkinfer/dashboard/',
+  'JSONbored/metagraphed': 'https://metagraph.sh',
+  'gittensor-vanguard/vanguarstew':
+    'https://gittensor-vanguard.github.io/vanguarstew/',
+  'JSONbored/gittensory': 'https://gittensory.aethereal.dev/',
+  'Autovara/kata': 'https://dashboardking.ngrok.app/',
+  'Geniepod/genie-claw': 'https://genieclaw.org',
+  'vouchdev/vouch': 'https://vouchai.dev',
+  'phase-rs/phase': 'http://preview.phase-rs.dev/',
+  'imagent-ai/imagent': 'https://tryimagent.com/',
+  'mini-router/minirouter': 'https://mini-router.github.io/minirouter/',
+  'zeokin/Cuda-Compute-OSS': 'https://zeokin.github.io/Cuda-Compute-Dashboard/',
+  'JSONbored/awesome-claude': 'https://heyclau.de',
+  'we-promise/sure': 'https://sure.am',
+};
+
+// These sites send X-Frame-Options / frame-ancestors and refuse to render in
+// an iframe, so they get a website screenshot (WordPress mshots) instead of a
+// live window.
+const FRAME_BLOCKED_HOSTS = new Set([
+  'metagraph.sh',
+  'gittensory.aethereal.dev',
+  'vouchai.dev',
+  'heyclau.de',
+  'sure.am',
+]);
+
+const getSiteHost = (url: string) => {
+  try {
+    return new URL(url).host;
+  } catch {
+    return '';
+  }
+};
+
+const getSiteScreenshotSrc = (url: string) =>
+  `https://s0.wp.com/mshots/v1/${encodeURIComponent(url)}?w=1280&h=640`;
+
 // GitHub throttles bursts of OpenGraph requests (HTTP 429) when the whole
 // grid loads at once, so failed images retry with a staggered backoff.
 const MAX_PREVIEW_ATTEMPTS = 4;
@@ -34,15 +77,116 @@ const sortByEmissionShare = (repos: Repository[]) =>
       parseNumber(a.config?.emissionShare ?? 0),
   );
 
+const CHROME_BAR_HEIGHT = 26;
+
+const SiteChromeBar: React.FC<{ host: string; live: boolean }> = ({
+  host,
+  live,
+}) => (
+  <Box
+    sx={(theme) => ({
+      position: 'absolute',
+      top: 0,
+      left: 0,
+      right: 0,
+      height: CHROME_BAR_HEIGHT,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 1,
+      px: 1.25,
+      borderBottom: `1px solid ${theme.palette.border.subtle}`,
+      backgroundColor: alpha(theme.palette.text.primary, 0.05),
+      zIndex: 1,
+    })}
+  >
+    <Box sx={{ display: 'flex', gap: 0.5 }}>
+      {[0, 1, 2].map((dot) => (
+        <Box
+          key={dot}
+          sx={(theme) => ({
+            width: 7,
+            height: 7,
+            borderRadius: '50%',
+            backgroundColor: alpha(theme.palette.text.primary, 0.16),
+          })}
+        />
+      ))}
+    </Box>
+    <Typography
+      sx={(theme) => ({
+        color: theme.palette.text.secondary,
+        fontFamily: 'var(--font-mono)',
+        fontSize: '0.58rem',
+        letterSpacing: '0.06em',
+        whiteSpace: 'nowrap',
+        overflow: 'hidden',
+        textOverflow: 'ellipsis',
+        minWidth: 0,
+        flex: 1,
+      })}
+    >
+      {host}
+    </Typography>
+    {live && (
+      <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.6 }}>
+        <Box
+          sx={(theme) => ({
+            width: 5,
+            height: 5,
+            borderRadius: '50%',
+            backgroundColor: theme.palette.status.merged,
+          })}
+        />
+        <Typography
+          sx={(theme) => ({
+            color: theme.palette.status.merged,
+            fontFamily: 'var(--font-mono)',
+            fontSize: '0.55rem',
+            letterSpacing: '0.14em',
+          })}
+        >
+          LIVE
+        </Typography>
+      </Box>
+    )}
+  </Box>
+);
+
 const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
   repo,
   index,
 }) => {
   const [attempt, setAttempt] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
+  const [shotTick, setShotTick] = useState(0);
+  const [siteShotFailed, setSiteShotFailed] = useState(false);
   const retryTimerRef = useRef<number | undefined>(undefined);
+  const shotTimerRef = useRef<number | undefined>(undefined);
 
-  useEffect(() => () => window.clearTimeout(retryTimerRef.current), []);
+  const website = REPO_WEBSITES[repo.fullName];
+  const websiteHost = website ? getSiteHost(website) : '';
+  const canEmbed = Boolean(website) && !FRAME_BLOCKED_HOSTS.has(websiteHost);
+  const useSiteShot = Boolean(website) && !canEmbed && !siteShotFailed;
+
+  useEffect(
+    () => () => {
+      window.clearTimeout(retryTimerRef.current);
+      window.clearTimeout(shotTimerRef.current);
+    },
+    [],
+  );
+
+  // mshots serves a "generating" placeholder on the first request for a
+  // site; re-render the image a couple of times so the real screenshot
+  // replaces it without a manual reload.
+  useEffect(() => {
+    if (!useSiteShot || shotTick >= 2) return;
+    shotTimerRef.current = window.setTimeout(
+      () => setShotTick(shotTick + 1),
+      5000 * (shotTick + 1) + index * 200,
+    );
+    return () => window.clearTimeout(shotTimerRef.current);
+  }, [useSiteShot, shotTick, index]);
 
   const handleImageError = () => {
     if (attempt + 1 >= MAX_PREVIEW_ATTEMPTS) {
@@ -95,7 +239,67 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           overflow: 'hidden',
         })}
       >
-        {imageFailed ? (
+        {(canEmbed || useSiteShot) && (
+          <SiteChromeBar host={websiteHost} live={canEmbed} />
+        )}
+        {canEmbed ? (
+          <Box
+            className="repo-card-preview"
+            sx={{
+              position: 'absolute',
+              top: CHROME_BAR_HEIGHT,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              overflow: 'hidden',
+              filter: 'grayscale(1)',
+              opacity: 0.88,
+              transition: 'filter 0.25s ease, opacity 0.25s ease',
+              backgroundColor: '#fff',
+            }}
+          >
+            <Box
+              component="iframe"
+              src={website}
+              title={`${repo.fullName} website`}
+              loading="lazy"
+              tabIndex={-1}
+              sx={{
+                width: '400%',
+                height: '400%',
+                border: 0,
+                transform: 'scale(0.25)',
+                transformOrigin: 'top left',
+                pointerEvents: 'none',
+                backgroundColor: '#fff',
+              }}
+            />
+          </Box>
+        ) : useSiteShot ? (
+          <Box
+            key={shotTick}
+            component="img"
+            className="repo-card-preview"
+            src={getSiteScreenshotSrc(website)}
+            alt={`${websiteHost} screenshot`}
+            loading="lazy"
+            onError={() => setSiteShotFailed(true)}
+            sx={{
+              position: 'absolute',
+              top: CHROME_BAR_HEIGHT,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              width: '100%',
+              height: `calc(100% - ${CHROME_BAR_HEIGHT}px)`,
+              objectFit: 'cover',
+              objectPosition: 'top',
+              filter: 'grayscale(1)',
+              opacity: 0.88,
+              transition: 'filter 0.25s ease, opacity 0.25s ease',
+            }}
+          />
+        ) : imageFailed ? (
           <Box
             sx={(theme) => ({
               position: 'absolute',
