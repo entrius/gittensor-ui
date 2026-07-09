@@ -506,24 +506,6 @@ const HomePage: React.FC = () => {
 
         {timeline === 'repositories' ? (
           <>
-            <Typography
-              sx={(theme) => ({
-                mt: { xs: 3, md: 4.5 },
-                mx: 'auto',
-                maxWidth: 640,
-                color: alpha(theme.palette.text.primary, 0.55),
-                fontFamily: 'var(--font-accent)',
-                fontSize: '0.72rem',
-                letterSpacing: '0.14em',
-                textTransform: 'uppercase',
-                textAlign: 'center',
-                lineHeight: 1.9,
-                ...fadeUp(120),
-              })}
-            >
-              These are the open source projects built by Gittensor.
-            </Typography>
-
             <Box
               sx={{
                 mt: { xs: 4, md: 6 },
