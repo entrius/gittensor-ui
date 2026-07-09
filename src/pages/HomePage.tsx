@@ -565,6 +565,23 @@ const HomePage: React.FC = () => {
           </>
         ) : (
           <Box sx={{ mt: { xs: 2, md: 3 } }}>
+            <Typography
+              sx={(theme) => ({
+                mt: { xs: 1, md: 1.5 },
+                mx: 'auto',
+                maxWidth: 640,
+                color: alpha(theme.palette.text.primary, 0.55),
+                fontFamily: 'var(--font-accent)',
+                fontSize: '0.72rem',
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                textAlign: 'center',
+                lineHeight: 1.9,
+                ...fadeUp(120),
+              })}
+            >
+              This is the work done by Gittensor miners.
+            </Typography>
             <React.Suspense
               fallback={
                 <Typography
