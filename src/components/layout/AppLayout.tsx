@@ -112,22 +112,20 @@ const AppLayout: React.FC = () => {
           title="Back to home"
           sx={{
             position: 'fixed',
-            top: 14,
-            left: 16,
+            top: 16,
+            left: 18,
             zIndex: 1200,
             display: 'flex',
             alignItems: 'center',
-            gap: 1,
-            px: 1.25,
-            py: 0.75,
-            borderRadius: 1.5,
-            border: `1px solid ${theme.palette.border.light}`,
-            backgroundColor: alpha(theme.palette.common.black, 0.72),
-            backdropFilter: 'blur(8px)',
-            transition: 'border-color 0.15s ease, transform 0.15s ease',
+            transition: 'transform 0.2s ease',
+            '& img': {
+              transition: 'filter 0.2s ease',
+            },
             '&:hover': {
-              borderColor: alpha(theme.palette.common.white, 0.35),
-              transform: 'translateY(-1px)',
+              transform: 'scale(1.12)',
+            },
+            '&:hover img': {
+              filter: `brightness(0) invert(1) drop-shadow(0 0 12px ${alpha(theme.palette.common.white, 1)})`,
             },
           }}
         >
@@ -135,9 +133,9 @@ const AppLayout: React.FC = () => {
             src="/gt-logo.svg"
             alt="Gittensor home"
             style={{
-              height: 20,
+              height: 24,
               width: 'auto',
-              filter: `brightness(0) invert(1) drop-shadow(0 0 6px ${alpha(theme.palette.common.white, 0.8)})`,
+              filter: `brightness(0) invert(1) drop-shadow(0 0 6px ${alpha(theme.palette.common.white, 0.7)})`,
             }}
           />
         </LinkBox>
