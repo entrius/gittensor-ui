@@ -462,7 +462,7 @@ const HomePage: React.FC = () => {
             mt: { xs: 2.5, md: 3.5 },
             mx: 'auto',
             width: 'fit-content',
-            borderRadius: 3,
+            borderRadius: 1,
             overflow: 'hidden',
             border: `1px solid ${theme.palette.border.light}`,
             ...fadeUp(100),
