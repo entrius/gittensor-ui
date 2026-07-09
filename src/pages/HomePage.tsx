@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Avatar, Box, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { Page } from '../components/layout';
@@ -18,8 +18,14 @@ const fadeUp = (delayMs = 0) => ({
   },
 });
 
-const getRepoPreviewSrc = (fullName: string) =>
-  `https://opengraph.githubassets.com/1/${fullName}`;
+const getRepoPreviewSrc = (fullName: string, attempt: number) =>
+  `https://opengraph.githubassets.com/1/${fullName}${
+    attempt > 0 ? `?retry=${attempt}` : ''
+  }`;
+
+// GitHub throttles bursts of OpenGraph requests (HTTP 429) when the whole
+// grid loads at once, so failed images retry with a staggered backoff.
+const MAX_PREVIEW_ATTEMPTS = 4;
 
 const sortByEmissionShare = (repos: Repository[]) =>
   [...repos].sort(
@@ -32,7 +38,22 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
   repo,
   index,
 }) => {
+  const [attempt, setAttempt] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
+  const retryTimerRef = useRef<number | undefined>(undefined);
+
+  useEffect(() => () => window.clearTimeout(retryTimerRef.current), []);
+
+  const handleImageError = () => {
+    if (attempt + 1 >= MAX_PREVIEW_ATTEMPTS) {
+      setImageFailed(true);
+      return;
+    }
+    retryTimerRef.current = window.setTimeout(
+      () => setAttempt(attempt + 1),
+      1200 * (attempt + 1) + index * 150,
+    );
+  };
 
   return (
     <LinkBox
@@ -91,12 +112,13 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           </Box>
         ) : (
           <Box
+            key={attempt}
             component="img"
             className="repo-card-preview"
-            src={getRepoPreviewSrc(repo.fullName)}
+            src={getRepoPreviewSrc(repo.fullName, attempt)}
             alt={`${repo.fullName} preview`}
             loading="lazy"
-            onError={() => setImageFailed(true)}
+            onError={handleImageError}
             sx={{
               position: 'absolute',
               inset: 0,
