@@ -111,7 +111,7 @@ const SiteOverlay: React.FC<{ host: string; live: boolean }> = ({
         borderRadius: 0.75,
         backgroundColor: alpha(theme.palette.common.black, 0.55),
         color: alpha(theme.palette.common.white, 0.78),
-        fontFamily: 'var(--font-mono)',
+        fontFamily: 'var(--font-accent)',
         fontSize: '0.58rem',
         letterSpacing: '0.06em',
         whiteSpace: 'nowrap',
@@ -275,7 +275,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
               display: 'grid',
               placeItems: 'center',
               color: alpha(theme.palette.text.primary, 0.3),
-              fontFamily: 'var(--font-heading)',
+              fontFamily: 'var(--font-accent)',
               fontSize: '1.4rem',
               fontWeight: 900,
             })}
@@ -327,7 +327,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
         <Box sx={{ minWidth: 0 }}>
           <Typography
             sx={{
-              fontFamily: 'var(--font-heading)',
+              fontFamily: 'var(--font-accent)',
               fontWeight: 900,
               fontSize: '1.02rem',
               lineHeight: 1.2,
@@ -341,7 +341,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           <Typography
             sx={(theme) => ({
               color: theme.palette.text.secondary,
-              fontFamily: 'var(--font-mono)',
+              fontFamily: 'var(--font-accent)',
               fontSize: '0.64rem',
               letterSpacing: '0.08em',
               textTransform: 'uppercase',
@@ -444,7 +444,7 @@ const HomePage: React.FC = () => {
         <Typography
           component="h1"
           sx={{
-            fontFamily: 'var(--font-heading)',
+            fontFamily: 'var(--font-accent)',
             fontWeight: 900,
             fontSize: { xs: '2.1rem', sm: '2.7rem' },
             textAlign: 'center',
@@ -476,7 +476,7 @@ const HomePage: React.FC = () => {
                 px: 2.25,
                 py: 0.7,
                 cursor: 'pointer',
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-accent)',
                 fontSize: '0.68rem',
                 fontWeight: 700,
                 letterSpacing: '0.1em',
@@ -512,7 +512,7 @@ const HomePage: React.FC = () => {
                 mx: 'auto',
                 maxWidth: 640,
                 color: alpha(theme.palette.text.primary, 0.55),
-                fontFamily: 'var(--font-mono)',
+                fontFamily: 'var(--font-accent)',
                 fontSize: '0.72rem',
                 letterSpacing: '0.14em',
                 textTransform: 'uppercase',
@@ -552,7 +552,7 @@ const HomePage: React.FC = () => {
                 sx={(theme) => ({
                   mt: 6,
                   color: theme.palette.text.secondary,
-                  fontFamily: 'var(--font-mono)',
+                  fontFamily: 'var(--font-accent)',
                   fontSize: '0.72rem',
                   letterSpacing: '0.14em',
                   textTransform: 'uppercase',
@@ -573,7 +573,7 @@ const HomePage: React.FC = () => {
                   sx={(theme) => ({
                     mt: 6,
                     color: theme.palette.text.secondary,
-                    fontFamily: 'var(--font-mono)',
+                    fontFamily: 'var(--font-accent)',
                     fontSize: '0.72rem',
                     letterSpacing: '0.14em',
                     textTransform: 'uppercase',

@@ -5,6 +5,7 @@ import { LoadingPage } from '../../pages';
 import useOnNavigate from '../../hooks/useOnNavigate';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
 import ErrorBoundary from '../ErrorBoundary';
+import { LinkBox } from '../common/linkBehavior';
 import GlobalSearchBar from './GlobalSearchBar';
 import ShortcutsHelpDialog from './ShortcutsHelpDialog';
 import theme, { scrollbarSx } from '../../theme';
@@ -60,7 +61,7 @@ const Footer: React.FC = () => (
             underline="none"
             sx={{
               color: theme.palette.text.primary,
-              fontFamily: 'var(--font-mono)',
+              fontFamily: 'var(--font-accent)',
               fontSize: '0.78rem',
               transition: 'color 0.15s ease',
               '&:hover': { color: theme.palette.status.merged },
@@ -74,7 +75,7 @@ const Footer: React.FC = () => (
     <Typography
       sx={{
         color: alpha(theme.palette.text.primary, 0.38),
-        fontFamily: 'var(--font-mono)',
+        fontFamily: 'var(--font-accent)',
         fontSize: '0.7rem',
       }}
     >
@@ -91,6 +92,7 @@ const AppLayout: React.FC = () => {
   const shouldShowGlobalSearch = Boolean(
     getRouteForPathname(location.pathname)?.showGlobalSearch,
   );
+  const isLandingPage = location.pathname === '/';
 
   return (
     <Box
@@ -103,6 +105,44 @@ const AppLayout: React.FC = () => {
         justifyContent: 'center', // Center for ultra-wide screens
       }}
     >
+      {/* One-click return to the landing page from anywhere */}
+      {!isLandingPage && (
+        <LinkBox
+          href="/"
+          title="Back to home"
+          sx={{
+            position: 'fixed',
+            top: 14,
+            left: 16,
+            zIndex: 1200,
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            px: 1.25,
+            py: 0.75,
+            borderRadius: 1.5,
+            border: `1px solid ${theme.palette.border.light}`,
+            backgroundColor: alpha(theme.palette.common.black, 0.72),
+            backdropFilter: 'blur(8px)',
+            transition: 'border-color 0.15s ease, transform 0.15s ease',
+            '&:hover': {
+              borderColor: alpha(theme.palette.common.white, 0.35),
+              transform: 'translateY(-1px)',
+            },
+          }}
+        >
+          <img
+            src="/gt-logo.svg"
+            alt="Gittensor home"
+            style={{
+              height: 20,
+              width: 'auto',
+              filter: `brightness(0) invert(1) drop-shadow(0 0 6px ${alpha(theme.palette.common.white, 0.8)})`,
+            }}
+          />
+        </LinkBox>
+      )}
+
       {/* Main Content Area - Constrained for ultra-wide screens */}
       <Box
         ref={mainRef}
