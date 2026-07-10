@@ -47,16 +47,68 @@ const REPO_WEBSITES: Record<string, string> = {
   'we-promise/sure': 'https://sure.am',
 };
 
-// These sites send X-Frame-Options / frame-ancestors and refuse to render in
-// an iframe, so they get a website screenshot (WordPress mshots) instead of a
-// live window.
-const FRAME_BLOCKED_HOSTS = new Set([
-  'metagraph.sh',
-  'gittensory.aethereal.dev',
-  'vouchai.dev',
-  'heyclau.de',
-  'sure.am',
-]);
+// An https page cannot embed http content (browsers block it as mixed
+// content), so on https embed URLs upgrade to https; a site that cannot
+// serve https then fails the live embed and falls back to a screenshot. On
+// an http origin (local dev) the original scheme is kept — http-in-http is
+// allowed, and upgrading would break the same-origin dashboard mirror.
+const toEmbedUrl = (url: string) =>
+  window.location.protocol === 'https:'
+    ? url.replace(/^http:\/\//i, 'https://')
+    : url;
+
+// Backstop for an embed that fires neither load nor error (both are wired
+// natively below); generous so slow hosts still get to go live.
+const EMBED_VERIFY_TIMEOUT_MS = 30000;
+
+// Live embeds are Blink-only. Blink's <object> gives an honest verdict
+// (refused/unreachable documents fire error, rendered pages fire load —
+// verified empirically). WebKit fires load with a null contentDocument for
+// allowed and blocked frames alike, so a live window is indistinguishable
+// from a blank refused one; it also crash-reloaded under a page of embeds.
+// Gecko is unverified, so it is excluded too; both get screenshots.
+// navigator.userAgentData only exists in Blink browsers — notably it is
+// absent in iOS Chrome, which is WebKit and would false-positive a
+// window.chrome sniff.
+const IS_CHROMIUM = Boolean(
+  (
+    navigator as Navigator & {
+      userAgentData?: { brands?: Array<{ brand: string }> };
+    }
+  ).userAgentData?.brands?.some((entry) => entry.brand === 'Chromium'),
+);
+
+// Once verified, the visible/interactive window is a sandboxed <iframe>
+// (no allow-top-navigation), so a listed site can never navigate the whole
+// app away; <object> cannot carry a sandbox, so it is used only as the
+// hidden verifier.
+const EMBED_IFRAME_SANDBOX =
+  'allow-scripts allow-same-origin allow-forms allow-popups';
+
+// The embed renders a desktop-ish viewport scaled down into the card.
+const EMBED_ZOOM = 0.25;
+const EMBED_SIZE = `${100 / EMBED_ZOOM}%`;
+
+// mshots returns a "generating…" placeholder on the first request for a
+// URL; remount the image a couple of times so the real shot swaps in.
+const SHOT_REFRESH_MAX = 2;
+const SHOT_REFRESH_BASE_MS = 5000;
+const SHOT_REFRESH_STAGGER_MS = 200;
+
+type EmbedState = 'checking' | 'ok' | 'failed';
+
+// Shared look for every card preview surface (screenshot, OG image, live
+// window): grayscale until the card is hovered.
+const PREVIEW_MEDIA_SX = {
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+  objectFit: 'cover',
+  filter: 'grayscale(1)',
+  opacity: 0.88,
+  transition: 'filter 0.25s ease, opacity 0.25s ease',
+} as const;
 
 const getSiteHost = (url: string) => {
   try {
@@ -130,17 +182,35 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
   repo,
   index,
 }) => {
+  const website = REPO_WEBSITES[repo.fullName];
+  const embedUrl = website ? toEmbedUrl(website) : '';
+  const websiteHost = website ? getSiteHost(embedUrl) : '';
+  const sameOrigin = Boolean(website) && websiteHost === window.location.host;
+  const canAttemptEmbed = Boolean(website) && IS_CHROMIUM;
+
   const [attempt, setAttempt] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
   const [shotTick, setShotTick] = useState(0);
   const [siteShotFailed, setSiteShotFailed] = useState(false);
+  const [embedState, setEmbedState] = useState<EmbedState>(
+    canAttemptEmbed ? 'checking' : 'failed',
+  );
+  const [inView, setInView] = useState(false);
   const retryTimerRef = useRef<number | undefined>(undefined);
   const shotTimerRef = useRef<number | undefined>(undefined);
+  const mediaRef = useRef<HTMLDivElement | null>(null);
+  const embedRef = useRef<HTMLObjectElement | null>(null);
 
-  const website = REPO_WEBSITES[repo.fullName];
-  const websiteHost = website ? getSiteHost(website) : '';
-  const canEmbed = Boolean(website) && !FRAME_BLOCKED_HOSTS.has(websiteHost);
-  const useSiteShot = Boolean(website) && !canEmbed && !siteShotFailed;
+  const embedLive = embedState === 'ok';
+  // The screenshot is fetched only when it will actually be seen: right
+  // away in browsers that never attempt embeds, otherwise only after the
+  // embed failed — verified-live cards fire no mshots requests, and the
+  // screenshot always targets the site's declared URL (mshots fetches
+  // server-side, so the mixed-content upgrade is irrelevant to it).
+  const showSiteShot =
+    Boolean(website) &&
+    !siteShotFailed &&
+    (!canAttemptEmbed || embedState === 'failed');
 
   useEffect(
     () => () => {
@@ -150,17 +220,76 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
     [],
   );
 
-  // mshots serves a "generating" placeholder on the first request for a
-  // site; re-render the image a couple of times so the real screenshot
-  // replaces it without a manual reload.
+  // Only mount the live embed once the card is near the viewport, so
+  // verification timers don't start (and fail) for off-screen cards.
   useEffect(() => {
-    if (!useSiteShot || shotTick >= 2) return;
+    if (!canAttemptEmbed || inView) return;
+    const node = mediaRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') {
+      setInView(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [canAttemptEmbed, inView]);
+
+  // Verdict listeners are attached natively: react-dom wires only the load
+  // event for <object>/<iframe>/<embed>, and error does not bubble, so an
+  // onError prop would silently never fire. A load event proves rendering
+  // (see IS_CHROMIUM); the same-origin mirror also fires load for its
+  // initial about:blank, so it must report a real document URL first. The
+  // deadline reaps embeds that never report either way.
+  useEffect(() => {
+    if (!canAttemptEmbed || !inView || embedState !== 'checking') return;
+    const node = embedRef.current;
+    if (!node) return;
+
+    const handleLoad = () => {
+      if (!sameOrigin) {
+        setEmbedState('ok');
+        return;
+      }
+      try {
+        const doc = node.contentDocument;
+        if (doc && doc.URL !== 'about:blank') setEmbedState('ok');
+      } catch {
+        /* unexpectedly cross-origin: let the deadline decide */
+      }
+    };
+    const handleError = () => setEmbedState('failed');
+
+    node.addEventListener('load', handleLoad);
+    node.addEventListener('error', handleError);
+    const deadline = window.setTimeout(
+      () => setEmbedState('failed'),
+      EMBED_VERIFY_TIMEOUT_MS,
+    );
+    return () => {
+      node.removeEventListener('load', handleLoad);
+      node.removeEventListener('error', handleError);
+      window.clearTimeout(deadline);
+    };
+  }, [canAttemptEmbed, inView, embedState, sameOrigin]);
+
+  // Remount the screenshot a couple of times so the real shot replaces the
+  // mshots "generating…" placeholder without a manual reload.
+  useEffect(() => {
+    if (!showSiteShot || shotTick >= SHOT_REFRESH_MAX) return;
     shotTimerRef.current = window.setTimeout(
       () => setShotTick(shotTick + 1),
-      5000 * (shotTick + 1) + index * 200,
+      SHOT_REFRESH_BASE_MS * (shotTick + 1) + index * SHOT_REFRESH_STAGGER_MS,
     );
     return () => window.clearTimeout(shotTimerRef.current);
-  }, [useSiteShot, shotTick, index]);
+  }, [showSiteShot, shotTick, index]);
 
   const handleImageError = () => {
     if (attempt + 1 >= MAX_PREVIEW_ATTEMPTS) {
@@ -172,6 +301,8 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
       1200 * (attempt + 1) + index * 150,
     );
   };
+
+  const showBackdropOg = !embedLive && (!website || siteShotFailed);
 
   return (
     <LinkBox
@@ -197,6 +328,16 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           filter: 'grayscale(0)',
           opacity: 1,
         },
+        // Hovering a live card hands the pointer to the embedded site so it
+        // can be scrolled and browsed like a real window; the footer below
+        // the preview stays the link to the repo page. Mouse-like pointers
+        // only: on touch, sticky :hover would swallow the tap that should
+        // follow the card link.
+        '@media (hover: hover) and (pointer: fine)': {
+          '&:hover .repo-card-embed': {
+            pointerEvents: 'auto',
+          },
+        },
         '&:focus-visible': {
           outline: `2px solid ${theme.palette.status.merged}`,
           outlineOffset: 2,
@@ -204,6 +345,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
       })}
     >
       <Box
+        ref={mediaRef}
         sx={(theme) => ({
           position: 'relative',
           width: '100%',
@@ -213,12 +355,82 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           overflow: 'hidden',
         })}
       >
-        {(canEmbed || useSiteShot) && (
-          <SiteOverlay host={websiteHost} live={canEmbed} />
+        {website && (embedLive || showSiteShot) && (
+          <SiteOverlay host={websiteHost} live={embedLive} />
         )}
-        {canEmbed ? (
+
+        {/* Backdrop: website screenshot → GitHub OG card → repo name. The
+            verified live window covers it, so the card never renders blank.
+            While an embed is still being verified the neutral card
+            background shows instead — most verdicts land within seconds. */}
+        {!embedLive &&
+          (showSiteShot ? (
+            <Box
+              key={shotTick}
+              component="img"
+              className="repo-card-preview"
+              src={getSiteScreenshotSrc(website)}
+              alt={`${websiteHost} screenshot`}
+              loading="lazy"
+              onError={() => setSiteShotFailed(true)}
+              sx={{ ...PREVIEW_MEDIA_SX, objectPosition: 'top' }}
+            />
+          ) : showBackdropOg ? (
+            imageFailed ? (
+              <Box
+                sx={(theme) => ({
+                  position: 'absolute',
+                  inset: 0,
+                  display: 'grid',
+                  placeItems: 'center',
+                  color: alpha(theme.palette.text.primary, 0.3),
+                  fontFamily: 'var(--font-accent)',
+                  fontSize: '1.4rem',
+                  fontWeight: 900,
+                })}
+              >
+                {repo.name}
+              </Box>
+            ) : (
+              <Box
+                key={attempt}
+                component="img"
+                className="repo-card-preview"
+                src={getRepoPreviewSrc(repo.fullName, attempt)}
+                alt={`${repo.fullName} preview`}
+                loading="lazy"
+                onError={handleImageError}
+                sx={PREVIEW_MEDIA_SX}
+              />
+            )
+          ) : null)}
+
+        {/* Hidden verifier: mounted once near the viewport, unmounted as
+            soon as a verdict arrives (see the verification effect). */}
+        {canAttemptEmbed && inView && embedState === 'checking' && (
           <Box
-            className="repo-card-preview"
+            component="object"
+            ref={embedRef}
+            type="text/html"
+            data={embedUrl}
+            aria-hidden
+            tabIndex={-1}
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              border: 0,
+              opacity: 0,
+              pointerEvents: 'none',
+            }}
+          />
+        )}
+
+        {/* Live window: shown only after verification, as a sandboxed
+            iframe so the embedded site can never navigate the app away
+            (an <object> cannot carry a sandbox attribute). */}
+        {embedLive && (
+          <Box
+            className="repo-card-preview repo-card-embed"
             sx={{
               position: 'absolute',
               inset: 0,
@@ -227,81 +439,25 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
               opacity: 0.88,
               transition: 'filter 0.25s ease, opacity 0.25s ease',
               backgroundColor: '#fff',
+              pointerEvents: 'none',
             }}
           >
             <Box
               component="iframe"
-              src={website}
+              src={embedUrl}
               title={`${repo.fullName} website`}
-              loading="lazy"
+              sandbox={EMBED_IFRAME_SANDBOX}
               tabIndex={-1}
               sx={{
-                width: '400%',
-                height: '400%',
+                width: EMBED_SIZE,
+                height: EMBED_SIZE,
                 border: 0,
-                transform: 'scale(0.25)',
+                transform: `scale(${EMBED_ZOOM})`,
                 transformOrigin: 'top left',
-                pointerEvents: 'none',
                 backgroundColor: '#fff',
               }}
             />
           </Box>
-        ) : useSiteShot ? (
-          <Box
-            key={shotTick}
-            component="img"
-            className="repo-card-preview"
-            src={getSiteScreenshotSrc(website)}
-            alt={`${websiteHost} screenshot`}
-            loading="lazy"
-            onError={() => setSiteShotFailed(true)}
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              objectPosition: 'top',
-              filter: 'grayscale(1)',
-              opacity: 0.88,
-              transition: 'filter 0.25s ease, opacity 0.25s ease',
-            }}
-          />
-        ) : imageFailed ? (
-          <Box
-            sx={(theme) => ({
-              position: 'absolute',
-              inset: 0,
-              display: 'grid',
-              placeItems: 'center',
-              color: alpha(theme.palette.text.primary, 0.3),
-              fontFamily: 'var(--font-accent)',
-              fontSize: '1.4rem',
-              fontWeight: 900,
-            })}
-          >
-            {repo.name}
-          </Box>
-        ) : (
-          <Box
-            key={attempt}
-            component="img"
-            className="repo-card-preview"
-            src={getRepoPreviewSrc(repo.fullName, attempt)}
-            alt={`${repo.fullName} preview`}
-            loading="lazy"
-            onError={handleImageError}
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
-              filter: 'grayscale(1)',
-              opacity: 0.88,
-              transition: 'filter 0.25s ease, opacity 0.25s ease',
-            }}
-          />
         )}
       </Box>
       <Box
