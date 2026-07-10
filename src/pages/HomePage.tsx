@@ -143,7 +143,9 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
   const embedUrl = website ? toEmbedUrl(website) : '';
   const websiteHost = website ? getSiteHost(embedUrl) : '';
   const sameOrigin = Boolean(website) && websiteHost === window.location.host;
-  const canAttemptEmbed = Boolean(website) && (sameOrigin || IS_CHROMIUM);
+  // Chromium-only across the board: WebKit can't verify embeds (see
+  // IS_CHROMIUM) and crash-reloads under the self-mirror's nested app.
+  const canAttemptEmbed = Boolean(website) && IS_CHROMIUM;
 
   const [attempt, setAttempt] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
