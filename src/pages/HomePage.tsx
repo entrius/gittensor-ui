@@ -275,6 +275,12 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           filter: 'grayscale(0)',
           opacity: 1,
         },
+        // Hovering a live card hands the pointer to the embedded site so it
+        // can be scrolled and browsed like a real window; the footer below
+        // the preview stays the link to the repo page.
+        '&:hover .repo-card-embed': {
+          pointerEvents: 'auto',
+        },
         '&:focus-visible': {
           outline: `2px solid ${theme.palette.status.merged}`,
           outlineOffset: 2,
@@ -360,7 +366,9 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
             the browser confirms the site actually rendered in the frame. */}
         {canAttemptEmbed && inView && embedState !== 'failed' && (
           <Box
-            className={embedLive ? 'repo-card-preview' : undefined}
+            className={
+              embedLive ? 'repo-card-preview repo-card-embed' : undefined
+            }
             sx={{
               position: 'absolute',
               inset: 0,
@@ -387,7 +395,6 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
                 border: 0,
                 transform: 'scale(0.25)',
                 transformOrigin: 'top left',
-                pointerEvents: 'none',
                 backgroundColor: '#fff',
               }}
             />
