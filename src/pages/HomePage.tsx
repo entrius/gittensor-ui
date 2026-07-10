@@ -47,16 +47,15 @@ const REPO_WEBSITES: Record<string, string> = {
   'we-promise/sure': 'https://sure.am',
 };
 
-// These sites send X-Frame-Options / frame-ancestors and refuse to render in
-// an iframe, so they get a website screenshot (WordPress mshots) instead of a
-// live window.
-const FRAME_BLOCKED_HOSTS = new Set([
-  'metagraph.sh',
-  'gittensory.aethereal.dev',
-  'vouchai.dev',
-  'heyclau.de',
-  'sure.am',
-]);
+// An https page cannot embed http content (browsers block it as mixed
+// content), so embeds always upgrade to https. A site that cannot serve
+// https simply fails the live embed and falls back to a screenshot.
+const toEmbedUrl = (url: string) => url.replace(/^http:\/\//i, 'https://');
+
+// Backstop for a live embed that fires neither load nor error.
+const EMBED_VERIFY_TIMEOUT_MS = 10000;
+
+type EmbedState = 'checking' | 'ok' | 'failed';
 
 const getSiteHost = (url: string) => {
   try {
@@ -134,13 +133,17 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
   const [imageFailed, setImageFailed] = useState(false);
   const [shotTick, setShotTick] = useState(0);
   const [siteShotFailed, setSiteShotFailed] = useState(false);
+  const [embedState, setEmbedState] = useState<EmbedState>('checking');
+  const [inView, setInView] = useState(false);
   const retryTimerRef = useRef<number | undefined>(undefined);
   const shotTimerRef = useRef<number | undefined>(undefined);
+  const mediaRef = useRef<HTMLDivElement | null>(null);
 
   const website = REPO_WEBSITES[repo.fullName];
-  const websiteHost = website ? getSiteHost(website) : '';
-  const canEmbed = Boolean(website) && !FRAME_BLOCKED_HOSTS.has(websiteHost);
-  const useSiteShot = Boolean(website) && !canEmbed && !siteShotFailed;
+  const embedUrl = website ? toEmbedUrl(website) : '';
+  const websiteHost = website ? getSiteHost(embedUrl) : '';
+  const embedLive = Boolean(website) && embedState === 'ok';
+  const showSiteShot = Boolean(website) && !siteShotFailed;
 
   useEffect(
     () => () => {
@@ -150,17 +153,55 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
     [],
   );
 
+  // Only mount the live embed once the card is near the viewport, so
+  // verification timers don't start (and fail) for off-screen cards.
+  useEffect(() => {
+    if (!website || inView) return;
+    const node = mediaRef.current;
+    if (!node || typeof IntersectionObserver === 'undefined') {
+      setInView(true);
+      return;
+    }
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries.some((entry) => entry.isIntersecting)) {
+          setInView(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [website, inView]);
+
+  // The live window is an <object>, not an <iframe>, because the browser
+  // gives <object> an honest verdict: a document refused by the site
+  // (X-Frame-Options / CSP frame-ancestors), blocked as mixed content, or
+  // unreachable fires the error event, while a rendered page fires load.
+  // An <iframe> deliberately reports all of those identically. Until the
+  // load verdict arrives the embed stays hidden behind the screenshot, so
+  // a failure can never show a blank card. The timeout is a backstop for
+  // an embed that never reports either way.
+  useEffect(() => {
+    if (!website || !inView || embedState !== 'checking') return;
+    const deadline = window.setTimeout(() => {
+      setEmbedState((current) => (current === 'checking' ? 'failed' : current));
+    }, EMBED_VERIFY_TIMEOUT_MS);
+    return () => window.clearTimeout(deadline);
+  }, [website, inView, embedState]);
+
   // mshots serves a "generating" placeholder on the first request for a
   // site; re-render the image a couple of times so the real screenshot
-  // replaces it without a manual reload.
+  // replaces it without a manual reload. Stops once the live embed covers it.
   useEffect(() => {
-    if (!useSiteShot || shotTick >= 2) return;
+    if (!showSiteShot || embedLive || shotTick >= 2) return;
     shotTimerRef.current = window.setTimeout(
       () => setShotTick(shotTick + 1),
       5000 * (shotTick + 1) + index * 200,
     );
     return () => window.clearTimeout(shotTimerRef.current);
-  }, [useSiteShot, shotTick, index]);
+  }, [showSiteShot, embedLive, shotTick, index]);
 
   const handleImageError = () => {
     if (attempt + 1 >= MAX_PREVIEW_ATTEMPTS) {
@@ -172,6 +213,9 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
       1200 * (attempt + 1) + index * 150,
     );
   };
+
+  const showBackdropShot = showSiteShot && !embedLive;
+  const showBackdropOg = !embedLive && !showSiteShot;
 
   return (
     <LinkBox
@@ -204,6 +248,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
       })}
     >
       <Box
+        ref={mediaRef}
         sx={(theme) => ({
           position: 'relative',
           width: '100%',
@@ -213,45 +258,16 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           overflow: 'hidden',
         })}
       >
-        {(canEmbed || useSiteShot) && (
-          <SiteOverlay host={websiteHost} live={canEmbed} />
-        )}
-        {canEmbed ? (
-          <Box
-            className="repo-card-preview"
-            sx={{
-              position: 'absolute',
-              inset: 0,
-              overflow: 'hidden',
-              filter: 'grayscale(1)',
-              opacity: 0.88,
-              transition: 'filter 0.25s ease, opacity 0.25s ease',
-              backgroundColor: '#fff',
-            }}
-          >
-            <Box
-              component="iframe"
-              src={website}
-              title={`${repo.fullName} website`}
-              loading="lazy"
-              tabIndex={-1}
-              sx={{
-                width: '400%',
-                height: '400%',
-                border: 0,
-                transform: 'scale(0.25)',
-                transformOrigin: 'top left',
-                pointerEvents: 'none',
-                backgroundColor: '#fff',
-              }}
-            />
-          </Box>
-        ) : useSiteShot ? (
+        {website && <SiteOverlay host={websiteHost} live={embedLive} />}
+
+        {/* Backdrop: website screenshot → GitHub OG card → repo name. The
+            verified live window covers it, so the card never renders blank. */}
+        {showBackdropShot ? (
           <Box
             key={shotTick}
             component="img"
             className="repo-card-preview"
-            src={getSiteScreenshotSrc(website)}
+            src={getSiteScreenshotSrc(embedUrl)}
             alt={`${websiteHost} screenshot`}
             loading="lazy"
             onError={() => setSiteShotFailed(true)}
@@ -267,41 +283,80 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
               transition: 'filter 0.25s ease, opacity 0.25s ease',
             }}
           />
-        ) : imageFailed ? (
+        ) : showBackdropOg ? (
+          imageFailed ? (
+            <Box
+              sx={(theme) => ({
+                position: 'absolute',
+                inset: 0,
+                display: 'grid',
+                placeItems: 'center',
+                color: alpha(theme.palette.text.primary, 0.3),
+                fontFamily: 'var(--font-accent)',
+                fontSize: '1.4rem',
+                fontWeight: 900,
+              })}
+            >
+              {repo.name}
+            </Box>
+          ) : (
+            <Box
+              key={attempt}
+              component="img"
+              className="repo-card-preview"
+              src={getRepoPreviewSrc(repo.fullName, attempt)}
+              alt={`${repo.fullName} preview`}
+              loading="lazy"
+              onError={handleImageError}
+              sx={{
+                position: 'absolute',
+                inset: 0,
+                width: '100%',
+                height: '100%',
+                objectFit: 'cover',
+                filter: 'grayscale(1)',
+                opacity: 0.88,
+                transition: 'filter 0.25s ease, opacity 0.25s ease',
+              }}
+            />
+          )
+        ) : null}
+
+        {/* Live window: mounted once near the viewport, revealed only after
+            the browser confirms the site actually rendered in the frame. */}
+        {website && inView && embedState !== 'failed' && (
           <Box
-            sx={(theme) => ({
-              position: 'absolute',
-              inset: 0,
-              display: 'grid',
-              placeItems: 'center',
-              color: alpha(theme.palette.text.primary, 0.3),
-              fontFamily: 'var(--font-accent)',
-              fontSize: '1.4rem',
-              fontWeight: 900,
-            })}
-          >
-            {repo.name}
-          </Box>
-        ) : (
-          <Box
-            key={attempt}
-            component="img"
-            className="repo-card-preview"
-            src={getRepoPreviewSrc(repo.fullName, attempt)}
-            alt={`${repo.fullName} preview`}
-            loading="lazy"
-            onError={handleImageError}
+            className={embedLive ? 'repo-card-preview' : undefined}
             sx={{
               position: 'absolute',
               inset: 0,
-              width: '100%',
-              height: '100%',
-              objectFit: 'cover',
+              overflow: 'hidden',
               filter: 'grayscale(1)',
-              opacity: 0.88,
-              transition: 'filter 0.25s ease, opacity 0.25s ease',
+              opacity: embedLive ? 0.88 : 0,
+              transition: 'filter 0.25s ease, opacity 0.4s ease',
+              backgroundColor: embedLive ? '#fff' : 'transparent',
+              pointerEvents: 'none',
             }}
-          />
+          >
+            <Box
+              component="object"
+              type="text/html"
+              data={embedUrl}
+              aria-label={`${repo.fullName} website`}
+              tabIndex={-1}
+              onLoad={() => setEmbedState('ok')}
+              onError={() => setEmbedState('failed')}
+              sx={{
+                width: '400%',
+                height: '400%',
+                border: 0,
+                transform: 'scale(0.25)',
+                transformOrigin: 'top left',
+                pointerEvents: 'none',
+                backgroundColor: '#fff',
+              }}
+            />
+          </Box>
         )}
       </Box>
       <Box
