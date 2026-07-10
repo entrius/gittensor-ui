@@ -55,6 +55,16 @@ const toEmbedUrl = (url: string) => url.replace(/^http:\/\//i, 'https://');
 // Backstop for a live embed that fires neither load nor error.
 const EMBED_VERIFY_TIMEOUT_MS = 10000;
 
+// Cross-origin live embeds are Chromium-only. Chromium's <object> gives an
+// honest verdict (refused/unreachable documents fire error, rendered pages
+// fire load — verified empirically). WebKit fires load with a null
+// contentDocument for allowed and blocked frames alike, so there is no
+// client-side way to tell a live window from a blank refused one; Safari
+// gets the screenshot instead. Same-origin embeds are verifiable in every
+// browser (the document URL is readable), so the self-mirror stays live.
+const IS_CHROMIUM =
+  typeof (window as unknown as { chrome?: unknown }).chrome !== 'undefined';
+
 type EmbedState = 'checking' | 'ok' | 'failed';
 
 const getSiteHost = (url: string) => {
@@ -129,21 +139,43 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
   repo,
   index,
 }) => {
+  const website = REPO_WEBSITES[repo.fullName];
+  const embedUrl = website ? toEmbedUrl(website) : '';
+  const websiteHost = website ? getSiteHost(embedUrl) : '';
+  const sameOrigin = Boolean(website) && websiteHost === window.location.host;
+  const canAttemptEmbed = Boolean(website) && (sameOrigin || IS_CHROMIUM);
+
   const [attempt, setAttempt] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
   const [shotTick, setShotTick] = useState(0);
   const [siteShotFailed, setSiteShotFailed] = useState(false);
-  const [embedState, setEmbedState] = useState<EmbedState>('checking');
+  const [embedState, setEmbedState] = useState<EmbedState>(
+    canAttemptEmbed ? 'checking' : 'failed',
+  );
   const [inView, setInView] = useState(false);
   const retryTimerRef = useRef<number | undefined>(undefined);
   const shotTimerRef = useRef<number | undefined>(undefined);
   const mediaRef = useRef<HTMLDivElement | null>(null);
+  const embedRef = useRef<HTMLObjectElement | null>(null);
 
-  const website = REPO_WEBSITES[repo.fullName];
-  const embedUrl = website ? toEmbedUrl(website) : '';
-  const websiteHost = website ? getSiteHost(embedUrl) : '';
   const embedLive = Boolean(website) && embedState === 'ok';
   const showSiteShot = Boolean(website) && !siteShotFailed;
+
+  // A load event proves rendering on Chromium. For the same-origin mirror
+  // the initial about:blank document also fires load, so require the real
+  // URL before going live there.
+  const handleEmbedLoad = () => {
+    if (!sameOrigin) {
+      setEmbedState('ok');
+      return;
+    }
+    try {
+      const doc = embedRef.current?.contentDocument;
+      if (doc && doc.URL !== 'about:blank') setEmbedState('ok');
+    } catch {
+      /* cross-origin surprise: leave it to the deadline */
+    }
+  };
 
   useEffect(
     () => () => {
@@ -156,7 +188,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
   // Only mount the live embed once the card is near the viewport, so
   // verification timers don't start (and fail) for off-screen cards.
   useEffect(() => {
-    if (!website || inView) return;
+    if (!canAttemptEmbed || inView) return;
     const node = mediaRef.current;
     if (!node || typeof IntersectionObserver === 'undefined') {
       setInView(true);
@@ -173,7 +205,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
     );
     observer.observe(node);
     return () => observer.disconnect();
-  }, [website, inView]);
+  }, [canAttemptEmbed, inView]);
 
   // The live window is an <object>, not an <iframe>, because the browser
   // gives <object> an honest verdict: a document refused by the site
@@ -184,12 +216,12 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
   // a failure can never show a blank card. The timeout is a backstop for
   // an embed that never reports either way.
   useEffect(() => {
-    if (!website || !inView || embedState !== 'checking') return;
+    if (!canAttemptEmbed || !inView || embedState !== 'checking') return;
     const deadline = window.setTimeout(() => {
       setEmbedState((current) => (current === 'checking' ? 'failed' : current));
     }, EMBED_VERIFY_TIMEOUT_MS);
     return () => window.clearTimeout(deadline);
-  }, [website, inView, embedState]);
+  }, [canAttemptEmbed, inView, embedState]);
 
   // mshots serves a "generating" placeholder on the first request for a
   // site; re-render the image a couple of times so the real screenshot
@@ -324,7 +356,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
 
         {/* Live window: mounted once near the viewport, revealed only after
             the browser confirms the site actually rendered in the frame. */}
-        {website && inView && embedState !== 'failed' && (
+        {canAttemptEmbed && inView && embedState !== 'failed' && (
           <Box
             className={embedLive ? 'repo-card-preview' : undefined}
             sx={{
@@ -340,11 +372,12 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           >
             <Box
               component="object"
+              ref={embedRef}
               type="text/html"
               data={embedUrl}
               aria-label={`${repo.fullName} website`}
               tabIndex={-1}
-              onLoad={() => setEmbedState('ok')}
+              onLoad={handleEmbedLoad}
               onError={() => setEmbedState('failed')}
               sx={{
                 width: '400%',
