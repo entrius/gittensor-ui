@@ -132,50 +132,30 @@ const sortByEmissionShare = (repos: Repository[]) =>
       parseNumber(a.config?.emissionShare ?? 0),
   );
 
-const SiteOverlay: React.FC<{ host: string; live: boolean }> = ({
-  host,
-  live,
-}) => (
-  <>
-    {live && (
-      <Box
-        title="Live site"
-        sx={(theme) => ({
-          position: 'absolute',
-          top: 10,
-          right: 10,
-          width: 6,
-          height: 6,
-          borderRadius: '50%',
-          backgroundColor: theme.palette.status.merged,
-          zIndex: 1,
-        })}
-      />
-    )}
-    <Typography
-      sx={(theme) => ({
-        position: 'absolute',
-        bottom: 6,
-        right: 8,
-        maxWidth: 'calc(100% - 16px)',
-        px: 0.75,
-        py: 0.25,
-        borderRadius: 0.75,
-        backgroundColor: alpha(theme.palette.common.black, 0.55),
-        color: alpha(theme.palette.common.white, 0.78),
-        fontFamily: 'var(--font-accent)',
-        fontSize: '0.58rem',
-        letterSpacing: '0.06em',
-        whiteSpace: 'nowrap',
-        overflow: 'hidden',
-        textOverflow: 'ellipsis',
-        zIndex: 1,
-        pointerEvents: 'none',
-      })}
-    >
-      {host}
-    </Typography>
-  </>
+const SiteOverlay: React.FC<{ host: string }> = ({ host }) => (
+  <Typography
+    sx={(theme) => ({
+      position: 'absolute',
+      bottom: 6,
+      right: 8,
+      maxWidth: 'calc(100% - 16px)',
+      px: 0.75,
+      py: 0.25,
+      borderRadius: 0.75,
+      backgroundColor: alpha(theme.palette.common.black, 0.55),
+      color: alpha(theme.palette.common.white, 0.78),
+      fontFamily: 'var(--font-accent)',
+      fontSize: '0.58rem',
+      letterSpacing: '0.06em',
+      whiteSpace: 'nowrap',
+      overflow: 'hidden',
+      textOverflow: 'ellipsis',
+      zIndex: 1,
+      pointerEvents: 'none',
+    })}
+  >
+    {host}
+  </Typography>
 );
 
 const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
@@ -356,7 +336,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
         })}
       >
         {website && (embedLive || showSiteShot) && (
-          <SiteOverlay host={websiteHost} live={embedLive} />
+          <SiteOverlay host={websiteHost} />
         )}
 
         {/* Backdrop: website screenshot → GitHub OG card → repo name. The
@@ -471,6 +451,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
         }}
       >
         <Avatar
+          className="repo-card-preview"
           src={getRepositoryOwnerAvatarSrc(repo.owner)}
           alt={repo.owner}
           sx={(theme) => ({
@@ -478,6 +459,9 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
             height: 26,
             border: `1px solid ${theme.palette.border.medium}`,
             flexShrink: 0,
+            filter: 'grayscale(1)',
+            opacity: 0.88,
+            transition: 'filter 0.25s ease, opacity 0.25s ease',
           })}
         />
         <Box sx={{ minWidth: 0 }}>
@@ -639,10 +623,7 @@ const HomePage: React.FC = () => {
                 textTransform: 'uppercase',
                 whiteSpace: 'nowrap',
                 transition: 'all 0.25s ease',
-                backgroundColor:
-                  timeline === tab
-                    ? alpha(theme.palette.status.merged, 0.15)
-                    : 'transparent',
+                backgroundColor: 'transparent',
                 color:
                   timeline === tab
                     ? theme.palette.status.merged
@@ -650,7 +631,7 @@ const HomePage: React.FC = () => {
                 '&:hover': {
                   backgroundColor:
                     timeline === tab
-                      ? alpha(theme.palette.status.merged, 0.15)
+                      ? 'transparent'
                       : alpha(theme.palette.text.primary, 0.06),
                 },
               })}
