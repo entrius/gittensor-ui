@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Avatar, Box, Stack, Typography } from '@mui/material';
+import { Avatar, Box, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
@@ -550,11 +550,70 @@ const RepoCardSkeleton: React.FC<{ index: number }> = ({ index }) => (
 const DashboardTimeline = React.lazy(() => import('./dashboard/DashboardPage'));
 
 type Timeline = 'repositories' | 'dashboard';
-const TIMELINES: readonly Timeline[] = ['repositories', 'dashboard'];
+
+// A left/right dial button; grayed out when the dial can't turn that way
+// (the word that direction is already showing).
+const DialArrow: React.FC<{
+  dir: 'left' | 'right';
+  active: Timeline;
+  onTurn: (dir: 'left' | 'right') => void;
+}> = ({ dir, active, onTurn }) => {
+  const target: Timeline = dir === 'right' ? 'dashboard' : 'repositories';
+  const enabled = target !== active;
+  return (
+    <Box
+      component="span"
+      role="button"
+      tabIndex={enabled ? 0 : -1}
+      aria-disabled={!enabled}
+      title={enabled ? `Switch to ${target}` : undefined}
+      onClick={() => onTurn(dir)}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          onTurn(dir);
+        }
+      }}
+      sx={(theme) => ({
+        fontSize: '0.8rem',
+        lineHeight: 1,
+        px: 0.5,
+        cursor: enabled ? 'pointer' : 'default',
+        color: alpha(theme.palette.text.primary, enabled ? 0.45 : 0.14),
+        transition: 'color 0.2s ease',
+        ...(enabled && {
+          '&:hover': {
+            color: alpha(theme.palette.text.primary, 0.85),
+          },
+        }),
+        '&:focus-visible': {
+          outline: `2px solid ${theme.palette.status.merged}`,
+          outlineOffset: 2,
+          borderRadius: 0.75,
+        },
+      })}
+    >
+      {dir === 'left' ? '‹' : '›'}
+    </Box>
+  );
+};
 
 const HomePage: React.FC = () => {
   const reposQuery = useReposAndWeights();
   const [timeline, setTimeline] = useState<Timeline>('repositories');
+  // The word leaving the dial; rendered just long enough to slide out in
+  // the direction of travel, then cleared by onAnimationEnd.
+  const [leaving, setLeaving] = useState<{
+    word: Timeline;
+    dir: 'left' | 'right';
+  } | null>(null);
+
+  const turnDial = (dir: 'left' | 'right') => {
+    const target: Timeline = dir === 'right' ? 'dashboard' : 'repositories';
+    if (target === timeline) return;
+    setLeaving({ word: timeline, dir });
+    setTimeline(target);
+  };
 
   const repos = useMemo(
     () => sortByEmissionShare(reposQuery.data ?? []),
@@ -595,66 +654,108 @@ const HomePage: React.FC = () => {
           Gittensor
         </Typography>
 
-        <Stack
-          direction="row"
-          spacing={0}
-          sx={(theme) => ({
-            mt: { xs: 2.5, md: 3.5 },
+        {/* Dial toggle: only the active timeline shows, flanked by arrows.
+            Turning the dial slides the old word out and the new word in,
+            both moving in the direction of travel. */}
+        <Box
+          sx={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 1,
+            mt: { xs: 2.5, md: 3 },
             mx: 'auto',
+            py: 0.7,
             width: 'fit-content',
-            borderRadius: 1,
-            overflow: 'hidden',
-            border: `1px solid ${theme.palette.border.light}`,
+            userSelect: 'none',
+            fontFamily: 'var(--font-accent)',
+            fontSize: '0.72rem',
+            fontWeight: 700,
+            letterSpacing: '0.1em',
+            textTransform: 'uppercase',
+            whiteSpace: 'nowrap',
             ...fadeUp(100),
-          })}
+            '@keyframes timelineDialInRight': {
+              '0%': { opacity: 0, transform: 'translateX(55%)' },
+              '100%': { opacity: 1, transform: 'translateX(0)' },
+            },
+            '@keyframes timelineDialInLeft': {
+              '0%': { opacity: 0, transform: 'translateX(-55%)' },
+              '100%': { opacity: 1, transform: 'translateX(0)' },
+            },
+            '@keyframes timelineDialOutRight': {
+              '0%': { opacity: 1, transform: 'translateX(0)' },
+              '100%': { opacity: 0, transform: 'translateX(55%)' },
+            },
+            '@keyframes timelineDialOutLeft': {
+              '0%': { opacity: 1, transform: 'translateX(0)' },
+              '100%': { opacity: 0, transform: 'translateX(-55%)' },
+            },
+          }}
         >
-          {TIMELINES.map((tab) => (
+          <DialArrow dir="left" active={timeline} onTurn={turnDial} />
+          {/* The hidden word reserves the width of the longest label so
+              the window doesn't resize as the dial turns. */}
+          <Box sx={{ position: 'relative', overflow: 'hidden' }}>
+            <Box component="span" aria-hidden sx={{ visibility: 'hidden' }}>
+              repositories
+            </Box>
+            {leaving && (
+              <Box
+                component="span"
+                aria-hidden
+                onAnimationEnd={() => setLeaving(null)}
+                sx={(theme) => ({
+                  position: 'absolute',
+                  inset: 0,
+                  textAlign: 'center',
+                  color: theme.palette.status.merged,
+                  animation: `${
+                    leaving.dir === 'right'
+                      ? 'timelineDialOutLeft'
+                      : 'timelineDialOutRight'
+                  } 0.3s ease forwards`,
+                })}
+              >
+                {leaving.word}
+              </Box>
+            )}
             <Box
-              key={tab}
-              onClick={() => setTimeline(tab)}
+              component="span"
+              key={timeline}
               sx={(theme) => ({
-                px: 2.25,
-                py: 0.7,
-                cursor: 'pointer',
-                fontFamily: 'var(--font-accent)',
-                fontSize: '0.68rem',
-                fontWeight: 700,
-                letterSpacing: '0.1em',
-                textTransform: 'uppercase',
-                whiteSpace: 'nowrap',
-                transition: 'all 0.25s ease',
-                backgroundColor: 'transparent',
-                color:
-                  timeline === tab
-                    ? theme.palette.status.merged
-                    : alpha(theme.palette.text.primary, 0.4),
-                '&:hover': {
-                  backgroundColor:
-                    timeline === tab
-                      ? 'transparent'
-                      : alpha(theme.palette.text.primary, 0.06),
-                },
+                position: 'absolute',
+                inset: 0,
+                textAlign: 'center',
+                color: theme.palette.status.merged,
+                animation: leaving
+                  ? `${
+                      leaving.dir === 'right'
+                        ? 'timelineDialInRight'
+                        : 'timelineDialInLeft'
+                    } 0.3s ease`
+                  : undefined,
               })}
             >
-              {tab}
+              {timeline}
             </Box>
-          ))}
-        </Stack>
+          </Box>
+          <DialArrow dir="right" active={timeline} onTurn={turnDial} />
+        </Box>
 
         {timeline === 'repositories' ? (
           <>
             <Typography
               sx={(theme) => ({
-                mt: { xs: 3, md: 4.5 },
+                mt: { xs: 1.25, md: 1.5 },
                 mx: 'auto',
                 maxWidth: 640,
-                color: alpha(theme.palette.text.primary, 0.55),
+                color: alpha(theme.palette.text.primary, 0.45),
                 fontFamily: 'var(--font-accent)',
-                fontSize: '0.72rem',
-                letterSpacing: '0.14em',
+                fontSize: '0.66rem',
+                letterSpacing: '0.16em',
                 textTransform: 'uppercase',
                 textAlign: 'center',
-                lineHeight: 1.9,
+                lineHeight: 1.7,
                 ...fadeUp(120),
               })}
             >
@@ -663,7 +764,7 @@ const HomePage: React.FC = () => {
 
             <Box
               sx={{
-                mt: { xs: 4, md: 6 },
+                mt: { xs: 5, md: 7 },
                 display: 'grid',
                 gridTemplateColumns: {
                   xs: '1fr',
@@ -701,19 +802,19 @@ const HomePage: React.FC = () => {
             )}
           </>
         ) : (
-          <Box sx={{ mt: { xs: 2, md: 3 } }}>
+          <Box>
             <Typography
               sx={(theme) => ({
-                mt: { xs: 1, md: 1.5 },
+                mt: { xs: 1.25, md: 1.5 },
                 mx: 'auto',
                 maxWidth: 640,
-                color: alpha(theme.palette.text.primary, 0.55),
+                color: alpha(theme.palette.text.primary, 0.45),
                 fontFamily: 'var(--font-accent)',
-                fontSize: '0.72rem',
-                letterSpacing: '0.14em',
+                fontSize: '0.66rem',
+                letterSpacing: '0.16em',
                 textTransform: 'uppercase',
                 textAlign: 'center',
-                lineHeight: 1.9,
+                lineHeight: 1.7,
                 ...fadeUp(120),
               })}
             >
