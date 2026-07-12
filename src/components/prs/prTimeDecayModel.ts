@@ -34,9 +34,20 @@ export interface DecayProjection {
   chartNowMultiplier: number | null;
   /** Subnet-reported multiplier (used to back-derive pre-decay score). */
   currentMultiplier: number | null;
+  /** Multiplier to display — the subnet value wins when the curve disagrees. */
+  nowMultiplier: number | null;
+  /** True when the subnet-reported multiplier contradicts the local curve. */
+  curveMismatch: boolean;
   preDecayScore: number | null;
   chartNowScore: number | null;
 }
+
+/**
+ * Subnet multipliers arrive rounded to 2dp, so small drift from the local
+ * curve is expected; beyond this the curve params must be wrong (e.g. the
+ * repo config failed to load) and the subnet value is authoritative.
+ */
+const NOW_MULTIPLIER_TOLERANCE = 0.05;
 
 const DEFAULT_PARAMS: DecayParams = {
   graceHours: 12,
@@ -176,6 +187,11 @@ export function buildDecayProjection(
     earned,
     currentMultiplier ?? chartNowMultiplier,
   );
+  const curveMismatch =
+    currentMultiplier != null &&
+    chartNowMultiplier != null &&
+    Math.abs(currentMultiplier - chartNowMultiplier) > NOW_MULTIPLIER_TOLERANCE;
+  const nowMultiplier = curveMismatch ? currentMultiplier : chartNowMultiplier;
   return {
     isMerged,
     inWindow: isWithinLookbackWindow(daysSinceMerge, params.lookbackDays),
@@ -183,8 +199,10 @@ export function buildDecayProjection(
     daysSinceMerge,
     chartNowMultiplier,
     currentMultiplier,
+    nowMultiplier,
+    curveMismatch,
     preDecayScore,
-    chartNowScore: applyMultiplier(preDecayScore, chartNowMultiplier),
+    chartNowScore: applyMultiplier(preDecayScore, nowMultiplier),
   };
 }
 
@@ -194,5 +212,8 @@ export function buildDecaySubline(projection: DecayProjection): string {
   if (projection.daysSinceMerge > projection.lookbackDays) {
     return `Outside ${projection.lookbackDays}-day scoring window.`;
   }
-  return `${projection.daysSinceMerge.toFixed(1)} day(s) since merge`;
+  const base = `${projection.daysSinceMerge.toFixed(1)} day(s) since merge`;
+  return projection.curveMismatch
+    ? `${base} · showing subnet-reported multiplier (curve is approximate)`
+    : base;
 }
