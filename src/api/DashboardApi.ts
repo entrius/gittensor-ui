@@ -30,8 +30,14 @@ export const useStats = () => useDashboardQuery<Stats>('useStats', '/stats');
 export const getReposQueryKey = () =>
   ['useReposAndWeights', '/dash/repos', undefined] as const;
 
-export const useReposAndWeights = () =>
-  useDashboardQuery<Repository[]>('useReposAndWeights', '/repos');
+export const useReposAndWeights = (enabled?: boolean) =>
+  useDashboardQuery<Repository[]>(
+    'useReposAndWeights',
+    '/repos',
+    undefined,
+    undefined,
+    enabled,
+  );
 
 export const useLanguagesAndWeights = () =>
   useDashboardQuery<LanguageWeight[]>('useLanguagesAndWeights', '/languages');

@@ -1,5 +1,6 @@
 // Repository API hooks - uses /repos endpoints
 import { useApiQuery } from './ApiUtils';
+import { useReposAndWeights } from './DashboardApi';
 import { type RepositoryMaintainer, type RepositoryIssue } from './models';
 import { type Repository, type RepositoryMiner } from './models/Dashboard';
 
@@ -28,6 +29,22 @@ export const useRepositoryConfig = (repo: string) =>
     'useRepositoryConfig',
     `/${encodeURIComponent(repo)}`,
   );
+
+/**
+ * Repository config resolved case-insensitively. `/repos/{name}` matches the
+ * canonical casing only, while PR records may carry a lowercased repository
+ * name — on a direct miss this falls back to matching the full repositories
+ * list by lowercased name.
+ */
+export const useResolvedRepositoryConfig = (
+  repo: string,
+): Repository | null => {
+  const direct = useRepositoryConfig(repo);
+  const fallback = useReposAndWeights(direct.isError);
+  if (direct.data) return direct.data;
+  const lower = repo.toLowerCase();
+  return fallback.data?.find((r) => r.fullName.toLowerCase() === lower) ?? null;
+};
 
 /**
  * Get maintainers (assignees) for a specific repository

@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
 import { type Theme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
-import { useGeneralConfig, useRepositoryConfig } from '../../api';
+import { useGeneralConfig, useResolvedRepositoryConfig } from '../../api';
 import { STATUS_COLORS, TEXT_OPACITY } from '../../theme';
 import {
   echartsAxisTooltipChrome,
@@ -65,10 +65,10 @@ function buildGradient(opacities?: number[]) {
 function resolveNowMarker(projection: DecayProjection): NowMarker | null {
   if (!projection.isMerged || !projection.inWindow) return null;
   if (projection.daysSinceMerge == null) return null;
-  if (projection.chartNowMultiplier == null) return null;
+  if (projection.nowMultiplier == null) return null;
   return {
     day: +projection.daysSinceMerge.toFixed(2),
-    multiplier: projection.chartNowMultiplier,
+    multiplier: projection.nowMultiplier,
   };
 }
 
@@ -272,7 +272,7 @@ function PRTimeDecayChart({
 }: PRTimeDecayChartProps) {
   const theme = useTheme();
   const { data: generalConfig } = useGeneralConfig();
-  const { data: repoData } = useRepositoryConfig(repository);
+  const repoData = useResolvedRepositoryConfig(repository);
   const params = useMemo(
     () => resolveDecayParams(generalConfig, repoData?.config),
     [generalConfig, repoData],
@@ -347,7 +347,7 @@ function PRTimeDecayChart({
               </Typography>
             </Box>
           )}
-          {showNow && projection.chartNowMultiplier != null && (
+          {showNow && projection.nowMultiplier != null && (
             <Box sx={{ textAlign: 'right' }}>
               <Typography
                 sx={{
@@ -360,7 +360,7 @@ function PRTimeDecayChart({
                   lineHeight: 1.1,
                 }}
               >
-                {projection.chartNowMultiplier.toFixed(2)}×
+                {projection.nowMultiplier.toFixed(2)}×
               </Typography>
               <Typography sx={{ color: muted, fontSize: '0.65rem' }}>
                 multiplier
