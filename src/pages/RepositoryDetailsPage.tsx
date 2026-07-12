@@ -651,12 +651,10 @@ const RepositoryDetailsPage: React.FC = () => {
                 {/* Repository Stats */}
                 <RepositoryStats repositoryFullName={repo} />
 
-                {tabValue === 4 || tabValue === 5 ? (
-                  <RepositoryPrActivityChart
-                    repositoryFullName={repo}
-                    viewMode={tabValue === 4 ? 'issues' : 'prs'}
-                  />
-                ) : null}
+                <RepositoryPrActivityChart
+                  repositoryFullName={repo}
+                  viewMode={tabValue === 4 ? 'issues' : 'prs'}
+                />
 
                 <RepositorySocialLinks repositoryFullName={repo} />
 

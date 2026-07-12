@@ -10,11 +10,27 @@ import {
   useTheme,
 } from '@mui/material';
 import { useRepositoryMaintainers } from '../../api';
+import { type RepositoryMaintainer } from '../../api/models';
 import { STATUS_COLORS } from '../../theme';
 
 interface RepositoryMaintainersProps {
   repositoryFullName: string;
 }
+
+// When the API lists no maintainers (or the request fails), fall back to the
+// repo owner so the section never disappears from the sidebar.
+const ownerFallback = (repositoryFullName: string): RepositoryMaintainer[] => {
+  const owner = repositoryFullName.split('/')[0];
+  if (!owner) return [];
+  return [
+    {
+      login: owner,
+      avatarUrl: `https://github.com/${owner}.png?size=80`,
+      htmlUrl: `https://github.com/${owner}`,
+      type: 'User',
+    },
+  ];
+};
 
 const RepositoryMaintainers: React.FC<RepositoryMaintainersProps> = ({
   repositoryFullName,
@@ -44,7 +60,12 @@ const RepositoryMaintainers: React.FC<RepositoryMaintainersProps> = ({
     );
   }
 
-  if (!maintainers || maintainers.length === 0) {
+  const displayMaintainers =
+    maintainers && maintainers.length > 0
+      ? maintainers
+      : ownerFallback(repositoryFullName);
+
+  if (displayMaintainers.length === 0) {
     return null;
   }
 
@@ -62,12 +83,12 @@ const RepositoryMaintainers: React.FC<RepositoryMaintainersProps> = ({
           component="span"
           sx={{ color: STATUS_COLORS.open, fontSize: '0.8em' }}
         >
-          ({maintainers.length})
+          ({displayMaintainers.length})
         </Typography>
       </Typography>
 
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
-        {maintainers.map((maintainer) => (
+        {displayMaintainers.map((maintainer) => (
           <Tooltip key={maintainer.login} title={maintainer.login} arrow>
             <Link
               href={maintainer.htmlUrl}
