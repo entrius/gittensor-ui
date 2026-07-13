@@ -104,6 +104,31 @@ export function resolveDecayParams(
   };
 }
 
+/**
+ * Re-fit the sigmoid midpoint so the curve passes through the subnet-reported
+ * (day, multiplier) point. Repos can override decay hyperparameters without
+ * the API publishing them (`/repos/{name}` only exposes emission shares), so
+ * when the reported multiplier contradicts the resolved params the fitted
+ * curve is the closest available approximation of the repo's real schedule.
+ */
+export function fitCurveThroughPoint(
+  params: DecayParams,
+  day: number,
+  multiplier: number,
+): DecayParams {
+  if (!(multiplier > params.floor) || !(multiplier < 1) || day <= 0) {
+    return params;
+  }
+  const midpoint = day - Math.log(1 / multiplier - 1) / params.steepness;
+  return {
+    ...params,
+    midpoint,
+    // A reported multiplier below 1 means decay already started, so the
+    // grace period cannot extend past the merge age.
+    graceHours: Math.min(params.graceHours, day * 24),
+  };
+}
+
 function decayAt(days: number, params: DecayParams): number {
   if (days <= params.graceHours / 24) return 1;
   const sigmoid =
@@ -214,6 +239,6 @@ export function buildDecaySubline(projection: DecayProjection): string {
   }
   const base = `${projection.daysSinceMerge.toFixed(1)} day(s) since merge`;
   return projection.curveMismatch
-    ? `${base} · showing subnet-reported multiplier (curve is approximate)`
+    ? `${base} · curve fitted to subnet-reported multiplier (repo overrides decay params)`
     : base;
 }

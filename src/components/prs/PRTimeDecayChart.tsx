@@ -16,6 +16,7 @@ import {
   buildDecaySubline,
   type DecayParams,
   type DecayProjection,
+  fitCurveThroughPoint,
   resolveDecayParams,
 } from './prTimeDecayModel';
 
@@ -252,14 +253,18 @@ function buildChartOption(
   const fontFamily = echartsFontFamily(theme);
   const mutedHex = alpha(theme.palette.common.white, TEXT_OPACITY.tertiary);
   const marker = resolveNowMarker(projection);
-  const seriesData = injectNowPoint(buildDecayCurve(params), marker);
+  const curveParams =
+    projection.curveMismatch && marker
+      ? fitCurveThroughPoint(params, marker.day, marker.multiplier)
+      : params;
+  const seriesData = injectNowPoint(buildDecayCurve(curveParams), marker);
   return {
     ...echartsTransparentBackground(),
     grid: { left: 44, right: 16, top: 28, bottom: 36 },
     tooltip: buildTooltip(theme, projection.preDecayScore, mutedHex),
-    xAxis: buildXAxis(axis, fontFamily, params.lookbackDays),
+    xAxis: buildXAxis(axis, fontFamily, curveParams.lookbackDays),
     yAxis: buildYAxis(axis),
-    series: [buildSeries(theme, axis, params, seriesData, marker)],
+    series: [buildSeries(theme, axis, curveParams, seriesData, marker)],
   };
 }
 
