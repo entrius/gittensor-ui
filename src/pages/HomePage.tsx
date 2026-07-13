@@ -25,10 +25,14 @@ const getRepoPreviewSrc = (fullName: string, attempt: number) =>
 
 // Experiment: show each project's own website in the card instead of the
 // GitHub OpenGraph card. Homepages come from the repos' GitHub metadata
-// (snapshotted 2026-07-09); repos without a website fall back to the OG image.
+// (snapshotted 2026-07-13); repos without a website fall back to the OG image.
 const REPO_WEBSITES: Record<string, string> = {
   'gittensor-ai-lab/sparkinfer':
     'https://gittensor-ai-lab.github.io/sparkinfer/dashboard/',
+  'gittensor-model-hub/SparkDistill':
+    'https://gittensor-model-hub.github.io/SparkDistill/',
+  'James-CUDA/Gittensor-TinyRouter':
+    'https://james-cuda.github.io/Gittensor-TinyRouter/',
   'JSONbored/metagraphed': 'https://metagraph.sh',
   'gittensor-vanguard/vanguarstew':
     'https://gittensor-vanguard.github.io/vanguarstew/',
