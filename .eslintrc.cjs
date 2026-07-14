@@ -7,6 +7,14 @@ module.exports = {
     'plugin:react-hooks/recommended',
   ],
   ignorePatterns: ['dist', '.eslintrc.cjs'],
+  overrides: [
+    {
+      // Build-time Node scripts, not browser code
+      files: ['scripts/**/*.mjs'],
+      env: { node: true },
+      rules: { 'no-console': 'off' },
+    },
+  ],
   parser: '@typescript-eslint/parser',
   parserOptions: {
     ecmaVersion: 'latest',

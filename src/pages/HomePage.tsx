@@ -8,6 +8,7 @@ import { useReposAndWeights } from '../api';
 import { type Repository } from '../api/models/Dashboard';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import { minerRepositoryPath, parseNumber } from '../utils';
+import repoWebsitesSnapshot from '../generated/repoWebsites.json';
 
 const fadeUp = (delayMs = 0) => ({
   opacity: 0,
@@ -23,28 +24,19 @@ const getRepoPreviewSrc = (fullName: string, attempt: number) =>
     attempt > 0 ? `?retry=${attempt}` : ''
   }`;
 
-// Experiment: show each project's own website in the card instead of the
-// GitHub OpenGraph card. Homepages come from the repos' GitHub metadata
-// (snapshotted 2026-07-09); repos without a website fall back to the OG image.
+// Show each project's own website in the card instead of the GitHub
+// OpenGraph card. Homepages come from the repos' GitHub metadata, snapshotted
+// into repoWebsites.json by scripts/fetch-repo-websites.mjs on every build
+// (the `prebuild` hook), so a project adding or changing its GitHub website
+// is picked up on the next deploy. Repos without one fall back to the OG
+// image.
 const REPO_WEBSITES: Record<string, string> = {
-  'gittensor-ai-lab/sparkinfer':
-    'https://gittensor-ai-lab.github.io/sparkinfer/dashboard/',
-  'JSONbored/metagraphed': 'https://metagraph.sh',
-  'gittensor-vanguard/vanguarstew':
-    'https://gittensor-vanguard.github.io/vanguarstew/',
+  ...repoWebsitesSnapshot,
   // The site you are on right now — mirror its live dashboard. A page cannot
-  // iframe its own URL (recursion protection), so point at /dashboard.
+  // iframe its own URL (recursion protection), so point at /dashboard. This
+  // stays in code (not the snapshot): the mirror must be same-origin on every
+  // deploy target, and it must win even if the repo sets a GitHub homepage.
   'entrius/gittensor': `${window.location.origin}/dashboard`,
-  'JSONbored/gittensory': 'https://gittensory.aethereal.dev/',
-  'Autovara/kata': 'https://dashboardking.ngrok.app/',
-  'Geniepod/genie-claw': 'https://genieclaw.org',
-  'vouchdev/vouch': 'https://vouchai.dev',
-  'phase-rs/phase': 'http://preview.phase-rs.dev/',
-  'imagent-ai/imagent': 'https://tryimagent.com/',
-  'mini-router/minirouter': 'https://mini-router.github.io/minirouter/',
-  'zeokin/Cuda-Compute-OSS': 'https://zeokin.github.io/Cuda-Compute-Dashboard/',
-  'JSONbored/awesome-claude': 'https://heyclau.de',
-  'we-promise/sure': 'https://sure.am',
 };
 
 // An https page cannot embed http content (browsers block it as mixed
