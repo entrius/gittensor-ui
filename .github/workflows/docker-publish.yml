@@ -6,6 +6,11 @@ on:
       - main
       - test
 
+# The GITHUB_TOKEN only reads public repo metadata in the prebuild script;
+# never let it carry write scopes into a job that pushes public images.
+permissions:
+  contents: read
+
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
@@ -42,5 +47,5 @@ jobs:
           file: Dockerfile
           push: true
           tags: ${{ steps.tags.outputs.tags }}
-          build-args: |
-            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
+          secrets: |
+            github_token=${{ secrets.GITHUB_TOKEN }}
