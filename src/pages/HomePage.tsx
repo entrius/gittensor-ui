@@ -9,6 +9,21 @@ import { type Repository } from '../api/models/Dashboard';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import { minerRepositoryPath, parseNumber } from '../utils';
 import repoWebsitesSnapshot from '../generated/repoWebsites.json';
+import repoRegistrySnapshot from '../generated/repoRegistry.json';
+import repoPreviewsManifest from '../generated/repoPreviews.json';
+
+// Build-time preview assets (see scripts/fetch-repo-previews.mjs): each
+// repo's screenshot/OG card downloaded into public/previews/ so the grid
+// serves first-party images that are ready the moment the page paints,
+// instead of hitting mshots/GitHub from the visitor's browser. Live embeds
+// still verify and swap in over these at runtime.
+const REPO_PREVIEWS: Record<string, string> = repoPreviewsManifest;
+
+// Build-time snapshot of the registry (see scripts/fetch-repo-registry.mjs),
+// so the grid renders real cards on first paint instead of skeletons — the
+// registry changes rarely enough that the snapshot is almost always exactly
+// what the live query returns moments later.
+const REGISTRY_SNAPSHOT = repoRegistrySnapshot as Repository[];
 
 const fadeUp = (delayMs = 0) => ({
   opacity: 0,
@@ -81,6 +96,13 @@ const EMBED_IFRAME_SANDBOX =
 const EMBED_ZOOM = 0.25;
 const EMBED_SIZE = `${100 / EMBED_ZOOM}%`;
 
+// The visible iframe reloads the site from scratch after verification, so
+// revealing it immediately shows a blank window booting up (worst on slow
+// hosts with entrance animations, e.g. kata via ngrok). Instead it loads
+// hidden behind the backdrop and fades in only after its load event plus a
+// grace period that lets intro animations finish off-screen.
+const LIVE_REVEAL_GRACE_MS = 1800;
+
 // mshots returns a "generating…" placeholder on the first request for a
 // URL; remount the image a couple of times so the real shot swaps in.
 const SHOT_REFRESH_MAX = 2;
@@ -89,16 +111,41 @@ const SHOT_REFRESH_STAGGER_MS = 200;
 
 type EmbedState = 'checking' | 'ok' | 'failed';
 
+// Preview images (OG cards, screenshots) pop in raw whenever their request
+// happens to finish, which makes the loading phase feel chaotic. This wraps
+// them so each one fades in on load instead; PREVIEW_MEDIA_SX already
+// carries the opacity transition.
+const PreviewImg: React.FC<{
+  className?: string;
+  src: string;
+  alt: string;
+  onError?: () => void;
+  sx: object;
+}> = ({ sx, onError, ...imgProps }) => {
+  const [loaded, setLoaded] = useState(false);
+  return (
+    <Box
+      component="img"
+      loading="lazy"
+      onLoad={() => setLoaded(true)}
+      onError={onError}
+      {...imgProps}
+      sx={{ ...sx, opacity: loaded ? 1 : 0 }}
+    />
+  );
+};
+
 // Shared look for every card preview surface (screenshot, OG image, live
-// window): grayscale until the card is hovered.
+// window): grayscale until the card is hovered. Full opacity + a contrast
+// lift, not a dim: the sites are mostly dark-on-dark, so dimming melts them
+// into the page while contrast keeps each one's structure legible.
 const PREVIEW_MEDIA_SX = {
   position: 'absolute',
   inset: 0,
   width: '100%',
   height: '100%',
   objectFit: 'cover',
-  filter: 'grayscale(1)',
-  opacity: 0.88,
+  filter: 'grayscale(1) contrast(1.14) brightness(1.08)',
   transition: 'filter 0.25s ease, opacity 0.25s ease',
 } as const;
 
@@ -126,10 +173,13 @@ const sortByEmissionShare = (repos: Repository[]) =>
 
 const SiteOverlay: React.FC<{ host: string }> = ({ host }) => (
   <Typography
+    className="repo-card-host"
     sx={(theme) => ({
       position: 'absolute',
       bottom: 6,
       right: 8,
+      opacity: 0,
+      transition: 'opacity 0.2s ease',
       maxWidth: 'calc(100% - 16px)',
       px: 0.75,
       py: 0.25,
@@ -160,6 +210,10 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
   const sameOrigin = Boolean(website) && websiteHost === window.location.host;
   const canAttemptEmbed = Boolean(website) && IS_CHROMIUM;
 
+  const localPreview = REPO_PREVIEWS[repo.fullName];
+  const [localFailed, setLocalFailed] = useState(false);
+  const useLocal = Boolean(localPreview) && !localFailed;
+
   const [attempt, setAttempt] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
   const [shotTick, setShotTick] = useState(0);
@@ -168,8 +222,10 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
     canAttemptEmbed ? 'checking' : 'failed',
   );
   const [inView, setInView] = useState(false);
+  const [liveShown, setLiveShown] = useState(false);
   const retryTimerRef = useRef<number | undefined>(undefined);
   const shotTimerRef = useRef<number | undefined>(undefined);
+  const revealTimerRef = useRef<number | undefined>(undefined);
   const mediaRef = useRef<HTMLDivElement | null>(null);
   const embedRef = useRef<HTMLObjectElement | null>(null);
 
@@ -188,6 +244,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
     () => () => {
       window.clearTimeout(retryTimerRef.current);
       window.clearTimeout(shotTimerRef.current);
+      window.clearTimeout(revealTimerRef.current);
     },
     [],
   );
@@ -300,6 +357,17 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           filter: 'grayscale(0)',
           opacity: 1,
         },
+        // The host pill only matters while the preview is being inspected;
+        // at rest it would be one more repeated element muddying the grid.
+        // Touch devices never hover, so they keep it visible.
+        '&:hover .repo-card-host': {
+          opacity: 1,
+        },
+        '@media (hover: none)': {
+          '& .repo-card-host': {
+            opacity: 1,
+          },
+        },
         // Hovering a live card hands the pointer to the embedded site so it
         // can be scrolled and browsed like a real window; the footer below
         // the preview stays the link to the repo page. Mouse-like pointers
@@ -327,54 +395,62 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           overflow: 'hidden',
         })}
       >
-        {website && (embedLive || showSiteShot) && (
+        {website && (liveShown || showSiteShot || useLocal) && (
           <SiteOverlay host={websiteHost} />
         )}
 
-        {/* Backdrop: website screenshot → GitHub OG card → repo name. The
-            verified live window covers it, so the card never renders blank.
-            While an embed is still being verified the neutral card
-            background shows instead — most verdicts land within seconds. */}
-        {!embedLive &&
-          (showSiteShot ? (
-            <Box
+        {/* Name plate: the instant base layer of every card. Previews fade
+            in over it, so the media area never sits as an empty void while
+            an embed verifies or an image loads — and it doubles as the
+            terminal fallback when every preview source fails. */}
+        <Box
+          sx={(theme) => ({
+            position: 'absolute',
+            inset: 0,
+            display: 'grid',
+            placeItems: 'center',
+            px: 2,
+            textAlign: 'center',
+            color: alpha(theme.palette.text.primary, 0.3),
+            fontFamily: 'var(--font-accent)',
+            fontSize: '1.4rem',
+            fontWeight: 900,
+          })}
+        >
+          {repo.name}
+        </Box>
+
+        {/* Preview: build-time first-party asset (instant) → live-fetched
+            website screenshot → GitHub OG card, fading in over the name
+            plate; the verified live window covers everything. The remote
+            chain only runs for repos missing a build-time asset. */}
+        {!liveShown &&
+          (useLocal ? (
+            <PreviewImg
+              className="repo-card-preview"
+              src={localPreview}
+              alt={`${repo.fullName} preview`}
+              onError={() => setLocalFailed(true)}
+              sx={{ ...PREVIEW_MEDIA_SX, objectPosition: 'top' }}
+            />
+          ) : showSiteShot ? (
+            <PreviewImg
               key={shotTick}
-              component="img"
               className="repo-card-preview"
               src={getSiteScreenshotSrc(website)}
               alt={`${websiteHost} screenshot`}
-              loading="lazy"
               onError={() => setSiteShotFailed(true)}
               sx={{ ...PREVIEW_MEDIA_SX, objectPosition: 'top' }}
             />
-          ) : showBackdropOg ? (
-            imageFailed ? (
-              <Box
-                sx={(theme) => ({
-                  position: 'absolute',
-                  inset: 0,
-                  display: 'grid',
-                  placeItems: 'center',
-                  color: alpha(theme.palette.text.primary, 0.3),
-                  fontFamily: 'var(--font-accent)',
-                  fontSize: '1.4rem',
-                  fontWeight: 900,
-                })}
-              >
-                {repo.name}
-              </Box>
-            ) : (
-              <Box
-                key={attempt}
-                component="img"
-                className="repo-card-preview"
-                src={getRepoPreviewSrc(repo.fullName, attempt)}
-                alt={`${repo.fullName} preview`}
-                loading="lazy"
-                onError={handleImageError}
-                sx={PREVIEW_MEDIA_SX}
-              />
-            )
+          ) : showBackdropOg && !imageFailed ? (
+            <PreviewImg
+              key={attempt}
+              className="repo-card-preview"
+              src={getRepoPreviewSrc(repo.fullName, attempt)}
+              alt={`${repo.fullName} preview`}
+              onError={handleImageError}
+              sx={PREVIEW_MEDIA_SX}
+            />
           ) : null)}
 
         {/* Hidden verifier: mounted once near the viewport, unmounted as
@@ -397,19 +473,25 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           />
         )}
 
-        {/* Live window: shown only after verification, as a sandboxed
-            iframe so the embedded site can never navigate the app away
-            (an <object> cannot carry a sandbox attribute). */}
+        {/* Live window: mounted after verification as a sandboxed iframe so
+            the embedded site can never navigate the app away (an <object>
+            cannot carry a sandbox attribute). It loads hidden behind the
+            backdrop and fades in LIVE_REVEAL_GRACE_MS after its load event,
+            so slow hosts and entrance animations never show a blank window
+            booting up. The hover classes attach only once it is shown —
+            otherwise hovering would force the half-loaded window visible. */}
         {embedLive && (
           <Box
-            className="repo-card-preview repo-card-embed"
+            className={
+              liveShown ? 'repo-card-preview repo-card-embed' : undefined
+            }
             sx={{
               position: 'absolute',
               inset: 0,
               overflow: 'hidden',
-              filter: 'grayscale(1)',
-              opacity: 0.88,
-              transition: 'filter 0.25s ease, opacity 0.25s ease',
+              filter: 'grayscale(1) contrast(1.14) brightness(1.08)',
+              opacity: liveShown ? 1 : 0,
+              transition: 'filter 0.25s ease, opacity 0.35s ease',
               backgroundColor: '#fff',
               pointerEvents: 'none',
             }}
@@ -420,6 +502,24 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
               title={`${repo.fullName} website`}
               sandbox={EMBED_IFRAME_SANDBOX}
               tabIndex={-1}
+              onLoad={(event: React.SyntheticEvent<HTMLIFrameElement>) => {
+                if (liveShown || revealTimerRef.current !== undefined) return;
+                // The same-origin mirror fires load for its initial
+                // about:blank too; wait for the real document (see the
+                // verifier's load handler above).
+                if (sameOrigin) {
+                  try {
+                    const doc = event.currentTarget.contentDocument;
+                    if (!doc || doc.URL === 'about:blank') return;
+                  } catch {
+                    return;
+                  }
+                }
+                revealTimerRef.current = window.setTimeout(
+                  () => setLiveShown(true),
+                  LIVE_REVEAL_GRACE_MS,
+                );
+              }}
               sx={{
                 width: EMBED_SIZE,
                 height: EMBED_SIZE,
@@ -432,13 +532,15 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           </Box>
         )}
       </Box>
+      {/* Caption, not header: the preview above is the card's subject, so
+          this line stays quiet — one row, small type, dimmed org. */}
       <Box
         sx={{
           display: 'flex',
           alignItems: 'center',
-          gap: 1.25,
-          px: 1.75,
-          py: 1.5,
+          gap: 1,
+          px: 1.5,
+          py: 1.125,
           minWidth: 0,
         }}
       >
@@ -446,45 +548,41 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           className="repo-card-preview"
           src={getRepositoryOwnerAvatarSrc(repo.owner)}
           alt={repo.owner}
-          sx={(theme) => ({
-            width: 26,
-            height: 26,
-            border: `1px solid ${theme.palette.border.medium}`,
+          sx={{
+            width: 18,
+            height: 18,
             flexShrink: 0,
             filter: 'grayscale(1)',
-            opacity: 0.88,
+            opacity: 0.7,
             transition: 'filter 0.25s ease, opacity 0.25s ease',
-          })}
+          }}
         />
-        <Box sx={{ minWidth: 0 }}>
-          <Typography
-            sx={{
-              fontFamily: 'var(--font-accent)',
-              fontWeight: 900,
-              fontSize: '1.02rem',
-              lineHeight: 1.2,
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-            }}
-          >
-            {repo.name}
-          </Typography>
-          <Typography
+        <Typography
+          sx={(theme) => ({
+            fontFamily: 'var(--font-accent)',
+            fontSize: '0.82rem',
+            lineHeight: 1.2,
+            whiteSpace: 'nowrap',
+            overflow: 'hidden',
+            textOverflow: 'ellipsis',
+            minWidth: 0,
+            color: theme.palette.text.secondary,
+          })}
+        >
+          <Box component="span" sx={{ opacity: 0.6 }}>
+            {repo.owner}
+            {' / '}
+          </Box>
+          <Box
+            component="span"
             sx={(theme) => ({
-              color: theme.palette.text.secondary,
-              fontFamily: 'var(--font-accent)',
-              fontSize: '0.64rem',
-              letterSpacing: '0.08em',
-              textTransform: 'uppercase',
-              whiteSpace: 'nowrap',
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
+              fontWeight: 600,
+              color: theme.palette.text.primary,
             })}
           >
-            {repo.owner}
-          </Typography>
-        </Box>
+            {repo.name}
+          </Box>
+        </Typography>
       </Box>
     </LinkBox>
   );
@@ -507,34 +605,25 @@ const RepoCardSkeleton: React.FC<{ index: number }> = ({ index }) => (
         backgroundColor: alpha(theme.palette.text.primary, 0.045),
       })}
     />
-    <Box sx={{ px: 1.75, py: 1.5, display: 'flex', gap: 1.25 }}>
+    <Box
+      sx={{ px: 1.5, py: 1.125, display: 'flex', alignItems: 'center', gap: 1 }}
+    >
       <Box
         sx={(theme) => ({
-          width: 26,
-          height: 26,
+          width: 18,
+          height: 18,
           borderRadius: '50%',
           backgroundColor: alpha(theme.palette.text.primary, 0.07),
         })}
       />
-      <Box>
-        <Box
-          sx={(theme) => ({
-            width: 120,
-            height: 12,
-            borderRadius: 0.5,
-            backgroundColor: alpha(theme.palette.text.primary, 0.07),
-          })}
-        />
-        <Box
-          sx={(theme) => ({
-            mt: 0.75,
-            width: 72,
-            height: 8,
-            borderRadius: 0.5,
-            backgroundColor: alpha(theme.palette.text.primary, 0.05),
-          })}
-        />
-      </Box>
+      <Box
+        sx={(theme) => ({
+          width: 140,
+          height: 10,
+          borderRadius: 0.5,
+          backgroundColor: alpha(theme.palette.text.primary, 0.07),
+        })}
+      />
     </Box>
   </Box>
 );
@@ -590,6 +679,71 @@ const DialArrow: React.FC<{
   );
 };
 
+// Branded curtain shown once per tab session while the first screen of
+// preview assets decodes: a short, honest beat (NN/g-style indeterminate
+// wait, well under the ~10s bar) that lifts into a fully-formed grid in one
+// coordinated reveal instead of content trickling in. Hard-capped so a slow
+// or failed image can never hold the page hostage.
+const CURTAIN_SESSION_KEY = 'gt-landing-curtain-shown';
+const CURTAIN_MIN_MS = 700;
+const CURTAIN_MAX_MS = 2500;
+const CURTAIN_FADE_MS = 400;
+
+const Curtain: React.FC<{ leaving: boolean }> = ({ leaving }) => (
+  <Box
+    aria-hidden
+    sx={(theme) => ({
+      position: 'fixed',
+      inset: 0,
+      zIndex: theme.zIndex.modal + 1,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      gap: 2.5,
+      backgroundColor: '#000',
+      opacity: leaving ? 0 : 1,
+      transition: `opacity ${CURTAIN_FADE_MS}ms ease`,
+      pointerEvents: leaving ? 'none' : 'auto',
+      '@keyframes curtainDot': {
+        '0%, 80%, 100%': { opacity: 0.15 },
+        '40%': { opacity: 0.85 },
+      },
+    })}
+  >
+    <Typography
+      sx={{
+        fontFamily: 'var(--font-accent)',
+        fontWeight: 900,
+        fontSize: { xs: '2.1rem', sm: '2.7rem' },
+        lineHeight: 1.1,
+        color: '#fff',
+      }}
+    >
+      Gittensor
+    </Typography>
+    <Box sx={{ display: 'flex', gap: 1 }}>
+      {[0, 1, 2].map((dot) => (
+        <Box
+          key={dot}
+          sx={{
+            width: 5,
+            height: 5,
+            borderRadius: '50%',
+            backgroundColor: '#fff',
+            opacity: 0.15,
+            animation: `curtainDot 1.2s ease-in-out ${dot * 0.2}s infinite`,
+            '@media (prefers-reduced-motion: reduce)': {
+              animation: 'none',
+              opacity: 0.5,
+            },
+          }}
+        />
+      ))}
+    </Box>
+  </Box>
+);
+
 const HomePage: React.FC = () => {
   const reposQuery = useReposAndWeights();
   const [timeline, setTimeline] = useState<Timeline>('repositories');
@@ -608,9 +762,51 @@ const HomePage: React.FC = () => {
   };
 
   const repos = useMemo(
-    () => sortByEmissionShare(reposQuery.data ?? []),
+    () => sortByEmissionShare(reposQuery.data ?? REGISTRY_SNAPSHOT),
     [reposQuery.data],
   );
+
+  // Curtain state: 'shown' -> 'leaving' (fading) -> 'done' (unmounted).
+  // Shown once per tab session; SPA navigations back here skip it.
+  const [curtain, setCurtain] = useState<'shown' | 'leaving' | 'done'>(() =>
+    sessionStorage.getItem(CURTAIN_SESSION_KEY) ? 'done' : 'shown',
+  );
+
+  useEffect(() => {
+    if (curtain !== 'shown') return;
+    sessionStorage.setItem(CURTAIN_SESSION_KEY, '1');
+    let cancelled = false;
+
+    const firstScreen = sortByEmissionShare(REGISTRY_SNAPSHOT)
+      .slice(0, 9)
+      .map((repo) => REPO_PREVIEWS[repo.fullName])
+      .filter(Boolean);
+    const decoded = Promise.all(
+      firstScreen.map((src) => {
+        const img = new Image();
+        img.src = src;
+        return img.decode().catch(() => undefined);
+      }),
+    );
+    const wait = (ms: number) =>
+      new Promise((resolve) => window.setTimeout(resolve, ms));
+
+    // Lift when the first screen of previews has decoded, but never before
+    // the minimum beat and never later than the hard cap.
+    Promise.all([
+      wait(CURTAIN_MIN_MS),
+      Promise.race([decoded, wait(CURTAIN_MAX_MS)]),
+    ]).then(() => {
+      if (cancelled) return;
+      setCurtain('leaving');
+      window.setTimeout(() => {
+        if (!cancelled) setCurtain('done');
+      }, CURTAIN_FADE_MS);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [curtain]);
 
   return (
     <Page title="Home">
@@ -619,7 +815,9 @@ const HomePage: React.FC = () => {
         description="A permissionless market of miners on Bittensor Subnet 74. Explore every project the network is building."
         type="website"
       />
+      {curtain !== 'done' && <Curtain leaving={curtain === 'leaving'} />}
       <Box
+        className={curtain === 'shown' ? 'landing-hold' : undefined}
         sx={{
           width: '100%',
           maxWidth: timeline === 'dashboard' ? 1680 : 1180,
@@ -629,6 +827,11 @@ const HomePage: React.FC = () => {
           '@keyframes landingFadeUp': {
             '0%': { opacity: 0, transform: 'translateY(18px)' },
             '100%': { opacity: 1, transform: 'translateY(0)' },
+          },
+          // While the curtain is up, entrance animations are held at frame
+          // zero so the sweep plays for the viewer, not behind the curtain.
+          '&.landing-hold *': {
+            animationPlayState: 'paused',
           },
         }}
       >
@@ -766,7 +969,10 @@ const HomePage: React.FC = () => {
                 gap: { xs: 2, md: 2.5 },
               }}
             >
-              {reposQuery.isLoading
+              {/* Skeletons only when the snapshot is empty (fresh checkout
+                  before any prebuild) — normally the snapshot renders real
+                  cards immediately and the live query reconciles silently. */}
+              {reposQuery.isLoading && repos.length === 0
                 ? Array.from({ length: 9 }, (_, index) => (
                     <RepoCardSkeleton key={index} index={index} />
                   ))

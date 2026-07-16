@@ -1,0 +1,173 @@
+[
+  {
+    "fullName": "gittensor-ai-lab/sparkinfer",
+    "owner": "gittensor-ai-lab",
+    "name": "sparkinfer",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.319339
+    }
+  },
+  {
+    "fullName": "JSONbored/metagraphed",
+    "owner": "JSONbored",
+    "name": "metagraphed",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.198785
+    }
+  },
+  {
+    "fullName": "JSONbored/loopover",
+    "owner": "JSONbored",
+    "name": "loopover",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.106932
+    }
+  },
+  {
+    "fullName": "gittensor-model-hub/SparkDistill",
+    "owner": "gittensor-model-hub",
+    "name": "SparkDistill",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.1
+    }
+  },
+  {
+    "fullName": "gittensor-vanguard/vanguarstew",
+    "owner": "gittensor-vanguard",
+    "name": "vanguarstew",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.099211
+    }
+  },
+  {
+    "fullName": "Autovara/kata",
+    "owner": "Autovara",
+    "name": "kata",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.062157
+    }
+  },
+  {
+    "fullName": "vouchdev/vouch",
+    "owner": "vouchdev",
+    "name": "vouch",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.019442
+    }
+  },
+  {
+    "fullName": "Geniepod/genie-claw",
+    "owner": "Geniepod",
+    "name": "genie-claw",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.017708
+    }
+  },
+  {
+    "fullName": "phase-rs/phase",
+    "owner": "phase-rs",
+    "name": "phase",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.012964
+    }
+  },
+  {
+    "fullName": "entrius/gittensor",
+    "owner": "entrius",
+    "name": "gittensor",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.0125
+    }
+  },
+  {
+    "fullName": "zeokin/Cuda-Compute-OSS",
+    "owner": "zeokin",
+    "name": "Cuda-Compute-OSS",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.012
+    }
+  },
+  {
+    "fullName": "James-CUDA/Gittensor-TinyRouter",
+    "owner": "James-CUDA",
+    "name": "Gittensor-TinyRouter",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.01
+    }
+  },
+  {
+    "fullName": "mini-router/minirouter",
+    "owner": "mini-router",
+    "name": "minirouter",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.009107
+    }
+  },
+  {
+    "fullName": "gittensor-agent-forge/gt-imagent",
+    "owner": "gittensor-agent-forge",
+    "name": "gt-imagent",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.008891
+    }
+  },
+  {
+    "fullName": "JSONbored/awesome-claude",
+    "owner": "JSONbored",
+    "name": "awesome-claude",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.004428
+    }
+  },
+  {
+    "fullName": "entrius/das-github-mirror",
+    "owner": "entrius",
+    "name": "das-github-mirror",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.004322
+    }
+  },
+  {
+    "fullName": "DPBG/Engram.AI",
+    "owner": "DPBG",
+    "name": "Engram.AI",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0.002214
+    }
+  },
+  {
+    "fullName": "touchpilot/touchpilot",
+    "owner": "touchpilot",
+    "name": "touchpilot",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0
+    }
+  },
+  {
+    "fullName": "we-promise/sure",
+    "owner": "we-promise",
+    "name": "sure",
+    "updatedAt": "2026-07-14T20:11:53.630Z",
+    "config": {
+      "emissionShare": 0
+    }
+  }
+]
