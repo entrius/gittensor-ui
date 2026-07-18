@@ -1134,6 +1134,26 @@ const HomePage: React.FC = () => {
           Gittensor
         </Typography>
 
+        <Typography
+          sx={(theme) => ({
+            mt: { xs: 1, md: 1.25 },
+            mx: 'auto',
+            maxWidth: 640,
+            color: alpha(theme.palette.text.primary, 0.45),
+            fontFamily: 'var(--font-accent)',
+            fontSize: '0.66rem',
+            letterSpacing: '0.16em',
+            textTransform: 'uppercase',
+            textAlign: 'center',
+            lineHeight: 1.7,
+            ...fadeUp(80),
+          })}
+        >
+          {timeline === 'repositories'
+            ? 'These are the open source projects built by Gittensor.'
+            : 'This is the work done by Gittensor miners.'}
+        </Typography>
+
         {/* Dial toggle: only the active timeline shows, flanked by arrows.
             Turning the dial slides the old word out and the new word in,
             both moving in the direction of travel. */}
@@ -1142,7 +1162,7 @@ const HomePage: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             gap: 1,
-            mt: { xs: 2.5, md: 3 },
+            mt: { xs: 1.25, md: 1.5 },
             mx: 'auto',
             py: 0.7,
             width: 'fit-content',
@@ -1224,27 +1244,9 @@ const HomePage: React.FC = () => {
 
         {timeline === 'repositories' ? (
           <>
-            <Typography
-              sx={(theme) => ({
-                mt: { xs: 1.25, md: 1.5 },
-                mx: 'auto',
-                maxWidth: 640,
-                color: alpha(theme.palette.text.primary, 0.45),
-                fontFamily: 'var(--font-accent)',
-                fontSize: '0.66rem',
-                letterSpacing: '0.16em',
-                textTransform: 'uppercase',
-                textAlign: 'center',
-                lineHeight: 1.7,
-                ...fadeUp(120),
-              })}
-            >
-              These are the open source projects built by Gittensor.
-            </Typography>
-
             <Box
               sx={{
-                mt: { xs: 5, md: 7 },
+                mt: { xs: 4, md: 5.5 },
                 display: 'grid',
                 gridTemplateColumns: {
                   xs: '1fr',
@@ -1314,23 +1316,6 @@ const HomePage: React.FC = () => {
           </>
         ) : (
           <Box>
-            <Typography
-              sx={(theme) => ({
-                mt: { xs: 1.25, md: 1.5 },
-                mx: 'auto',
-                maxWidth: 640,
-                color: alpha(theme.palette.text.primary, 0.45),
-                fontFamily: 'var(--font-accent)',
-                fontSize: '0.66rem',
-                letterSpacing: '0.16em',
-                textTransform: 'uppercase',
-                textAlign: 'center',
-                lineHeight: 1.7,
-                ...fadeUp(120),
-              })}
-            >
-              This is the work done by Gittensor miners.
-            </Typography>
             <React.Suspense
               fallback={
                 <Typography
