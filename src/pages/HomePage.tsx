@@ -88,8 +88,12 @@ const EMBED_SIZE = `${100 / EMBED_ZOOM}%`;
 // grace period that lets intro animations finish off-screen.
 const LIVE_REVEAL_GRACE_MS = 1800;
 
-// mshots returns a "generating…" placeholder on the first request for a
-// URL; remount the image a couple of times so the real shot swaps in.
+// mshots returns a small "generating…" placeholder on the first request for
+// a URL; remount the image a couple of times so the real shot swaps in.
+// Real screenshots come back at the requested 1280px width, so anything
+// narrower is the placeholder — once a real shot is on screen, refreshing
+// stops (a remount would blank the card back to its name plate mid-fade).
+const SHOT_REAL_MIN_WIDTH = 1024;
 const SHOT_REFRESH_MAX = 2;
 const SHOT_REFRESH_BASE_MS = 5000;
 const SHOT_REFRESH_STAGGER_MS = 200;
@@ -105,14 +109,18 @@ const PreviewImg: React.FC<{
   src: string;
   alt: string;
   onError?: () => void;
+  onLoad?: (img: HTMLImageElement) => void;
   sx: object;
-}> = ({ sx, onError, ...imgProps }) => {
+}> = ({ sx, onError, onLoad, ...imgProps }) => {
   const [loaded, setLoaded] = useState(false);
   return (
     <Box
       component="img"
       loading="lazy"
-      onLoad={() => setLoaded(true)}
+      onLoad={(event: React.SyntheticEvent<HTMLImageElement>) => {
+        setLoaded(true);
+        onLoad?.(event.currentTarget);
+      }}
       onError={onError}
       {...imgProps}
       sx={{ ...sx, opacity: loaded ? 1 : 0 }}
@@ -198,6 +206,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
   const [attempt, setAttempt] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
   const [shotTick, setShotTick] = useState(0);
+  const [shotIsReal, setShotIsReal] = useState(false);
   const [siteShotFailed, setSiteShotFailed] = useState(false);
   const [embedState, setEmbedState] = useState<EmbedState>(
     canAttemptEmbed ? 'checking' : 'failed',
@@ -211,15 +220,12 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
   const embedRef = useRef<HTMLObjectElement | null>(null);
 
   const embedLive = embedState === 'ok';
-  // The screenshot is fetched only when it will actually be seen: right
-  // away in browsers that never attempt embeds, otherwise only after the
-  // embed failed — verified-live cards fire no mshots requests, and the
-  // screenshot always targets the site's declared URL (mshots fetches
-  // server-side, so the mixed-content upgrade is irrelevant to it).
-  const showSiteShot =
-    Boolean(website) &&
-    !siteShotFailed &&
-    (!canAttemptEmbed || embedState === 'failed');
+  // The screenshot shows immediately as the card's backdrop — including
+  // while a live embed is still verifying/loading — so a website card is
+  // never a bare name plate; the live window fades in over it. It always
+  // targets the site's declared URL (mshots fetches server-side, so the
+  // mixed-content upgrade is irrelevant to it).
+  const showSiteShot = Boolean(website) && !siteShotFailed;
 
   useEffect(
     () => () => {
@@ -293,13 +299,13 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
   // Remount the screenshot a couple of times so the real shot replaces the
   // mshots "generating…" placeholder without a manual reload.
   useEffect(() => {
-    if (!showSiteShot || shotTick >= SHOT_REFRESH_MAX) return;
+    if (!showSiteShot || shotIsReal || shotTick >= SHOT_REFRESH_MAX) return;
     shotTimerRef.current = window.setTimeout(
       () => setShotTick(shotTick + 1),
       SHOT_REFRESH_BASE_MS * (shotTick + 1) + index * SHOT_REFRESH_STAGGER_MS,
     );
     return () => window.clearTimeout(shotTimerRef.current);
-  }, [showSiteShot, shotTick, index]);
+  }, [showSiteShot, shotIsReal, shotTick, index]);
 
   const handleImageError = () => {
     if (attempt + 1 >= MAX_PREVIEW_ATTEMPTS) {
@@ -402,27 +408,31 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
         </Box>
 
         {/* Preview: website screenshot → GitHub OG card, fading in over the
-            name plate; the verified live window covers everything. */}
-        {!liveShown &&
-          (showSiteShot ? (
-            <PreviewImg
-              key={shotTick}
-              className="repo-card-preview"
-              src={getSiteScreenshotSrc(website)}
-              alt={`${websiteHost} screenshot`}
-              onError={() => setSiteShotFailed(true)}
-              sx={{ ...PREVIEW_MEDIA_SX, objectPosition: 'top' }}
-            />
-          ) : showBackdropOg && !imageFailed ? (
-            <PreviewImg
-              key={attempt}
-              className="repo-card-preview"
-              src={getRepoPreviewSrc(repo.fullName, attempt)}
-              alt={`${repo.fullName} preview`}
-              onError={handleImageError}
-              sx={PREVIEW_MEDIA_SX}
-            />
-          ) : null)}
+            name plate. It stays mounted even once the live window is shown:
+            the embed is opaque and covers it, and unmounting mid-cross-fade
+            would let the name plate peek through. */}
+        {showSiteShot ? (
+          <PreviewImg
+            key={shotTick}
+            className="repo-card-preview"
+            src={getSiteScreenshotSrc(website)}
+            alt={`${websiteHost} screenshot`}
+            onLoad={(img) => {
+              if (img.naturalWidth >= SHOT_REAL_MIN_WIDTH) setShotIsReal(true);
+            }}
+            onError={() => setSiteShotFailed(true)}
+            sx={{ ...PREVIEW_MEDIA_SX, objectPosition: 'top' }}
+          />
+        ) : showBackdropOg && !imageFailed ? (
+          <PreviewImg
+            key={attempt}
+            className="repo-card-preview"
+            src={getRepoPreviewSrc(repo.fullName, attempt)}
+            alt={`${repo.fullName} preview`}
+            onError={handleImageError}
+            sx={PREVIEW_MEDIA_SX}
+          />
+        ) : null}
 
         {/* Hidden verifier: mounted once near the viewport, unmounted as
             soon as a verdict arrives (see the verification effect). */}
@@ -657,7 +667,7 @@ const DialArrow: React.FC<{
 // hold the page hostage.
 const CURTAIN_SESSION_KEY = 'gt-landing-curtain-shown';
 const CURTAIN_MIN_MS = 700;
-const CURTAIN_MAX_MS = 2500;
+const CURTAIN_MAX_MS = 4000;
 const CURTAIN_FADE_MS = 400;
 
 const Curtain: React.FC<{ leaving: boolean }> = ({ leaving }) => (
@@ -772,14 +782,55 @@ const HomePage: React.FC = () => {
     };
   }, [curtain]);
 
-  // Lift once the repo list has settled (loaded or errored), but never
-  // before the minimum beat and never later than the hard cap.
+  // Preload the first screen of preview images (the same URLs the cards
+  // render, so the browser cache makes them paint instantly) once the repo
+  // list is in; the curtain holds until they have settled so it lifts into
+  // formed cards, not a wall of name plates with images trickling in.
+  const [previewsReady, setPreviewsReady] = useState(false);
+  useEffect(() => {
+    if (curtain !== 'shown' || previewsReady || repos.length === 0) return;
+    let cancelled = false;
+    const firstScreen = repos.slice(0, 9).map((repo) => {
+      const website = REPO_WEBSITES[repo.fullName];
+      return website
+        ? getSiteScreenshotSrc(website)
+        : getRepoPreviewSrc(repo.fullName, 0);
+    });
+    Promise.all(
+      firstScreen.map(
+        (src) =>
+          new Promise<void>((resolve) => {
+            const img = new Image();
+            img.onload = () => resolve();
+            img.onerror = () => resolve();
+            img.src = src;
+          }),
+      ),
+    ).then(() => {
+      if (!cancelled) setPreviewsReady(true);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [curtain, previewsReady, repos]);
+
+  // Lift once the repo list has settled and the first screen of previews
+  // has loaded, but never before the minimum beat and never later than the
+  // hard cap.
   const reposSettled = !reposQuery.isLoading;
   useEffect(() => {
     if (curtain !== 'shown' || !curtainMinPassed) return;
-    if (!reposSettled && !curtainCapPassed) return;
+    const ready = reposSettled && (previewsReady || repos.length === 0);
+    if (!ready && !curtainCapPassed) return;
     setCurtain('leaving');
-  }, [curtain, curtainMinPassed, curtainCapPassed, reposSettled]);
+  }, [
+    curtain,
+    curtainMinPassed,
+    curtainCapPassed,
+    reposSettled,
+    previewsReady,
+    repos.length,
+  ]);
 
   useEffect(() => {
     if (curtain !== 'leaving') return;
