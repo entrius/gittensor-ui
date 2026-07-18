@@ -9,21 +9,6 @@ import { type Repository } from '../api/models/Dashboard';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import { minerRepositoryPath, parseNumber } from '../utils';
 import repoWebsitesSnapshot from '../generated/repoWebsites.json';
-import repoRegistrySnapshot from '../generated/repoRegistry.json';
-import repoPreviewsManifest from '../generated/repoPreviews.json';
-
-// Build-time preview assets (see scripts/fetch-repo-previews.mjs): each
-// repo's screenshot/OG card downloaded into public/previews/ so the grid
-// serves first-party images that are ready the moment the page paints,
-// instead of hitting mshots/GitHub from the visitor's browser. Live embeds
-// still verify and swap in over these at runtime.
-const REPO_PREVIEWS: Record<string, string> = repoPreviewsManifest;
-
-// Build-time snapshot of the registry (see scripts/fetch-repo-registry.mjs),
-// so the grid renders real cards on first paint instead of skeletons — the
-// registry changes rarely enough that the snapshot is almost always exactly
-// what the live query returns moments later.
-const REGISTRY_SNAPSHOT = repoRegistrySnapshot as Repository[];
 
 const fadeUp = (delayMs = 0) => ({
   opacity: 0,
@@ -210,10 +195,6 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
   const sameOrigin = Boolean(website) && websiteHost === window.location.host;
   const canAttemptEmbed = Boolean(website) && IS_CHROMIUM;
 
-  const localPreview = REPO_PREVIEWS[repo.fullName];
-  const [localFailed, setLocalFailed] = useState(false);
-  const useLocal = Boolean(localPreview) && !localFailed;
-
   const [attempt, setAttempt] = useState(0);
   const [imageFailed, setImageFailed] = useState(false);
   const [shotTick, setShotTick] = useState(0);
@@ -395,7 +376,7 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           overflow: 'hidden',
         })}
       >
-        {website && (liveShown || showSiteShot || useLocal) && (
+        {website && (liveShown || showSiteShot) && (
           <SiteOverlay host={websiteHost} />
         )}
 
@@ -420,20 +401,10 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           {repo.name}
         </Box>
 
-        {/* Preview: build-time first-party asset (instant) → live-fetched
-            website screenshot → GitHub OG card, fading in over the name
-            plate; the verified live window covers everything. The remote
-            chain only runs for repos missing a build-time asset. */}
+        {/* Preview: website screenshot → GitHub OG card, fading in over the
+            name plate; the verified live window covers everything. */}
         {!liveShown &&
-          (useLocal ? (
-            <PreviewImg
-              className="repo-card-preview"
-              src={localPreview}
-              alt={`${repo.fullName} preview`}
-              onError={() => setLocalFailed(true)}
-              sx={{ ...PREVIEW_MEDIA_SX, objectPosition: 'top' }}
-            />
-          ) : showSiteShot ? (
+          (showSiteShot ? (
             <PreviewImg
               key={shotTick}
               className="repo-card-preview"
@@ -679,11 +650,11 @@ const DialArrow: React.FC<{
   );
 };
 
-// Branded curtain shown once per tab session while the first screen of
-// preview assets decodes: a short, honest beat (NN/g-style indeterminate
-// wait, well under the ~10s bar) that lifts into a fully-formed grid in one
-// coordinated reveal instead of content trickling in. Hard-capped so a slow
-// or failed image can never hold the page hostage.
+// Branded curtain shown once per tab session while the repo list loads: a
+// short, honest beat (NN/g-style indeterminate wait, well under the ~10s
+// bar) that lifts into the grid in one coordinated reveal instead of
+// content trickling in. Hard-capped so a slow or failed request can never
+// hold the page hostage.
 const CURTAIN_SESSION_KEY = 'gt-landing-curtain-shown';
 const CURTAIN_MIN_MS = 700;
 const CURTAIN_MAX_MS = 2500;
@@ -762,50 +733,61 @@ const HomePage: React.FC = () => {
   };
 
   const repos = useMemo(
-    () => sortByEmissionShare(reposQuery.data ?? REGISTRY_SNAPSHOT),
+    () => sortByEmissionShare(reposQuery.data ?? []),
     [reposQuery.data],
   );
 
   // Curtain state: 'shown' -> 'leaving' (fading) -> 'done' (unmounted).
   // Shown once per tab session; SPA navigations back here skip it.
-  const [curtain, setCurtain] = useState<'shown' | 'leaving' | 'done'>(() =>
-    sessionStorage.getItem(CURTAIN_SESSION_KEY) ? 'done' : 'shown',
-  );
+  // sessionStorage throws when the browser blocks all site data; the
+  // curtain is cosmetic, so it is simply skipped there.
+  const [curtain, setCurtain] = useState<'shown' | 'leaving' | 'done'>(() => {
+    try {
+      return sessionStorage.getItem(CURTAIN_SESSION_KEY) ? 'done' : 'shown';
+    } catch {
+      return 'done';
+    }
+  });
+  const [curtainMinPassed, setCurtainMinPassed] = useState(false);
+  const [curtainCapPassed, setCurtainCapPassed] = useState(false);
 
   useEffect(() => {
     if (curtain !== 'shown') return;
-    sessionStorage.setItem(CURTAIN_SESSION_KEY, '1');
-    let cancelled = false;
-
-    const firstScreen = sortByEmissionShare(REGISTRY_SNAPSHOT)
-      .slice(0, 9)
-      .map((repo) => REPO_PREVIEWS[repo.fullName])
-      .filter(Boolean);
-    const decoded = Promise.all(
-      firstScreen.map((src) => {
-        const img = new Image();
-        img.src = src;
-        return img.decode().catch(() => undefined);
-      }),
+    try {
+      sessionStorage.setItem(CURTAIN_SESSION_KEY, '1');
+    } catch {
+      /* storage unavailable: the curtain just shows again next visit */
+    }
+    const minTimer = window.setTimeout(
+      () => setCurtainMinPassed(true),
+      CURTAIN_MIN_MS,
     );
-    const wait = (ms: number) =>
-      new Promise((resolve) => window.setTimeout(resolve, ms));
-
-    // Lift when the first screen of previews has decoded, but never before
-    // the minimum beat and never later than the hard cap.
-    Promise.all([
-      wait(CURTAIN_MIN_MS),
-      Promise.race([decoded, wait(CURTAIN_MAX_MS)]),
-    ]).then(() => {
-      if (cancelled) return;
-      setCurtain('leaving');
-      window.setTimeout(() => {
-        if (!cancelled) setCurtain('done');
-      }, CURTAIN_FADE_MS);
-    });
+    const capTimer = window.setTimeout(
+      () => setCurtainCapPassed(true),
+      CURTAIN_MAX_MS,
+    );
     return () => {
-      cancelled = true;
+      window.clearTimeout(minTimer);
+      window.clearTimeout(capTimer);
     };
+  }, [curtain]);
+
+  // Lift once the repo list has settled (loaded or errored), but never
+  // before the minimum beat and never later than the hard cap.
+  const reposSettled = !reposQuery.isLoading;
+  useEffect(() => {
+    if (curtain !== 'shown' || !curtainMinPassed) return;
+    if (!reposSettled && !curtainCapPassed) return;
+    setCurtain('leaving');
+  }, [curtain, curtainMinPassed, curtainCapPassed, reposSettled]);
+
+  useEffect(() => {
+    if (curtain !== 'leaving') return;
+    const fadeTimer = window.setTimeout(
+      () => setCurtain('done'),
+      CURTAIN_FADE_MS,
+    );
+    return () => window.clearTimeout(fadeTimer);
   }, [curtain]);
 
   return (
@@ -969,10 +951,7 @@ const HomePage: React.FC = () => {
                 gap: { xs: 2, md: 2.5 },
               }}
             >
-              {/* Skeletons only when the snapshot is empty (fresh checkout
-                  before any prebuild) — normally the snapshot renders real
-                  cards immediately and the live query reconciles silently. */}
-              {reposQuery.isLoading && repos.length === 0
+              {reposQuery.isLoading
                 ? Array.from({ length: 9 }, (_, index) => (
                     <RepoCardSkeleton key={index} index={index} />
                   ))
