@@ -1,14 +1,123 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Avatar, Box, Typography } from '@mui/material';
+import { Box, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { LinkBox } from '../components/common/linkBehavior';
-import { useReposAndWeights } from '../api';
+import { useAllMiners, useAllPrs, useReposAndWeights } from '../api';
 import { type Repository } from '../api/models/Dashboard';
-import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
-import { minerRepositoryPath, parseNumber } from '../utils';
+import { formatUsdEstimate, minerRepositoryPath, parseNumber } from '../utils';
 import repoWebsitesSnapshot from '../generated/repoWebsites.json';
+import repoDescriptionsSnapshot from '../generated/repoDescriptions.json';
+
+// One-line repo descriptions from each project's GitHub metadata. The
+// build-time snapshot (scripts/fetch-repo-websites.mjs) paints instantly;
+// the current description is then fetched from GitHub once per session and
+// reconciled over it, so an owner editing their description shows up on the
+// next page view, not the next site deploy.
+const REPO_DESCRIPTIONS: Record<string, string> = repoDescriptionsSnapshot;
+const DESCRIPTION_CACHE_KEY = 'gt-repo-descriptions';
+const DESCRIPTION_REFRESH_DELAY_MS = 3500;
+
+// Hand-written one-liners (sourced from each repo's README) for repos whose
+// owners haven't set a GitHub description yet. Lowest-priority fallback: the
+// moment an owner adds a real description, the live/snapshot value wins and
+// this entry goes unused.
+const FALLBACK_DESCRIPTIONS: Record<string, string> = {
+  'entrius/gittensor':
+    'The Gittensor subnet itself: incentivizing open source contributions on Bittensor SN74.',
+  'DPBG/Engram.AI': 'A self-aware, continuously-learning neuromorphic AI.',
+  'touchpilot/touchpilot':
+    'Local-first Android AI agent runtime for safe, observable phone control.',
+  'gittensor-agent-forge/gt-imagent':
+    'An open research project for image-generation agents that plan, critique, and improve, beyond one-shot prompting.',
+  'James-CUDA/Gittensor-TinyRouter':
+    'An incentivized open benchmark for LLM routing intelligence: train a tiny routing head, beat the king, earn TAO.',
+};
+
+const readDescriptionCache = (): Record<string, string> => {
+  try {
+    return JSON.parse(
+      sessionStorage.getItem(DESCRIPTION_CACHE_KEY) ?? '{}',
+    ) as Record<string, string>;
+  } catch {
+    return {};
+  }
+};
+
+// Per-repo activity digest derived from the network-wide PR dataset the
+// dashboard already loads — no extra per-repo requests. mergedDaily is
+// oldest-first, one bucket per day over the sparkline window.
+type RepoActivity = {
+  mergedThisWeek: number;
+  activeMiners: number;
+  mergedDaily: number[];
+};
+
+const DAY_MS = 24 * 60 * 60 * 1000;
+const WEEK_MS = 7 * DAY_MS;
+const ACTIVE_MINER_WINDOW_MS = 30 * DAY_MS;
+const SPARK_DAYS = 28;
+
+// Merges-per-day sparkline as instrument telemetry: one 1px monochrome
+// hairline tick per day over a faint baseline — no fills, no rounding, no
+// color, so it registers as texture rather than pulling the eye. Square-
+// root scaling keeps quiet days visible next to a spike day (these
+// distributions are heavily peaked). Ticks are drawn as lines with
+// non-scaling strokes so they stay hairline-crisp while the x-axis
+// stretches to the card width. No axes labels, no tooltip — the activity
+// line right below states the headline number as text.
+const SPARK_H = 14;
+const SPARK_PITCH = 4;
+
+const MergeSparkline: React.FC<{ counts: number[] }> = ({ counts }) => {
+  const max = Math.max(...counts, 1);
+  const viewW = (counts.length - 1) * SPARK_PITCH;
+  return (
+    <Box
+      component="svg"
+      viewBox={`0 0 ${viewW} ${SPARK_H}`}
+      preserveAspectRatio="none"
+      aria-hidden
+      sx={{ display: 'block', width: '100%', height: SPARK_H, mt: 1.25 }}
+    >
+      <Box
+        component="line"
+        x1={0}
+        y1={SPARK_H - 0.5}
+        x2={viewW}
+        y2={SPARK_H - 0.5}
+        vectorEffect="non-scaling-stroke"
+        sx={(theme) => ({
+          stroke: alpha(theme.palette.text.primary, 0.08),
+          strokeWidth: 1,
+        })}
+      />
+      {counts.map((count, i) => {
+        const tickH =
+          count === 0 ? 1 : Math.max(2, Math.sqrt(count / max) * SPARK_H);
+        return (
+          <Box
+            component="line"
+            key={i}
+            x1={i * SPARK_PITCH}
+            y1={SPARK_H}
+            x2={i * SPARK_PITCH}
+            y2={SPARK_H - tickH}
+            vectorEffect="non-scaling-stroke"
+            sx={(theme) => ({
+              stroke: alpha(
+                theme.palette.text.primary,
+                count === 0 ? 0.12 : 0.32,
+              ),
+              strokeWidth: 1,
+            })}
+          />
+        );
+      })}
+    </Box>
+  );
+};
 
 const fadeUp = (delayMs = 0) => ({
   opacity: 0,
@@ -193,10 +302,13 @@ const SiteOverlay: React.FC<{ host: string }> = ({ host }) => (
   </Typography>
 );
 
-const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
-  repo,
-  index,
-}) => {
+const RepoCard: React.FC<{
+  repo: Repository;
+  index: number;
+  description?: string;
+  activity?: RepoActivity;
+  usdPerDay?: number | null;
+}> = ({ repo, index, description, activity, usdPerDay }) => {
   const website = REPO_WEBSITES[repo.fullName];
   const embedUrl = website ? toEmbedUrl(website) : '';
   const websiteHost = website ? getSiteHost(embedUrl) : '';
@@ -328,16 +440,13 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
         display: 'flex',
         flexDirection: 'column',
         minWidth: 0,
-        border: `1px solid ${theme.palette.border.light}`,
-        borderRadius: 1.5,
-        overflow: 'hidden',
-        backgroundColor: theme.palette.surface.subtle,
-        transition:
-          'border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease',
+        transition: 'transform 0.2s ease',
         ...fadeUp(120 + Math.min(index, 11) * 45),
         '&:hover': {
-          borderColor: alpha(theme.palette.text.primary, 0.32),
           transform: 'translateY(-3px)',
+        },
+        '&:hover .repo-card-frame': {
+          borderColor: alpha(theme.palette.text.primary, 0.32),
           boxShadow: `0 14px 40px ${alpha(theme.palette.common.black, 0.35)}`,
         },
         '&:hover .repo-card-preview': {
@@ -349,6 +458,14 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
         // Touch devices never hover, so they keep it visible.
         '&:hover .repo-card-host': {
           opacity: 1,
+        },
+        '&:hover .repo-card-label': {
+          color: theme.palette.text.primary,
+        },
+        // The payout figure is monochrome at rest like everything else on
+        // the card; hover restores the accent green along with the color.
+        '&:hover .repo-card-payout': {
+          color: theme.palette.status.merged,
         },
         '@media (hover: none)': {
           '& .repo-card-host': {
@@ -371,15 +488,71 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
         },
       })}
     >
+      {/* Identity header above the frame: name left, payout right,
+          description beneath. The framed preview hangs under it like the
+          piece under a gallery caption. */}
+      <Box sx={{ minWidth: 0, px: 0.25, mb: 1.25 }}>
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 1,
+              minWidth: 0,
+            }}
+          >
+            <Typography
+              className="repo-card-label"
+              sx={(theme) => ({
+                color: alpha(theme.palette.text.primary, 0.75),
+                fontFamily: 'var(--font-accent)',
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                letterSpacing: '0.14em',
+                textTransform: 'uppercase',
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+                minWidth: 0,
+                transition: 'color 0.2s ease',
+              })}
+            >
+              {repo.name}
+            </Typography>
+          </Box>
+          {/* Always reserved at exactly two lines — clamped when longer,
+              padded when shorter — so every frame in a row starts at the
+              same height regardless of description length. */}
+          <Typography
+            sx={(theme) => ({
+              mt: 0.25,
+              color: alpha(theme.palette.text.primary, 0.42),
+              fontFamily: 'var(--font-accent)',
+              fontSize: '0.7rem',
+              lineHeight: 1.55,
+              height: 'calc(0.7rem * 1.55 * 2)',
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+            })}
+          >
+            {description}
+          </Typography>
+        </Box>
+      </Box>
       <Box
         ref={mediaRef}
+        className="repo-card-frame"
         sx={(theme) => ({
           position: 'relative',
           width: '100%',
           aspectRatio: '2 / 1',
-          backgroundColor: alpha(theme.palette.text.primary, 0.03),
-          borderBottom: `1px solid ${theme.palette.border.subtle}`,
+          border: `1px solid ${theme.palette.border.light}`,
+          borderRadius: 1.5,
+          backgroundColor: theme.palette.surface.subtle,
           overflow: 'hidden',
+          transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
         })}
       >
         {website && (liveShown || showSiteShot) && (
@@ -513,99 +686,77 @@ const RepoCard: React.FC<{ repo: Repository; index: number }> = ({
           </Box>
         )}
       </Box>
-      {/* Caption, not header: the preview above is the card's subject, so
-          this line stays quiet — one row, small type, dimmed org. */}
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          px: 1.5,
-          py: 1.125,
-          minWidth: 0,
-        }}
-      >
-        <Avatar
-          className="repo-card-preview"
-          src={getRepositoryOwnerAvatarSrc(repo.owner)}
-          alt={repo.owner}
-          sx={{
-            width: 18,
-            height: 18,
-            flexShrink: 0,
-            filter: 'grayscale(1)',
-            opacity: 0.7,
-            transition: 'filter 0.25s ease, opacity 0.25s ease',
-          }}
-        />
-        <Typography
-          sx={(theme) => ({
-            fontFamily: 'var(--font-accent)',
-            fontSize: '0.82rem',
-            lineHeight: 1.2,
-            whiteSpace: 'nowrap',
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            minWidth: 0,
-            color: theme.palette.text.secondary,
-          })}
-        >
-          <Box component="span" sx={{ opacity: 0.6 }}>
-            {repo.owner}
-            {' / '}
-          </Box>
-          <Box
-            component="span"
+      {/* Below the frame: just the telemetry strip and activity line — the
+          PR data stays under the preview while identity lives above it. */}
+      <Box sx={{ mt: 0.5, px: 0.25, minWidth: 0 }}>
+        {activity && <MergeSparkline counts={activity.mergedDaily} />}
+        {activity && (
+          <Typography
             sx={(theme) => ({
-              fontWeight: 600,
-              color: theme.palette.text.primary,
+              mt: 0.75,
+              color: alpha(theme.palette.text.primary, 0.32),
+              fontFamily: 'var(--font-accent)',
+              fontSize: '0.56rem',
+              letterSpacing: '0.12em',
+              textTransform: 'uppercase',
+              whiteSpace: 'nowrap',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
             })}
           >
-            {repo.name}
-          </Box>
-        </Typography>
+            {activity.mergedThisWeek}
+            {activity.mergedThisWeek === 1 ? ' pr' : ' prs'} merged this week
+            {' · '}
+            {activity.activeMiners}
+            {activity.activeMiners === 1 ? ' active miner' : ' active miners'}
+            {usdPerDay != null && usdPerDay > 0 && (
+              <Box
+                component="span"
+                className="repo-card-payout"
+                sx={{ transition: 'color 0.25s ease' }}
+              >
+                {' · '}
+                {formatUsdEstimate(usdPerDay, { includeApproxPrefix: true })}
+                {'/day'}
+              </Box>
+            )}
+          </Typography>
+        )}
       </Box>
     </LinkBox>
   );
 };
 
 const RepoCardSkeleton: React.FC<{ index: number }> = ({ index }) => (
-  <Box
-    sx={(theme) => ({
-      border: `1px solid ${theme.palette.border.subtle}`,
-      borderRadius: 1.5,
-      overflow: 'hidden',
-      backgroundColor: theme.palette.surface.subtle,
-      ...fadeUp(120 + index * 45),
-    })}
-  >
-    <Box
-      sx={(theme) => ({
-        width: '100%',
-        aspectRatio: '2 / 1',
-        backgroundColor: alpha(theme.palette.text.primary, 0.045),
-      })}
-    />
-    <Box
-      sx={{ px: 1.5, py: 1.125, display: 'flex', alignItems: 'center', gap: 1 }}
-    >
+  <Box sx={{ ...fadeUp(120 + index * 45) }}>
+    <Box sx={{ mb: 1.25 }}>
       <Box
         sx={(theme) => ({
-          width: 18,
-          height: 18,
-          borderRadius: '50%',
-          backgroundColor: alpha(theme.palette.text.primary, 0.07),
-        })}
-      />
-      <Box
-        sx={(theme) => ({
-          width: 140,
-          height: 10,
+          width: 90,
+          height: 8,
           borderRadius: 0.5,
           backgroundColor: alpha(theme.palette.text.primary, 0.07),
         })}
       />
+      <Box
+        sx={(theme) => ({
+          mt: 1,
+          width: '85%',
+          height: 7,
+          borderRadius: 0.5,
+          backgroundColor: alpha(theme.palette.text.primary, 0.05),
+        })}
+      />
     </Box>
+    <Box
+      sx={(theme) => ({
+        width: '100%',
+        aspectRatio: '2 / 1',
+        border: `1px solid ${theme.palette.border.subtle}`,
+        borderRadius: 1.5,
+        backgroundColor: alpha(theme.palette.text.primary, 0.045),
+      })}
+    />
   </Box>
 );
 
@@ -747,6 +898,107 @@ const HomePage: React.FC = () => {
     [reposQuery.data],
   );
 
+  // Activity digest per repo (lowercased fullName -> counts), folded from
+  // the network-wide PR list in one pass. PR records may carry a lowercased
+  // repository name, so matching is case-insensitive.
+  const prsQuery = useAllPrs();
+  const activityByRepo = useMemo(() => {
+    if (!prsQuery.data) return undefined;
+    const now = Date.now();
+    const map = new Map<
+      string,
+      { mergedThisWeek: number; miners: Set<string>; mergedDaily: number[] }
+    >();
+    for (const pr of prsQuery.data) {
+      const key = pr.repository?.toLowerCase();
+      if (!key) continue;
+      let entry = map.get(key);
+      if (!entry) {
+        entry = {
+          mergedThisWeek: 0,
+          miners: new Set(),
+          mergedDaily: Array.from({ length: SPARK_DAYS }, () => 0),
+        };
+        map.set(key, entry);
+      }
+      const mergedAtMs = pr.mergedAt ? new Date(pr.mergedAt).getTime() : null;
+      if (mergedAtMs !== null) {
+        if (now - mergedAtMs < WEEK_MS) entry.mergedThisWeek += 1;
+        const daysAgo = Math.floor((now - mergedAtMs) / DAY_MS);
+        if (daysAgo >= 0 && daysAgo < SPARK_DAYS) {
+          entry.mergedDaily[SPARK_DAYS - 1 - daysAgo] += 1;
+        }
+      }
+      const activeAtMs = new Date(pr.mergedAt ?? pr.prCreatedAt).getTime();
+      if (pr.author && now - activeAtMs < ACTIVE_MINER_WINDOW_MS) {
+        entry.miners.add(pr.author);
+      }
+    }
+    return map;
+  }, [prsQuery.data]);
+
+  // Live description refresh: one GitHub metadata request per repo, at most
+  // once per session (cached in sessionStorage), fired a few seconds after
+  // mount so it never competes with the first paint. Failures (rate limit,
+  // renamed repo) silently keep the build-time snapshot.
+  const [liveDescriptions, setLiveDescriptions] =
+    useState<Record<string, string>>(readDescriptionCache);
+  const descriptionFetchAttemptedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const attempted = descriptionFetchAttemptedRef.current;
+    const missing = repos
+      .map((repo) => repo.fullName)
+      .filter(
+        (name) => liveDescriptions[name] === undefined && !attempted.has(name),
+      );
+    if (missing.length === 0) return;
+    missing.forEach((name) => attempted.add(name));
+    let cancelled = false;
+    const timer = window.setTimeout(async () => {
+      const updates: Record<string, string> = {};
+      await Promise.all(
+        missing.map(async (fullName) => {
+          try {
+            const response = await fetch(
+              `https://api.github.com/repos/${fullName}`,
+            );
+            if (!response.ok) return;
+            const meta = (await response.json()) as { description?: string };
+            updates[fullName] = (meta.description ?? '').trim();
+          } catch {
+            /* offline or blocked: the snapshot stays */
+          }
+        }),
+      );
+      if (cancelled || Object.keys(updates).length === 0) return;
+      setLiveDescriptions((previous) => {
+        const next = { ...previous, ...updates };
+        try {
+          sessionStorage.setItem(DESCRIPTION_CACHE_KEY, JSON.stringify(next));
+        } catch {
+          /* cache is best-effort */
+        }
+        return next;
+      });
+    }, DESCRIPTION_REFRESH_DELAY_MS);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timer);
+    };
+  }, [repos, liveDescriptions]);
+
+  // A repo's estimated payout: its emission share of the total daily USD
+  // currently flowing to miners across the network.
+  const minersQuery = useAllMiners();
+  const networkUsdPerDay = useMemo(
+    () =>
+      minersQuery.data?.reduce(
+        (acc, miner) => acc + parseNumber(miner.usdPerDay ?? 0),
+        0,
+      ) ?? null,
+    [minersQuery.data],
+  );
+
   // Curtain state: 'shown' -> 'leaving' (fading) -> 'done' (unmounted).
   // Shown once per tab session; SPA navigations back here skip it.
   // sessionStorage throws when the browser blocks all site data; the
@@ -853,7 +1105,7 @@ const HomePage: React.FC = () => {
         className={curtain === 'shown' ? 'landing-hold' : undefined}
         sx={{
           width: '100%',
-          maxWidth: timeline === 'dashboard' ? 1680 : 1180,
+          maxWidth: timeline === 'dashboard' ? 1680 : 1320,
           mx: 'auto',
           px: { xs: 1.5, sm: 3 },
           py: { xs: 4, md: 7 },
@@ -999,16 +1251,47 @@ const HomePage: React.FC = () => {
                   sm: 'repeat(2, minmax(0, 1fr))',
                   md: 'repeat(3, minmax(0, 1fr))',
                 },
-                gap: { xs: 2, md: 2.5 },
+                columnGap: { xs: 2, md: 2.5 },
+                rowGap: { xs: 3, md: 3.5 },
               }}
             >
               {reposQuery.isLoading
                 ? Array.from({ length: 9 }, (_, index) => (
                     <RepoCardSkeleton key={index} index={index} />
                   ))
-                : repos.map((repo, index) => (
-                    <RepoCard key={repo.fullName} repo={repo} index={index} />
-                  ))}
+                : repos.map((repo, index) => {
+                    const digest = activityByRepo?.get(
+                      repo.fullName.toLowerCase(),
+                    );
+                    const liveDescription = liveDescriptions[repo.fullName];
+                    return (
+                      <RepoCard
+                        key={repo.fullName}
+                        repo={repo}
+                        index={index}
+                        description={
+                          liveDescription ||
+                          REPO_DESCRIPTIONS[repo.fullName] ||
+                          FALLBACK_DESCRIPTIONS[repo.fullName]
+                        }
+                        activity={
+                          activityByRepo && {
+                            mergedThisWeek: digest?.mergedThisWeek ?? 0,
+                            activeMiners: digest?.miners.size ?? 0,
+                            mergedDaily:
+                              digest?.mergedDaily ??
+                              Array.from({ length: SPARK_DAYS }, () => 0),
+                          }
+                        }
+                        usdPerDay={
+                          networkUsdPerDay !== null
+                            ? networkUsdPerDay *
+                              parseNumber(repo.config?.emissionShare ?? 0)
+                            : null
+                        }
+                      />
+                    );
+                  })}
             </Box>
 
             {!reposQuery.isLoading && repos.length === 0 && (
