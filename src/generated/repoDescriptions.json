@@ -1,0 +1,16 @@
+{
+  "Autovara/kata": "Kata builds the best AI agent for a subnet through open competition — so anyone can mine that subnet with a proven, optimized agent.",
+  "entrius/das-github-mirror": "Mirror api for all tracked gittensor repositories",
+  "Geniepod/genie-claw": "🦞 Low-latency, limited-context AI harness for private on-device homes.",
+  "gittensor-ai-lab/sparkinfer": "Fastest MoE/LLM inference runtime for consumer and edge Blackwell GPUs. SN74 on Gittensor.",
+  "gittensor-model-hub/SparkDistill": "Trustless Triton-native AI distillation on SN74/Gittensor: verified datasets (SparkProof), training recipes, and eval harness for kernel-specialist LLMs on Blackwell.",
+  "gittensor-vanguard/vanguarstew": "An SN74 repo-maintainer agent + a GitHub-history benchmark that scores it — can an agent make the maintainer decisions a strong maintainer would?",
+  "JSONbored/awesome-claude": "HeyClaude is a curated registry and distribution surface for Claude and AI-workflow assets: agents, MCP servers, skills, commands, hooks, rules, guides, tools, jobs, Raycast feeds, static data exports, and an npm MCP package.",
+  "JSONbored/loopover": "Backend intelligence and MCP tooling for Gittensor contributors and maintainers.",
+  "JSONbored/metagraphed": "Operational metadata, health, schemas, and public interface discovery for Bittensor subnets.",
+  "mini-router/minirouter": "SN74 Gittensor miner workspace for MiniRouter: router training/eval code, benchmark configs, submission artifacts, and the web competition site for improving the tiny LLM router.",
+  "phase-rs/phase": "A rules engine and game client — Rust + WASM + React",
+  "vouchdev/vouch": "A git-native, review-gated knowledge base for AI agents: they propose writes, you approve them. Every claim cites a source, every change is a diff in your repo. MCP + CLI.",
+  "we-promise/sure": "The personal finance app for everyone (by everyone)",
+  "zeokin/Cuda-Compute-OSS": "CCO is an open-source system for managing, validating, and improving GPU."
+}
