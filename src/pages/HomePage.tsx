@@ -1108,7 +1108,7 @@ const HomePage: React.FC = () => {
           maxWidth: timeline === 'dashboard' ? 1680 : 1320,
           mx: 'auto',
           px: { xs: 1.5, sm: 3 },
-          py: { xs: 4, md: 7 },
+          py: { xs: 3, md: 5 },
           '@keyframes landingFadeUp': {
             '0%': { opacity: 0, transform: 'translateY(18px)' },
             '100%': { opacity: 1, transform: 'translateY(0)' },
@@ -1136,13 +1136,13 @@ const HomePage: React.FC = () => {
 
         <Typography
           sx={(theme) => ({
-            mt: { xs: 1, md: 1.25 },
+            mt: { xs: 0.75, md: 1 },
             mx: 'auto',
             maxWidth: 640,
             color: alpha(theme.palette.text.primary, 0.45),
             fontFamily: 'var(--font-accent)',
-            fontSize: '0.66rem',
-            letterSpacing: '0.16em',
+            fontSize: '0.7rem',
+            letterSpacing: '0.08em',
             textTransform: 'uppercase',
             textAlign: 'center',
             lineHeight: 1.7,
@@ -1162,7 +1162,7 @@ const HomePage: React.FC = () => {
             display: 'flex',
             alignItems: 'center',
             gap: 1,
-            mt: { xs: 1.25, md: 1.5 },
+            mt: { xs: 4, md: 5 },
             mx: 'auto',
             py: 0.7,
             width: 'fit-content',
@@ -1246,7 +1246,7 @@ const HomePage: React.FC = () => {
           <>
             <Box
               sx={{
-                mt: { xs: 4, md: 5.5 },
+                mt: { xs: 2.5, md: 3 },
                 display: 'grid',
                 gridTemplateColumns: {
                   xs: '1fr',
