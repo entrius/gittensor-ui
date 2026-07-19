@@ -82,6 +82,27 @@ const BLOCKED_HOSTS = [
 const BLOCKED_EXTENSIONS =
   /\.(?:png|jpe?g|gif|svg|webp|avif|ico|pdf)(?:$|[?#])/i;
 
+const LINK_ORDER: Record<LinkKind, number> = {
+  website: 0,
+  twitter: 1,
+  discord: 2,
+  telegram: 3,
+  linkedin: 4,
+  youtube: 5,
+};
+
+// Manual pins for repos whose README doesn't surface a link the auto-parser
+// can pick up. Only fills in a kind the live scan didn't already find.
+const FALLBACK_LINKS: Record<string, RepositoryLink[]> = {
+  'DPBG/Engram.AI': [
+    {
+      url: 'https://discord.com/channels/1504942454258798684/1523702741782888579',
+      label: 'Discord',
+      kind: 'discord',
+    },
+  ],
+};
+
 const markdownLinkPattern = /\[([^\]]+)\]\((https?:\/\/[^)\s]+)[^)]*\)/g;
 const htmlAnchorPattern =
   /<a\b[^>]*\bhref=["'](https?:\/\/[^"']+)["'][^>]*>(.*?)<\/a>/gis;
@@ -225,16 +246,9 @@ const buildRepositoryLinks = (
     });
   }
 
-  const order: Record<LinkKind, number> = {
-    website: 0,
-    twitter: 1,
-    discord: 2,
-    telegram: 3,
-    linkedin: 4,
-    youtube: 5,
-  };
-
-  return links.sort((a, b) => order[a.kind] - order[b.kind]).slice(0, 8);
+  return links
+    .sort((a, b) => LINK_ORDER[a.kind] - LINK_ORDER[b.kind])
+    .slice(0, 8);
 };
 
 const fetchRepositoryReadme = async (
@@ -298,15 +312,19 @@ const useRepositoryLinks = (repositoryFullName: string) => {
     retry: false,
   });
 
-  const links = useMemo(
-    () =>
-      buildRepositoryLinks(
-        repositoryFullName,
-        readmeQuery.data ?? '',
-        metaQuery.data,
-      ),
-    [metaQuery.data, readmeQuery.data, repositoryFullName],
-  );
+  const links = useMemo(() => {
+    const detected = buildRepositoryLinks(
+      repositoryFullName,
+      readmeQuery.data ?? '',
+      metaQuery.data,
+    );
+    const fallback = (FALLBACK_LINKS[repositoryFullName] ?? []).filter(
+      (link) => !detected.some((found) => found.kind === link.kind),
+    );
+    return [...detected, ...fallback].sort(
+      (a, b) => LINK_ORDER[a.kind] - LINK_ORDER[b.kind],
+    );
+  }, [metaQuery.data, readmeQuery.data, repositoryFullName]);
 
   return {
     links,
