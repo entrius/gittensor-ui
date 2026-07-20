@@ -4,7 +4,12 @@ import { alpha } from '@mui/material/styles';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
 import { LinkBox } from '../components/common/linkBehavior';
-import { useAllMiners, useAllPrs, useReposAndWeights } from '../api';
+import {
+  useAllMiners,
+  useAllPrs,
+  useMaintainerMergedPrs,
+  useReposAndWeights,
+} from '../api';
 import { type Repository } from '../api/models/Dashboard';
 import { formatUsdEstimate, minerRepositoryPath, parseNumber } from '../utils';
 import repoWebsitesSnapshot from '../generated/repoWebsites.json';
@@ -902,6 +907,14 @@ const HomePage: React.FC = () => {
   // the network-wide PR list in one pass. PR records may carry a lowercased
   // repository name, so matching is case-insensitive.
   const prsQuery = useAllPrs();
+  const minersQuery = useAllMiners();
+  // Maintainer-authored merged PRs are excluded from /prs by the scoring
+  // pipeline (maintainers are paid via maintainer_cut, not per-PR scores),
+  // so they're recovered separately and folded into the digest below.
+  const maintainerPrsByRepo = useMaintainerMergedPrs(
+    reposQuery.data,
+    minersQuery.data,
+  );
   const activityByRepo = useMemo(() => {
     if (!prsQuery.data) return undefined;
     const now = Date.now();
@@ -909,9 +922,7 @@ const HomePage: React.FC = () => {
       string,
       { mergedThisWeek: number; miners: Set<string>; mergedDaily: number[] }
     >();
-    for (const pr of prsQuery.data) {
-      const key = pr.repository?.toLowerCase();
-      if (!key) continue;
+    const getEntry = (key: string) => {
       let entry = map.get(key);
       if (!entry) {
         entry = {
@@ -921,21 +932,48 @@ const HomePage: React.FC = () => {
         };
         map.set(key, entry);
       }
-      const mergedAtMs = pr.mergedAt ? new Date(pr.mergedAt).getTime() : null;
-      if (mergedAtMs !== null) {
-        if (now - mergedAtMs < WEEK_MS) entry.mergedThisWeek += 1;
-        const daysAgo = Math.floor((now - mergedAtMs) / DAY_MS);
-        if (daysAgo >= 0 && daysAgo < SPARK_DAYS) {
-          entry.mergedDaily[SPARK_DAYS - 1 - daysAgo] += 1;
-        }
+      return entry;
+    };
+    const countMerge = (
+      entry: { mergedThisWeek: number; mergedDaily: number[] },
+      mergedAtMs: number,
+    ) => {
+      if (now - mergedAtMs < WEEK_MS) entry.mergedThisWeek += 1;
+      const daysAgo = Math.floor((now - mergedAtMs) / DAY_MS);
+      if (daysAgo >= 0 && daysAgo < SPARK_DAYS) {
+        entry.mergedDaily[SPARK_DAYS - 1 - daysAgo] += 1;
       }
+    };
+    const seen = new Set<string>();
+    for (const pr of prsQuery.data) {
+      const key = pr.repository?.toLowerCase();
+      if (!key) continue;
+      seen.add(`${key}#${pr.pullRequestNumber}`);
+      const entry = getEntry(key);
+      const mergedAtMs = pr.mergedAt ? new Date(pr.mergedAt).getTime() : null;
+      if (mergedAtMs !== null) countMerge(entry, mergedAtMs);
       const activeAtMs = new Date(pr.mergedAt ?? pr.prCreatedAt).getTime();
       if (pr.author && now - activeAtMs < ACTIVE_MINER_WINDOW_MS) {
         entry.miners.add(pr.author);
       }
     }
+    // Registered maintainers of cut-bearing repos are paid UIDs too — count
+    // their merges. Dedup by PR number in case the feed ever includes one.
+    if (maintainerPrsByRepo) {
+      for (const [key, maintainerPrs] of maintainerPrsByRepo) {
+        const entry = getEntry(key);
+        for (const pr of maintainerPrs) {
+          if (seen.has(`${key}#${pr.pullRequestNumber}`)) continue;
+          const mergedAtMs = new Date(pr.mergedAt).getTime();
+          countMerge(entry, mergedAtMs);
+          if (now - mergedAtMs < ACTIVE_MINER_WINDOW_MS) {
+            entry.miners.add(pr.author);
+          }
+        }
+      }
+    }
     return map;
-  }, [prsQuery.data]);
+  }, [prsQuery.data, maintainerPrsByRepo]);
 
   // Live description refresh: one GitHub metadata request per repo, at most
   // once per session (cached in sessionStorage), fired a few seconds after
@@ -989,7 +1027,6 @@ const HomePage: React.FC = () => {
 
   // A repo's estimated payout: its emission share of the total daily USD
   // currently flowing to miners across the network.
-  const minersQuery = useAllMiners();
   const networkUsdPerDay = useMemo(
     () =>
       minersQuery.data?.reduce(
