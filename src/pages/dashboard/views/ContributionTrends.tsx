@@ -80,15 +80,6 @@ const TREND_LINE_AREA_GRADIENT_STOPS = [
   { offset: 1, opacity: 0 },
 ] as const;
 
-const CHART_MODE_TOGGLE_PADDING = 0.25;
-const CHART_MODE_TOGGLE_BORDER_OPACITY = 0.08;
-const CHART_MODE_TOGGLE_BACKGROUND_OPACITY = 0.035;
-const CHART_MODE_TOGGLE_SLIDER_INSET = 3;
-const CHART_MODE_TOGGLE_SLIDER_WIDTH = `calc(50% - ${CHART_MODE_TOGGLE_SLIDER_INSET}px)`;
-const CHART_MODE_TOGGLE_SLIDER_OPACITY = 0.95;
-const CHART_MODE_TOGGLE_SLIDER_SHADOW_OPACITY = 0.16;
-const CHART_MODE_TOGGLE_TRANSITION =
-  'transform 0.22s ease, box-shadow 0.22s ease, background-color 0.22s ease';
 const CHART_MODE_TOGGLE_BUTTON_SIZE = {
   width: 36,
   height: 26,
@@ -214,47 +205,12 @@ const getTrendBarShadowBlur = (seriesKey: TrendSeriesKey) =>
     ? TREND_BAR_PRIMARY_SHADOW_BLUR
     : TREND_BAR_SECONDARY_SHADOW_BLUR;
 
-const getChartModeSliderOffset = (chartMode: TrendChartMode) =>
-  chartMode === 'bar' ? 'translateX(100%)' : 'translateX(0)';
-
-const getBarLayoutSliderOffset = (barLayout: TrendBarLayout) =>
-  barLayout === 'grouped' ? 'translateX(100%)' : 'translateX(0)';
-
-const getChartModeToggleSx = (theme: Theme, chartMode: TrendChartMode) => ({
-  position: 'relative',
+// No container, border, or fill: the selected control is marked by its text
+// (or icon) turning green; unselected stays neutral. Matches the Live
+// Activity filter styling.
+const getChartModeToggleSx = (theme: Theme) => ({
   gap: 0,
-  p: CHART_MODE_TOGGLE_PADDING,
-  borderRadius: 999,
-  border: `1px solid ${alpha(
-    theme.palette.text.primary,
-    CHART_MODE_TOGGLE_BORDER_OPACITY,
-  )}`,
-  backgroundColor: alpha(
-    theme.palette.text.primary,
-    CHART_MODE_TOGGLE_BACKGROUND_OPACITY,
-  ),
-  overflow: 'hidden',
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    top: CHART_MODE_TOGGLE_SLIDER_INSET,
-    bottom: CHART_MODE_TOGGLE_SLIDER_INSET,
-    left: CHART_MODE_TOGGLE_SLIDER_INSET,
-    width: CHART_MODE_TOGGLE_SLIDER_WIDTH,
-    borderRadius: 999,
-    backgroundColor: alpha(
-      theme.palette.diff.additions,
-      CHART_MODE_TOGGLE_SLIDER_OPACITY,
-    ),
-    boxShadow: `0 8px 18px ${alpha(
-      theme.palette.diff.additions,
-      CHART_MODE_TOGGLE_SLIDER_SHADOW_OPACITY,
-    )}`,
-    transform: getChartModeSliderOffset(chartMode),
-    transition: CHART_MODE_TOGGLE_TRANSITION,
-  },
   '& .MuiToggleButtonGroup-grouped': {
-    zIndex: 1,
     border: 0,
     borderRadius: '999px !important',
     px: 0,
@@ -270,25 +226,19 @@ const getChartModeToggleSx = (theme: Theme, chartMode: TrendChartMode) => ({
     fontWeight: 700,
     letterSpacing: '0.05em',
     textTransform: 'uppercase',
+    backgroundColor: 'transparent',
     '&.Mui-selected': {
-      color: theme.palette.background.paper,
+      color: theme.palette.diff.additions,
       backgroundColor: 'transparent',
     },
     '&.Mui-selected:hover': {
+      color: theme.palette.diff.additions,
       backgroundColor: 'transparent',
     },
     '&:hover': {
       backgroundColor: 'transparent',
       color: theme.palette.text.primary,
     },
-  },
-});
-
-const getBarLayoutToggleSx = (theme: Theme, barLayout: TrendBarLayout) => ({
-  ...getChartModeToggleSx(theme, 'line'),
-  '&::before': {
-    ...getChartModeToggleSx(theme, 'line')['&::before'],
-    transform: getBarLayoutSliderOffset(barLayout),
   },
 });
 
@@ -357,6 +307,7 @@ const buildContributionTrendChartOption = ({
       formatter: (
         params: Array<{
           axisValueLabel: string;
+          name: string;
           seriesName: string;
           seriesIndex: number;
           value: number;
@@ -391,7 +342,7 @@ const buildContributionTrendChartOption = ({
 
         return `
           <div style="display:grid;gap:6px;font-family:${chartFontFamily};min-width:160px;">
-            <div style="color:${tooltipPrimaryColor};font-weight:700;">${params[0]?.axisValueLabel || ''}</div>
+            <div style="color:${tooltipPrimaryColor};font-weight:700;">${params[0]?.name || params[0]?.axisValueLabel || ''}</div>
             ${rows}
             ${totalRow}
           </div>
@@ -409,6 +360,12 @@ const buildContributionTrendChartOption = ({
         fontSize: TREND_CHART_AXIS_LABEL_FONT_SIZE,
         interval: labelInterval,
         hideOverlap: true,
+        // All-time labels are full week ranges ("Dec 14 – 20, 2025") for the
+        // tooltip; the axis only shows the week's start date.
+        formatter:
+          range === 'all'
+            ? (value: string) => value.split(' – ')[0]
+            : undefined,
       },
       axisLine: {
         lineStyle: {
@@ -650,7 +607,7 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
             }}
             size="small"
             aria-label="Contribution timeline chart mode"
-            sx={getChartModeToggleSx(theme, chartMode)}
+            sx={getChartModeToggleSx(theme)}
           >
             <ToggleButton
               value="line"
@@ -676,7 +633,7 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
               }}
               size="small"
               aria-label="Bar chart layout"
-              sx={getBarLayoutToggleSx(theme, barLayout)}
+              sx={getChartModeToggleSx(theme)}
             >
               <ToggleButton
                 value="stacked"
@@ -720,14 +677,16 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
                 letterSpacing: '0.05em',
                 textTransform: 'uppercase',
                 '&.Mui-selected': {
-                  color: theme.palette.background.paper,
-                  backgroundColor: alpha(theme.palette.diff.additions, 0.95),
+                  color: theme.palette.diff.additions,
+                  backgroundColor: 'transparent',
                 },
                 '&.Mui-selected:hover': {
-                  backgroundColor: alpha(theme.palette.diff.additions, 0.95),
+                  color: theme.palette.diff.additions,
+                  backgroundColor: 'transparent',
                 },
                 '&:hover': {
-                  backgroundColor: alpha(theme.palette.text.primary, 0.06),
+                  backgroundColor: 'transparent',
+                  color: theme.palette.text.primary,
                 },
               },
             }}
@@ -792,45 +751,29 @@ const ContributionTrends: React.FC<ContributionTrendsProps> = ({
                     tabIndex={0}
                     aria-pressed={!isHidden}
                     sx={{
-                      px: 0.95,
+                      // No chip chrome: the legend word carries its series
+                      // color; hidden series fall back to muted gray.
                       py: 0.48,
-                      borderRadius: 999,
-                      border: isHidden
-                        ? `1px solid ${theme.palette.border.subtle}`
-                        : `1px solid ${theme.palette.border.light}`,
-                      backgroundColor: isHidden
-                        ? 'transparent'
-                        : theme.palette.surface.subtle,
                       cursor: 'pointer',
+                      transition: 'opacity 0.18s ease, color 0.18s ease',
                       opacity: isHidden ? 0.55 : 1,
-                      transition:
-                        'opacity 0.18s ease, border-color 0.18s ease, background-color 0.18s ease',
                       '&:hover': {
-                        borderColor: alpha(seriesColor, 0.5),
-                        backgroundColor: alpha(seriesColor, 0.06),
+                        opacity: 1,
                       },
                       '&:focus-visible': {
                         outline: `2px solid ${alpha(seriesColor, 0.5)}`,
                         outlineOffset: '2px',
+                        borderRadius: 999,
                       },
                     }}
                   >
-                    <Box
-                      sx={{
-                        width: 10,
-                        height: 10,
-                        borderRadius: '50%',
-                        backgroundColor: seriesColor,
-                        boxShadow: `0 0 0 1px ${seriesColor}`,
-                        opacity: isHidden ? 0.35 : presentation.lineOpacity,
-                      }}
-                    />
                     <Typography
                       sx={{
                         color: isHidden
                           ? alpha(theme.palette.text.primary, 0.46)
-                          : alpha(theme.palette.text.primary, 0.72),
+                          : seriesColor,
                         fontSize: '0.72rem',
+                        fontWeight: 700,
                         lineHeight: 1,
                       }}
                     >

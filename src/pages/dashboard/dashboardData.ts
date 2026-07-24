@@ -215,15 +215,21 @@ const isResolvedInWindow = (
   isResolvedMinerIssue(issue) &&
   isWithinWindow(toTimestamp(issue.solving_pr?.merged_at), window);
 
-const getUtcWeekStart = (timestamp: number) => {
-  const date = new Date(timestamp);
-  const dayOfWeek = date.getUTCDay();
-  const diffToMonday = (dayOfWeek + 6) % 7;
-  return Date.UTC(
-    date.getUTCFullYear(),
-    date.getUTCMonth(),
-    date.getUTCDate() - diffToMonday,
-  );
+// All-time buckets span a week, so the label carries the full range (and the
+// year, since the all-time window crosses a year boundary). The chart's x-axis
+// shows only the part before the dash; the tooltip shows the whole label.
+const formatWeekRangeLabel = (startMs: number, endMs: number) => {
+  const start = new Date(startMs);
+  const end = new Date(endMs - 1);
+  const monthDay = new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+  });
+  const sameMonth =
+    start.getFullYear() === end.getFullYear() &&
+    start.getMonth() === end.getMonth();
+  const endLabel = sameMonth ? String(end.getDate()) : monthDay.format(end);
+  return `${monthDay.format(start)} – ${endLabel}, ${end.getFullYear()}`;
 };
 
 const formatTrendBucketLabel = (timestamp: number, range: TrendTimeRange) => {
@@ -259,24 +265,24 @@ const buildTrendBuckets = (
     });
   }
 
-  const firstWeekStart = getUtcWeekStart(GITTENSOR_START_MS);
-  const currentWeekStart = getUtcWeekStart(now.getTime());
-  const endExclusive = currentWeekStart + WEEK_MS;
-  const buckets: Array<{ startMs: number; endMs: number; label: string }> = [];
+  // Anchor weekly buckets to *now* (rather than calendar weeks) so the last
+  // bucket always covers a full trailing 7 days. Calendar-aligned buckets end
+  // on a partial current week, which renders as a fake cliff at the right edge
+  // of every series.
+  const endMs = now.getTime();
+  const totalWeeks = Math.max(
+    1,
+    Math.ceil((endMs - GITTENSOR_START_MS) / WEEK_MS),
+  );
 
-  for (
-    let bucketStart = firstWeekStart;
-    bucketStart < endExclusive;
-    bucketStart += WEEK_MS
-  ) {
-    buckets.push({
-      startMs: bucketStart,
-      endMs: bucketStart + WEEK_MS,
-      label: formatTrendBucketLabel(bucketStart, range),
-    });
-  }
-
-  return buckets;
+  return Array.from({ length: totalWeeks }, (_, index) => {
+    const bucketEnd = endMs - (totalWeeks - 1 - index) * WEEK_MS;
+    return {
+      startMs: bucketEnd - WEEK_MS,
+      endMs: bucketEnd,
+      label: formatWeekRangeLabel(bucketEnd - WEEK_MS, bucketEnd),
+    };
+  });
 };
 
 const bucketTimestamps = (
