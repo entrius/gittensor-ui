@@ -1,13 +1,27 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 
-import { Avatar, Box, Button, Card, Tooltip, Typography } from '@mui/material';
+import {
+  Avatar,
+  Box,
+  Button,
+  Card,
+  Collapse,
+  Tooltip,
+  Typography,
+} from '@mui/material';
 import { alpha, type Theme } from '@mui/material/styles';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 
 import { LinkBox, useLinkBehavior } from '../components/common/linkBehavior';
 import { Page } from '../components/layout';
 import { TopRepositoriesTable, SEO } from '../components';
-import { useAllPrs, useAllMiners, useReposAndWeights } from '../api';
+import {
+  useAllPrs,
+  useAllMiners,
+  useReposAndWeights,
+  useValidatorBaskets,
+} from '../api';
 import { type CommitLog } from '../api/models/Dashboard';
 import { getRepositoryOwnerAvatarSrc } from '../utils/avatar';
 import { buildRepoDiscoveryRollupFromMiners } from '../utils/ExplorerUtils';
@@ -128,6 +142,208 @@ const cardSx = (theme: Theme) => ({
     borderColor: theme.palette.border.medium,
   },
 });
+
+// ── Validator weight consensus ──────────────────────────────────────────────
+const shortHotkey = (hotkey: string) =>
+  hotkey.length > 12 ? `${hotkey.slice(0, 6)}…${hotkey.slice(-4)}` : hotkey;
+
+const formatTao = (rao: string) => {
+  const tao = Number(rao) / 1e9;
+  if (!Number.isFinite(tao)) return '—';
+  return `${Intl.NumberFormat(undefined, {
+    notation: 'compact',
+    maximumFractionDigits: 1,
+  }).format(tao)} τ`;
+};
+
+const basketSummary = (basket: Record<string, number>) => {
+  const entries = Object.entries(basket).sort((a, b) => b[1] - a[1]);
+  const total = entries.reduce((sum, [, w]) => sum + w, 0) || 1;
+  return entries
+    .map(([name, w]) => `${name} ${((w / total) * 100).toFixed(0)}%`)
+    .join(' · ');
+};
+
+const ValidatorBasketsSection: React.FC = () => {
+  const { data } = useValidatorBaskets();
+  const [expanded, setExpanded] = useState(false);
+
+  const shares = useMemo(
+    () => (data ? Object.entries(data.shares).sort((a, b) => b[1] - a[1]) : []),
+    [data],
+  );
+
+  if (!data || data.snapshotBlock === null) return null;
+
+  return (
+    <Card
+      id="validator-baskets"
+      sx={(theme) => ({ ...cardSx(theme), mt: { xs: 2, sm: 3 } })}
+      elevation={0}
+    >
+      <SectionHeader>Validator Weight Consensus</SectionHeader>
+      {shares.length === 0 ? (
+        <Typography
+          sx={(theme) => ({
+            color: alpha(theme.palette.text.primary, 0.3),
+            fontSize: '0.8rem',
+            fontStyle: 'italic',
+            p: 1,
+          })}
+        >
+          No basket data available
+        </Typography>
+      ) : (
+        <Box sx={{ display: 'flex', flexDirection: 'column' }}>
+          {shares.map(([name, share]) => (
+            <HighlightRow
+              key={name}
+              href={getRepoHref(name)}
+              linkState={REPO_LINK_STATE}
+              avatar={getRepositoryOwnerAvatarSrc(name.split('/')[0])}
+              avatarAlt={name}
+              avatarBg={getAvatarBg(name)}
+              label={
+                <Tooltip title={name} arrow placement="top">
+                  <Typography
+                    sx={{
+                      fontFamily: FONTS.mono,
+                      fontSize: '0.82rem',
+                      color: 'text.primary',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {name}
+                  </Typography>
+                </Tooltip>
+              }
+              right={
+                <Typography
+                  sx={{
+                    fontFamily: FONTS.mono,
+                    fontSize: '0.75rem',
+                    fontWeight: 600,
+                    color: 'text.secondary',
+                    flexShrink: 0,
+                  }}
+                >
+                  {(share * 100).toFixed(1)}%
+                </Typography>
+              }
+            />
+          ))}
+        </Box>
+      )}
+      <Typography
+        sx={(theme) => ({
+          fontFamily: FONTS.mono,
+          fontSize: '0.68rem',
+          color: alpha(theme.palette.text.primary, 0.35),
+          mt: 1,
+        })}
+      >
+        block {data.snapshotBlock.toLocaleString()} ·{' '}
+        {pluralize(data.voterCount, 'voter')} · stake gate{' '}
+        {data.gatePassed ? 'passed' : 'not met'}
+      </Typography>
+      {data.baskets.length > 0 && (
+        <>
+          <Box
+            component="button"
+            type="button"
+            onClick={() => setExpanded((prev) => !prev)}
+            sx={{
+              background: 'none',
+              border: 0,
+              p: 0,
+              mt: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 0.5,
+              cursor: 'pointer',
+              width: 'fit-content',
+            }}
+          >
+            <Typography
+              sx={{
+                fontFamily: FONTS.mono,
+                fontSize: '0.72rem',
+                color: 'text.secondary',
+              }}
+            >
+              {pluralize(data.baskets.length, 'validator basket')}
+            </Typography>
+            <ExpandMoreIcon
+              sx={{
+                fontSize: 16,
+                color: 'text.secondary',
+                transform: expanded ? 'rotate(180deg)' : 'none',
+                transition: 'transform 0.2s',
+              }}
+            />
+          </Box>
+          <Collapse in={expanded}>
+            <Box
+              sx={{
+                mt: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 0.75,
+              }}
+            >
+              {data.baskets.map((b) => (
+                <Box
+                  key={b.hotkey}
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'baseline',
+                    gap: 1.5,
+                    flexWrap: 'wrap',
+                  }}
+                >
+                  <Tooltip title={b.hotkey} arrow placement="top">
+                    <Typography
+                      sx={{
+                        fontFamily: FONTS.mono,
+                        fontSize: '0.72rem',
+                        color: 'text.primary',
+                        flexShrink: 0,
+                      }}
+                    >
+                      {shortHotkey(b.hotkey)}
+                    </Typography>
+                  </Tooltip>
+                  <Typography
+                    sx={{
+                      fontFamily: FONTS.mono,
+                      fontSize: '0.72rem',
+                      color: 'text.secondary',
+                      flexShrink: 0,
+                    }}
+                  >
+                    {formatTao(b.stakeRao)}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      fontFamily: FONTS.mono,
+                      fontSize: '0.72rem',
+                      color: 'text.secondary',
+                      minWidth: 0,
+                    }}
+                  >
+                    {basketSummary(b.basket)}
+                  </Typography>
+                </Box>
+              ))}
+            </Box>
+          </Collapse>
+        </>
+      )}
+    </Card>
+  );
+};
 
 // ── Page ────────────────────────────────────────────────────────────────────
 const REPO_LINK_STATE = { backLabel: 'Back to Repositories' } as const;
@@ -786,6 +1002,9 @@ const RepositoriesPage: React.FC = () => {
             linkState={REPO_LINK_STATE}
           />
         </Card>
+
+        {/* ── Validator Weight Consensus ─────────────────────────────── */}
+        <ValidatorBasketsSection />
       </Box>
     </Page>
   );
