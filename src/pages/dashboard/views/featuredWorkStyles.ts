@@ -3,14 +3,10 @@ import { type SxProps, type Theme, alpha } from '@mui/material/styles';
 type ThemeSxFactory = (theme: Theme) => SxProps<Theme>;
 type FontSxFactory = (theme: Theme, mono: string) => SxProps<Theme>;
 
-export const sectionContainerSx: ThemeSxFactory = (
-  theme: Theme,
-): SxProps<Theme> => ({
+// Section title sits directly on the canvas; the repo cards inside are the
+// only card layer.
+export const sectionContainerSx: ThemeSxFactory = (): SxProps<Theme> => ({
   width: '100%',
-  p: { xs: 1.45, sm: 1.65 },
-  borderRadius: 3,
-  border: `1px solid ${theme.palette.border.light}`,
-  backgroundColor: 'transparent',
 });
 
 export const sectionTitleSx: FontSxFactory = (

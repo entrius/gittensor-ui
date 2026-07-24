@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Box, Card, CardContent, Grid, Stack, Typography } from '@mui/material';
+import { Box, Grid, Stack, Typography } from '@mui/material';
 import { alpha, type Theme, useTheme } from '@mui/material/styles';
 import ReactECharts from 'echarts-for-react';
 import KpiCard from '../../../components/KpiCard';
@@ -224,7 +224,7 @@ const PoolColumn: React.FC<PoolColumnProps> = ({
         border: `1px solid ${theme.palette.border.light}`,
       }}
     >
-      {/* Pool label — matches MinerCard eligibility badge style */}
+      {/* Pool label: plain colored word, no badge chrome */}
       <Typography
         sx={{
           fontFamily: monoFontFamily,
@@ -232,16 +232,9 @@ const PoolColumn: React.FC<PoolColumnProps> = ({
           fontWeight: 700,
           letterSpacing: '0.04em',
           alignSelf: 'flex-start',
-          borderRadius: 1,
-          px: 0.75,
-          py: 0.2,
-          border: `1px solid ${isEligible ? alpha(theme.palette.status.merged, 0.45) : theme.palette.border.subtle}`,
           color: isEligible
             ? theme.palette.status.merged
             : theme.palette.text.secondary,
-          backgroundColor: isEligible
-            ? alpha(theme.palette.status.merged, 0.08)
-            : theme.palette.surface.subtle,
         }}
       >
         {isEligible ? 'Eligible' : 'Ineligible'}
@@ -389,66 +382,51 @@ const DashboardOverview: React.FC<DashboardOverviewProps> = ({
         <Grid container spacing={{ xs: 1.5, md: 2 }}>
           {sections.map((section) => (
             <Grid item xs={12} lg={6} key={section.title}>
-              <Card
-                sx={{
-                  height: '100%',
-                  borderRadius: 3,
-                  border: `1px solid ${theme.palette.border.light}`,
-                  backgroundColor: 'transparent',
-                  overflow: 'visible',
-                }}
-                elevation={0}
-              >
-                <CardContent
-                  sx={{
-                    p: { xs: 1.35, sm: 1.5 },
-                    '&:last-child': { pb: { xs: 1.35, sm: 1.5 } },
-                  }}
-                >
-                  {/* Card header */}
-                  <Box sx={{ mb: 1.25 }}>
-                    <Typography
-                      sx={{
-                        color: theme.palette.text.primary,
-                        fontFamily: monoFontFamily,
-                        fontSize: { xs: '0.98rem', sm: '1.05rem' },
-                        fontWeight: 700,
-                      }}
-                    >
-                      {section.title}
-                    </Typography>
-                    <Typography
-                      sx={{
-                        mt: 0.18,
-                        color: 'text.secondary',
-                        fontFamily: monoFontFamily,
-                        fontSize: '0.7rem',
-                        letterSpacing: '0.02em',
-                      }}
-                    >
-                      {rangeDescription}
-                    </Typography>
-                  </Box>
+              {/* Section header sits directly on the canvas; the pool
+                  columns below are the only card layer. */}
+              <Box sx={{ height: '100%' }}>
+                <Box sx={{ mb: 1.25 }}>
+                  <Typography
+                    sx={{
+                      color: theme.palette.text.primary,
+                      fontFamily: monoFontFamily,
+                      fontSize: { xs: '0.98rem', sm: '1.05rem' },
+                      fontWeight: 700,
+                    }}
+                  >
+                    {section.title}
+                  </Typography>
+                  <Typography
+                    sx={{
+                      mt: 0.18,
+                      color: 'text.secondary',
+                      fontFamily: monoFontFamily,
+                      fontSize: '0.7rem',
+                      letterSpacing: '0.02em',
+                    }}
+                  >
+                    {rangeDescription}
+                  </Typography>
+                </Box>
 
-                  {/* Two pools side by side */}
-                  <Grid container spacing={1}>
-                    <Grid item xs={6}>
-                      <PoolColumn
-                        sectionTitle={section.title}
-                        pool={section.eligible}
-                        isEligible={true}
-                      />
-                    </Grid>
-                    <Grid item xs={6}>
-                      <PoolColumn
-                        sectionTitle={section.title}
-                        pool={section.ineligible}
-                        isEligible={false}
-                      />
-                    </Grid>
+                {/* Two pools side by side */}
+                <Grid container spacing={1}>
+                  <Grid item xs={6}>
+                    <PoolColumn
+                      sectionTitle={section.title}
+                      pool={section.eligible}
+                      isEligible={true}
+                    />
                   </Grid>
-                </CardContent>
-              </Card>
+                  <Grid item xs={6}>
+                    <PoolColumn
+                      sectionTitle={section.title}
+                      pool={section.ineligible}
+                      isEligible={false}
+                    />
+                  </Grid>
+                </Grid>
+              </Box>
             </Grid>
           ))}
         </Grid>

@@ -49,15 +49,9 @@ const DashboardTopContributors: React.FC<DashboardTopContributorsProps> = ({
   };
 
   return (
-    <Box
-      sx={{
-        width: '100%',
-        p: { xs: 1.45, sm: 1.65 },
-        borderRadius: 3,
-        border: `1px solid ${theme.palette.border.light}`,
-        backgroundColor: 'transparent',
-      }}
-    >
+    // Section title sits directly on the canvas; the contributor cards
+    // inside are the only card layer.
+    <Box sx={{ width: '100%' }}>
       <Box
         sx={{
           mb: 1.35,

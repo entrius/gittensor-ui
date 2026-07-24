@@ -6,8 +6,6 @@ import React, {
   useState,
 } from 'react';
 import {
-  Card,
-  CardContent,
   Typography,
   Box,
   Stack,
@@ -15,7 +13,6 @@ import {
   useMediaQuery,
   alpha,
   Avatar,
-  Chip,
   Tooltip,
 } from '@mui/material';
 import { formatDistanceToNow } from 'date-fns';
@@ -73,55 +70,13 @@ interface CommitLogEntry {
   score: string;
 }
 
-type CommitStatus = 'merged' | 'open' | 'closed';
-type CommitStatusFilter = 'all' | CommitStatus;
-
-const COMMIT_STATUS_META: Record<
-  CommitStatusFilter,
-  { filterLabel: string; badgeLabel: string; color: string }
-> = {
-  all: {
-    filterLabel: 'All',
-    badgeLabel: 'ALL',
-    color: theme.palette.text.secondary,
-  },
-  merged: {
-    filterLabel: 'Merged',
-    badgeLabel: 'MERGED',
-    color: theme.palette.status.merged,
-  },
-  open: {
-    filterLabel: 'Open',
-    badgeLabel: 'OPEN',
-    color: theme.palette.status.open,
-  },
-  closed: {
-    filterLabel: 'Closed',
-    badgeLabel: 'CLOSED',
-    color: theme.palette.status.closed,
-  },
-};
-
 /** Remaining scroll distance (px) at which the next page starts loading. */
 const SCROLL_BOTTOM_BUFFER_PX = 80;
 /** Debounce delay (ms) for the scroll handler to avoid hammering on fast scroll. */
 const SCROLL_DEBOUNCE_MS = 120;
 
-const COMMIT_STATUS_FILTERS: CommitStatusFilter[] = [
-  'all',
-  'merged',
-  'open',
-  'closed',
-];
-
 const getCommitId = (entry: CommitLogEntry) =>
   `${entry.repository}-${entry.pullRequestNumber}`;
-
-const getCommitStatus = (entry: CommitLogEntry): CommitStatus => {
-  if (entry.mergedAt || entry.prState === 'MERGED') return 'merged';
-  if (entry.prState === 'CLOSED') return 'closed';
-  return 'open';
-};
 
 const getCommitTimestamp = (entry: CommitLogEntry) => {
   const timestamp = entry.mergedAt || entry.prCreatedAt;
@@ -147,7 +102,7 @@ const CommitLogItem: React.FC<{
   const isMerged = !!entry.mergedAt;
   const isClosed = entry.prState === 'CLOSED' && !entry.mergedAt;
 
-  let status = { label: 'OPEN', color: theme.palette.status.neutral };
+  let status = { label: 'OPENED', color: theme.palette.status.neutral };
   if (isMerged)
     status = { label: 'MERGED', color: theme.palette.status.merged };
   else if (isClosed)
@@ -172,28 +127,16 @@ const CommitLogItem: React.FC<{
         borderColor: isNew
           ? theme.palette.secondary.main
           : theme.palette.border.light,
-        backgroundColor: theme.palette.surface.subtle,
-        backdropFilter: 'blur(8px)',
+        backgroundColor: 'transparent',
         transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
         animation: isNew ? 'slideIn 0.5s ease-out' : undefined,
         cursor: 'pointer',
         position: 'relative',
         overflow: 'hidden',
-        '&::before': {
-          content: '""',
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: `linear-gradient(90deg, ${alpha(status.color, 0.1)} 0%, transparent 100%)`,
-          opacity: 0.5,
-        },
         '&:hover': {
           borderColor: status.color,
           transform: 'translateX(4px)',
           boxShadow: `0 0 20px ${alpha(status.color, 0.1)}`,
-          '&::before': { opacity: 0.8 },
         },
         '@keyframes slideIn': {
           from: { opacity: 0, transform: 'translateX(-20px)' },
@@ -252,16 +195,17 @@ const CommitLogItem: React.FC<{
             spacing={1}
             sx={{ mb: 0.5 }}
           >
-            <Chip
-              variant="status"
-              label={status.label}
-              size="small"
+            <Typography
+              component="span"
+              variant="caption"
               sx={{
                 color: status.color,
-                borderColor: alpha(status.color, 0.3),
-                backgroundColor: alpha(status.color, 0.1),
+                fontWeight: 700,
+                letterSpacing: '0.04em',
               }}
-            />
+            >
+              {status.label}
+            </Typography>
             {timestampRaw ? (
               <Tooltip
                 title={formatUtcTimestamp(timestampRaw)}
@@ -389,7 +333,6 @@ const LiveCommitLog: React.FC = () => {
   const { data, isLoading, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteCommitLog({ refetchInterval: 10000 });
 
-  const [statusFilter, setStatusFilter] = useState<CommitStatusFilter>('all');
   const [logEntries, setLogEntries] = useState<CommitLogEntry[]>([]);
   const [newEntryIds, setNewEntryIds] = useState<Set<string>>(new Set());
   const [, setRelativeTimeTick] = useState(0);
@@ -456,19 +399,15 @@ const LiveCommitLog: React.FC = () => {
 
   const visibleEntries = useMemo(
     () =>
-      [...logEntries]
-        .filter(
-          (entry) =>
-            statusFilter === 'all' || getCommitStatus(entry) === statusFilter,
-        )
-        .sort((a, b) => getCommitTimestamp(b) - getCommitTimestamp(a)),
-    [logEntries, statusFilter],
+      [...logEntries].sort(
+        (a, b) => getCommitTimestamp(b) - getCommitTimestamp(a),
+      ),
+    [logEntries],
   );
 
   const hasAnyEntries = logEntries.length > 0;
   const showInitialLoading = isLoading && !hasAnyEntries;
   const showWaitingForActivity = !showInitialLoading && !hasAnyEntries;
-  const showFilteredEmptyState = hasAnyEntries && visibleEntries.length === 0;
 
   // If the first page doesn't fill the container there is no scroll event to
   // trigger pagination. Check after each render and fetch the next page when
@@ -518,124 +457,41 @@ const LiveCommitLog: React.FC = () => {
   );
 
   return (
-    <Card
+    // Header sits directly on the canvas; the activity entries inside are
+    // the only card layer.
+    <Box
       sx={{
-        borderRadius: 3,
-        border: `1px solid ${theme.palette.border.light}`,
-        backgroundColor: 'transparent',
         height: '100%',
         display: 'flex',
         flexDirection: 'column',
       }}
-      elevation={0}
     >
-      <CardContent
+      <Box
         sx={{
           flex: 1,
-          p: isMobile ? 1.5 : isTablet ? 1.75 : 2,
-          '&:last-child': { pb: isMobile ? 1.5 : isTablet ? 1.75 : 2 },
+          // No vertical padding: the header lines up with the "Active
+          // Network" title and the feed's bottom edge lines up with the
+          // main column's bottom.
           display: 'flex',
           flexDirection: 'column',
           overflow: 'hidden',
           minHeight: 0,
         }}
       >
-        <Stack
-          spacing={0.5}
-          useFlexGap
-          sx={{ mb: isMobile ? 1 : 1.5, flexShrink: 0 }}
+        <Typography
+          variant="h6"
+          sx={{
+            // Matches the "Active Network" header metrics exactly so the
+            // first entry card's top lines up with the chart card's top.
+            fontSize: { xs: '1.02rem', sm: '1.1rem' },
+            fontWeight: 700,
+            lineHeight: 1.5,
+            mb: isMobile ? 1 : 1.1,
+            flexShrink: 0,
+          }}
         >
-          <Stack
-            direction="row"
-            alignItems="center"
-            justifyContent="space-between"
-          >
-            <Typography
-              variant="h6"
-              sx={{
-                fontSize: isMobile ? '0.9rem' : isTablet ? '0.95rem' : '1rem',
-                fontWeight: 500,
-              }}
-            >
-              Live Activity
-            </Typography>
-            <Box
-              sx={{
-                width: 8,
-                height: 8,
-                borderRadius: '50%',
-                backgroundColor: theme.palette.success.main,
-                animation: 'pulse 2s infinite',
-                '@keyframes pulse': {
-                  '0%, 100%': { opacity: 1 },
-                  '50%': { opacity: 0.5 },
-                },
-              }}
-            />
-          </Stack>
-          <Box
-            sx={{
-              mt: 0.5,
-              borderBottom: (t) => `1px solid ${t.palette.border.light}`,
-            }}
-          />
-          <Box
-            sx={(t) => ({
-              mt: 1,
-              mb: '1px',
-              display: 'inline-flex',
-              alignSelf: 'center',
-              gap: 0.5,
-              p: 0.5,
-              borderRadius: 2,
-              backgroundColor: t.palette.surface.light,
-            })}
-          >
-            {COMMIT_STATUS_FILTERS.map((filter) => {
-              const option = COMMIT_STATUS_META[filter];
-              const selected = statusFilter === filter;
-
-              return (
-                <Box
-                  key={filter}
-                  component="button"
-                  type="button"
-                  aria-pressed={selected}
-                  onClick={() => setStatusFilter(filter)}
-                  sx={(t) => ({
-                    px: isMobile ? 1.35 : 1.6,
-                    height: isMobile ? 22 : 24,
-                    display: 'flex',
-                    alignItems: 'center',
-                    border: 0,
-                    borderRadius: 1.5,
-                    backgroundColor: selected
-                      ? alpha(t.palette.text.primary, 0.15)
-                      : 'transparent',
-                    color: selected
-                      ? t.palette.text.primary
-                      : alpha(option.color, 0.82),
-                    cursor: 'pointer',
-                    fontSize: isMobile ? '0.68rem' : '0.72rem',
-                    fontWeight: selected ? 600 : 500,
-                    lineHeight: 1,
-                    transition: 'all 0.2s ease',
-                    '&:hover': {
-                      backgroundColor: alpha(t.palette.text.primary, 0.1),
-                      color: t.palette.text.primary,
-                    },
-                    '&:focus-visible': {
-                      outline: `1px solid ${option.color}`,
-                      outlineOffset: 1,
-                    },
-                  })}
-                >
-                  {option.filterLabel}
-                </Box>
-              );
-            })}
-          </Box>
-        </Stack>
+          Live Activity
+        </Typography>
 
         {showInitialLoading ? (
           <Box
@@ -672,22 +528,6 @@ const LiveCommitLog: React.FC = () => {
               >
                 <Typography variant="body2">Waiting for activity...</Typography>
               </Box>
-            ) : showFilteredEmptyState ? (
-              <Box
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  alignItems: 'center',
-                  py: 8,
-                  color: 'text.secondary',
-                }}
-              >
-                <Typography variant="body2">
-                  No{' '}
-                  {COMMIT_STATUS_META[statusFilter].filterLabel.toLowerCase()}{' '}
-                  activity yet.
-                </Typography>
-              </Box>
             ) : (
               <Stack spacing={isMobile ? 1 : isTablet ? 1.25 : 1}>
                 {visibleEntries.map((entry) => {
@@ -708,8 +548,8 @@ const LiveCommitLog: React.FC = () => {
             )}
           </Box>
         )}
-      </CardContent>
-    </Card>
+      </Box>
+    </Box>
   );
 };
 

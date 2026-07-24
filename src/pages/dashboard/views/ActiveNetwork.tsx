@@ -35,15 +35,9 @@ const ActiveNetwork: React.FC<ActiveNetworkProps> = ({
   onCalendarMonthChange,
 }) => {
   return (
-    <Box
-      sx={{
-        width: '100%',
-        p: { xs: 1.45, sm: 1.65 },
-        borderRadius: 3,
-        border: (muiTheme) => `1px solid ${muiTheme.palette.border.light}`,
-        backgroundColor: 'transparent',
-      }}
-    >
+    // Section labels sit directly on the canvas; each subsection carries its
+    // own single card layer.
+    <Box sx={{ width: '100%' }}>
       <ContributionTrends
         range={range}
         labels={trendLabels}
