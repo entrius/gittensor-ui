@@ -440,36 +440,23 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
                             aria-pressed={isSelected}
                             aria-label={`Show ${formatMonthLabel(month)}`}
                             sx={{
+                              // No border or fill: the selected month is
+                              // marked by its text turning green, matching
+                              // the other dashboard controls.
                               appearance: 'none',
                               position: 'relative',
                               zIndex: 1,
-                              border: `1px solid ${
-                                isSelected
-                                  ? alpha(theme.palette.status.success, 0.85)
-                                  : alpha(theme.palette.border.light, 0.72)
-                              }`,
-                              borderRadius: 1,
-                              px: 1.05,
+                              border: 0,
+                              borderRadius: 999,
+                              px: 0.6,
                               py: 0.55,
-                              minWidth: { xs: 76, sm: 86 },
+                              backgroundColor: 'transparent',
                               color: isSelected
-                                ? theme.palette.text.primary
+                                ? theme.palette.status.success
                                 : alpha(
                                     theme.palette.text.primary,
                                     TEXT_OPACITY.secondary,
                                   ),
-                              backgroundColor: isSelected
-                                ? alpha(theme.palette.status.success, 0.22)
-                                : theme.palette.background.default,
-                              boxShadow: isSelected
-                                ? `0 0 0 1px ${alpha(
-                                    theme.palette.status.success,
-                                    0.32,
-                                  )}`
-                                : `0 0 0 1px ${alpha(
-                                    theme.palette.common.black,
-                                    0.45,
-                                  )}`,
                               cursor: isSelected ? 'default' : 'pointer',
                               fontFamily: monoFontFamily,
                               fontSize: { xs: '0.64rem', sm: '0.68rem' },
@@ -477,18 +464,11 @@ const ContributionCalendar: React.FC<ContributionCalendarProps> = ({
                               lineHeight: 1.1,
                               textAlign: 'center',
                               whiteSpace: 'nowrap',
-                              transition:
-                                'background-color 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease',
+                              transition: 'color 120ms ease',
                               '&:hover': {
-                                color: theme.palette.text.primary,
-                                borderColor: alpha(
-                                  theme.palette.status.success,
-                                  0.5,
-                                ),
-                                backgroundColor: alpha(
-                                  theme.palette.status.success,
-                                  isSelected ? 0.22 : 0.09,
-                                ),
+                                color: isSelected
+                                  ? theme.palette.status.success
+                                  : theme.palette.text.primary,
                               },
                               '&:disabled': {
                                 opacity: 1,
