@@ -76,3 +76,30 @@ export const useRepositoryMiners = (repo: string) =>
     'useRepositoryMiners',
     `/${encodeURIComponent(repo)}/miners`,
   );
+
+/** One validator's submitted repo basket (u16 weights keyed by "owner/repo"). */
+export type ValidatorBasket = {
+  hotkey: string;
+  stakeRao: string;
+  basket: Record<string, number>;
+};
+
+/** Stake-weighted repo weight consensus snapshot from validator baskets. */
+export type ValidatorBasketsResponse = {
+  snapshotBlock: number | null;
+  gatePassed: boolean;
+  shares: Record<string, number>;
+  eligibleStakeRao: string;
+  validStakeRao: string;
+  voterCount: number;
+  baskets: ValidatorBasket[];
+};
+
+/**
+ * Get the latest validator weight-basket consensus (GET /repos/validator-baskets).
+ */
+export const useValidatorBaskets = () =>
+  useReposQuery<ValidatorBasketsResponse>(
+    'useValidatorBaskets',
+    '/validator-baskets',
+  );
