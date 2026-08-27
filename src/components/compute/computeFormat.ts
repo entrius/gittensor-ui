@@ -70,6 +70,28 @@ export const formatUsd = (value: number | null | undefined): string =>
         maximumFractionDigits: 2,
       });
 
+export type MissSeverity = 'strike' | 'neutral';
+
+/**
+ * Only a wrong answer (strike) is an error; timeouts / unavailable /
+ * not-verified / empty completion are ordinary misses. A bare "Success"
+ * is a legacy validator string for an empty completion — never show it red.
+ */
+export const classifyMissReason = (
+  reason: string,
+): { label: string; severity: MissSeverity } => {
+  const trimmed = reason.trim();
+  if (/^success$/i.test(trimmed)) {
+    return { label: 'empty completion', severity: 'neutral' };
+  }
+  const lower = trimmed.toLowerCase();
+  const isStrike =
+    lower.startsWith('wrong') ||
+    lower.includes('reference mismatch') ||
+    lower.includes('wrong');
+  return { label: trimmed, severity: isStrike ? 'strike' : 'neutral' };
+};
+
 /** Payout estimates are meaningless without a price — render "—". */
 export const hasPricing = (
   source: ServingPricingSource | null | undefined,

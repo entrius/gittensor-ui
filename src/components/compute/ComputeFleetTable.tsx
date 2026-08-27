@@ -1,25 +1,22 @@
 import React, { useMemo } from 'react';
-import { Box, Tooltip, Typography, alpha, useTheme } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import type { ServingMiner } from '../../api';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
-import { TEXT_OPACITY, tooltipSlotProps } from '../../theme';
 import { computeMinerPath } from '../../utils/paths';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
 import { ComputeStatusBadge } from './ComputeStatusBadge';
 import { CopyableHotkey } from './CopyableHotkey';
+import { MissReasonText } from './MissReasonText';
 import {
   formatAlpha,
   formatFixed,
   formatPercent,
-  formatWindow,
   uptimeFraction,
 } from './computeFormat';
 
 const SORT_KEYS = [
   'uid',
   'status',
-  'window',
   'tps',
   'credit',
   'capacity',
@@ -30,7 +27,16 @@ const SORT_KEYS = [
 type FleetSortKey = (typeof SORT_KEYS)[number];
 
 const STATUS_RANK = { ready: 0, probation: 1, quarantined: 2 } as const;
-const LAST_MISS_MAX_CHARS = 28;
+
+// Compact single-line rows; numeric cells right-aligned.
+const cellSx = { py: 0.75, px: 1, whiteSpace: 'nowrap' } as const;
+const headerSx = { px: 1 } as const;
+
+/** Probe-derived metrics only mean something once a miner is READY. */
+const readyOnly = (
+  miner: ServingMiner,
+  render: (m: ServingMiner) => string,
+): string => (miner.status === 'ready' ? render(miner) : '—');
 
 const sortValue = (miner: ServingMiner, key: FleetSortKey): number => {
   switch (key) {
@@ -38,8 +44,6 @@ const sortValue = (miner: ServingMiner, key: FleetSortKey): number => {
       return miner.uid;
     case 'status':
       return STATUS_RANK[miner.status] ?? 3;
-    case 'window':
-      return miner.windowMean;
     case 'tps':
       return miner.probeTps ?? -1;
     case 'credit':
@@ -73,7 +77,6 @@ export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
   isError,
   emptyState,
 }) => {
-  const theme = useTheme();
   const navigate = useNavigate();
   const { sortField, sortOrder, setSort } = useDataTableParams<FleetSortKey>({
     sortKeys: SORT_KEYS,
@@ -89,52 +92,53 @@ export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
     });
   }, [miners, sortField, sortOrder]);
 
-  const muted = alpha(theme.palette.common.white, TEXT_OPACITY.muted);
-
   const columns = useMemo<DataTableColumn<ServingMiner, FleetSortKey>[]>(
     () => [
       {
         key: 'uid',
         header: 'UID',
-        width: 64,
+        width: 60,
         sortKey: 'uid',
+        cellSx,
+        headerSx,
         renderCell: (m) => m.uid,
       },
       {
         key: 'hotkey',
         header: 'Hotkey',
-        width: 170,
+        width: 140,
+        cellSx,
+        headerSx,
         renderCell: (m) => <CopyableHotkey hotkey={m.hotkey} edge={5} />,
       },
       {
         key: 'status',
         header: 'Status',
-        width: 120,
+        width: 118,
         sortKey: 'status',
+        cellSx,
+        headerSx,
         renderCell: (m) => <ComputeStatusBadge status={m.status} />,
-      },
-      {
-        key: 'window',
-        header: 'Window',
-        width: 110,
-        sortKey: 'window',
-        renderCell: (m) => formatWindow(m),
       },
       {
         key: 'tps',
         header: 'tok/s',
-        width: 84,
+        width: 76,
         align: 'right',
         sortKey: 'tps',
-        renderCell: (m) => formatFixed(m.probeTps, 0),
+        cellSx,
+        headerSx,
+        renderCell: (m) => readyOnly(m, (x) => formatFixed(x.probeTps, 0)),
       },
       {
         key: 'credit',
-        header: 'TTFT credit',
-        width: 118,
+        header: 'TTFT',
+        width: 76,
         align: 'right',
         sortKey: 'credit',
-        renderCell: (m) => formatFixed(m.credit, 2),
+        cellSx,
+        headerSx,
+        renderCell: (m) => readyOnly(m, (x) => formatFixed(x.credit, 2)),
       },
       {
         key: 'capacity',
@@ -142,67 +146,50 @@ export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
         width: 104,
         align: 'right',
         sortKey: 'capacity',
-        renderCell: (m) => formatFixed(m.capacity, 2),
+        cellSx,
+        headerSx,
+        renderCell: (m) => readyOnly(m, (x) => formatFixed(x.capacity, 2)),
       },
       {
         key: 'settled',
         header: 'Settled',
-        width: 92,
+        width: 86,
         align: 'right',
         sortKey: 'settled',
+        cellSx,
+        headerSx,
         renderCell: (m) => formatFixed(m.settledScore, 3),
       },
       {
         key: 'uptime',
         header: 'Uptime 24h',
-        width: 118,
+        width: 120,
         align: 'right',
         sortKey: 'uptime',
+        cellSx,
+        headerSx,
         renderCell: (m) => formatPercent(uptimeFraction(m)),
       },
       {
         key: 'alpha',
         header: 'Est. α/day',
-        width: 118,
+        width: 120,
         align: 'right',
         sortKey: 'alpha',
-        renderCell: (m) => (priced ? formatAlpha(m.estAlphaPerDay) : '—'),
+        cellSx,
+        headerSx,
+        renderCell: (m) =>
+          priced ? readyOnly(m, (x) => formatAlpha(x.estAlphaPerDay)) : '—',
       },
       {
         key: 'lastMiss',
         header: 'Last miss',
-        width: 200,
-        renderCell: (m) => {
-          const reason = m.lastMissReason?.trim();
-          if (!reason) return <Box sx={{ color: muted }}>—</Box>;
-          const truncated =
-            reason.length > LAST_MISS_MAX_CHARS
-              ? `${reason.slice(0, LAST_MISS_MAX_CHARS)}…`
-              : reason;
-          return (
-            <Tooltip
-              title={reason}
-              arrow
-              placement="top"
-              slotProps={tooltipSlotProps}
-            >
-              <Typography
-                component="span"
-                sx={{
-                  fontSize: 'inherit',
-                  fontFamily: 'inherit',
-                  color: theme.palette.status.error,
-                  whiteSpace: 'nowrap',
-                }}
-              >
-                {truncated}
-              </Typography>
-            </Tooltip>
-          );
-        },
+        cellSx,
+        headerSx,
+        renderCell: (m) => <MissReasonText reason={m.lastMissReason} />,
       },
     ],
-    [muted, priced, theme.palette.status.error],
+    [priced],
   );
 
   return (
@@ -214,7 +201,6 @@ export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
       isError={isError}
       errorLabel="Could not load the compute fleet."
       emptyState={emptyState}
-      minWidth={1280}
       onRowClick={(m) => navigate(computeMinerPath(m.hotkey))}
       sort={{ field: sortField, order: sortOrder, onChange: setSort }}
     />

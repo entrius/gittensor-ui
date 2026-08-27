@@ -81,7 +81,7 @@ const routesArray: AppRoute[] = [
     name: 'compute-miner',
     path: '/compute/miner',
     element: <ComputeMinerPage />,
-    showGlobalSearch: true,
+    showGlobalSearch: false,
   },
   {
     name: 'watchlist',

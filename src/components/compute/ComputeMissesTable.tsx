@@ -1,20 +1,26 @@
 import React from 'react';
 import type { ServingMiss } from '../../api';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import { MissReasonText } from './MissReasonText';
 import { formatRoundTime } from './computeFormat';
+
+const cellSx = { py: 0.75, whiteSpace: 'nowrap' } as const;
 
 const columns: DataTableColumn<ServingMiss>[] = [
   {
     key: 'time',
     header: 'Round',
-    width: 160,
+    width: 170,
+    cellSx,
     renderCell: (miss) => formatRoundTime(miss.roundTs),
   },
   {
     key: 'reason',
     header: 'Reason',
-    renderCell: (miss) => miss.reason,
-    cellSx: { whiteSpace: 'normal', overflowWrap: 'anywhere' },
+    cellSx,
+    renderCell: (miss) => (
+      <MissReasonText reason={miss.reason} maxWidth="100%" />
+    ),
   },
 ];
 
@@ -26,6 +32,5 @@ export const ComputeMissesTable: React.FC<{ misses: ServingMiss[] }> = ({
     rows={misses}
     getRowKey={(miss) => `${miss.roundTs}-${miss.reason}`}
     emptyLabel="No misses recorded in this window."
-    minWidth={480}
   />
 );
