@@ -24,3 +24,12 @@ export const minerRepositoryPath = (
   const base = `/miners/repository?name=${encodeURIComponent(repositoryFullName)}`;
   return options?.tab ? `${base}&tab=${options.tab}` : base;
 };
+
+export const computePath = (): string => '/compute';
+
+export const computeMinerPath = (hotkey: string): string =>
+  `/compute/miner?hotkey=${encodeURIComponent(hotkey)}`;
+
+/** Loose ss58 check — 48 chars, starts with `5` (Bittensor hotkeys). */
+export const looksLikeSs58Hotkey = (value: string): boolean =>
+  /^5[1-9A-HJ-NP-Za-km-z]{47}$/.test(value);
