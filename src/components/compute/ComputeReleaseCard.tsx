@@ -191,11 +191,12 @@ export const ComputeReleaseCard: React.FC<{ release: ServingRelease }> = ({
             m: 0,
             flex: 1,
             minWidth: 0,
-            overflowX: 'auto',
+            overflowX: 'hidden',
             fontFamily: MONO,
             fontSize: '0.78rem',
             lineHeight: 1.5,
-            whiteSpace: 'pre',
+            whiteSpace: 'pre-wrap',
+            overflowWrap: 'anywhere',
             ...scrollbarSx,
           }}
         >
