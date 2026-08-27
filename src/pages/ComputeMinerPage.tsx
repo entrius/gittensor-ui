@@ -29,7 +29,7 @@ import {
   type ServingRound,
 } from '../api';
 import { STATUS_COLORS, TEXT_OPACITY } from '../theme';
-import { computePath, minerDetailsPath } from '../utils/paths';
+import { computeViewPath, minerDetailsPath } from '../utils/paths';
 
 const HISTORY_HOURS = 24;
 
@@ -303,7 +303,7 @@ const ComputeMinerPage: React.FC = () => {
         >
           <Box>
             <BackButton
-              to={computePath()}
+              to={computeViewPath()}
               label="Back to Compute"
               variant="text"
             />

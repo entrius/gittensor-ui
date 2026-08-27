@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { Page } from '../components/layout';
@@ -781,6 +782,9 @@ const dialTarget = (
   return TIMELINES[index] ?? null;
 };
 
+const isTimeline = (value: string | null): value is Timeline =>
+  (TIMELINES as readonly string[]).includes(value ?? '');
+
 const TIMELINE_TAGLINE: Record<Timeline, string> = {
   repositories: 'These are the open source projects built by Gittensor.',
   dashboard: 'This is the work done by Gittensor miners.',
@@ -901,7 +905,18 @@ const Curtain: React.FC<{ leaving: boolean }> = ({ leaving }) => (
 
 const HomePage: React.FC = () => {
   const reposQuery = useReposAndWeights();
-  const [timeline, setTimeline] = useState<Timeline>('repositories');
+  // The dial position lives in the URL (`/?view=compute`) so a drilldown's
+  // back link, a refresh, or a shared link land on the same timeline.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewParam = searchParams.get('view');
+  const [timeline, setTimeline] = useState<Timeline>(
+    isTimeline(viewParam) ? viewParam : 'repositories',
+  );
+  useEffect(() => {
+    if (isTimeline(viewParam) && viewParam !== timeline) setTimeline(viewParam);
+    // Follow browser back/forward between dial positions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewParam]);
   // The word leaving the dial; rendered just long enough to slide out in
   // the direction of travel, then cleared by onAnimationEnd.
   const [leaving, setLeaving] = useState<{
@@ -914,6 +929,9 @@ const HomePage: React.FC = () => {
     if (target === null) return;
     setLeaving({ word: timeline, dir });
     setTimeline(target);
+    setSearchParams(target === 'repositories' ? {} : { view: target }, {
+      replace: false,
+    });
   };
 
   const repos = useMemo(

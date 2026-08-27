@@ -26,6 +26,8 @@ export const minerRepositoryPath = (
 };
 
 export const computePath = (): string => '/compute';
+/** The landing page with the dial turned to compute — where the fleet actually lives in the UI. */
+export const computeViewPath = (): string => '/?view=compute';
 
 export const computeMinerPath = (hotkey: string): string =>
   `/compute/miner?hotkey=${encodeURIComponent(hotkey)}`;
