@@ -16,9 +16,8 @@ import type { ServingRelease } from '../../api';
 import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 import { TEXT_OPACITY, scrollbarSx, tooltipSlotProps } from '../../theme';
 
-const LOADOUT_URL =
-  'https://github.com/entrius/gittensor/blob/main/gittensor/validator/weights/serving_loadout.json';
-const DOCKER_HUB_URL = 'https://hub.docker.com/r/entrius/sparkinfer/tags';
+// Images for every blessed runtime/model live under the entrius org; the release row says which one to pull.
+const DOCKER_HUB_URL = 'https://hub.docker.com/u/entrius';
 
 const MONO = '"JetBrains Mono", monospace';
 
@@ -206,10 +205,7 @@ export const ComputeReleaseCard: React.FC<{ release: ServingRelease }> = ({
       </Box>
 
       <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 1.5 }}>
-        {[
-          { label: 'serving_loadout.json', href: LOADOUT_URL },
-          { label: 'entrius/sparkinfer on Docker Hub', href: DOCKER_HUB_URL },
-        ].map((link) => (
+        {[{ label: 'Docker Hub', href: DOCKER_HUB_URL }].map((link) => (
           <Link
             key={link.href}
             href={link.href}
