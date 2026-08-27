@@ -34,15 +34,16 @@ const KpiCard: React.FC<KpiCardProps> = ({
   const valueVariant = isLarge ? 'h2' : 'h4';
   const titleSize = isLarge ? (isMobile ? 14 : 16) : isMobile ? 12 : 14;
 
+  // Numbers (and numeric strings) get locale grouping; any other string —
+  // "$5", "2.12%", "54.2 α", "3 minutes ago" — is displayed as-is.
   const formattedValue =
-    value !== undefined && value !== null
-      ? typeof value === 'string' &&
-        (value.startsWith('$') || value.includes('ل') || value.includes(','))
-        ? value
-        : typeof value === 'number' || typeof value === 'string'
+    value === undefined || value === null
+      ? undefined
+      : typeof value === 'number'
+        ? value.toLocaleString()
+        : value.trim() !== '' && Number.isFinite(Number(value))
           ? Number(value).toLocaleString()
-          : value
-      : undefined;
+          : value;
 
   return (
     <Card

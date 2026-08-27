@@ -17,12 +17,14 @@ import {
   formatPercent,
   formatRelative,
   formatUsd,
+  hasPricing,
   shortHotkey,
   uptimeFraction,
 } from '../components/compute';
 import {
   isNotFoundError,
   useServingMinerDetail,
+  useServingStatus,
   type ServingMiner,
   type ServingRound,
 } from '../api';
@@ -121,8 +123,20 @@ const StatusCard: React.FC<{ miner: ServingMiner }> = ({ miner }) => {
   );
 };
 
-const MinerKpis: React.FC<{ miner: ServingMiner }> = ({ miner }) => {
+const MinerKpis: React.FC<{ miner: ServingMiner; priced: boolean }> = ({
+  miner,
+  priced,
+}) => {
   const usd = formatUsd(miner.estUsdPerDay);
+  const tempo = formatAlpha(miner.estAlphaPerTempo);
+  const payoutSubtitle = !priced
+    ? 'No price this round'
+    : [
+        tempo === '—' ? null : `${tempo}/tempo`,
+        usd === '—' ? null : `≈ ${usd}/day`,
+      ]
+        .filter(Boolean)
+        .join(' · ') + ' · est.';
   return (
     <Box
       sx={{
@@ -140,9 +154,9 @@ const MinerKpis: React.FC<{ miner: ServingMiner }> = ({ miner }) => {
         subtitle={`Round ${formatFixed(miner.roundScore, 3)}`}
       />
       <KpiCard
-        title="Est. α/day"
-        value={formatAlpha(miner.estAlphaPerDay)}
-        subtitle={usd === '—' ? 'Estimate' : `≈ ${usd}/day · est.`}
+        title="Est. alpha/day"
+        value={priced ? formatAlpha(miner.estAlphaPerDay) : '—'}
+        subtitle={payoutSubtitle}
       />
       <KpiCard
         title="tok/s"
@@ -205,6 +219,9 @@ const ComputeMinerPage: React.FC = () => {
   const [searchParams] = useSearchParams();
   const hotkey = (searchParams.get('hotkey') ?? '').trim();
   const query = useServingMinerDetail(hotkey, HISTORY_HOURS);
+  // Pricing source lives on the pool snapshot, not the per-hotkey payload.
+  const statusQuery = useServingStatus();
+  const pricingSource = statusQuery.data?.pricingSource;
   const theme = useTheme();
 
   const notFound = isNotFoundError(query.error);
@@ -235,7 +252,7 @@ const ComputeMinerPage: React.FC = () => {
       <>
         <IdentityHeader miner={miner} />
         <StatusCard miner={miner} />
-        <MinerKpis miner={miner} />
+        <MinerKpis miner={miner} priced={hasPricing(pricingSource)} />
         <Box>
           <Typography
             variant="sectionTitle"
@@ -304,6 +321,7 @@ const ComputeMinerPage: React.FC = () => {
           </Typography>
           <ValidatorSnapshotFootnote
             validatorHotkey={query.data?.validatorHotkey}
+            pricingSource={pricingSource}
           />
         </Box>
       </Box>

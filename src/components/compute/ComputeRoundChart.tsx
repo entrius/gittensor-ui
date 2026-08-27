@@ -45,6 +45,7 @@ export const ComputeRoundChart: React.FC<ComputeRoundChartProps> = ({
     const fontFamily = echartsFontFamily(theme);
     return {
       ...echartsTransparentBackground(),
+      animation: false,
       grid: echartsGridLineChart(),
       tooltip: {
         trigger: 'axis',

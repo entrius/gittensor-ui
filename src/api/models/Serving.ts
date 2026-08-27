@@ -3,6 +3,20 @@
 
 export type ServingMinerStatus = 'ready' | 'probation' | 'quarantined';
 
+/** Where the alpha price used for USD estimates came from. */
+export type ServingPricingSource = 'validator' | 'taostats' | 'none';
+
+/** The model/runtime pin the validator currently enforces. */
+export interface ServingRelease {
+  modelId: string;
+  /** e.g. "gittensor-ai-lab/sparkinfer@12954e6" */
+  runtimePin: string;
+  modelSha256: string;
+  modelFile: string;
+  /** e.g. "entrius/sparkinfer:12954e6" */
+  image: string;
+}
+
 export interface ServingStatus {
   validatorHotkey: string;
   roundTs: string;
@@ -19,14 +33,18 @@ export interface ServingStatus {
   cardEquivalents: number;
   /** Fraction of subnet emissions flowing to the pool (≤ poolCap). */
   poolShare: number;
-  poolCap: number;
-  gpuHourUsd: number;
+  /** From the validator; null on rows written before the column existed. */
+  poolCap: number | null;
+  gpuHourUsd: number | null;
+  pricingSource: ServingPricingSource;
   alphaPerHour: number | null;
   alphaUsd: number | null;
+  /** Per 72-min tempo. */
+  estAlphaPerCardTempo: number | null;
   estAlphaPerCardDay: number | null;
   estUsdPerCardDay: number | null;
   roundsLast24h: number;
-  retentionDays: number;
+  release: ServingRelease | null;
 }
 
 export interface ServingMiner {
@@ -50,6 +68,7 @@ export interface ServingMiner {
   roundTs: string;
   readyRounds24h: number;
   rounds24h: number;
+  estAlphaPerTempo: number | null;
   estAlphaPerDay: number | null;
   estUsdPerDay: number | null;
 }

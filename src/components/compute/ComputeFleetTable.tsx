@@ -59,6 +59,8 @@ const sortValue = (miner: ServingMiner, key: FleetSortKey): number => {
 
 interface ComputeFleetTableProps {
   miners: ServingMiner[];
+  /** False when the validator had no alpha price — payouts render as "—". */
+  priced?: boolean;
   isLoading: boolean;
   isError: boolean;
   emptyState: React.ReactNode;
@@ -66,6 +68,7 @@ interface ComputeFleetTableProps {
 
 export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
   miners,
+  priced = true,
   isLoading,
   isError,
   emptyState,
@@ -128,7 +131,7 @@ export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
       {
         key: 'credit',
         header: 'TTFT credit',
-        width: 100,
+        width: 118,
         align: 'right',
         sortKey: 'credit',
         renderCell: (m) => formatFixed(m.credit, 2),
@@ -136,7 +139,7 @@ export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
       {
         key: 'capacity',
         header: 'Capacity',
-        width: 92,
+        width: 104,
         align: 'right',
         sortKey: 'capacity',
         renderCell: (m) => formatFixed(m.capacity, 2),
@@ -152,7 +155,7 @@ export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
       {
         key: 'uptime',
         header: 'Uptime 24h',
-        width: 100,
+        width: 118,
         align: 'right',
         sortKey: 'uptime',
         renderCell: (m) => formatPercent(uptimeFraction(m)),
@@ -160,10 +163,10 @@ export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
       {
         key: 'alpha',
         header: 'Est. α/day',
-        width: 104,
+        width: 118,
         align: 'right',
         sortKey: 'alpha',
-        renderCell: (m) => formatAlpha(m.estAlphaPerDay),
+        renderCell: (m) => (priced ? formatAlpha(m.estAlphaPerDay) : '—'),
       },
       {
         key: 'lastMiss',
@@ -199,7 +202,7 @@ export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
         },
       },
     ],
-    [muted, theme.palette.status.error],
+    [muted, priced, theme.palette.status.error],
   );
 
   return (
@@ -211,7 +214,7 @@ export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
       isError={isError}
       errorLabel="Could not load the compute fleet."
       emptyState={emptyState}
-      minWidth={1180}
+      minWidth={1280}
       onRowClick={(m) => navigate(computeMinerPath(m.hotkey))}
       sort={{ field: sortField, order: sortOrder, onChange: setSort }}
     />

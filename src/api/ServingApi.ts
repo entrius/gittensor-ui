@@ -64,6 +64,7 @@ const MINER_NUMERIC_FIELDS: readonly (keyof ServingMiner)[] = [
 ];
 const MINER_NULLABLE_NUMERIC_FIELDS: readonly (keyof ServingMiner)[] = [
   'probeTps',
+  'estAlphaPerTempo',
   'estAlphaPerDay',
   'estUsdPerDay',
 ];
@@ -89,13 +90,13 @@ const STATUS_NUMERIC_FIELDS: readonly (keyof ServingStatus)[] = [
   'quarantined',
   'cardEquivalents',
   'poolShare',
-  'poolCap',
-  'gpuHourUsd',
   'roundsLast24h',
-  'retentionDays',
 ];
 const STATUS_NULLABLE_NUMERIC_FIELDS: readonly (keyof ServingStatus)[] = [
+  'poolCap',
+  'gpuHourUsd',
   'alphaPerHour',
+  'estAlphaPerCardTempo',
   'alphaUsd',
   'estAlphaPerCardDay',
   'estUsdPerCardDay',

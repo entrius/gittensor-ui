@@ -5,3 +5,4 @@ export * from './ValidatorSnapshotFootnote';
 export * from './ComputeFleetTable';
 export * from './ComputeRoundChart';
 export * from './ComputeMissesTable';
+export * from './ComputeReleaseCard';

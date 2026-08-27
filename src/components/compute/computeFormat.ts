@@ -1,6 +1,10 @@
 import { formatDistanceToNowStrict } from 'date-fns';
 import { STATUS_COLORS } from '../../theme';
-import type { ServingMiner, ServingMinerStatus } from '../../api';
+import type {
+  ServingMiner,
+  ServingMinerStatus,
+  ServingPricingSource,
+} from '../../api';
 
 export const WINDOW_SLOTS = 10;
 export const WINDOW_READY_MEAN = 0.8;
@@ -65,6 +69,11 @@ export const formatUsd = (value: number | null | undefined): string =>
         currency: 'USD',
         maximumFractionDigits: 2,
       });
+
+/** Payout estimates are meaningless without a price — render "—". */
+export const hasPricing = (
+  source: ServingPricingSource | null | undefined,
+): boolean => source !== 'none';
 
 export const formatWindow = (miner: {
   windowN: number;

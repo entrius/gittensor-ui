@@ -5,7 +5,9 @@ import { SEO } from '../components';
 import KpiCard from '../components/KpiCard';
 import {
   ComputeFleetTable,
+  ComputeReleaseCard,
   ValidatorSnapshotFootnote,
+  hasPricing,
   formatAlpha,
   formatRelative,
   formatRoundTime,
@@ -19,16 +21,38 @@ import {
 } from '../api';
 import { TEXT_OPACITY } from '../theme';
 
-const POOL_EXPLAINER =
-  'The serving pool pays RTX 5090 miners an estimated $0.70 per verified GPU-hour inside a 3.5% emission cap. Every 5 minutes the validator audits served traffic against its reference GPU, keeps a rolling 10-slot window (READY at mean ≥ 0.8), and settles scores over the trailing 12 rounds.';
+const poolExplainer = (status: ServingStatus | undefined): string => {
+  const rate =
+    status?.gpuHourUsd != null
+      ? `an estimated $${status.gpuHourUsd.toFixed(2)} per verified GPU-hour`
+      : 'a validator-set USD rate per verified GPU-hour';
+  const cap =
+    status?.poolCap != null
+      ? `inside a ${(status.poolCap * 100).toFixed(1)}% emission cap`
+      : 'inside an emission cap set by the validator';
+  return `The serving pool pays RTX 5090 miners ${rate} ${cap}. Every 5 minutes the validator audits served traffic against its reference GPU, keeps a rolling 10-slot window (READY at mean ≥ 0.8), and settles scores over the trailing 12 rounds.`;
+};
 
 const EMPTY_MESSAGE = 'No serving rounds recorded yet by this validator.';
 
 const formatPoolShare = (status: ServingStatus): string =>
-  `${(status.poolShare * 100).toFixed(2)}% of ${(status.poolCap * 100).toFixed(1)}% cap`;
+  status.poolCap === null
+    ? 'Cap not reported this round'
+    : `of ${(status.poolCap * 100).toFixed(1)}% cap`;
+
+const formatPerCardSubtitle = (status: ServingStatus): string => {
+  if (!hasPricing(status.pricingSource)) return 'No price this round';
+  const tempo = formatAlpha(status.estAlphaPerCardTempo);
+  const usd = formatUsd(status.estUsdPerCardDay);
+  const parts = [
+    tempo === '—' ? null : `${tempo}/tempo`,
+    usd === '—' ? null : `≈ ${usd}/day`,
+  ].filter(Boolean);
+  return parts.length ? `${parts.join(' · ')} · est.` : 'Full card, estimate';
+};
 
 const ComputeKpis: React.FC<{ status: ServingStatus }> = ({ status }) => {
-  const perCardUsd = formatUsd(status.estUsdPerCardDay);
+  const priced = hasPricing(status.pricingSource);
   return (
     <Box
       sx={{
@@ -56,13 +80,9 @@ const ComputeKpis: React.FC<{ status: ServingStatus }> = ({ status }) => {
         subtitle="Sum of settled scores"
       />
       <KpiCard
-        title="Est. α/day per card"
-        value={formatAlpha(status.estAlphaPerCardDay)}
-        subtitle={
-          perCardUsd === '—'
-            ? 'Full card, estimate'
-            : `≈ ${perCardUsd}/day · est.`
-        }
+        title="Est. alpha/day per card"
+        value={priced ? formatAlpha(status.estAlphaPerCardDay) : '—'}
+        subtitle={formatPerCardSubtitle(status)}
       />
       <KpiCard
         title="Last round"
@@ -136,12 +156,15 @@ const ComputePage: React.FC = () => {
                 lineHeight: 1.55,
               }}
             >
-              {POOL_EXPLAINER}
+              {poolExplainer(statusQuery.data)}
             </Typography>
           </Box>
 
           {statusQuery.data && !noRoundsYet ? (
             <ComputeKpis status={statusQuery.data} />
+          ) : null}
+          {statusQuery.data?.release && !noRoundsYet ? (
+            <ComputeReleaseCard release={statusQuery.data.release} />
           ) : null}
           {statusError ? (
             <Typography color="error" variant="body2">
@@ -159,6 +182,7 @@ const ComputePage: React.FC = () => {
             </Typography>
             <ComputeFleetTable
               miners={miners}
+              priced={hasPricing(statusQuery.data?.pricingSource)}
               isLoading={
                 !noRoundsYet && (minersQuery.isLoading || statusQuery.isLoading)
               }
@@ -169,6 +193,7 @@ const ComputePage: React.FC = () => {
 
           <ValidatorSnapshotFootnote
             validatorHotkey={statusQuery.data?.validatorHotkey}
+            pricingSource={statusQuery.data?.pricingSource}
           />
         </Box>
       </Box>

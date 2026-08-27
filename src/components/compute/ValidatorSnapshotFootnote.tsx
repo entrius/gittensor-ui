@@ -1,11 +1,19 @@
 import React from 'react';
 import { Box, Typography, alpha, useTheme } from '@mui/material';
 import { TEXT_OPACITY } from '../../theme';
+import type { ServingPricingSource } from '../../api';
 import { CopyableHotkey } from './CopyableHotkey';
 
 interface ValidatorSnapshotFootnoteProps {
   validatorHotkey: string | null | undefined;
+  pricingSource?: ServingPricingSource | null;
 }
+
+const PRICING_NOTES: Partial<Record<ServingPricingSource, string>> = {
+  taostats:
+    'USD figures are priced from a market feed (validator had no price).',
+  none: 'No alpha price available this round, so payouts are shown as "—".',
+};
 
 /**
  * Required on every compute page: the numbers are one validator's audit,
@@ -13,7 +21,8 @@ interface ValidatorSnapshotFootnoteProps {
  */
 export const ValidatorSnapshotFootnote: React.FC<
   ValidatorSnapshotFootnoteProps
-> = ({ validatorHotkey }) => {
+> = ({ validatorHotkey, pricingSource }) => {
+  const pricingNote = pricingSource ? PRICING_NOTES[pricingSource] : null;
   const theme = useTheme();
   const muted = alpha(theme.palette.common.white, TEXT_OPACITY.muted);
   return (
@@ -48,6 +57,7 @@ export const ValidatorSnapshotFootnote: React.FC<
         )}
         . Other validators run their own audits; scores and payouts shown here
         are estimates, not consensus.
+        {pricingNote ? ` ${pricingNote}` : ''}
       </Typography>
     </Box>
   );

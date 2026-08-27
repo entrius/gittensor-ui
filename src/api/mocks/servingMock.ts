@@ -25,8 +25,10 @@ const seeded = (seed: number) => {
   };
 };
 
+// 48-char ss58-shaped string so `looksLikeSs58Hotkey` accepts fixtures.
+const HOTKEY_TAIL = 'F7kQmZ2xNpLcT9vRbW4yHdG8sJ3eA6uC1oK5iM9nXvY2rTb';
 const hotkeyFor = (uid: number) =>
-  `5${uid.toString(36).padStart(3, 'a')}${'F7kQmZ2xNpLcT9vRbW4yHdG8sJ3eA6uC1oK5iM0nX'.slice(0, 44)}`;
+  `5${uid.toString(36).padStart(3, 'a')}${HOTKEY_TAIL.slice(0, 44)}`;
 
 const FIXTURE_ROWS: Array<{
   uid: number;
@@ -92,6 +94,7 @@ const buildMiner = (
     roundTs,
     readyRounds24h,
     rounds24h,
+    estAlphaPerTempo: Number((estAlphaPerDay / 20).toFixed(3)),
     estAlphaPerDay: Number(estAlphaPerDay.toFixed(2)),
     estUsdPerDay: Number((estAlphaPerDay * ALPHA_USD).toFixed(2)),
   };
@@ -124,12 +127,21 @@ export const mockServingStatus = (): ServingStatus => {
     poolShare: 0.0212,
     poolCap: 0.035,
     gpuHourUsd: 0.7,
+    pricingSource: 'validator',
     alphaPerHour,
     alphaUsd: ALPHA_USD,
+    estAlphaPerCardTempo: Number((alphaPerHour * 1.2).toFixed(3)),
     estAlphaPerCardDay: Number((alphaPerHour * 24).toFixed(2)),
     estUsdPerCardDay: Number((alphaPerHour * 24 * ALPHA_USD).toFixed(2)),
     roundsLast24h: 287,
-    retentionDays: 7,
+    release: {
+      modelId: 'gpt-oss-20b',
+      runtimePin: 'gittensor-ai-lab/sparkinfer@12954e6',
+      modelSha256:
+        '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
+      modelFile: 'gpt-oss-20b-q8_0.gguf',
+      image: 'entrius/sparkinfer:12954e6',
+    },
   };
 };
 
