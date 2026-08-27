@@ -770,7 +770,7 @@ const ComputeTimeline = React.lazy(() => import('./ComputePage'));
 
 // The dial's positions, left to right. Turning right moves one step toward
 // the end of this list, turning left one step toward the start.
-const TIMELINES = ['repositories', 'dashboard', 'compute'] as const;
+const TIMELINES = ['repositories', 'compute', 'dashboard'] as const;
 type Timeline = (typeof TIMELINES)[number];
 
 const dialTarget = (
