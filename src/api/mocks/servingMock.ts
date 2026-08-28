@@ -57,8 +57,9 @@ const buildMiner = (
     : ready
       ? 0.8 + rand() * 0.2
       : 0.4 + rand() * 0.35;
-  const probeTps = quarantined ? null : 120 + rand() * 90;
-  const capacity = probeTps ? Math.min(probeTps / 180, 1.2) : 0;
+  const decodeTps = quarantined ? null : 300 + rand() * 160;
+  const ttftMs = quarantined ? null : 35 + rand() * 120;
+  const capacity = ready ? 1 : 0;
   const credit = ready ? 0.85 + rand() * 0.15 : 0.5 + rand() * 0.4;
   const roundScore = ready ? credit * capacity : 0;
   const settledScore = ready ? roundScore * (0.9 + rand() * 0.1) : 0;
@@ -82,8 +83,9 @@ const buildMiner = (
       : null,
     served: ready ? 20 + Math.floor(rand() * 40) : 2,
     credit: Number(credit.toFixed(3)),
-    probeTps: probeTps === null ? null : Number(probeTps.toFixed(1)),
-    capacity: Number(capacity.toFixed(3)),
+    ttftMs: ttftMs === null ? null : Number(ttftMs.toFixed(1)),
+    decodeTps: decodeTps === null ? null : Number(decodeTps.toFixed(1)),
+    capacity,
     roundScore: Number(roundScore.toFixed(3)),
     settledScore: Number(settledScore.toFixed(3)),
     lastMissReason: quarantined
@@ -158,13 +160,15 @@ export const mockServingMinerDetail = (
   for (let i = count - 1; i >= 0; i -= 1) {
     const ts = new Date(end - i * ROUND_MS).toISOString();
     const jitter = () => 0.92 + rand() * 0.16;
-    const probeTps =
-      miner.probeTps === null
+    const decodeTps =
+      miner.decodeTps === null
         ? null
-        : Number((miner.probeTps * jitter()).toFixed(1));
-    const capacity = probeTps
-      ? Number(Math.min(probeTps / 180, 1.2).toFixed(3))
-      : 0;
+        : Number((miner.decodeTps * jitter()).toFixed(1));
+    const ttftMs =
+      miner.ttftMs === null
+        ? null
+        : Number((miner.ttftMs * jitter()).toFixed(1));
+    const capacity = miner.capacity;
     const credit = Number(Math.min(1, miner.credit * jitter()).toFixed(3));
     const missed = rand() < 0.04;
     const roundScore =
@@ -177,7 +181,8 @@ export const mockServingMinerDetail = (
       windowMean: miner.windowMean,
       windowN: miner.windowN,
       credit,
-      probeTps,
+      ttftMs,
+      decodeTps,
       capacity,
       roundScore,
       settledScore: Number((roundScore * 0.95).toFixed(3)),

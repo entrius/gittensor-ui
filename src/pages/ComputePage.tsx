@@ -77,7 +77,7 @@ const ComputeKpis: React.FC<{ status: ServingStatus }> = ({ status }) => {
       <KpiCard
         title="Card-equivalents"
         value={status.cardEquivalents.toFixed(2)}
-        subtitle="Sum of settled scores"
+        subtitle="Σ settled scores · paid 5090s this round"
       />
       <KpiCard
         title="Est. alpha/day per card"

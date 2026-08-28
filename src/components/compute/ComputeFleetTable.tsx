@@ -4,12 +4,15 @@ import type { ServingMiner } from '../../api';
 import { useDataTableParams } from '../../hooks/useDataTableParams';
 import { computeMinerPath } from '../../utils/paths';
 import { DataTable, type DataTableColumn } from '../common/DataTable';
+import { ColumnHint } from './ColumnHint';
 import { ComputeStatusBadge } from './ComputeStatusBadge';
 import { CopyableHotkey } from './CopyableHotkey';
 import { MissReasonText } from './MissReasonText';
 import {
+  COMPUTE_METRIC_HINTS,
   formatAlpha,
   formatFixed,
+  formatMs,
   formatPercent,
   uptimeFraction,
 } from './computeFormat';
@@ -18,8 +21,8 @@ const SORT_KEYS = [
   'uid',
   'status',
   'tps',
+  'ttft',
   'credit',
-  'capacity',
   'settled',
   'uptime',
   'alpha',
@@ -32,7 +35,7 @@ const STATUS_RANK = { ready: 0, probation: 1, quarantined: 2 } as const;
 const cellSx = { py: 0.75, px: 1, whiteSpace: 'nowrap' } as const;
 const headerSx = { px: 1 } as const;
 
-/** Probe-derived metrics only mean something once a miner is READY. */
+/** Payout only means something once a miner is READY. */
 const readyOnly = (
   miner: ServingMiner,
   render: (m: ServingMiner) => string,
@@ -45,11 +48,11 @@ const sortValue = (miner: ServingMiner, key: FleetSortKey): number => {
     case 'status':
       return STATUS_RANK[miner.status] ?? 3;
     case 'tps':
-      return miner.probeTps ?? -1;
+      return miner.decodeTps ?? -1;
+    case 'ttft':
+      return miner.ttftMs ?? Number.POSITIVE_INFINITY;
     case 'credit':
       return miner.credit;
-    case 'capacity':
-      return miner.capacity;
     case 'settled':
       return miner.settledScore;
     case 'uptime':
@@ -81,7 +84,7 @@ export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
   const { sortField, sortOrder, setSort } = useDataTableParams<FleetSortKey>({
     sortKeys: SORT_KEYS,
     defaultSortKey: 'settled',
-    defaultOrderOverrides: { uid: 'asc', status: 'asc' },
+    defaultOrderOverrides: { uid: 'asc', status: 'asc', ttft: 'asc' },
   });
 
   const rows = useMemo(() => {
@@ -122,37 +125,39 @@ export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
       },
       {
         key: 'tps',
-        header: 'tok/s',
+        header: <ColumnHint label="tok/s" hint={COMPUTE_METRIC_HINTS.tps} />,
         width: 76,
         align: 'right',
         sortKey: 'tps',
         cellSx,
         headerSx,
-        renderCell: (m) => readyOnly(m, (x) => formatFixed(x.probeTps, 0)),
+        renderCell: (m) => formatFixed(m.decodeTps, 0),
+      },
+      {
+        key: 'ttft',
+        header: <ColumnHint label="TTFT" hint={COMPUTE_METRIC_HINTS.ttft} />,
+        width: 84,
+        align: 'right',
+        sortKey: 'ttft',
+        cellSx,
+        headerSx,
+        renderCell: (m) => formatMs(m.ttftMs),
       },
       {
         key: 'credit',
-        header: 'TTFT',
+        header: <ColumnHint label="Speed" hint={COMPUTE_METRIC_HINTS.credit} />,
         width: 76,
         align: 'right',
         sortKey: 'credit',
         cellSx,
         headerSx,
-        renderCell: (m) => readyOnly(m, (x) => formatFixed(x.credit, 2)),
-      },
-      {
-        key: 'capacity',
-        header: 'Capacity',
-        width: 104,
-        align: 'right',
-        sortKey: 'capacity',
-        cellSx,
-        headerSx,
-        renderCell: (m) => readyOnly(m, (x) => formatFixed(x.capacity, 2)),
+        renderCell: (m) => formatFixed(m.credit, 2),
       },
       {
         key: 'settled',
-        header: 'Settled',
+        header: (
+          <ColumnHint label="Settled" hint={COMPUTE_METRIC_HINTS.settled} />
+        ),
         width: 86,
         align: 'right',
         sortKey: 'settled',

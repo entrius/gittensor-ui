@@ -59,10 +59,16 @@ export interface ServingMiner {
   windowPassed: boolean;
   quarantinedUntil: string | null;
   served: number;
+  /** Speed credit 0–1: TTFT band × decode band, mean over the round's served requests. */
   credit: number;
-  probeTps: number | null;
+  /** Validator-observed time to first token, mean over the round (ms). */
+  ttftMs: number | null;
+  /** Validator-observed decode rate on served traffic, mean over the round (tok/s). */
+  decodeTps: number | null;
+  /** 1 when this round's hardware attestation passed, else 0. */
   capacity: number;
   roundScore: number;
+  /** Trailing 12-round mean of roundScore — what the miner is paid on. */
   settledScore: number;
   lastMissReason: string | null;
   roundTs: string;
@@ -79,7 +85,8 @@ export interface ServingRound {
   windowMean: number;
   windowN: number;
   credit: number;
-  probeTps: number | null;
+  ttftMs: number | null;
+  decodeTps: number | null;
   capacity: number;
   roundScore: number;
   settledScore: number;
