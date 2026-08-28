@@ -13,8 +13,10 @@ export interface ServingRelease {
   runtimePin: string;
   modelSha256: string;
   modelFile: string;
-  /** e.g. "entrius/sparkinfer:12954e6" */
+  /** e.g. "entrius/sparkinfer:7498736@sha256:…" — the runtime container */
   image: string;
+  /** e.g. "entrius/gt-attest:v1" — the attest container every box runs beside the runtime; null on older rounds */
+  attestImage: string | null;
 }
 
 export interface ServingStatus {
@@ -65,7 +67,7 @@ export interface ServingMiner {
   ttftMs: number | null;
   /** Validator-observed decode rate on served traffic, mean over the round (tok/s). */
   decodeTps: number | null;
-  /** 1 when this round's hardware attestation passed, else 0. */
+  /** GPUs that passed this round's hardware attestation (0 = not attested); each is a card-hour. */
   capacity: number;
   roundScore: number;
   /** Trailing 12-round mean of roundScore — what the miner is paid on. */

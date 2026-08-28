@@ -143,6 +143,7 @@ export const mockServingStatus = (): ServingStatus => {
         '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
       modelFile: 'gpt-oss-20b-q8_0.gguf',
       image: 'entrius/sparkinfer:12954e6',
+      attestImage: 'entrius/gt-attest:v1',
     },
   };
 };
