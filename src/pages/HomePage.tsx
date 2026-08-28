@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Box, Typography } from '@mui/material';
 import { alpha } from '@mui/material/styles';
 import { Page } from '../components/layout';
@@ -766,8 +767,29 @@ const RepoCardSkeleton: React.FC<{ index: number }> = ({ index }) => (
 );
 
 const DashboardTimeline = React.lazy(() => import('./dashboard/DashboardPage'));
+const ComputeTimeline = React.lazy(() => import('./ComputePage'));
 
-type Timeline = 'repositories' | 'dashboard';
+// The dial's positions, left to right. Turning right moves one step toward
+// the end of this list, turning left one step toward the start.
+const TIMELINES = ['repositories', 'compute', 'dashboard'] as const;
+type Timeline = (typeof TIMELINES)[number];
+
+const dialTarget = (
+  active: Timeline,
+  dir: 'left' | 'right',
+): Timeline | null => {
+  const index = TIMELINES.indexOf(active) + (dir === 'right' ? 1 : -1);
+  return TIMELINES[index] ?? null;
+};
+
+const isTimeline = (value: string | null): value is Timeline =>
+  (TIMELINES as readonly string[]).includes(value ?? '');
+
+const TIMELINE_TAGLINE: Record<Timeline, string> = {
+  repositories: 'These are the open source projects built by Gittensor.',
+  dashboard: 'This is the work done by Gittensor miners.',
+  compute: 'This is the GPU fleet serving Gittensor models.',
+};
 
 // A left/right dial button; grayed out when the dial can't turn that way
 // (the word that direction is already showing).
@@ -776,8 +798,8 @@ const DialArrow: React.FC<{
   active: Timeline;
   onTurn: (dir: 'left' | 'right') => void;
 }> = ({ dir, active, onTurn }) => {
-  const target: Timeline = dir === 'right' ? 'dashboard' : 'repositories';
-  const enabled = target !== active;
+  const target = dialTarget(active, dir);
+  const enabled = target !== null;
   return (
     <Box
       component="span"
@@ -883,7 +905,18 @@ const Curtain: React.FC<{ leaving: boolean }> = ({ leaving }) => (
 
 const HomePage: React.FC = () => {
   const reposQuery = useReposAndWeights();
-  const [timeline, setTimeline] = useState<Timeline>('repositories');
+  // The dial position lives in the URL (`/?view=compute`) so a drilldown's
+  // back link, a refresh, or a shared link land on the same timeline.
+  const [searchParams, setSearchParams] = useSearchParams();
+  const viewParam = searchParams.get('view');
+  const [timeline, setTimeline] = useState<Timeline>(
+    isTimeline(viewParam) ? viewParam : 'repositories',
+  );
+  useEffect(() => {
+    if (isTimeline(viewParam) && viewParam !== timeline) setTimeline(viewParam);
+    // Follow browser back/forward between dial positions.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewParam]);
   // The word leaving the dial; rendered just long enough to slide out in
   // the direction of travel, then cleared by onAnimationEnd.
   const [leaving, setLeaving] = useState<{
@@ -892,10 +925,13 @@ const HomePage: React.FC = () => {
   } | null>(null);
 
   const turnDial = (dir: 'left' | 'right') => {
-    const target: Timeline = dir === 'right' ? 'dashboard' : 'repositories';
-    if (target === timeline) return;
+    const target = dialTarget(timeline, dir);
+    if (target === null) return;
     setLeaving({ word: timeline, dir });
     setTimeline(target);
+    setSearchParams(target === 'repositories' ? {} : { view: target }, {
+      replace: false,
+    });
   };
 
   const repos = useMemo(
@@ -1142,7 +1178,7 @@ const HomePage: React.FC = () => {
         className={curtain === 'shown' ? 'landing-hold' : undefined}
         sx={{
           width: '100%',
-          maxWidth: timeline === 'dashboard' ? 1680 : 1320,
+          maxWidth: timeline === 'repositories' ? 1320 : 1680,
           mx: 'auto',
           px: { xs: 1.5, sm: 3 },
           py: { xs: 3, md: 5 },
@@ -1186,9 +1222,7 @@ const HomePage: React.FC = () => {
             ...fadeUp(80),
           })}
         >
-          {timeline === 'repositories'
-            ? 'These are the open source projects built by Gittensor.'
-            : 'This is the work done by Gittensor miners.'}
+          {TIMELINE_TAGLINE[timeline]}
         </Typography>
 
         {/* Dial toggle: only the active timeline shows, flanked by arrows.
@@ -1366,11 +1400,15 @@ const HomePage: React.FC = () => {
                     textAlign: 'center',
                   })}
                 >
-                  Loading dashboard…
+                  Loading {timeline}…
                 </Typography>
               }
             >
-              <DashboardTimeline />
+              {timeline === 'dashboard' ? (
+                <DashboardTimeline />
+              ) : (
+                <ComputeTimeline />
+              )}
             </React.Suspense>
           </Box>
         )}

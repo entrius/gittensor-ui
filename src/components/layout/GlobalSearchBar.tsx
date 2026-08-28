@@ -25,14 +25,19 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSearchResults } from '../../pages/search/searchData';
 import { useLinkBehavior, linkResetSx } from '../common/linkBehavior';
 import { minerPrPath, minerRepositoryPath } from '../../utils';
-import { minerDetailsPath, bountyDetailsPath } from '../../utils/paths';
+import {
+  minerDetailsPath,
+  bountyDetailsPath,
+  computeMinerPath,
+  looksLikeSs58Hotkey,
+} from '../../utils/paths';
 
 const QUICK_RESULT_LIMIT = 3;
 const DROPDOWN_CLOSE_DELAY_MS = 150;
 const LISTBOX_ID = 'global-search-listbox';
 const itemIdFromKey = (key: string) => `global-search-item-${key}`;
 
-type NavItemKind = 'miner' | 'repo' | 'pr' | 'issue' | 'action';
+type NavItemKind = 'miner' | 'compute' | 'repo' | 'pr' | 'issue' | 'action';
 
 type NavItem = {
   key: string;
@@ -45,6 +50,7 @@ type NavItem = {
 
 const SECTION_LABELS: Record<Exclude<NavItemKind, 'action'>, string> = {
   miner: 'Miners',
+  compute: 'Compute',
   repo: 'Repositories',
   pr: 'Pull Requests',
   issue: 'Issues',
@@ -245,13 +251,14 @@ const GlobalSearchBar: React.FC = () => {
     datasets.prs.isLoading ||
     datasets.issues.isLoading;
 
+  const trimmedQuery = query.trim();
+
   const hasAnyResults =
+    looksLikeSs58Hotkey(trimmedQuery) ||
     minerResults.length > 0 ||
     repositoryResults.length > 0 ||
     prResults.length > 0 ||
     issueResults.length > 0;
-
-  const trimmedQuery = query.trim();
 
   // Sync URL query param on /search page.
   useEffect(() => {
@@ -317,6 +324,19 @@ const GlobalSearchBar: React.FC = () => {
         onSelect: () => navigateAndClose(href),
       });
     });
+    // An ss58 hotkey may belong to a compute miner the contribution
+    // datasets don't know about — always offer the compute lookup.
+    if (looksLikeSs58Hotkey(trimmedQuery)) {
+      const href = computeMinerPath(trimmedQuery);
+      items.push({
+        key: `compute-${trimmedQuery}`,
+        kind: 'compute',
+        title: `Compute miner ${trimmedQuery.slice(0, 8)}…${trimmedQuery.slice(-6)}`,
+        subtitle: 'Serving status as observed by the validator',
+        href,
+        onSelect: () => navigateAndClose(href),
+      });
+    }
     repositoryResults.forEach((repo) => {
       const href = minerRepositoryPath(repo.fullName);
       items.push({

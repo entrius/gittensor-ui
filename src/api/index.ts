@@ -9,5 +9,6 @@ export * from './MirrorDashboardApi';
 export * from './PrsApi';
 export * from './ReposApi';
 export * from './SearchApi';
+export * from './ServingApi';
 
 export * from './models';
