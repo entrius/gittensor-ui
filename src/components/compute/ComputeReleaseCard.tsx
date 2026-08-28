@@ -21,9 +21,17 @@ const DOCKER_HUB_URL = 'https://hub.docker.com/u/entrius';
 
 const MONO = '"JetBrains Mono", monospace';
 
-/** The exact command miners run; kept in one place so docs can link here. */
+/** The exact commands miners run — the runtime and, beside it, the attest container that answers the validators'
+ *  hardware challenge on every GPU of the box. Kept in one place so docs can link here. */
 export const buildSparkinferRunCommand = (release: ServingRelease): string =>
-  `docker run -d --name sparkinfer --gpus all -p 8080:8080 -v sparkmodels:/opt/sparkinfer/models -e MODEL_SHA256=${release.modelSha256} -e SPARKINFER_DETERMINISTIC=1 ${release.image}`;
+  [
+    `docker run -d --name sparkinfer --gpus all --restart unless-stopped -p 127.0.0.1:8080:8080 -v sparkmodels:/opt/sparkinfer/models -e MODEL_SHA256=${release.modelSha256} -e SPARKINFER_DETERMINISTIC=1 ${release.image}`,
+    release.attestImage
+      ? `docker run -d --name gt-attest --gpus all --restart unless-stopped -p 127.0.0.1:8081:8081 ${release.attestImage}`
+      : null,
+  ]
+    .filter(Boolean)
+    .join('\n');
 
 const CopyButton: React.FC<{ text: string; label: string }> = ({
   text,
@@ -162,6 +170,11 @@ export const ComputeReleaseCard: React.FC<{ release: ServingRelease }> = ({
         <Field label="Model file" value={release.modelFile} />
         <Field label="Image" value={release.image} copyable />
       </Box>
+      {release.attestImage && (
+        <Box sx={{ mb: 2 }}>
+          <Field label="Attest image" value={release.attestImage} copyable />
+        </Box>
+      )}
       <Box sx={{ mb: 2 }}>
         <Field label="Model SHA-256" value={release.modelSha256} copyable />
       </Box>
@@ -201,7 +214,7 @@ export const ComputeReleaseCard: React.FC<{ release: ServingRelease }> = ({
         >
           <code>{command}</code>
         </Box>
-        <CopyButton text={command} label="docker command" />
+        <CopyButton text={command} label="docker commands" />
       </Box>
 
       <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 1.5 }}>
