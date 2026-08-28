@@ -63,7 +63,8 @@ const MINER_NUMERIC_FIELDS: readonly (keyof ServingMiner)[] = [
   'rounds24h',
 ];
 const MINER_NULLABLE_NUMERIC_FIELDS: readonly (keyof ServingMiner)[] = [
-  'probeTps',
+  'ttftMs',
+  'decodeTps',
   'estAlphaPerTempo',
   'estAlphaPerDay',
   'estUsdPerDay',
@@ -125,7 +126,7 @@ export const normalizeServingMiner = (row: ServingMiner): ServingMiner =>
   coerceNumbers(row, MINER_NUMERIC_FIELDS, MINER_NULLABLE_NUMERIC_FIELDS);
 
 const normalizeServingRound = (row: ServingRound): ServingRound =>
-  coerceNumbers(row, ROUND_NUMERIC_FIELDS, ['probeTps']);
+  coerceNumbers(row, ROUND_NUMERIC_FIELDS, ['ttftMs', 'decodeTps']);
 
 const normalizeServingStatus = (row: ServingStatus): ServingStatus =>
   coerceNumbers(row, STATUS_NUMERIC_FIELDS, STATUS_NULLABLE_NUMERIC_FIELDS);

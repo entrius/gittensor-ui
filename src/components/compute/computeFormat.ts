@@ -8,7 +8,19 @@ import type {
 
 export const WINDOW_SLOTS = 10;
 export const WINDOW_READY_MEAN = 0.8;
-export const CAPACITY_REFERENCE_TPS = 180;
+export const SETTLEMENT_ROUNDS = 12;
+
+/** Header tooltips for the fleet table / KPI cards. */
+export const COMPUTE_METRIC_HINTS = {
+  tps: 'Decode rate the validator observed on traffic it sent this miner (completion tokens ÷ time after first token), mean over the round.',
+  ttft: 'Time to first token the validator observed on traffic it sent this miner, mean over the round.',
+  credit:
+    'Speed credit 0–1: TTFT band × decode band against the blessed 5090 curve, mean over the round. Misses earn 0.',
+  attested:
+    'Hardware attestation this round: seeded VRAM fill + GEMM chain must match the reference runtime. Not attested = no pay this round.',
+  settled: `Mean round score over the trailing ${SETTLEMENT_ROUNDS} rounds (~1 h). 1.0 = one fully paid card; this is what the miner is paid on.`,
+  round: 'This round: window pass (0/1) × speed credit × attested (0/1).',
+} as const;
 
 export const COMPUTE_STATUS_META: Record<
   ServingMinerStatus,
@@ -46,6 +58,16 @@ export const formatFixed = (
   value === null || value === undefined || !Number.isFinite(value)
     ? '—'
     : value.toFixed(decimals);
+
+export const formatMs = (value: number | null | undefined): string =>
+  value === null || value === undefined || !Number.isFinite(value)
+    ? '—'
+    : `${Math.round(value)} ms`;
+
+export const formatTps = (value: number | null | undefined): string =>
+  value === null || value === undefined || !Number.isFinite(value)
+    ? '—'
+    : `${Math.round(value)} tok/s`;
 
 export const formatPercent = (
   fraction: number | null | undefined,
@@ -132,7 +154,7 @@ export const formatRelative = (iso: string | null | undefined): string => {
 export const describeMinerStatus = (miner: ServingMiner): string => {
   switch (miner.status) {
     case 'ready':
-      return `Serving. Window ${miner.windowN}/${WINDOW_SLOTS}, settled ${formatFixed(miner.settledScore, 2)}.`;
+      return `Serving. Window ${miner.windowN}/${WINDOW_SLOTS}, settled ${formatFixed(miner.settledScore, 2)} (${SETTLEMENT_ROUNDS}-round mean).`;
     case 'probation':
       return `Not READY yet — window ${miner.windowN}/${WINDOW_SLOTS} mean ${formatFixed(miner.windowMean, 2)}, needs ≥ ${WINDOW_READY_MEAN} (validator sends 2 baseline prompts per round).`;
     case 'quarantined':

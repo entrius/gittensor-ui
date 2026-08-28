@@ -6,6 +6,7 @@ import { BackButton, SEO } from '../components';
 import KpiCard from '../components/KpiCard';
 import {
   COMPUTE_STATUS_META,
+  SETTLEMENT_ROUNDS,
   ComputeMissesTable,
   ComputeRoundChart,
   ComputeStatusBadge,
@@ -14,6 +15,7 @@ import {
   describeMinerStatus,
   formatAlpha,
   formatFixed,
+  formatMs,
   formatPercent,
   formatRelative,
   formatUsd,
@@ -151,7 +153,7 @@ const MinerKpis: React.FC<{ miner: ServingMiner; priced: boolean }> = ({
       <KpiCard
         title="Settled score"
         value={formatFixed(miner.settledScore, 3)}
-        subtitle={`Round ${formatFixed(miner.roundScore, 3)}`}
+        subtitle={`${SETTLEMENT_ROUNDS}-round mean · this round ${formatFixed(miner.roundScore, 3)}`}
       />
       <KpiCard
         title="Est. alpha/day"
@@ -159,11 +161,15 @@ const MinerKpis: React.FC<{ miner: ServingMiner; priced: boolean }> = ({
         subtitle={payoutSubtitle}
       />
       <KpiCard
-        title="tok/s"
-        value={formatFixed(miner.probeTps, 0)}
-        subtitle={`Capacity ${formatFixed(miner.capacity, 2)} (÷ 180)`}
+        title="Decode tok/s"
+        value={formatFixed(miner.decodeTps, 0)}
+        subtitle={`TTFT ${formatMs(miner.ttftMs)}`}
       />
-      <KpiCard title="TTFT credit" value={formatFixed(miner.credit, 2)} />
+      <KpiCard
+        title="Speed credit"
+        value={formatFixed(miner.credit, 2)}
+        subtitle={miner.capacity > 0 ? 'Attested' : 'Not attested'}
+      />
       <KpiCard
         title="Uptime 24h"
         value={formatPercent(uptimeFraction(miner))}
@@ -176,8 +182,8 @@ const MinerKpis: React.FC<{ miner: ServingMiner; priced: boolean }> = ({
 const RoundCharts: React.FC<{ rounds: ServingRound[] }> = ({ rounds }) => {
   const timestamps = useMemo(() => rounds.map((r) => r.roundTs), [rounds]);
   const scores = useMemo(() => rounds.map((r) => r.roundScore), [rounds]);
-  const tps = useMemo(() => rounds.map((r) => r.probeTps), [rounds]);
-  const credits = useMemo(() => rounds.map((r) => r.credit), [rounds]);
+  const tps = useMemo(() => rounds.map((r) => r.decodeTps), [rounds]);
+  const ttft = useMemo(() => rounds.map((r) => r.ttftMs), [rounds]);
   const emptyHint = `No audit rounds for this miner in the last ${HISTORY_HOURS} h.`;
   return (
     <Box
@@ -196,7 +202,7 @@ const RoundCharts: React.FC<{ rounds: ServingRound[] }> = ({ rounds }) => {
         emptyHint={emptyHint}
       />
       <ComputeRoundChart
-        title="Probe tok/s"
+        title="Decode tok/s"
         timestamps={timestamps}
         values={tps}
         color={STATUS_COLORS.info}
@@ -204,11 +210,11 @@ const RoundCharts: React.FC<{ rounds: ServingRound[] }> = ({ rounds }) => {
         emptyHint={emptyHint}
       />
       <ComputeRoundChart
-        title="TTFT credit"
+        title="TTFT (ms)"
         timestamps={timestamps}
-        values={credits}
+        values={ttft}
         color={STATUS_COLORS.warning}
-        yMax={1}
+        decimals={0}
         emptyHint={emptyHint}
       />
     </Box>
@@ -315,9 +321,11 @@ const ComputeMinerPage: React.FC = () => {
               color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
             }}
           >
-            Score = window pass × TTFT credit × capacity (probe tok/s ÷ 180),
-            settled over the trailing 12 rounds. A WRONG answer wipes the window
-            and quarantines the miner for 1 h.
+            Round score = window pass × speed credit (TTFT band × decode band
+            vs. the blessed 5090 curve, on traffic this validator sent) ×
+            hardware attestation. Settled = mean over the trailing{' '}
+            {SETTLEMENT_ROUNDS} rounds (~1 h) and is what the miner is paid on.
+            A WRONG answer wipes the window and quarantines the miner for 1 h.
           </Typography>
           <ValidatorSnapshotFootnote
             validatorHotkey={query.data?.validatorHotkey}
