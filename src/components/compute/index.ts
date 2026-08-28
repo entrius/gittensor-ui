@@ -7,3 +7,4 @@ export * from './ComputeRoundChart';
 export * from './ComputeMissesTable';
 export * from './ComputeReleaseCard';
 export * from './MissReasonText';
+export * from './ColumnHint';
