@@ -59,9 +59,11 @@ const buildMiner = (
       : 0.4 + rand() * 0.35;
   const decodeTps = quarantined ? null : 300 + rand() * 160;
   const ttftMs = quarantined ? null : 35 + rand() * 120;
-  const capacity = ready ? 1 : 0;
+  const attested = ready;
   const credit = ready ? 0.85 + rand() * 0.15 : 0.5 + rand() * 0.4;
-  const roundScore = ready ? credit * capacity : 0;
+  // ~84k output tokens is one 5090 flat out for a 5-minute round
+  const tokens = ready ? Math.floor(20_000 + rand() * 60_000) : 0;
+  const roundScore = ready ? tokens / 84_000 : 0;
   const settledScore = ready ? roundScore * (0.9 + rand() * 0.1) : 0;
   const rounds24h = 280 + Math.floor(rand() * 8);
   const readyRounds24h = ready
@@ -85,7 +87,9 @@ const buildMiner = (
     credit: Number(credit.toFixed(3)),
     ttftMs: ttftMs === null ? null : Number(ttftMs.toFixed(1)),
     decodeTps: decodeTps === null ? null : Number(decodeTps.toFixed(1)),
-    capacity,
+    attested,
+    tokens,
+    tokens24h: tokens * 288,
     roundScore: Number(roundScore.toFixed(3)),
     settledScore: Number(settledScore.toFixed(3)),
     lastMissReason: quarantined
@@ -126,9 +130,12 @@ export const mockServingStatus = (): ServingStatus => {
     probation: miners.filter((m) => m.status === 'probation').length,
     quarantined: miners.filter((m) => m.status === 'quarantined').length,
     cardEquivalents: Number(cardEquivalents.toFixed(2)),
+    tokens: miners.reduce((sum, m) => sum + m.tokens, 0),
+    tokensLast24h: miners.reduce((sum, m) => sum + m.tokens24h, 0),
     poolShare: 0.0212,
-    poolCap: 0.035,
+    poolCap: 0.1,
     gpuHourUsd: 0.7,
+    usdPerMTokens: 0.694,
     pricingSource: 'validator',
     alphaPerHour,
     alphaUsd: ALPHA_USD,
@@ -169,13 +176,13 @@ export const mockServingMinerDetail = (
       miner.ttftMs === null
         ? null
         : Number((miner.ttftMs * jitter()).toFixed(1));
-    const capacity = miner.capacity;
     const credit = Number(Math.min(1, miner.credit * jitter()).toFixed(3));
     const missed = rand() < 0.04;
-    const roundScore =
+    const tokens =
       miner.status === 'ready' && !missed
-        ? Number((credit * capacity).toFixed(3))
+        ? Math.floor(miner.tokens * jitter())
         : 0;
+    const roundScore = Number((tokens / 84_000).toFixed(3));
     rounds.push({
       roundTs: ts,
       status: miner.status,
@@ -184,7 +191,8 @@ export const mockServingMinerDetail = (
       credit,
       ttftMs,
       decodeTps,
-      capacity,
+      attested: miner.attested,
+      tokens,
       roundScore,
       settledScore: Number((roundScore * 0.95).toFixed(3)),
       served: missed ? 0 : miner.served,

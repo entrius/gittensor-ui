@@ -11,6 +11,7 @@ import {
   formatAlpha,
   formatRelative,
   formatRoundTime,
+  formatTokens,
   formatUsd,
 } from '../components/compute';
 import {
@@ -23,21 +24,25 @@ import { TEXT_OPACITY } from '../theme';
 
 const poolExplainer = (status: ServingStatus | undefined): string => {
   const rate =
+    status?.usdPerMTokens != null
+      ? `about ${formatUsd(status.usdPerMTokens, 3)} per million output tokens`
+      : 'a rate derived from the blessed runtime’s throughput';
+  const cardHour =
     status?.gpuHourUsd != null
-      ? `an estimated $${status.gpuHourUsd.toFixed(2)} per verified GPU-hour`
-      : 'a validator-set USD rate per verified GPU-hour';
+      ? `set so one 5090 flat out earns $${status.gpuHourUsd.toFixed(2)} per card-hour`
+      : 'set so one 5090 flat out earns the posted card-hour';
   const cap =
     status?.poolCap != null
       ? `inside a ${(status.poolCap * 100).toFixed(1)}% emission cap`
       : 'inside an emission cap set by the validator';
-  return `The serving pool pays RTX 5090 miners ${rate} ${cap}. Every 5 minutes the validator audits served traffic against its reference GPU, keeps a rolling 10-slot window (READY at mean ≥ 0.8), and settles scores over the trailing 12 rounds.`;
+  return `The serving pool pays RTX 5090 miners per output token the validator’s gateway routes to them — ${rate}, ${cardHour} — ${cap}. Every 5 minutes the validator audits served traffic against its reference GPU, keeps a rolling 10-slot window (READY at mean ≥ 0.8), attests the hardware, and settles the hour’s tokens over the trailing 12 rounds.`;
 };
 
 const EMPTY_MESSAGE = 'No serving rounds recorded yet by this validator.';
 
 const formatPoolShare = (status: ServingStatus): string =>
   status.poolCap === null
-    ? 'Cap not reported this round'
+    ? 'cap not reported'
     : `of ${(status.poolCap * 100).toFixed(1)}% cap`;
 
 const formatPerCardSubtitle = (status: ServingStatus): string => {
@@ -48,7 +53,9 @@ const formatPerCardSubtitle = (status: ServingStatus): string => {
     tempo === '—' ? null : `${tempo}/tempo`,
     usd === '—' ? null : `≈ ${usd}/day`,
   ].filter(Boolean);
-  return parts.length ? `${parts.join(' · ')} · est.` : 'Full card, estimate';
+  return parts.length
+    ? `${parts.join(' · ')} · est., one card flat out`
+    : 'One card flat out, estimate';
 };
 
 const ComputeKpis: React.FC<{ status: ServingStatus }> = ({ status }) => {
@@ -60,7 +67,8 @@ const ComputeKpis: React.FC<{ status: ServingStatus }> = ({ status }) => {
         gap: { xs: 1, sm: 1.5 },
         gridTemplateColumns: {
           xs: 'repeat(2, minmax(0, 1fr))',
-          md: 'repeat(5, minmax(0, 1fr))',
+          md: 'repeat(3, minmax(0, 1fr))',
+          lg: 'repeat(6, minmax(0, 1fr))',
         },
       }}
     >
@@ -70,14 +78,23 @@ const ComputeKpis: React.FC<{ status: ServingStatus }> = ({ status }) => {
         subtitle={`${status.probation} probation · ${status.quarantined} quarantined`}
       />
       <KpiCard
-        title="Pool share"
-        value={`${(status.poolShare * 100).toFixed(2)}%`}
-        subtitle={formatPoolShare(status)}
+        title="Tokens served 24h"
+        value={formatTokens(status.tokensLast24h)}
+        subtitle={`${formatTokens(status.tokens)} this round · output tokens paid`}
       />
       <KpiCard
-        title="Card-equivalents"
-        value={status.cardEquivalents.toFixed(2)}
-        subtitle="Σ settled scores · paid 5090s this round"
+        title="Price per M tokens"
+        value={formatUsd(status.usdPerMTokens, 3)}
+        subtitle={
+          status.gpuHourUsd != null
+            ? `$${status.gpuHourUsd.toFixed(2)} per card-hour flat out`
+            : 'Derived from the runtime’s throughput'
+        }
+      />
+      <KpiCard
+        title="Pool share"
+        value={`${(status.poolShare * 100).toFixed(2)}%`}
+        subtitle={`${formatPoolShare(status)} · ${status.cardEquivalents.toFixed(2)} card-h settled`}
       />
       <KpiCard
         title="Est. alpha/day per card"
