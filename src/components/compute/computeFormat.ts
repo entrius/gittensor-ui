@@ -17,9 +17,12 @@ export const COMPUTE_METRIC_HINTS = {
   credit:
     'Speed credit 0–1: TTFT band × decode band against the blessed 5090 curve, mean over the round. Misses earn 0.',
   attested:
-    'Hardware attestation this round: seeded VRAM fill + GEMM chain must match the reference runtime. Not attested = no pay this round.',
-  settled: `Mean round score over the trailing ${SETTLEMENT_ROUNDS} rounds (~1 h). 1.0 = one fully paid card; this is what the miner is paid on.`,
-  round: 'This round: window pass (0/1) × speed credit × attested (0/1).',
+    'Hardware attestation this round: seeded VRAM fill + GEMM chain must match the reference runtime. Admission only — not attested = not READY, no pay this round.',
+  tokens:
+    'Output tokens the validator’s gateway saw this miner serve on user traffic — counted by the gateway, never self-reported. This is what the miner is paid for; baseline prompts pay nothing.',
+  settled: `Mean round score over the trailing ${SETTLEMENT_ROUNDS} rounds (~1 h): the hour’s served tokens in card-hours. 1.0 = one 5090 flat out for the hour; this is what the miner is paid on.`,
+  round:
+    'This round: served output tokens ÷ what one 5090 decodes in a round, if the window passed and the card attested.',
 } as const;
 
 export const COMPUTE_STATUS_META: Record<
@@ -29,7 +32,7 @@ export const COMPUTE_STATUS_META: Record<
   ready: {
     label: 'Ready',
     color: STATUS_COLORS.success,
-    hint: `Serving and earning — rolling ${WINDOW_SLOTS}-slot window mean ≥ ${WINDOW_READY_MEAN}.`,
+    hint: `Serving and paid per token routed to it — rolling ${WINDOW_SLOTS}-slot window mean ≥ ${WINDOW_READY_MEAN}, attested.`,
   },
   probation: {
     label: 'Probation',
@@ -83,14 +86,27 @@ export const formatAlpha = (value: number | null | undefined): string =>
     ? '—'
     : `${value.toFixed(2)} α`;
 
-export const formatUsd = (value: number | null | undefined): string =>
+export const formatUsd = (
+  value: number | null | undefined,
+  maximumFractionDigits = 2,
+): string =>
   value === null || value === undefined || !Number.isFinite(value)
     ? '—'
     : value.toLocaleString('en-US', {
         style: 'currency',
         currency: 'USD',
-        maximumFractionDigits: 2,
+        maximumFractionDigits,
       });
+
+/** Token counts in compact form: 840 · 84.0k · 1.20M · 2.5B. */
+export const formatTokens = (value: number | null | undefined): string => {
+  if (value === null || value === undefined || !Number.isFinite(value))
+    return '—';
+  if (value < 1_000) return String(Math.round(value));
+  if (value < 1_000_000) return `${(value / 1_000).toFixed(1)}k`;
+  if (value < 1_000_000_000) return `${(value / 1_000_000).toFixed(2)}M`;
+  return `${(value / 1_000_000_000).toFixed(2)}B`;
+};
 
 export type MissSeverity = 'strike' | 'neutral';
 

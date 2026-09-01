@@ -32,12 +32,20 @@ export interface ServingStatus {
   ready: number;
   probation: number;
   quarantined: number;
+  /** Σ settled scores — the hour's served tokens across the fleet, in card-hours. */
   cardEquivalents: number;
+  /** Output tokens paid this round across the fleet. */
+  tokens: number;
+  /** Output tokens paid over the validator's last 24 h of rounds. */
+  tokensLast24h: number;
   /** Fraction of subnet emissions flowing to the pool (≤ poolCap). */
   poolShare: number;
   /** From the validator; null on rows written before the column existed. */
   poolCap: number | null;
+  /** What one 5090 flat out for an hour earns; the per-token rate derives from it. */
   gpuHourUsd: number | null;
+  /** The release's derived rate, USD per million output tokens; null on older rounds. */
+  usdPerMTokens: number | null;
   pricingSource: ServingPricingSource;
   alphaPerHour: number | null;
   alphaUsd: number | null;
@@ -67,10 +75,15 @@ export interface ServingMiner {
   ttftMs: number | null;
   /** Validator-observed decode rate on served traffic, mean over the round (tok/s). */
   decodeTps: number | null;
-  /** GPUs that passed this round's hardware attestation (0 = not attested); each is a card-hour. */
-  capacity: number;
+  /** Passed this round's hardware attestation — admission to the READY set, not pay. */
+  attested: boolean;
+  /** Output tokens the gateway saw this miner serve on user traffic this round — what it is paid for. */
+  tokens: number;
+  /** Output tokens served over the last 24 h of rounds. */
+  tokens24h: number;
+  /** This round's served tokens in card-equivalents (1.0 = one card flat out for the round). */
   roundScore: number;
-  /** Trailing 12-round mean of roundScore — what the miner is paid on. */
+  /** Trailing 12-round mean of roundScore — the hour's tokens in card-hours; what the miner is paid on. */
   settledScore: number;
   lastMissReason: string | null;
   roundTs: string;
@@ -89,7 +102,8 @@ export interface ServingRound {
   credit: number;
   ttftMs: number | null;
   decodeTps: number | null;
-  capacity: number;
+  attested: boolean;
+  tokens: number;
   roundScore: number;
   settledScore: number;
   served: number;

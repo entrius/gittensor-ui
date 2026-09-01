@@ -14,6 +14,7 @@ import {
   formatFixed,
   formatMs,
   formatPercent,
+  formatTokens,
   uptimeFraction,
 } from './computeFormat';
 
@@ -23,6 +24,7 @@ const SORT_KEYS = [
   'tps',
   'ttft',
   'credit',
+  'tokens',
   'settled',
   'uptime',
   'alpha',
@@ -53,6 +55,8 @@ const sortValue = (miner: ServingMiner, key: FleetSortKey): number => {
       return miner.ttftMs ?? Number.POSITIVE_INFINITY;
     case 'credit':
       return miner.credit;
+    case 'tokens':
+      return miner.tokens24h;
     case 'settled':
       return miner.settledScore;
     case 'uptime':
@@ -152,6 +156,18 @@ export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
         cellSx,
         headerSx,
         renderCell: (m) => formatFixed(m.credit, 2),
+      },
+      {
+        key: 'tokens',
+        header: (
+          <ColumnHint label="Tokens 24h" hint={COMPUTE_METRIC_HINTS.tokens} />
+        ),
+        width: 100,
+        align: 'right',
+        sortKey: 'tokens',
+        cellSx,
+        headerSx,
+        renderCell: (m) => formatTokens(m.tokens24h),
       },
       {
         key: 'settled',
