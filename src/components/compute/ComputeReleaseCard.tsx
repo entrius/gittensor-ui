@@ -18,10 +18,22 @@ import { TEXT_OPACITY, scrollbarSx, tooltipSlotProps } from '../../theme';
 
 // Images for every blessed runtime/model live under the entrius org; the release row says which one to pull.
 const DOCKER_HUB_URL = 'https://hub.docker.com/u/entrius';
+const MINER_GUIDE_URL = 'https://docs.gittensor.io/compute-miner.html';
 
 const MONO = '"JetBrains Mono", monospace';
 
-/** The exact commands miners run — the runtime and, beside it, the attest container that answers the validators'
+/** The release side of a miner's `.env` for docker-compose.miner.yml (miner.env.example in the gittensor repo) —
+ *  the values only this card can supply, one paste. */
+export const buildMinerEnv = (release: ServingRelease): string =>
+  [
+    `RUNTIME_IMAGE=${release.image}`,
+    release.attestImage ? `ATTEST_IMAGE=${release.attestImage}` : null,
+    `MODEL_SHA256=${release.modelSha256}`,
+  ]
+    .filter(Boolean)
+    .join('\n');
+
+/** The no-compose path: the runtime and, beside it, the attest container that answers the validators'
  *  hardware challenge on every GPU of the box. Kept in one place so docs can link here. */
 export const buildSparkinferRunCommand = (release: ServingRelease): string =>
   [
@@ -76,6 +88,55 @@ const CopyButton: React.FC<{ text: string; label: string }> = ({
   );
 };
 
+const CommandBlock: React.FC<{ label: string; text: string }> = ({
+  label,
+  text,
+}) => {
+  const theme = useTheme();
+  const muted = alpha(theme.palette.common.white, TEXT_OPACITY.muted);
+  return (
+    <>
+      <Typography
+        variant="dataLabel"
+        sx={{ display: 'block', color: muted, mb: 0.5 }}
+      >
+        {label}
+      </Typography>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 1,
+          borderRadius: 2,
+          border: `1px solid ${theme.palette.border.light}`,
+          backgroundColor: theme.palette.surface.subtle,
+          px: 1.5,
+          py: 1,
+        }}
+      >
+        <Box
+          component="pre"
+          sx={{
+            m: 0,
+            flex: 1,
+            minWidth: 0,
+            overflowX: 'hidden',
+            fontFamily: MONO,
+            fontSize: '0.78rem',
+            lineHeight: 1.5,
+            whiteSpace: 'pre-wrap',
+            overflowWrap: 'anywhere',
+            ...scrollbarSx,
+          }}
+        >
+          <code>{text}</code>
+        </Box>
+        <CopyButton text={text} label={label} />
+      </Box>
+    </>
+  );
+};
+
 const Field: React.FC<{
   label: string;
   value: string;
@@ -120,6 +181,7 @@ export const ComputeReleaseCard: React.FC<{ release: ServingRelease }> = ({
   release,
 }) => {
   const theme = useTheme();
+  const env = buildMinerEnv(release);
   const command = buildSparkinferRunCommand(release);
   const muted = alpha(theme.palette.common.white, TEXT_OPACITY.muted);
   return (
@@ -168,7 +230,7 @@ export const ComputeReleaseCard: React.FC<{ release: ServingRelease }> = ({
         <Field label="Model" value={release.modelId} />
         <Field label="Runtime pin" value={release.runtimePin} copyable />
         <Field label="Model file" value={release.modelFile} />
-        <Field label="Image" value={release.image} copyable />
+        <Field label="Runtime image" value={release.image} copyable />
       </Box>
       {release.attestImage && (
         <Box sx={{ mb: 2 }}>
@@ -179,46 +241,16 @@ export const ComputeReleaseCard: React.FC<{ release: ServingRelease }> = ({
         <Field label="Model SHA-256" value={release.modelSha256} copyable />
       </Box>
 
-      <Typography
-        variant="dataLabel"
-        sx={{ display: 'block', color: muted, mb: 0.5 }}
-      >
-        Run it
-      </Typography>
-      <Box
-        sx={{
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 1,
-          borderRadius: 2,
-          border: `1px solid ${theme.palette.border.light}`,
-          backgroundColor: theme.palette.surface.subtle,
-          px: 1.5,
-          py: 1,
-        }}
-      >
-        <Box
-          component="pre"
-          sx={{
-            m: 0,
-            flex: 1,
-            minWidth: 0,
-            overflowX: 'hidden',
-            fontFamily: MONO,
-            fontSize: '0.78rem',
-            lineHeight: 1.5,
-            whiteSpace: 'pre-wrap',
-            overflowWrap: 'anywhere',
-            ...scrollbarSx,
-          }}
-        >
-          <code>{command}</code>
-        </Box>
-        <CopyButton text={command} label="docker commands" />
+      <CommandBlock label="Miner .env" text={env} />
+      <Box sx={{ mt: 2 }}>
+        <CommandBlock label="Run it without compose" text={command} />
       </Box>
 
       <Stack direction="row" flexWrap="wrap" gap={2} sx={{ mt: 1.5 }}>
-        {[{ label: 'Docker Hub', href: DOCKER_HUB_URL }].map((link) => (
+        {[
+          { label: 'Miner guide', href: MINER_GUIDE_URL },
+          { label: 'Docker Hub', href: DOCKER_HUB_URL },
+        ].map((link) => (
           <Link
             key={link.href}
             href={link.href}
