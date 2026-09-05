@@ -56,7 +56,7 @@ const sortValue = (miner: ServingMiner, key: FleetSortKey): number => {
     case 'credit':
       return miner.credit;
     case 'tokens':
-      return miner.tokens24h;
+      return miner.tokens24h + miner.promptTokens24h;
     case 'settled':
       return miner.settledScore;
     case 'uptime':
@@ -167,7 +167,7 @@ export const ComputeFleetTable: React.FC<ComputeFleetTableProps> = ({
         sortKey: 'tokens',
         cellSx,
         headerSx,
-        renderCell: (m) => formatTokens(m.tokens24h),
+        renderCell: (m) => formatTokens(m.tokens24h + m.promptTokens24h),
       },
       {
         key: 'settled',
