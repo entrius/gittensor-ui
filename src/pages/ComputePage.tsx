@@ -25,7 +25,11 @@ import { TEXT_OPACITY } from '../theme';
 const poolExplainer = (status: ServingStatus | undefined): string => {
   const rate =
     status?.usdPerMTokens != null
-      ? `about ${formatUsd(status.usdPerMTokens, 3)} per million output tokens`
+      ? `about ${formatUsd(status.usdPerMTokens, 3)} per million output tokens${
+          status.usdPerMPromptTokens != null
+            ? ` and ${formatUsd(status.usdPerMPromptTokens, 4)} per million input tokens`
+            : ''
+        }`
       : 'a rate derived from the blessed runtime’s throughput';
   const cardHour =
     status?.gpuHourUsd != null
@@ -35,7 +39,7 @@ const poolExplainer = (status: ServingStatus | undefined): string => {
     status?.poolCap != null
       ? `inside a ${(status.poolCap * 100).toFixed(1)}% emission cap`
       : 'inside an emission cap set by the validator';
-  return `The serving pool pays RTX 5090 miners per output token the validator’s gateway routes to them — ${rate}, ${cardHour} — ${cap}. Every 5 minutes the validator audits served traffic against its reference GPU, keeps a rolling 10-slot window (READY at mean ≥ 0.8), attests the hardware, and settles the hour’s tokens over the trailing 12 rounds.`;
+  return `The serving pool pays RTX 5090 miners for the card-time the validator’s gateway routes to them — output tokens at the card’s decode rate, input tokens (prefill) at its prefill rate, ${rate}, ${cardHour} — ${cap}. Every 5 minutes the validator audits served traffic against its reference GPU, keeps a rolling 10-slot window (READY at mean ≥ 0.8), attests the hardware, and settles the hour’s card-time over the trailing 12 rounds.`;
 };
 
 const EMPTY_MESSAGE = 'No serving rounds recorded yet by this validator.';
@@ -68,7 +72,8 @@ const ComputeKpis: React.FC<{ status: ServingStatus }> = ({ status }) => {
         gridTemplateColumns: {
           xs: 'repeat(2, minmax(0, 1fr))',
           md: 'repeat(3, minmax(0, 1fr))',
-          lg: 'repeat(6, minmax(0, 1fr))',
+          lg: 'repeat(4, minmax(0, 1fr))',
+          xl: 'repeat(7, minmax(0, 1fr))',
         },
       }}
     >
@@ -78,17 +83,24 @@ const ComputeKpis: React.FC<{ status: ServingStatus }> = ({ status }) => {
         subtitle={`${status.probation} probation · ${status.quarantined} quarantined`}
       />
       <KpiCard
-        title="Tokens served 24h"
-        value={formatTokens(status.tokensLast24h)}
-        subtitle={`${formatTokens(status.tokens)} this round · output tokens paid`}
+        title="Total tokens served 24h"
+        value={formatTokens(status.totalTokensLast24h)}
+        subtitle={`${formatTokens(status.promptTokensLast24h)} input · ${formatTokens(status.tokensLast24h)} output`}
+      />
+      <KpiCard
+        title="Requests 24h"
+        value={status.requestsLast24h.toLocaleString('en-US')}
+        subtitle={`${status.gateway.toLocaleString('en-US')} this round · routed to a miner`}
       />
       <KpiCard
         title="Price per M tokens"
         value={formatUsd(status.usdPerMTokens, 3)}
         subtitle={
-          status.gpuHourUsd != null
-            ? `$${status.gpuHourUsd.toFixed(2)} per card-hour flat out`
-            : 'Derived from the runtime’s throughput'
+          status.usdPerMPromptTokens != null
+            ? `output · ${formatUsd(status.usdPerMPromptTokens, 4)} input (prefill)`
+            : status.gpuHourUsd != null
+              ? `$${status.gpuHourUsd.toFixed(2)} per card-hour flat out`
+              : 'Derived from the runtime’s throughput'
         }
       />
       <KpiCard

@@ -36,8 +36,18 @@ export interface ServingStatus {
   cardEquivalents: number;
   /** Output tokens paid this round across the fleet. */
   tokens: number;
+  /** Prompt (input) tokens paid as prefill this round across the fleet. */
+  promptTokens: number;
+  /** tokens + promptTokens: every token the gateway served this round. */
+  totalTokens: number;
   /** Output tokens paid over the validator's last 24 h of rounds. */
   tokensLast24h: number;
+  /** Prompt (input) tokens paid over the last 24 h of rounds. */
+  promptTokensLast24h: number;
+  /** Total tokens (input + output) served over the last 24 h of rounds. */
+  totalTokensLast24h: number;
+  /** User requests the gateway routed to a miner over the last 24 h (served or failed; 429s never reach a miner). */
+  requestsLast24h: number;
   /** Fraction of subnet emissions flowing to the pool (≤ poolCap). */
   poolShare: number;
   /** From the validator; null on rows written before the column existed. */
@@ -46,6 +56,8 @@ export interface ServingStatus {
   gpuHourUsd: number | null;
   /** The release's derived rate, USD per million output tokens; null on older rounds. */
   usdPerMTokens: number | null;
+  /** The same card-hour over one card's hourly prefill, USD per million input tokens; null on older rounds. */
+  usdPerMPromptTokens: number | null;
   pricingSource: ServingPricingSource;
   alphaPerHour: number | null;
   alphaUsd: number | null;
@@ -79,8 +91,12 @@ export interface ServingMiner {
   attested: boolean;
   /** Output tokens the gateway saw this miner serve on user traffic this round — what it is paid for. */
   tokens: number;
+  /** Prompt (input) tokens on those same requests, paid as prefill. */
+  promptTokens: number;
   /** Output tokens served over the last 24 h of rounds. */
   tokens24h: number;
+  /** Prompt (input) tokens served over the last 24 h of rounds. */
+  promptTokens24h: number;
   /** This round's served tokens in card-equivalents (1.0 = one card flat out for the round). */
   roundScore: number;
   /** Trailing 12-round mean of roundScore — the hour's tokens in card-hours; what the miner is paid on. */
@@ -104,6 +120,7 @@ export interface ServingRound {
   decodeTps: number | null;
   attested: boolean;
   tokens: number;
+  promptTokens: number;
   roundScore: number;
   settledScore: number;
   served: number;

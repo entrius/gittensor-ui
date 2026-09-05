@@ -19,10 +19,10 @@ export const COMPUTE_METRIC_HINTS = {
   attested:
     'Hardware attestation this round: seeded VRAM fill + GEMM chain must match the reference runtime. Admission only — not attested = not READY, no pay this round.',
   tokens:
-    'Output tokens the validator’s gateway saw this miner serve on user traffic — counted by the gateway, never self-reported. This is what the miner is paid for; baseline prompts pay nothing.',
-  settled: `Mean round score over the trailing ${SETTLEMENT_ROUNDS} rounds (~1 h): the hour’s served tokens in card-hours. 1.0 = one 5090 flat out for the hour; this is what the miner is paid on.`,
+    'Input + output tokens the validator’s gateway saw this miner serve on user traffic. Output tokens are counted by the gateway; input tokens are the runtime’s count, capped at the prompt’s length. Both are paid, as card-time; baseline prompts pay nothing.',
+  settled: `Mean round score over the trailing ${SETTLEMENT_ROUNDS} rounds (~1 h): the hour’s served card-time in card-hours. 1.0 = one 5090 flat out for the hour; this is what the miner is paid on.`,
   round:
-    'This round: served output tokens ÷ what one 5090 decodes in a round, if the window passed and the card attested.',
+    'This round: output tokens ÷ what one 5090 decodes in a round + input tokens ÷ what it prefills in a round, if the window passed and the card attested.',
 } as const;
 
 export const COMPUTE_STATUS_META: Record<

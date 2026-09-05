@@ -153,9 +153,9 @@ const MinerKpis: React.FC<{ miner: ServingMiner; priced: boolean }> = ({
       }}
     >
       <KpiCard
-        title="Tokens served 24h"
-        value={formatTokens(miner.tokens24h)}
-        subtitle={`${formatTokens(miner.tokens)} this round · what it is paid for`}
+        title="Total tokens served 24h"
+        value={formatTokens(miner.tokens24h + miner.promptTokens24h)}
+        subtitle={`${formatTokens(miner.promptTokens24h)} input · ${formatTokens(miner.tokens24h)} output`}
       />
       <KpiCard
         title="Settled score"
@@ -188,7 +188,10 @@ const MinerKpis: React.FC<{ miner: ServingMiner; priced: boolean }> = ({
 
 const RoundCharts: React.FC<{ rounds: ServingRound[] }> = ({ rounds }) => {
   const timestamps = useMemo(() => rounds.map((r) => r.roundTs), [rounds]);
-  const tokens = useMemo(() => rounds.map((r) => r.tokens), [rounds]);
+  const tokens = useMemo(
+    () => rounds.map((r) => r.tokens + r.promptTokens),
+    [rounds],
+  );
   const scores = useMemo(() => rounds.map((r) => r.roundScore), [rounds]);
   const tps = useMemo(() => rounds.map((r) => r.decodeTps), [rounds]);
   const ttft = useMemo(() => rounds.map((r) => r.ttftMs), [rounds]);
@@ -341,14 +344,16 @@ const ComputeMinerPage: React.FC = () => {
               color: alpha(theme.palette.common.white, TEXT_OPACITY.muted),
             }}
           >
-            Pay is per output token the validator’s gateway saw this miner
-            serve. Round score = those tokens ÷ what one 5090 decodes in a
-            round, if the window passed and the card attested; speed credit
-            (TTFT band × decode band vs. the blessed 5090 curve) is the routing
-            weight, not a pay multiplier. Settled = mean over the trailing{' '}
-            {SETTLEMENT_ROUNDS} rounds (~1 h), i.e. the hour’s tokens in
-            card-hours, and is what the miner is paid on. A WRONG answer wipes
-            the window and quarantines the miner for 1 h.
+            Pay is for the card-time the validator’s gateway saw this miner
+            serve: output tokens at the card’s decode rate, input tokens
+            (prefill) at its prefill rate. Round score = output tokens ÷ what
+            one 5090 decodes in a round + input tokens ÷ what it prefills, if
+            the window passed and the card attested; speed credit (TTFT band ×
+            decode band vs. the blessed 5090 curve) is the routing weight, not a
+            pay multiplier. Settled = mean over the trailing {SETTLEMENT_ROUNDS}{' '}
+            rounds (~1 h), i.e. the hour’s card-time in card-hours, and is what
+            the miner is paid on. A WRONG answer wipes the window and
+            quarantines the miner for 1 h.
           </Typography>
           <ValidatorSnapshotFootnote
             validatorHotkey={query.data?.validatorHotkey}
