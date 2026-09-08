@@ -57,13 +57,14 @@ const buildMiner = (
     : ready
       ? 0.8 + rand() * 0.2
       : 0.4 + rand() * 0.35;
-  const decodeTps = quarantined ? null : 300 + rand() * 160;
+  // Qwen3.8-27B NVFP4 on one 5090: ~99 tok/s single-stream, ~338 tok/s aggregate across streams
+  const decodeTps = quarantined ? null : 90 + rand() * 12;
   const ttftMs = quarantined ? null : 35 + rand() * 120;
   const attested = ready;
   const credit = ready ? 0.85 + rand() * 0.15 : 0.5 + rand() * 0.4;
-  // ~84k output tokens is one 5090 flat out for a 5-minute round
-  const tokens = ready ? Math.floor(20_000 + rand() * 60_000) : 0;
-  const roundScore = ready ? tokens / 84_000 : 0;
+  // ~101k output tokens (338 tok/s aggregate × 300 s) is one 5090 flat out for a 5-minute round
+  const tokens = ready ? Math.floor(25_000 + rand() * 70_000) : 0;
+  const roundScore = ready ? tokens / 101_000 : 0;
   const settledScore = ready ? roundScore * (0.9 + rand() * 0.1) : 0;
   const rounds24h = 280 + Math.floor(rand() * 8);
   const readyRounds24h = ready
@@ -75,7 +76,7 @@ const buildMiner = (
     hotkey: hotkeyFor(row.uid),
     githubId: row.githubId,
     username: row.username,
-    modelId: 'gpt-oss-20b',
+    modelId: 'qwen3.8-27b',
     status: row.status,
     windowMean: Number(windowMean.toFixed(3)),
     windowN,
@@ -146,8 +147,9 @@ export const mockServingStatus = (): ServingStatus => {
     poolShare: 0.0212,
     poolCap: 0.1,
     gpuHourUsd: 0.7,
-    usdPerMTokens: 0.694,
-    usdPerMPromptTokens: 0.0081,
+    // $0.70 card-hour over ~338 tok/s aggregate ≈ $0.58 per million output tokens
+    usdPerMTokens: 0.575,
+    usdPerMPromptTokens: 0.0259,
     pricingSource: 'validator',
     alphaPerHour,
     alphaUsd: ALPHA_USD,
@@ -156,12 +158,20 @@ export const mockServingStatus = (): ServingStatus => {
     estUsdPerCardDay: Number((alphaPerHour * 24 * ALPHA_USD).toFixed(2)),
     roundsLast24h: 287,
     release: {
-      modelId: 'gpt-oss-20b',
-      runtimePin: 'gittensor-ai-lab/sparkinfer@12954e6',
-      modelSha256:
-        '9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08',
-      modelFile: 'gpt-oss-20b-q8_0.gguf',
-      image: 'entrius/sparkinfer:12954e6',
+      modelId: 'qwen3.8-27b',
+      runtimePin: 'gittensor-ai-lab/sparkinfer@19ef39ec2',
+      modelSha256: null,
+      modelFile:
+        'gittensor-model-hub/Qwen3.8-27B-NVFP4-RTX5090@8e2c0cd25468ac5c1f85f621c2b8edb15ea1f03a',
+      modelDirSha256:
+        'model-00001-of-00002.safetensors=cdd37b0e61eccc8a3d7d08f9d1a4f52856a9d88e4e8b42089bd18a970e3a01ec,model-00002-of-00002.safetensors=713b84b8287e2193290214766c5384fa6475c5626a628e4021c2c9ca90aa61df',
+      runtimeEnv: {
+        CTX: '131072',
+        MODEL_NAME: 'qwen3.8-27b',
+        TOK_REPO: 'Qwen/Qwen3.8-27B',
+      },
+      image:
+        'entrius/sparkinfer:19ef39ec2@sha256:d35719b03f320f7c30abcb7f6b495e64fb7edbe4187c8744775277dc661a23bb',
       attestImage: 'entrius/gt-attest:v1',
     },
   };
@@ -194,7 +204,7 @@ export const mockServingMinerDetail = (
       miner.status === 'ready' && !missed
         ? Math.floor(miner.tokens * jitter())
         : 0;
-    const roundScore = Number((tokens / 84_000).toFixed(3));
+    const roundScore = Number((tokens / 101_000).toFixed(3));
     rounds.push({
       roundTs: ts,
       status: miner.status,
