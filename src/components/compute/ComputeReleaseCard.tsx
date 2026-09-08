@@ -22,28 +22,73 @@ const MINER_GUIDE_URL = 'https://docs.gittensor.io/compute-miner.html';
 
 const MONO = '"JetBrains Mono", monospace';
 
+/** Split "file=sha256,file=sha256" for display; the runtime takes the joined string verbatim. */
+export const splitShardDigests = (digests: string): string[] =>
+  digests
+    .split(',')
+    .map((part) => part.trim())
+    .filter(Boolean);
+
+/** A directory release's `modelFile` is "<hf repo>@<hf commit sha>" — the two halves the entrypoint pins on. */
+const splitModelDir = (
+  modelFile: string,
+): { repo: string; revision: string } => {
+  const at = modelFile.lastIndexOf('@');
+  return at < 0
+    ? { repo: modelFile, revision: '' }
+    : { repo: modelFile.slice(0, at), revision: modelFile.slice(at + 1) };
+};
+
+const isDirectoryRelease = (release: ServingRelease): boolean =>
+  Boolean(release.modelDirSha256);
+
+/** The runtime container's release env as KEY=value pairs, in the order the .env block and the `-e` flags list them.
+ *  A GGUF release pins one file (MODEL_SHA256); a model-directory release pins the Hugging Face repo at a commit plus
+ *  every weight shard's digest (MODEL_DIR_REPO / MODEL_DIR_REVISION / MODEL_DIR_SHA256) —
+ *  docker/sparkinfer-entrypoint.sh in the gittensor repo refuses to start on a mismatch. `runtimeEnv` (CTX,
+ *  MODEL_NAME, TOK_REPO…) rides along whenever the release carries it. */
+export const buildRuntimeEnvPairs = (
+  release: ServingRelease,
+): Array<[string, string]> => {
+  const model: Array<[string, string]> = release.modelDirSha256
+    ? (() => {
+        const { repo, revision } = splitModelDir(release.modelFile);
+        return [
+          ['MODEL_DIR_REPO', repo],
+          ['MODEL_DIR_REVISION', revision],
+          ['MODEL_DIR_SHA256', release.modelDirSha256],
+        ];
+      })()
+    : [['MODEL_SHA256', release.modelSha256 ?? '']];
+  return [...model, ...Object.entries(release.runtimeEnv ?? {})];
+};
+
 /** The release side of a miner's `.env` for docker-compose.miner.yml (miner.env.example in the gittensor repo) —
  *  the values only this card can supply, one paste. */
 export const buildMinerEnv = (release: ServingRelease): string =>
   [
     `RUNTIME_IMAGE=${release.image}`,
     release.attestImage ? `ATTEST_IMAGE=${release.attestImage}` : null,
-    `MODEL_SHA256=${release.modelSha256}`,
+    ...buildRuntimeEnvPairs(release).map(([key, value]) => `${key}=${value}`),
   ]
     .filter(Boolean)
     .join('\n');
 
 /** The no-compose path: the runtime and, beside it, the attest container that answers the validators'
  *  hardware challenge on every GPU of the box. Kept in one place so docs can link here. */
-export const buildSparkinferRunCommand = (release: ServingRelease): string =>
-  [
-    `docker run -d --name sparkinfer --gpus all --restart unless-stopped -p 127.0.0.1:8080:8080 -v sparkmodels:/opt/sparkinfer/models -e MODEL_SHA256=${release.modelSha256} -e SPARKINFER_DETERMINISTIC=1 ${release.image}`,
+export const buildSparkinferRunCommand = (release: ServingRelease): string => {
+  const env = buildRuntimeEnvPairs(release)
+    .map(([key, value]) => `-e ${key}=${value}`)
+    .join(' ');
+  return [
+    `docker run -d --name sparkinfer --gpus all --restart unless-stopped -p 127.0.0.1:8080:8080 -v sparkmodels:/opt/sparkinfer/models ${env} -e SPARKINFER_DETERMINISTIC=1 ${release.image}`,
     release.attestImage
       ? `docker run -d --name gt-attest --gpus all --restart unless-stopped -p 127.0.0.1:8081:8081 ${release.attestImage}`
       : null,
   ]
     .filter(Boolean)
     .join('\n');
+};
 
 const CopyButton: React.FC<{ text: string; label: string }> = ({
   text,
@@ -88,10 +133,12 @@ const CopyButton: React.FC<{ text: string; label: string }> = ({
   );
 };
 
-const CommandBlock: React.FC<{ label: string; text: string }> = ({
-  label,
-  text,
-}) => {
+const CommandBlock: React.FC<{
+  label: string;
+  text: string;
+  /** What the copy button puts on the clipboard when it differs from the displayed text. */
+  copyText?: string;
+}> = ({ label, text, copyText = text }) => {
   const theme = useTheme();
   const muted = alpha(theme.palette.common.white, TEXT_OPACITY.muted);
   return (
@@ -131,7 +178,7 @@ const CommandBlock: React.FC<{ label: string; text: string }> = ({
         >
           <code>{text}</code>
         </Box>
-        <CopyButton text={text} label={label} />
+        <CopyButton text={copyText} label={label} />
       </Box>
     </>
   );
@@ -162,6 +209,7 @@ const Field: React.FC<{
             fontFamily: MONO,
             fontSize: '0.82rem',
             overflowWrap: 'anywhere',
+            whiteSpace: 'pre-line',
             minWidth: 0,
           }}
         >
@@ -184,6 +232,10 @@ export const ComputeReleaseCard: React.FC<{ release: ServingRelease }> = ({
   const env = buildMinerEnv(release);
   const command = buildSparkinferRunCommand(release);
   const muted = alpha(theme.palette.common.white, TEXT_OPACITY.muted);
+  const directory = isDirectoryRelease(release);
+  const runtimeEnv = Object.entries(release.runtimeEnv ?? {})
+    .map(([key, value]) => `${key}=${value}`)
+    .join('\n');
   return (
     <Box
       component="section"
@@ -229,7 +281,11 @@ export const ComputeReleaseCard: React.FC<{ release: ServingRelease }> = ({
       >
         <Field label="Model" value={release.modelId} />
         <Field label="Runtime pin" value={release.runtimePin} copyable />
-        <Field label="Model file" value={release.modelFile} />
+        {directory ? (
+          <Field label="Model directory" value={release.modelFile} copyable />
+        ) : (
+          <Field label="Model file" value={release.modelFile} />
+        )}
         <Field label="Runtime image" value={release.image} copyable />
       </Box>
       {release.attestImage && (
@@ -237,9 +293,28 @@ export const ComputeReleaseCard: React.FC<{ release: ServingRelease }> = ({
           <Field label="Attest image" value={release.attestImage} copyable />
         </Box>
       )}
-      <Box sx={{ mb: 2 }}>
-        <Field label="Model SHA-256" value={release.modelSha256} copyable />
-      </Box>
+      {runtimeEnv && (
+        <Box sx={{ mb: 2 }}>
+          <Field label="Runtime env" value={runtimeEnv} copyable />
+        </Box>
+      )}
+      {release.modelDirSha256 ? (
+        <Box sx={{ mb: 2 }}>
+          <CommandBlock
+            label="Shard SHA-256"
+            text={splitShardDigests(release.modelDirSha256).join('\n')}
+            copyText={release.modelDirSha256}
+          />
+        </Box>
+      ) : (
+        <Box sx={{ mb: 2 }}>
+          <Field
+            label="Model SHA-256"
+            value={release.modelSha256 ?? '—'}
+            copyable={release.modelSha256 !== null}
+          />
+        </Box>
+      )}
 
       <CommandBlock label="Miner .env" text={env} />
       <Box sx={{ mt: 2 }}>

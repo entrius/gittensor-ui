@@ -6,14 +6,28 @@ export type ServingMinerStatus = 'ready' | 'probation' | 'quarantined';
 /** Where the alpha price used for USD estimates came from. */
 export type ServingPricingSource = 'validator' | 'taostats' | 'none';
 
-/** The model/runtime pin the validator currently enforces. */
+/**
+ * The model/runtime pin the validator currently enforces. The model artifact takes one of two shapes:
+ *  - a GGUF release: `modelFile` is the file name and `modelSha256` its digest (`modelDirSha256` null);
+ *  - a Hugging Face model-directory release: `modelFile` is `<hf repo>@<hf commit sha>`, `modelSha256` is null and
+ *    `modelDirSha256` carries one digest per weight shard.
+ */
 export interface ServingRelease {
   modelId: string;
-  /** e.g. "gittensor-ai-lab/sparkinfer@12954e6" */
+  /** e.g. "gittensor-ai-lab/sparkinfer@19ef39ec2" */
   runtimePin: string;
-  modelSha256: string;
+  /** The GGUF file's sha256; null for a model-directory release. */
+  modelSha256: string | null;
+  /** A GGUF file name (e.g. "Qwen3.6-35B-A3B-UD-Q4_K_M.gguf") or, for a directory release, `<hf repo>@<hf commit sha>`
+   *  (e.g. "gittensor-model-hub/Qwen3.8-27B-NVFP4-RTX5090@8e2c0cd2…"). */
   modelFile: string;
-  /** e.g. "entrius/sparkinfer:7498736@sha256:…" — the runtime container */
+  /** Directory release only: "model-00001-of-00002.safetensors=<sha256>,model-00002-of-00002.safetensors=<sha256>" —
+   *  every weight shard the runtime entrypoint verifies before serving. Null for a GGUF release. */
+  modelDirSha256: string | null;
+  /** Extra env the runtime container needs for this release, e.g. {"CTX":"131072","MODEL_NAME":"qwen3.8-27b",
+   *  "TOK_REPO":"Qwen/Qwen3.8-27B"}; null when the image's defaults suffice. */
+  runtimeEnv: Record<string, string> | null;
+  /** e.g. "entrius/sparkinfer:19ef39ec2@sha256:…" — the runtime container */
   image: string;
   /** e.g. "entrius/gt-attest:v1" — the attest container every box runs beside the runtime; null on older rounds */
   attestImage: string | null;
