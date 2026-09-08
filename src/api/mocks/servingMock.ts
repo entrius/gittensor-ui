@@ -149,7 +149,7 @@ export const mockServingStatus = (): ServingStatus => {
     gpuHourUsd: 0.7,
     // $0.70 card-hour over ~338 tok/s aggregate ≈ $0.58 per million output tokens
     usdPerMTokens: 0.575,
-    usdPerMPromptTokens: 0.0081,
+    usdPerMPromptTokens: 0.0259,
     pricingSource: 'validator',
     alphaPerHour,
     alphaUsd: ALPHA_USD,
