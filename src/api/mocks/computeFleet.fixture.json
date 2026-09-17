@@ -1,0 +1,155 @@
+{
+  "boxes": [
+    {
+      "bench_until": null,
+      "benched_reason": null,
+      "card_count": 1,
+      "cards": [
+        {
+          "card": "232c52f6265a",
+          "since": 1788992000.0,
+          "state": "IDLE"
+        }
+      ],
+      "gpu_type": "RTX5090",
+      "hotkey": "5DAAnrj7VHTznn2AWBemMuyBwZWs6FNFjdyVXUeYum3PTXFy",
+      "last_check_at": 1788999800.0,
+      "last_event": {
+        "at": 1788856000.0,
+        "kind": "clean_lease"
+      },
+      "last_failed": [],
+      "pay": {
+        "idle_h": 1.0,
+        "leased_h": 0.0,
+        "usd_window": 0.35,
+        "weight": 0.12
+      },
+      "standing": "standard",
+      "status": "IDLE",
+      "uid": null
+    },
+    {
+      "bench_until": 1789003600.0,
+      "benched_reason": "check_failed",
+      "card_count": 0,
+      "cards": [],
+      "gpu_type": "RTX5090",
+      "hotkey": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+      "last_check_at": 1788998500.0,
+      "last_event": {
+        "at": 1788998500.0,
+        "kind": "check_failed"
+      },
+      "last_failed": ["gpu_uuid_pin"],
+      "pay": null,
+      "standing": "probation",
+      "status": "BENCHED",
+      "uid": null
+    },
+    {
+      "bench_until": null,
+      "benched_reason": null,
+      "card_count": 0,
+      "cards": [],
+      "gpu_type": null,
+      "hotkey": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+      "last_check_at": null,
+      "last_event": null,
+      "last_failed": [],
+      "pay": null,
+      "standing": "probation",
+      "status": "ADMIT",
+      "uid": null
+    },
+    {
+      "bench_until": null,
+      "benched_reason": null,
+      "card_count": 2,
+      "cards": [
+        {
+          "card": "add4be37a2b6",
+          "draining": true,
+          "healthy": false,
+          "heartbeat_misses": 0,
+          "image": "entrius/qwen3.8-27b-nvfp4:6",
+          "last_heartbeat_at": 1788999960.0,
+          "leased_at": 1788996000.0,
+          "since": 1788999970.0,
+          "state": "DRAINING",
+          "uptime_s": 4000.0,
+          "workload": "qwen3.8-27b-nvfp4@6"
+        },
+        {
+          "card": "c7b1676fb45e",
+          "draining": false,
+          "healthy": true,
+          "heartbeat_misses": 1,
+          "image": "entrius/qwen3.8-27b-nvfp4:6",
+          "last_heartbeat_at": 1788999920.0,
+          "leased_at": 1788997600.0,
+          "since": 1788997600.0,
+          "state": "LEASED",
+          "uptime_s": 2400.0,
+          "workload": "qwen3.8-27b-nvfp4@6"
+        }
+      ],
+      "gpu_type": "RTX5090",
+      "hotkey": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+      "last_check_at": 1788999700.0,
+      "last_event": {
+        "at": 1788995000.0,
+        "kind": "clean_lease"
+      },
+      "last_failed": ["gpu_uuid_pin"],
+      "pay": {
+        "idle_h": 0.3333,
+        "leased_h": 1.3333,
+        "usd_window": 1.43,
+        "weight": 0.27
+      },
+      "standing": "probation",
+      "status": "IDLE",
+      "uid": null
+    }
+  ],
+  "controller": {
+    "last_round_at": 1788999500.0,
+    "publish_interval_s": 30.0,
+    "round_interval_s": 1200.0,
+    "round_n": 10,
+    "running": true
+  },
+  "generated_at": 1789000000.0,
+  "netuid": 74,
+  "network": "finney",
+  "oracle": {
+    "alpha_tao": 0.002887277,
+    "held": false,
+    "tao_usd": 228.77
+  },
+  "rates": {
+    "RTX5090": {
+      "idle_usd_per_card_hour": 0.35,
+      "leased_usd_per_card_hour": 1.0,
+      "source": "scorecard"
+    }
+  },
+  "schema": 1,
+  "scorecard": {
+    "issued_at": 1788999600.0,
+    "recycle_share": 0.61,
+    "sha256": "2814cab2b2b84a398b222fb417a216fe1136cd6cf51d4699605a99e4c4ca07cc",
+    "valid": true,
+    "valid_until": 1789002000.0
+  },
+  "totals": {
+    "boxes": 4,
+    "cards": 3,
+    "cards_by_state": {
+      "DRAINING": 1,
+      "IDLE": 1,
+      "LEASED": 1
+    }
+  }
+}

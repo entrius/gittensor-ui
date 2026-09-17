@@ -4,7 +4,7 @@ interface ImportMetaEnv {
   readonly VITE_REACT_APP_MIRROR_BASE_URL?: string;
   readonly VITE_WEB3FORMS_ACCESS_KEY?: string;
   /** Dev only: serve /serving endpoints from local fixtures. */
-  readonly VITE_SERVING_MOCK?: string;
+  readonly VITE_COMPUTE_MOCK?: string;
 }
 
 interface ImportMeta {

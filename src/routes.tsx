@@ -20,7 +20,6 @@ const RepositoriesPage = React.lazy(() => import('./pages/RepositoriesPage'));
 const LeaderboardPage = React.lazy(() => import('./pages/LeaderboardPage'));
 const MinerDetailsPage = React.lazy(() => import('./pages/MinerDetailsPage'));
 const ComputePage = React.lazy(() => import('./pages/ComputePage'));
-const ComputeMinerPage = React.lazy(() => import('./pages/ComputeMinerPage'));
 const RepositoryDetailsPage = React.lazy(
   () => import('./pages/RepositoryDetailsPage'),
 );
@@ -78,10 +77,10 @@ const routesArray: AppRoute[] = [
     showGlobalSearch: true,
   },
   {
-    name: 'compute-miner',
+    // The phase-0 per-miner page is gone; old links land on the fleet.
+    name: 'compute-miner-redirect',
     path: '/compute/miner',
-    element: <ComputeMinerPage />,
-    showGlobalSearch: false,
+    element: <Navigate to="/compute" replace />,
   },
   {
     name: 'watchlist',
