@@ -4,7 +4,7 @@ import ContentCopyIcon from '@mui/icons-material/ContentCopy';
 import CheckIcon from '@mui/icons-material/Check';
 import { useClipboardCopy } from '../../hooks/useClipboardCopy';
 import { tooltipSlotProps } from '../../theme';
-import { shortHotkey } from './computeFormat';
+import { shortHotkey } from './fleetFormat';
 
 interface CopyableHotkeyProps {
   hotkey: string;

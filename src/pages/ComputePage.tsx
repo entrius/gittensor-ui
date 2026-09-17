@@ -2,11 +2,13 @@ import React from 'react';
 import { Box, Link, Typography, alpha, useTheme } from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
+import { ComputeFleetSection } from '../components/compute';
 import { TEXT_OPACITY } from '../theme';
 
 // The compute pool (phase 1) replaced per-token serving on 2026-09-17. The controller that runs the pool keeps its
-// state (cards, leases, pay) in its own files, not in the database this site reads, so the phase-0 KPIs, release card
-// and fleet table are gone until that state is published. What stays is what a miner needs: how it pays, how to join.
+// state (cards, leases, pay) in its own files, not in the database this site reads; it publishes a sanitized copy that
+// das serves as GET /compute/fleet, and the Fleet section below reads that. The rest is what a miner needs: how it
+// pays, how to join.
 const DOCS_URL = 'https://docs.gittensor.io/compute-mining.html';
 
 const EXPLAINER =
@@ -145,13 +147,17 @@ const ComputePage: React.FC = () => {
                 </Typography>
               ))}
             </Box>
+          </Box>
+
+          <Box>
             <Typography
-              variant="body2"
-              sx={{ color: secondary, mt: 1.5, maxWidth: 860 }}
+              variant="sectionTitle"
+              component="h2"
+              sx={{ display: 'block', mb: 1.25 }}
             >
-              A live fleet table (card status, workload, uptime) returns here
-              once the pool publishes its state.
+              Fleet
             </Typography>
+            <ComputeFleetSection />
           </Box>
         </Box>
       </Box>
