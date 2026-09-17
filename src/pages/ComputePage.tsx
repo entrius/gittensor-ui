@@ -1,151 +1,46 @@
 import React from 'react';
-import { Box, Typography, alpha, useTheme } from '@mui/material';
+import { Box, Link, Typography, alpha, useTheme } from '@mui/material';
 import { Page } from '../components/layout';
 import { SEO } from '../components';
-import KpiCard from '../components/KpiCard';
-import {
-  ComputeFleetTable,
-  ComputeReleaseCard,
-  ValidatorSnapshotFootnote,
-  hasPricing,
-  formatAlpha,
-  formatRelative,
-  formatRoundTime,
-  formatTokens,
-  formatUsd,
-} from '../components/compute';
-import {
-  isNotFoundError,
-  useServingMiners,
-  useServingStatus,
-  type ServingStatus,
-} from '../api';
 import { TEXT_OPACITY } from '../theme';
 
-const poolExplainer = (status: ServingStatus | undefined): string => {
-  const rate =
-    status?.usdPerMTokens != null
-      ? `about ${formatUsd(status.usdPerMTokens, 3)} per million output tokens${
-          status.usdPerMPromptTokens != null
-            ? ` and ${formatUsd(status.usdPerMPromptTokens, 4)} per million input tokens`
-            : ''
-        }`
-      : 'a rate derived from the blessed runtime’s throughput';
-  const cardHour =
-    status?.gpuHourUsd != null
-      ? `set so one 5090 flat out earns $${status.gpuHourUsd.toFixed(2)} per card-hour`
-      : 'set so one 5090 flat out earns the posted card-hour';
-  const cap =
-    status?.poolCap != null
-      ? `inside a ${(status.poolCap * 100).toFixed(1)}% emission cap`
-      : 'inside an emission cap set by the validator';
-  return `The serving pool pays RTX 5090 miners for the card-time the validator’s gateway routes to them — output tokens at the card’s decode rate, input tokens (prefill) at its prefill rate, ${rate}, ${cardHour} — ${cap}. Every 5 minutes the validator audits served traffic against its reference GPU, keeps a rolling 10-slot window (READY at mean ≥ 0.8), attests the hardware, and settles the hour’s card-time over the trailing 12 rounds.`;
-};
+// The compute pool (phase 1) replaced per-token serving on 2026-09-17. The controller that runs the pool keeps its
+// state (cards, leases, pay) in its own files, not in the database this site reads, so the phase-0 KPIs, release card
+// and fleet table are gone until that state is published. What stays is what a miner needs: how it pays, how to join.
+const DOCS_URL = 'https://docs.gittensor.io/compute-mining.html';
 
-const EMPTY_MESSAGE = 'No serving rounds recorded yet by this validator.';
+const EXPLAINER =
+  'The compute pool pays RTX 5090 miners for card-time, not tokens. You run one command on your GPU box; the ' +
+  'subnet proves the card is a real, exclusive 5090 every 20 minutes, places a blessed workload on it when there ' +
+  'is demand, and pays per card-hour: an idle rate while the card is proven and waiting, a leased rate while it ' +
+  'serves. A signed scorecard sets each miner’s share of the compute emissions and the validator commits its ' +
+  'hash on chain.';
 
-const formatPoolShare = (status: ServingStatus): string =>
-  status.poolCap === null
-    ? 'cap not reported'
-    : `of ${(status.poolCap * 100).toFixed(1)}% cap`;
+const STATES: Array<[string, string]> = [
+  ['IDLE', 'proven and waiting for a workload: earns the idle rate'],
+  ['LEASED', 'serving a blessed workload: earns the leased rate'],
+  [
+    'CHECKING',
+    'being re-proven after a workload left: unpaid, usually under a minute',
+  ],
+  ['BENCHED', 'failed a proof or a rule: unpaid until the bench ends'],
+];
 
-const formatPerCardSubtitle = (status: ServingStatus): string => {
-  if (!hasPricing(status.pricingSource)) return 'No price this round';
-  const tempo = formatAlpha(status.estAlphaPerCardTempo);
-  const usd = formatUsd(status.estUsdPerCardDay);
-  const parts = [
-    tempo === '—' ? null : `${tempo}/tempo`,
-    usd === '—' ? null : `≈ ${usd}/day`,
-  ].filter(Boolean);
-  return parts.length
-    ? `${parts.join(' · ')} · est., one card flat out`
-    : 'One card flat out, estimate';
-};
+const JOIN = `# on the GPU box (RTX 5090, NVIDIA driver, Docker, nvidia-container-toolkit)
+gitt up --wallet WALLET_NAME --hotkey WALLET_HOTKEY
 
-const ComputeKpis: React.FC<{ status: ServingStatus }> = ({ status }) => {
-  const priced = hasPricing(status.pricingSource);
-  return (
-    <Box
-      sx={{
-        display: 'grid',
-        gap: { xs: 1, sm: 1.5 },
-        gridTemplateColumns: {
-          xs: 'repeat(2, minmax(0, 1fr))',
-          md: 'repeat(3, minmax(0, 1fr))',
-          lg: 'repeat(4, minmax(0, 1fr))',
-          xl: 'repeat(7, minmax(0, 1fr))',
-        },
-      }}
-    >
-      <KpiCard
-        title="Ready cards"
-        value={status.ready}
-        subtitle={`${status.probation} probation · ${status.quarantined} quarantined`}
-      />
-      <KpiCard
-        title="Total tokens served 24h"
-        value={formatTokens(status.totalTokensLast24h)}
-        subtitle={`${formatTokens(status.promptTokensLast24h)} input · ${formatTokens(status.tokensLast24h)} output`}
-      />
-      <KpiCard
-        title="Requests 24h"
-        value={status.requestsLast24h.toLocaleString('en-US')}
-        subtitle={`${status.gateway.toLocaleString('en-US')} this round · routed to a miner`}
-      />
-      <KpiCard
-        title="Price per M tokens"
-        value={formatUsd(status.usdPerMTokens, 3)}
-        subtitle={
-          status.usdPerMPromptTokens != null
-            ? `output · ${formatUsd(status.usdPerMPromptTokens, 4)} input (prefill)`
-            : status.gpuHourUsd != null
-              ? `$${status.gpuHourUsd.toFixed(2)} per card-hour flat out`
-              : 'Derived from the runtime’s throughput'
-        }
-      />
-      <KpiCard
-        title="Pool share"
-        value={`${(status.poolShare * 100).toFixed(2)}%`}
-        subtitle={`${formatPoolShare(status)} · ${status.cardEquivalents.toFixed(2)} card-h settled`}
-      />
-      <KpiCard
-        title="Est. alpha/day per card"
-        value={priced ? formatAlpha(status.estAlphaPerCardDay) : '—'}
-        subtitle={formatPerCardSubtitle(status)}
-      />
-      <KpiCard
-        title="Last round"
-        value={formatRelative(status.roundTs)}
-        subtitle={`${formatRoundTime(status.roundTs)} · ${status.roundsLast24h} rounds in 24 h`}
-      />
-    </Box>
-  );
-};
+# leave cleanly (drains the workload first; no penalty)
+gitt down`;
 
 const ComputePage: React.FC = () => {
   const theme = useTheme();
-  const statusQuery = useServingStatus();
-  const minersQuery = useServingMiners();
-
-  const noRoundsYet =
-    isNotFoundError(statusQuery.error) ||
-    (statusQuery.isSuccess && !statusQuery.data);
-  const statusError = statusQuery.isError && !noRoundsYet;
-  const miners = noRoundsYet ? [] : (minersQuery.data ?? []);
-  const minersError =
-    minersQuery.isError && !isNotFoundError(minersQuery.error);
-
-  const emptyState = (
-    <Box sx={{ p: 3 }}>
-      <Typography color="text.secondary">{EMPTY_MESSAGE}</Typography>
-    </Box>
-  );
+  const secondary = alpha(theme.palette.common.white, TEXT_OPACITY.secondary);
 
   return (
     <Page title="Compute">
       <SEO
         title="Compute"
-        description="RTX 5090 serving pool — READY cards, pool share, and per-miner audit status as observed by one validator."
+        description="The Gittensor compute pool: RTX 5090 miners paid per card-hour. One command to join."
         type="website"
       />
       <Box
@@ -176,30 +71,11 @@ const ComputePage: React.FC = () => {
             </Typography>
             <Typography
               variant="body2"
-              sx={{
-                color: alpha(
-                  theme.palette.common.white,
-                  TEXT_OPACITY.secondary,
-                ),
-                maxWidth: 860,
-                lineHeight: 1.55,
-              }}
+              sx={{ color: secondary, maxWidth: 860, lineHeight: 1.55 }}
             >
-              {poolExplainer(statusQuery.data)}
+              {EXPLAINER}
             </Typography>
           </Box>
-
-          {statusQuery.data && !noRoundsYet ? (
-            <ComputeKpis status={statusQuery.data} />
-          ) : null}
-          {statusQuery.data?.release && !noRoundsYet ? (
-            <ComputeReleaseCard release={statusQuery.data.release} />
-          ) : null}
-          {statusError ? (
-            <Typography color="error" variant="body2">
-              Could not load the pool snapshot.
-            </Typography>
-          ) : null}
 
           <Box>
             <Typography
@@ -207,23 +83,76 @@ const ComputePage: React.FC = () => {
               component="h2"
               sx={{ display: 'block', mb: 1.25 }}
             >
-              Fleet
+              Run a card
             </Typography>
-            <ComputeFleetTable
-              miners={miners}
-              priced={hasPricing(statusQuery.data?.pricingSource)}
-              isLoading={
-                !noRoundsYet && (minersQuery.isLoading || statusQuery.isLoading)
-              }
-              isError={minersError}
-              emptyState={emptyState}
-            />
+            <Box
+              component="pre"
+              sx={{
+                m: 0,
+                p: 2,
+                borderRadius: 2,
+                border: `1px solid ${theme.palette.border.light}`,
+                backgroundColor: alpha(theme.palette.common.white, 0.03),
+                fontFamily: 'monospace',
+                fontSize: 13,
+                lineHeight: 1.6,
+                overflowX: 'auto',
+                whiteSpace: 'pre',
+              }}
+            >
+              {JOIN}
+            </Box>
+            <Typography
+              variant="body2"
+              sx={{ color: secondary, mt: 1.25, maxWidth: 860 }}
+            >
+              That is the whole setup: no model downloads, no configuration.
+              Prerequisites, ports, a wallet that is not on the GPU box, and
+              what gets a box benched are in the{' '}
+              <Link href={DOCS_URL} target="_blank" rel="noopener noreferrer">
+                compute mining guide
+              </Link>
+              .
+            </Typography>
           </Box>
 
-          <ValidatorSnapshotFootnote
-            validatorHotkey={statusQuery.data?.validatorHotkey}
-            pricingSource={statusQuery.data?.pricingSource}
-          />
+          <Box>
+            <Typography
+              variant="sectionTitle"
+              component="h2"
+              sx={{ display: 'block', mb: 1.25 }}
+            >
+              Card states
+            </Typography>
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}>
+              {STATES.map(([state, meaning]) => (
+                <Typography
+                  key={state}
+                  variant="body2"
+                  sx={{ color: secondary }}
+                >
+                  <Box
+                    component="span"
+                    sx={{
+                      fontFamily: 'monospace',
+                      color: theme.palette.common.white,
+                      mr: 1,
+                    }}
+                  >
+                    {state}
+                  </Box>
+                  {meaning}
+                </Typography>
+              ))}
+            </Box>
+            <Typography
+              variant="body2"
+              sx={{ color: secondary, mt: 1.5, maxWidth: 860 }}
+            >
+              A live fleet table (card status, workload, uptime) returns here
+              once the pool publishes its state.
+            </Typography>
+          </Box>
         </Box>
       </Box>
     </Page>

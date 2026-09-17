@@ -1,17 +1,3 @@
 {
-  "Autovara/kata": "https://dashboardking.ngrok.app/",
-  "Geniepod/genie-claw": "https://genieclaw.org",
-  "gittensor-agent-forge/gt-imagent": "https://tryimagent.com/",
-  "gittensor-ai-lab/sparkinfer": "https://sparkinfer.com/",
-  "gittensor-model-hub/SparkDistill": "https://gittensor-model-hub.github.io/SparkDistill/",
-  "gittensor-vanguard/vanguarstew": "https://gittensor-vanguard.github.io/vanguarstew/",
-  "James-CUDA/Gittensor-TinyRouter": "https://james-cuda.github.io/Gittensor-TinyRouter/",
-  "JSONbored/awesome-claude": "https://heyclau.de",
-  "JSONbored/loopover": "https://loopover.ai",
-  "JSONbored/metagraphed": "https://metagraph.sh",
-  "mini-router/minirouter": "https://mini-router.github.io/minirouter/",
-  "phase-rs/phase": "http://preview.phase-rs.dev/",
-  "vouchdev/vouch": "https://vouchai.dev",
-  "we-promise/sure": "https://sure.am",
-  "zeokin/Cuda-Compute-OSS": "https://zeokin.github.io/Cuda-Compute-Dashboard/"
+  "gittensor-ai-lab/sparkinfer": "https://sparkinfer.com/"
 }
