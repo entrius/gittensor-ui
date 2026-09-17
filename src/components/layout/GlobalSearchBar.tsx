@@ -28,7 +28,6 @@ import { minerPrPath, minerRepositoryPath } from '../../utils';
 import {
   minerDetailsPath,
   bountyDetailsPath,
-  computeMinerPath,
   looksLikeSs58Hotkey,
 } from '../../utils/paths';
 
@@ -324,19 +323,8 @@ const GlobalSearchBar: React.FC = () => {
         onSelect: () => navigateAndClose(href),
       });
     });
-    // An ss58 hotkey may belong to a compute miner the contribution
-    // datasets don't know about — always offer the compute lookup.
-    if (looksLikeSs58Hotkey(trimmedQuery)) {
-      const href = computeMinerPath(trimmedQuery);
-      items.push({
-        key: `compute-${trimmedQuery}`,
-        kind: 'compute',
-        title: `Compute miner ${trimmedQuery.slice(0, 8)}…${trimmedQuery.slice(-6)}`,
-        subtitle: 'Serving status as observed by the validator',
-        href,
-        onSelect: () => navigateAndClose(href),
-      });
-    }
+    // No compute-miner lookup: the per-miner page reads phase-0 serving rows, which stopped on 2026-09-17 (the
+    // compute pool keeps its state elsewhere), so every pool miner would land on "never seen".
     repositoryResults.forEach((repo) => {
       const href = minerRepositoryPath(repo.fullName);
       items.push({
