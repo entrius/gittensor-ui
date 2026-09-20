@@ -151,8 +151,21 @@ export const formatAgo = (
 export const formatUsdRate = (value: number | null | undefined): string =>
   value == null ? '—' : `$${value.toFixed(2)}`;
 
-/** `gpu_uuid_pin` -> "gpu uuid pin". */
-export const humanize = (name: string): string => name.replace(/_/g, ' ');
+/** `gpu_uuid_pin` -> "gpu uuid pin"; `heartbeat:same_card` -> "heartbeat same card". */
+export const humanize = (name: string): string => name.replace(/[_:]/g, ' ');
+
+// A published phrase is assembled by the controller from constants in its own source plus integers, so it can hold
+// nothing a box reported. This is the page's own check on that, not its only defence: React escapes what it renders.
+const PHRASE = /^[A-Za-z0-9][A-Za-z0-9 ,.()'/-]{0,199}$/;
+
+/**
+ * Why one check failed, in the controller's words — or `null`, and the caller names the check instead. Anything
+ * that does not look like a phrase we would have written is dropped rather than shown.
+ */
+export const benchPhrase = (box: ComputeBox, check: string): string | null => {
+  const text = box.last_failed_why?.[check];
+  return typeof text === 'string' && PHRASE.test(text) ? text : null;
+};
 
 // Standing events that are good news, not a miss.
 const QUIET_EVENTS = new Set(['clean_lease', 'released', 'folded']);
@@ -163,10 +176,13 @@ export const lastMiss = (
   nowS: number,
 ): { text: string; when: string } | null => {
   const { box, card } = row;
-  // A failed check is the box's, not a card's: said once, on the box's first row.
+  // A failed check is the box's, not a card's: said once, on the box's first row. The check's own words if the
+  // controller published them — "failed card_free" named the check and told the miner nothing to do about it.
   if (row.leads && box.last_failed.length)
     return {
-      text: `failed ${box.last_failed.map(humanize).join(', ')}`,
+      text: box.last_failed
+        .map((check) => benchPhrase(box, check) ?? `failed ${humanize(check)}`)
+        .join('; '),
       when: formatAgo(box.last_check_at, nowS),
     };
   if (card?.heartbeat_misses)

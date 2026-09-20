@@ -19,6 +19,7 @@
         "kind": "clean_lease"
       },
       "last_failed": [],
+      "last_failed_why": {},
       "pay": {
         "idle_h": 1.0,
         "leased_h": 0.0,
@@ -41,7 +42,10 @@
         "at": 1788998500.0,
         "kind": "check_failed"
       },
-      "last_failed": ["gpu_uuid_pin"],
+      "last_failed": ["card_free"],
+      "last_failed_why": {
+        "card_free": "a desktop session is using this GPU (4 processes outside our containers)"
+      },
       "pay": null,
       "standing": "probation",
       "status": "BENCHED",
@@ -57,6 +61,7 @@
       "last_check_at": null,
       "last_event": null,
       "last_failed": [],
+      "last_failed_why": {},
       "pay": null,
       "standing": "probation",
       "status": "ADMIT",
@@ -102,6 +107,9 @@
         "kind": "clean_lease"
       },
       "last_failed": ["gpu_uuid_pin"],
+      "last_failed_why": {
+        "gpu_uuid_pin": "the GPUs on this box are not the ones pinned when it was admitted (1 gone, 1 new)"
+      },
       "pay": {
         "idle_h": 0.3333,
         "leased_h": 1.3333,

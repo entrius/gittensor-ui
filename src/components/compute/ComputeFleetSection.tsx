@@ -241,15 +241,40 @@ export const ComputeFleetSection: React.FC = () => {
         renderCell: (r) => {
           const miss = lastMiss(r, nowS);
           if (!miss) return '—';
+          // A bench reason is a sentence now, not a check name: cap it so one long one does not widen the table,
+          // and keep the whole of it a hover away.
           return (
-            <>
-              {miss.text}
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'baseline',
+                gap: 0.75,
+                minWidth: 0,
+              }}
+            >
+              <Tooltip
+                title={miss.text}
+                arrow
+                placement="top"
+                slotProps={tooltipSlotProps}
+              >
+                <Box
+                  component="span"
+                  sx={{
+                    overflow: 'hidden',
+                    textOverflow: 'ellipsis',
+                    maxWidth: 360,
+                  }}
+                >
+                  {miss.text}
+                </Box>
+              </Tooltip>
               {miss.when && (
-                <Box component="span" sx={{ color: secondary, ml: 0.75 }}>
+                <Box component="span" sx={{ color: secondary, flexShrink: 0 }}>
                   {miss.when}
                 </Box>
               )}
-            </>
+            </Box>
           );
         },
       },
