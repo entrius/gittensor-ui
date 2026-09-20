@@ -37,6 +37,13 @@ export interface ComputeBox {
   card_count: number;
   last_check_at: number | null;
   last_failed: string[];
+  /**
+   * Per failed check name, why it failed, in one phrase a miner can act on. The controller renders these from
+   * string constants in its own source plus integers (`checks/why.py`) — no part of what a box reported is in
+   * them, which is what makes them safe on a public document. Absent on a document from a controller older than
+   * the field, and a name with no phrase is simply missing: fall back to naming the check.
+   */
+  last_failed_why?: Record<string, string>;
   bench_until: number | null;
   benched_reason: string | null;
   pay: {
