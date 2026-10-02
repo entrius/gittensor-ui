@@ -48,10 +48,6 @@ interface LeaderboardInsightsProps {
   onSelectCohort?: (cohort: CohortKey) => void;
 }
 
-// Mirrors validator constants.py (OSS_EMISSION_SHARE=0.90, ISSUES_TREASURY_SHARE=0.10).
-const CONTRIB_EMISSION_SHARE = 0.9;
-const TREASURY_EMISSION_SHARE = 0.1;
-
 const fmtUsd = (n: number): string => {
   if (n < 1) return '<$1';
   if (n >= 10_000) return `$${(n / 1000).toFixed(1)}k`;
@@ -193,146 +189,6 @@ const Zone: React.FC<{
   );
 };
 
-const EmissionSplitBar: React.FC<{ pool: number }> = ({ pool }) => {
-  const contribShare = CONTRIB_EMISSION_SHARE;
-  const treasuryShare = TREASURY_EMISSION_SHARE;
-  const contribUsd = pool * contribShare;
-  const treasuryUsd = pool * treasuryShare;
-  const contribColor = STATUS_COLORS.merged;
-  const treasuryColor = STATUS_COLORS.info;
-  const tooltipBody = (
-    <Box sx={{ lineHeight: 1.45, maxWidth: 260 }}>
-      <Box sx={{ fontWeight: 700, fontSize: '0.78rem' }}>
-        Emission allocation
-      </Box>
-      <Box sx={{ fontSize: '0.7rem', opacity: 0.82, mt: '4px' }}>
-        Of the {fmtUsd(pool)} daily pool, {Math.round(contribShare * 100)}% is
-        distributed to miners via OSS + Discovery scoring, and{' '}
-        {Math.round(treasuryShare * 100)}% flows to the issues treasury (UID
-        111). Allocation is fixed by the validator and applies network-wide.
-      </Box>
-    </Box>
-  );
-  return (
-    <Tooltip
-      title={tooltipBody}
-      arrow
-      placement="top"
-      slotProps={tooltipSlotProps}
-    >
-      <Box sx={{ mt: 0.85, cursor: 'help' }}>
-        <Box
-          sx={{
-            display: 'flex',
-            height: 10,
-            borderRadius: 999,
-            overflow: 'hidden',
-          }}
-        >
-          <Box
-            sx={{
-              width: `${contribShare * 100}%`,
-              backgroundColor: contribColor,
-            }}
-          />
-          <Box
-            sx={{
-              width: `${treasuryShare * 100}%`,
-              backgroundColor: treasuryColor,
-            }}
-          />
-        </Box>
-        <Box
-          sx={{
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'baseline',
-            mt: '6px',
-            fontSize: '0.66rem',
-            fontFamily: '"JetBrains Mono", monospace',
-            lineHeight: 1.1,
-          }}
-        >
-          <Box
-            sx={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-          >
-            <Box
-              component="span"
-              sx={{
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                backgroundColor: contribColor,
-              }}
-            />
-            <Box
-              component="span"
-              sx={(t) => ({
-                color: alpha(t.palette.text.primary, 0.55),
-                fontWeight: 500,
-              })}
-            >
-              Miners
-            </Box>
-            <Box
-              component="span"
-              sx={{ color: 'text.primary', fontWeight: 700 }}
-            >
-              {fmtUsd(contribUsd)}
-            </Box>
-            <Box
-              component="span"
-              sx={(t) => ({
-                color: alpha(t.palette.text.primary, 0.4),
-                fontSize: '0.6rem',
-              })}
-            >
-              {Math.round(contribShare * 100)}%
-            </Box>
-          </Box>
-          <Box
-            sx={{ display: 'inline-flex', alignItems: 'center', gap: '6px' }}
-          >
-            <Box
-              component="span"
-              sx={{
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                backgroundColor: treasuryColor,
-              }}
-            />
-            <Box
-              component="span"
-              sx={(t) => ({
-                color: alpha(t.palette.text.primary, 0.55),
-                fontWeight: 500,
-              })}
-            >
-              Treasury
-            </Box>
-            <Box
-              component="span"
-              sx={{ color: 'text.primary', fontWeight: 700 }}
-            >
-              {fmtUsd(treasuryUsd)}
-            </Box>
-            <Box
-              component="span"
-              sx={(t) => ({
-                color: alpha(t.palette.text.primary, 0.4),
-                fontSize: '0.6rem',
-              })}
-            >
-              {Math.round(treasuryShare * 100)}%
-            </Box>
-          </Box>
-        </Box>
-      </Box>
-    </Tooltip>
-  );
-};
-
 const DailyPoolZone: React.FC<{
   pool: number;
   earners: EarnerLite[];
@@ -374,7 +230,6 @@ const DailyPoolZone: React.FC<{
           /day
         </Typography>
       </Box>
-      {pool > 0 && <EmissionSplitBar pool={pool} />}
       {earners.length > 0 && (
         <Box sx={{ mt: 'auto', pt: 2 }}>
           <Typography
