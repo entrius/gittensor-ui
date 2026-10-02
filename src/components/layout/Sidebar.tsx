@@ -11,7 +11,6 @@ import {
 } from '@mui/material';
 import { useLocation } from 'react-router-dom';
 import DashboardIcon from '@mui/icons-material/Dashboard';
-import MemoryIcon from '@mui/icons-material/Memory';
 import { useLinkBehavior } from '../common/linkBehavior';
 
 const LOGO_IMG_FILTER =
@@ -82,10 +81,7 @@ const Sidebar: React.FC<SidebarProps> = ({ onNavigate, collapsed = false }) => {
     path: string;
     icon: React.ReactNode;
     badge?: string;
-  }> = [
-    { label: 'dashboard', path: '/dashboard', icon: <DashboardIcon /> },
-    { label: 'compute', path: '/compute', icon: <MemoryIcon /> },
-  ];
+  }> = [{ label: 'dashboard', path: '/dashboard', icon: <DashboardIcon /> }];
 
   const logoLink = (
     <SidebarLogoLink onNavigate={onNavigate} collapsed={collapsed}>
