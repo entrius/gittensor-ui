@@ -25,14 +25,18 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { useSearchResults } from '../../pages/search/searchData';
 import { useLinkBehavior, linkResetSx } from '../common/linkBehavior';
 import { minerPrPath, minerRepositoryPath } from '../../utils';
-import { minerDetailsPath, bountyDetailsPath } from '../../utils/paths';
+import {
+  minerDetailsPath,
+  bountyDetailsPath,
+  looksLikeSs58Hotkey,
+} from '../../utils/paths';
 
 const QUICK_RESULT_LIMIT = 3;
 const DROPDOWN_CLOSE_DELAY_MS = 150;
 const LISTBOX_ID = 'global-search-listbox';
 const itemIdFromKey = (key: string) => `global-search-item-${key}`;
 
-type NavItemKind = 'miner' | 'repo' | 'pr' | 'issue' | 'action';
+type NavItemKind = 'miner' | 'compute' | 'repo' | 'pr' | 'issue' | 'action';
 
 type NavItem = {
   key: string;
@@ -45,6 +49,7 @@ type NavItem = {
 
 const SECTION_LABELS: Record<Exclude<NavItemKind, 'action'>, string> = {
   miner: 'Miners',
+  compute: 'Compute',
   repo: 'Repositories',
   pr: 'Pull Requests',
   issue: 'Issues',
@@ -248,6 +253,7 @@ const GlobalSearchBar: React.FC = () => {
   const trimmedQuery = query.trim();
 
   const hasAnyResults =
+    looksLikeSs58Hotkey(trimmedQuery) ||
     minerResults.length > 0 ||
     repositoryResults.length > 0 ||
     prResults.length > 0 ||
@@ -317,6 +323,8 @@ const GlobalSearchBar: React.FC = () => {
         onSelect: () => navigateAndClose(href),
       });
     });
+    // No compute-miner lookup: the per-miner page reads phase-0 serving rows, which stopped on 2026-09-17 (the
+    // compute pool keeps its state elsewhere), so every pool miner would land on "never seen".
     repositoryResults.forEach((repo) => {
       const href = minerRepositoryPath(repo.fullName);
       items.push({

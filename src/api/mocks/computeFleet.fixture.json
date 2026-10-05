@@ -1,0 +1,123 @@
+{
+  "schema": 1,
+  "generated_at": 1789000000.0,
+  "network": "finney",
+  "netuid": 74,
+  "controller": {
+    "running": true,
+    "round_n": 10,
+    "last_round_at": 1788999500.0,
+    "round_interval_s": 1200.0,
+    "publish_interval_s": 30.0
+  },
+  "scorecard": null,
+  "rates": {
+    "RTX5090": {
+      "idle_usd_per_card_hour": 0.35,
+      "leased_usd_per_card_hour": 1.0,
+      "source": "table"
+    }
+  },
+  "oracle": null,
+  "totals": {
+    "boxes": 3,
+    "cards": 2,
+    "cards_by_state": {
+      "DRAINING": 1,
+      "LEASED": 1
+    }
+  },
+  "boxes": [
+    {
+      "hotkey": "5FHneW46xGXgs5mUiveU4sbTyGBzmstUspZC92UhjJM694ty",
+      "uid": null,
+      "status": "BENCHED",
+      "standing": "probation",
+      "gpu_type": "RTX5090",
+      "card_count": 0,
+      "last_check_at": 1788998500.0,
+      "last_failed": ["gpu_uuid_pin"],
+      "last_failed_why": {
+        "gpu_uuid_pin": "the GPUs on this box are not the ones pinned when it was admitted"
+      },
+      "bench_until": 1789003600.0,
+      "benched_reason": "check_failed",
+      "ladder_rung": 0,
+      "strikes": 0,
+      "pay": null,
+      "last_event": {
+        "at": 1788998500.0,
+        "kind": "check_failed"
+      },
+      "cards": []
+    },
+    {
+      "hotkey": "5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y",
+      "uid": null,
+      "status": "ADMIT",
+      "standing": "probation",
+      "gpu_type": null,
+      "card_count": 0,
+      "last_check_at": null,
+      "last_failed": [],
+      "last_failed_why": {},
+      "bench_until": null,
+      "benched_reason": null,
+      "ladder_rung": 0,
+      "strikes": 0,
+      "pay": null,
+      "last_event": null,
+      "cards": []
+    },
+    {
+      "hotkey": "5GrwvaEF5zXb26Fz9rcQpDWS57CtERHpNehXCPcNoHGKutQY",
+      "uid": 61,
+      "status": "IDLE",
+      "standing": "probation",
+      "gpu_type": "RTX5090",
+      "card_count": 2,
+      "last_check_at": 1788999700.0,
+      "last_failed": ["gpu_uuid_pin"],
+      "last_failed_why": {
+        "gpu_uuid_pin": "the GPUs on this box are not the ones pinned when it was admitted"
+      },
+      "bench_until": null,
+      "benched_reason": null,
+      "ladder_rung": 0,
+      "strikes": 0,
+      "pay": null,
+      "last_event": {
+        "at": 1788995000.0,
+        "kind": "clean_lease"
+      },
+      "cards": [
+        {
+          "card": "add4be37a2b6",
+          "state": "DRAINING",
+          "since": 1788999970.0,
+          "workload": "qwen3.8-27b-nvfp4@6",
+          "image": "entrius/qwen3.8-27b-nvfp4:6",
+          "leased_at": 1788996000.0,
+          "uptime_s": 4000.0,
+          "healthy": false,
+          "draining": true,
+          "heartbeat_misses": 0,
+          "last_heartbeat_at": 1788999960.0
+        },
+        {
+          "card": "c7b1676fb45e",
+          "state": "LEASED",
+          "since": 1788997600.0,
+          "workload": "qwen3.8-27b-nvfp4@6",
+          "image": "entrius/qwen3.8-27b-nvfp4:6",
+          "leased_at": 1788997600.0,
+          "uptime_s": 2400.0,
+          "healthy": true,
+          "draining": false,
+          "heartbeat_misses": 1,
+          "last_heartbeat_at": 1788999920.0
+        }
+      ]
+    }
+  ]
+}

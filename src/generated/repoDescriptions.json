@@ -1,3 +1,5 @@
 {
-  "gittensor-ai-lab/sparkinfer": "Fastest MoE/LLM inference runtime for consumer and edge Blackwell GPUs. SN74 on Gittensor."
+  "coderbench/bittrellis": "Search the best compressed LLM checkpoint for a specific GPU.",
+  "gittensor-ai-lab/sparkinfer": "Fastest MoE/LLM inference runtime for consumer and edge Blackwell GPUs. SN74 on Gittensor.",
+  "gittensor-model-hub/spark-hermes": "Verified agent intelligence, continuously improved by SN74 Gittensor. Target: Spark-Hermes-3.8-27B."
 }
