@@ -767,10 +767,11 @@ const RepoCardSkeleton: React.FC<{ index: number }> = ({ index }) => (
 );
 
 const DashboardTimeline = React.lazy(() => import('./dashboard/DashboardPage'));
+const ComputeTimeline = React.lazy(() => import('./ComputePage'));
 
 // The dial's positions, left to right. Turning right moves one step toward
 // the end of this list, turning left one step toward the start.
-const TIMELINES = ['repositories', 'dashboard'] as const;
+const TIMELINES = ['repositories', 'compute', 'dashboard'] as const;
 type Timeline = (typeof TIMELINES)[number];
 
 const dialTarget = (
@@ -787,6 +788,7 @@ const isTimeline = (value: string | null): value is Timeline =>
 const TIMELINE_TAGLINE: Record<Timeline, string> = {
   repositories: 'These are the open source projects built by Gittensor.',
   dashboard: 'This is the work done by Gittensor miners.',
+  compute: 'This is the GPU fleet serving Gittensor models.',
 };
 
 // A left/right dial button; grayed out when the dial can't turn that way
@@ -903,7 +905,7 @@ const Curtain: React.FC<{ leaving: boolean }> = ({ leaving }) => (
 
 const HomePage: React.FC = () => {
   const reposQuery = useReposAndWeights();
-  // The dial position lives in the URL (`/?view=dashboard`) so a drilldown's
+  // The dial position lives in the URL (`/?view=compute`) so a drilldown's
   // back link, a refresh, or a shared link land on the same timeline.
   const [searchParams, setSearchParams] = useSearchParams();
   const viewParam = searchParams.get('view');
@@ -1402,7 +1404,11 @@ const HomePage: React.FC = () => {
                 </Typography>
               }
             >
-              <DashboardTimeline />
+              {timeline === 'dashboard' ? (
+                <DashboardTimeline />
+              ) : (
+                <ComputeTimeline />
+              )}
             </React.Suspense>
           </Box>
         )}
